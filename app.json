@@ -7,19 +7,27 @@
     "icon": "./assets/app_logo.jpg",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "plugins": [
+      "@react-native-firebase/app",
+      "@react-native-firebase/messaging"
+    ],
     "splash": {
       "image": "./assets/app_logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.edunovaasia.edusis",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/app_logo.jpg",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.edunovaasia.edusis",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/app_logo.png"
