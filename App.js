@@ -1,20 +1,23 @@
+import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import SplashScreen from './src/screens/SplashScreen';
+import LoginScreen from './src/screens/LoginScreen';
 
 export default function App() {
+  const [isLoading, setIsLoading] = useState(true);
+
+  const handleAnimationComplete = () => {
+    setIsLoading(false);
+  };
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
+    <>
       <StatusBar style="auto" />
-    </View>
+      {isLoading ? (
+        <SplashScreen onAnimationComplete={handleAnimationComplete} />
+      ) : (
+        <LoginScreen />
+      )}
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
