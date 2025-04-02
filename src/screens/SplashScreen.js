@@ -17,7 +17,7 @@ const TEXT_LINE1 = 'Inspiring Brilliance';
 const TEXT_LINE2 = 'Building Brighter Futures';
 const FULL_TEXT = TEXT_LINE1 + '\n' + TEXT_LINE2;
 
-export default function SplashScreen({ onAnimationComplete }) {
+export default function SplashScreen() {
   const [displayText, setDisplayText] = useState('');
   const [startTyping, setStartTyping] = useState(false);
   const animation = useSharedValue(0);
@@ -74,7 +74,7 @@ export default function SplashScreen({ onAnimationComplete }) {
         currentIndex++;
       } else {
         clearInterval(typewriterInterval);
-        setTimeout(onAnimationComplete, 500);
+        // Animation is complete, but we no longer need to call a callback
       }
     }, TYPING_SPEED);
 

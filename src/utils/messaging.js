@@ -29,12 +29,24 @@ export async function getFCMToken() {
   }
 }
 
+export async function getToken() {
+  try {
+    // Get the device token directly from Firebase messaging
+    const token = await messaging().getToken();
+    console.log('FCM Token:', token);
+    return token;
+  } catch (error) {
+    console.error('Error getting Firebase messaging token:', error);
+    return null;
+  }
+}
+
 export const notificationListener = () => {
   // When the application is running in the background
-  messaging().onNotificationOpenedApp(remoteMessage => {
+  messaging().onNotificationOpenedApp((remoteMessage) => {
     console.log(
       'Notification caused app to open from background state:',
-      remoteMessage.notification,
+      remoteMessage.notification
     );
     // Navigate to appropriate screen if needed
   });
@@ -42,19 +54,19 @@ export const notificationListener = () => {
   // When the application is opened from a quit state
   messaging()
     .getInitialNotification()
-    .then(remoteMessage => {
+    .then((remoteMessage) => {
       if (remoteMessage) {
         console.log(
           'Notification caused app to open from quit state:',
-          remoteMessage.notification,
+          remoteMessage.notification
         );
         // Navigate to appropriate screen if needed
       }
     });
 
   // Handle foreground messages
-  messaging().onMessage(async remoteMessage => {
+  messaging().onMessage(async (remoteMessage) => {
     console.log('Received foreground message:', remoteMessage);
     // You can show a local notification here
   });
-}
+};
