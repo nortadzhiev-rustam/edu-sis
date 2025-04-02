@@ -11,13 +11,13 @@ import Animated, {
 } from 'react-native-reanimated';
 
 const { width, height } = Dimensions.get('window');
-const TYPING_SPEED = 30;
+const TYPING_SPEED = 50; // Increased for better visibility
 const LOGO_ANIMATION_DURATION = 1000;
 const TEXT_LINE1 = 'Inspiring Brilliance';
 const TEXT_LINE2 = 'Building Brighter Futures';
 const FULL_TEXT = TEXT_LINE1 + '\n' + TEXT_LINE2;
 
-export default function SplashScreen() {
+export default function SplashScreen({ onAnimationComplete }) {
   const [displayText, setDisplayText] = useState('');
   const [startTyping, setStartTyping] = useState(false);
   const animation = useSharedValue(0);
@@ -27,7 +27,7 @@ export default function SplashScreen() {
     const translateY = interpolate(
       animation.value,
       [0, 1, 2],
-      [0, 0, -height * 0.47]
+      [0, 0, -height * 0.42]
     );
 
     return {
@@ -44,13 +44,17 @@ export default function SplashScreen() {
 
   useEffect(() => {
     // Initial logo animation
+    // Calculate total animation time for better coordination
+    const totalTextTime =
+      (TEXT_LINE1.length + TEXT_LINE2.length) * TYPING_SPEED + 1500;
+
     animation.value = withSequence(
       withTiming(1, {
         duration: LOGO_ANIMATION_DURATION,
         easing: Easing.bezier(0.25, 0.1, 0.25, 1),
       }),
       withDelay(
-        TEXT_LINE1.length * TYPING_SPEED + TEXT_LINE2.length * TYPING_SPEED,
+        totalTextTime, // Wait for text animation to complete plus extra time
         withTiming(2, {
           duration: 500,
           easing: Easing.bezier(0.25, 0.1, 0.25, 1),
@@ -74,7 +78,13 @@ export default function SplashScreen() {
         currentIndex++;
       } else {
         clearInterval(typewriterInterval);
-        // Animation is complete, but we no longer need to call a callback
+        // Animation is complete, call the callback if provided
+        if (onAnimationComplete) {
+          // Add a small delay to ensure the text is fully visible
+          setTimeout(() => {
+            onAnimationComplete();
+          }, 1000);
+        }
       }
     }, TYPING_SPEED);
 
@@ -108,12 +118,13 @@ const styles = StyleSheet.create({
   },
   text: {
     marginTop: 20,
-    fontSize: 18,
-    fontWeight: '500',
-    color: '#333',
+    fontSize: 22,
+    fontWeight: '600',
+    color: '#007AFF',
     textAlign: 'center',
     paddingHorizontal: 20,
     fontFamily: Platform.OS === 'ios' ? 'Helvetica Neue' : 'sans-serif',
-    lineHeight: 28,
+    lineHeight: 32,
+    letterSpacing: 0.5,
   },
 });

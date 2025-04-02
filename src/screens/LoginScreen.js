@@ -14,11 +14,21 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getToken } from '../utils/messaging';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { teacherLogin, studentLogin, saveUserData } from '../services/authService';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
+import {
+  teacherLogin,
+  studentLogin,
+  saveUserData,
+} from '../services/authService';
 
 const { width, height } = Dimensions.get('window');
 
-export default function LoginScreen({ navigation }) {
+export default function LoginScreen({ route, navigation }) {
+  // Get login type from route params or default to teacher
+  const routeLoginType = route.params?.loginType;
+  const isAddingStudent = route.params?.isAddingStudent || false;
+
   // Form state
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -26,7 +36,7 @@ export default function LoginScreen({ navigation }) {
   const [deviceToken, setDeviceToken] = useState('');
 
   // Login type state (teacher or student)
-  const [loginType, setLoginType] = useState('teacher'); // Default to teacher login
+  const [loginType, setLoginType] = useState(routeLoginType || 'teacher');
 
   useEffect(() => {
     // Get device token when component mounts
@@ -55,7 +65,10 @@ export default function LoginScreen({ navigation }) {
       return userData;
     } catch (error) {
       setLoading(false);
-      Alert.alert('Login Error', 'An unexpected error occurred. Please try again.');
+      Alert.alert(
+        'Login Error',
+        'An unexpected error occurred. Please try again.'
+      );
       console.error('Login error:', error);
       return null;
     }
@@ -74,13 +87,56 @@ export default function LoginScreen({ navigation }) {
 
     if (userData) {
       // Handle successful login
-      console.log(`${loginType.charAt(0).toUpperCase() + loginType.slice(1)} login successful:`, userData);
+      console.log(
+        `${
+          loginType.charAt(0).toUpperCase() + loginType.slice(1)
+        } login successful:`,
+        userData
+      );
 
-      // Save user data to AsyncStorage
-      await saveUserData(userData, AsyncStorage);
+      // If adding a student account
+      if (isAddingStudent) {
+        // Save to student accounts list
+        try {
+          const existingStudentsJSON = await AsyncStorage.getItem(
+            'studentAccounts'
+          );
+          const existingStudents = existingStudentsJSON
+            ? JSON.parse(existingStudentsJSON)
+            : [];
 
-      // Navigate to Dashboard screen with user data
-      navigation.navigate('Dashboard', { userData });
+          // Add the new student account
+          existingStudents.push(userData);
+
+          // Save updated list
+          await AsyncStorage.setItem(
+            'studentAccounts',
+            JSON.stringify(existingStudents)
+          );
+
+          // Navigate back to parent screen
+          Alert.alert('Success', 'Student account added successfully');
+          navigation.goBack();
+        } catch (error) {
+          console.error('Error saving student account:', error);
+          Alert.alert('Error', 'Failed to save student account');
+        }
+      } else {
+        // Normal login flow - save user data to AsyncStorage
+        await saveUserData(userData, AsyncStorage);
+
+        // Navigate to appropriate screen based on user type
+        if (userData.userType === 'teacher') {
+          navigation.replace('TeacherScreen', { userData });
+        } else if (userData.userType === 'student') {
+          // For direct student login (not through parent)
+          Alert.alert(
+            'Student Login',
+            'Student direct login is not supported in this version'
+          );
+          // You could implement a student screen here if needed
+        }
+      }
     } else {
       Alert.alert('Login Failed', `Incorrect ${loginType} ID or password!`);
     }
@@ -89,6 +145,13 @@ export default function LoginScreen({ navigation }) {
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
+        {/* Back Button */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <FontAwesomeIcon icon={faArrowLeft} size={20} color='#007AFF' />
+        </TouchableOpacity>
         <Animated.Image
           source={require('../../assets/app_logo.jpg')}
           style={styles.logo}
@@ -99,24 +162,55 @@ export default function LoginScreen({ navigation }) {
           entering={FadeInDown.delay(300).springify()}
           style={styles.formContainer}
         >
-          <Text style={styles.title}>Please Login</Text>
+          <Text style={styles.title}>
+            {isAddingStudent
+              ? 'Add Student Account'
+              : routeLoginType
+              ? `${
+                  routeLoginType.charAt(0).toUpperCase() +
+                  routeLoginType.slice(1)
+                } Login`
+              : 'Please Login'}
+          </Text>
 
-          {/* Login Type Selector */}
-          <View style={styles.loginTypeContainer}>
-            <TouchableOpacity
-              style={[styles.loginTypeButton, loginType === 'teacher' && styles.activeLoginType]}
-              onPress={() => setLoginType('teacher')}
-            >
-              <Text style={[styles.loginTypeText, loginType === 'teacher' && styles.activeLoginTypeText]}>Teacher</Text>
-            </TouchableOpacity>
+          {/* Login Type Selector - only show if not coming from a specific route */}
+          {!routeLoginType && (
+            <View style={styles.loginTypeContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.loginTypeButton,
+                  loginType === 'teacher' && styles.activeLoginType,
+                ]}
+                onPress={() => setLoginType('teacher')}
+              >
+                <Text
+                  style={[
+                    styles.loginTypeText,
+                    loginType === 'teacher' && styles.activeLoginTypeText,
+                  ]}
+                >
+                  Teacher
+                </Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.loginTypeButton, loginType === 'student' && styles.activeLoginType]}
-              onPress={() => setLoginType('student')}
-            >
-              <Text style={[styles.loginTypeText, loginType === 'student' && styles.activeLoginTypeText]}>Student</Text>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                style={[
+                  styles.loginTypeButton,
+                  loginType === 'student' && styles.activeLoginType,
+                ]}
+                onPress={() => setLoginType('student')}
+              >
+                <Text
+                  style={[
+                    styles.loginTypeText,
+                    loginType === 'student' && styles.activeLoginTypeText,
+                  ]}
+                >
+                  Student
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           <TextInput
             style={styles.input}
@@ -160,6 +254,23 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
   container: {
     flex: 1,
