@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getToken } from '../utils/messaging';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -143,8 +144,8 @@ export default function LoginScreen({ route, navigation }) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* Back Button */}
         <TouchableOpacity
           style={styles.backButton}
@@ -246,14 +247,15 @@ export default function LoginScreen({ route, navigation }) {
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
         </Animated.View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
+    alignItems: 'center',
   },
   backButton: {
     position: 'absolute',
@@ -275,7 +277,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ffffff',
-    alignItems: 'center',
   },
   logo: {
     width: width * 0.3,

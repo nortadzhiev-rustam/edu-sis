@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, Text, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import SplashScreen from './src/screens/SplashScreen';
 import HomeScreen from './src/screens/HomeScreen';
@@ -63,23 +64,29 @@ export default function App() {
   // };
 
   if (isLoading) {
-    return <SplashScreen onAnimationComplete={handleAnimationComplete} />;
+    return (
+      <SafeAreaProvider>
+        <SplashScreen onAnimationComplete={handleAnimationComplete} />
+      </SafeAreaProvider>
+    );
   }
 
   return (
-    <NavigationContainer>
-      <StatusBar style='auto' />
-      <Stack.Navigator
-        initialRouteName='Home'
-        screenOptions={{ headerShown: false }}
-      >
-        <Stack.Screen name='Home' component={HomeScreen} />
-        <Stack.Screen name='Login' component={LoginScreen} />
-        <Stack.Screen name='TeacherScreen' component={TeacherScreen} />
-        <Stack.Screen name='ParentScreen' component={ParentScreen} />
-      </Stack.Navigator>
-      {/* <DevTokenDisplay /> */}
-    </NavigationContainer>
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <StatusBar style='auto' />
+        <Stack.Navigator
+          initialRouteName='Home'
+          screenOptions={{ headerShown: false }}
+        >
+          <Stack.Screen name='Home' component={HomeScreen} />
+          <Stack.Screen name='Login' component={LoginScreen} />
+          <Stack.Screen name='TeacherScreen' component={TeacherScreen} />
+          <Stack.Screen name='ParentScreen' component={ParentScreen} />
+        </Stack.Navigator>
+        {/* <DevTokenDisplay /> */}
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }
 

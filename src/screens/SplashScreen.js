@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Dimensions, Platform } from 'react-native';
+import { StyleSheet, Dimensions, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
-  withSequence,
-  withDelay,
   interpolate,
   Easing,
 } from 'react-native-reanimated';
@@ -44,23 +43,12 @@ export default function SplashScreen({ onAnimationComplete }) {
 
   useEffect(() => {
     // Initial logo animation
-    // Calculate total animation time for better coordination
-    const totalTextTime =
-      (TEXT_LINE1.length + TEXT_LINE2.length) * TYPING_SPEED + 1500;
-
-    animation.value = withSequence(
-      withTiming(1, {
-        duration: LOGO_ANIMATION_DURATION,
-        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-      }),
-      withDelay(
-        totalTextTime, // Wait for text animation to complete plus extra time
-        withTiming(2, {
-          duration: 500,
-          easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-        })
-      )
-    );
+    // Just animate to the middle state (1) initially
+    // The transition to state 2 will happen after typing is complete
+    animation.value = withTiming(1, {
+      duration: LOGO_ANIMATION_DURATION,
+      easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+    });
 
     // Start typing animation
     setTimeout(() => {
@@ -82,7 +70,16 @@ export default function SplashScreen({ onAnimationComplete }) {
         if (onAnimationComplete) {
           // Add a small delay to ensure the text is fully visible
           setTimeout(() => {
-            onAnimationComplete();
+            // Start the final animation
+            animation.value = withTiming(2, {
+              duration: 500,
+              easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+            });
+
+            // Call the completion callback after a delay that matches the animation duration
+            setTimeout(() => {
+              onAnimationComplete();
+            }, 600); // 500ms animation + 100ms buffer
           }, 1000);
         }
       }
@@ -92,7 +89,7 @@ export default function SplashScreen({ onAnimationComplete }) {
   }, [startTyping]);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={[]}>
       <Animated.Image
         source={require('../../assets/app_logo.jpg')}
         style={[styles.logo, logoStyle]}
@@ -101,7 +98,7 @@ export default function SplashScreen({ onAnimationComplete }) {
       <Animated.Text style={[styles.text, textStyle]}>
         {displayText}
       </Animated.Text>
-    </View>
+    </SafeAreaView>
   );
 }
 

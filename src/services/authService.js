@@ -3,10 +3,18 @@
  * Handles all API calls related to authentication
  */
 
-import { Platform } from 'expo-modules-core';
-
 // Base API URL - replace with your actual API endpoint
 const BASE_URL = 'https://sis.bfi.edu.mm/mobile_api';
+
+// Вспомогательная функция для кодирования строки в base64
+const encodeToBase64 = (str) => {
+  if (typeof btoa === 'function') {
+    return btoa(str);
+  } else if (typeof Buffer === 'function') {
+    return Buffer.from(str, 'utf8').toString('base64');
+  }
+  throw new Error('Нет доступного метода для кодирования в base64');
+};
 
 /**
  * Teacher login API call
@@ -17,10 +25,10 @@ const BASE_URL = 'https://sis.bfi.edu.mm/mobile_api';
  */
 export const teacherLogin = async (username, password, deviceToken) => {
   try {
-    // Encode device token to base64
-    const encodedToken = deviceToken ? btoa(deviceToken) : '';
+    // Используем вспомогательную функцию для кодирования deviceToken
+    const encodedToken = deviceToken ? encodeToBase64(deviceToken) : '';
 
-    const apiUrl = `${BASE_URL}/check-staff-credentials?username=${username}&password=${password}&deviceType=${Platform.OS}&deviceToken=${encodedToken}`;
+    const apiUrl = `${BASE_URL}/check-staff-credentials/?username=${username}&password=${password}&deviceType=ios&deviceToken=${encodedToken}`;
 
     const response = await fetch(apiUrl);
     console.log('Teacher login response:', response);
@@ -29,7 +37,7 @@ export const teacherLogin = async (username, password, deviceToken) => {
       const data = await response.json();
       return {
         ...data,
-        userType: 'teacher', // Add user type to distinguish in the app
+        userType: 'teacher', // Добавляем тип пользователя для различения в приложении
       };
     } else {
       console.error('Teacher login failed with status:', response.status);
@@ -51,7 +59,7 @@ export const teacherLogin = async (username, password, deviceToken) => {
 export const studentLogin = async (username, password, deviceToken) => {
   try {
     // Encode device token to base64
-    const encodedToken = deviceToken ? btoa(deviceToken) : '';
+    const encodedToken = deviceToken ? encodeToBase64(deviceToken) : '';
 
     const apiUrl = `${BASE_URL}/check-student-credentials?username=${username}&password=${password}&deviceType=ios&deviceToken=${encodedToken}`;
 
