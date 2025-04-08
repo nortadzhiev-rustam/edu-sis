@@ -6,13 +6,13 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
   faUser,
   faChalkboardTeacher,
-  faBook,
   faClipboardCheck,
   faBell,
   faCog,
@@ -51,7 +51,8 @@ export default function TeacherScreen({ route, navigation }) {
     };
 
     getUserData();
-  }, []);
+    console.log(userData);
+  }, [userData]);
 
   const handleLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
@@ -83,13 +84,19 @@ export default function TeacherScreen({ route, navigation }) {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.navigate('Home')}
-        >
-          <FontAwesomeIcon icon={faArrowLeft} size={20} color='#fff' />
+        <View style={styles.headerLeft}>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => navigation.goBack()}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} size={20} color='#fff' />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Teacher Dashboard</Text>
+        </View>
+
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <FontAwesomeIcon icon={faSignOutAlt} size={22} color='#fff' />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Teacher Dashboard</Text>
       </View>
 
       {loading ? (
@@ -104,17 +111,46 @@ export default function TeacherScreen({ route, navigation }) {
             </Text>
 
             <View style={styles.userInfoCard}>
-              <Text style={styles.userInfoTitle}>Teacher Information</Text>
-              <Text style={styles.userInfoText}>
-                ID: {userData.username || 'N/A'}
-              </Text>
-              <Text style={styles.userInfoText}>
-                Email: {userData.email || 'N/A'}
-              </Text>
+              <View style={styles.userInfoHeader}>
+                <View style={styles.photoContainer}>
+                  {userData.photo ? (
+                    <Image
+                      source={{ uri: userData.photo }}
+                      style={styles.userPhoto}
+                      resizeMode='cover'
+                    />
+                  ) : (
+                    <View style={styles.photoPlaceholder}>
+                      <FontAwesomeIcon
+                        icon={faUser}
+                        size={30}
+                        color='#007AFF'
+                      />
+                    </View>
+                  )}
+                </View>
+                <View style={styles.userInfoTitleContainer}>
+                  <Text style={styles.userInfoTitle}>Teacher Information</Text>
+                  <Text style={styles.userInfoText}>
+                    ID: {userData.id || 'N/A'}
+                  </Text>
+                </View>
+              </View>
+
               {userData.department && (
                 <Text style={styles.userInfoText}>
                   Department: {userData.department}
                 </Text>
+              )}
+
+              {userData.position && (
+                <Text style={styles.userInfoText}>
+                  Position: {userData.position}
+                </Text>
+              )}
+
+              {userData.email && (
+                <Text style={styles.userInfoText}>Email: {userData.email}</Text>
               )}
             </View>
           </View>
@@ -122,77 +158,102 @@ export default function TeacherScreen({ route, navigation }) {
           <View style={styles.menuContainer}>
             <Text style={styles.menuSectionTitle}>Teacher Menu</Text>
 
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuIconContainer}>
-                <FontAwesomeIcon icon={faUser} size={18} color='#007AFF' />
-              </View>
-              <Text style={styles.menuItemText}>My Profile</Text>
-            </TouchableOpacity>
+            <View style={styles.tilesContainer}>
+              {/* First row of tiles */}
+              <View style={styles.tileRow}>
+                <TouchableOpacity style={styles.tile}>
+                  <View
+                    style={[
+                      styles.tileIconContainer,
+                      { backgroundColor: 'rgba(0, 122, 255, 0.1)' },
+                    ]}
+                  >
+                    <FontAwesomeIcon icon={faUser} size={24} color='#007AFF' />
+                  </View>
+                  <Text style={styles.tileText}>My Profile</Text>
+                </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuIconContainer}>
-                <FontAwesomeIcon
-                  icon={faChalkboardTeacher}
-                  size={18}
-                  color='#007AFF'
-                />
+                <TouchableOpacity style={styles.tile}>
+                  <View
+                    style={[
+                      styles.tileIconContainer,
+                      { backgroundColor: 'rgba(52, 199, 89, 0.1)' },
+                    ]}
+                  >
+                    <FontAwesomeIcon
+                      icon={faChalkboardTeacher}
+                      size={24}
+                      color='#34C759'
+                    />
+                  </View>
+                  <Text style={styles.tileText}>My Classes</Text>
+                </TouchableOpacity>
               </View>
-              <Text style={styles.menuItemText}>My Classes</Text>
-            </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuIconContainer}>
-                <FontAwesomeIcon
-                  icon={faGraduationCap}
-                  size={18}
-                  color='#007AFF'
-                />
-              </View>
-              <Text style={styles.menuItemText}>Grade Management</Text>
-            </TouchableOpacity>
+              {/* Second row of tiles */}
+              <View style={styles.tileRow}>
+                <TouchableOpacity style={styles.tile}>
+                  <View
+                    style={[
+                      styles.tileIconContainer,
+                      { backgroundColor: 'rgba(255, 149, 0, 0.1)' },
+                    ]}
+                  >
+                    <FontAwesomeIcon
+                      icon={faGraduationCap}
+                      size={24}
+                      color='#FF9500'
+                    />
+                  </View>
+                  <Text style={styles.tileText}>Grades</Text>
+                </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuIconContainer}>
-                <FontAwesomeIcon
-                  icon={faClipboardCheck}
-                  size={18}
-                  color='#007AFF'
-                />
+                <TouchableOpacity style={styles.tile}>
+                  <View
+                    style={[
+                      styles.tileIconContainer,
+                      { backgroundColor: 'rgba(90, 200, 250, 0.1)' },
+                    ]}
+                  >
+                    <FontAwesomeIcon
+                      icon={faClipboardCheck}
+                      size={24}
+                      color='#5AC8FA'
+                    />
+                  </View>
+                  <Text style={styles.tileText}>Attendance</Text>
+                </TouchableOpacity>
               </View>
-              <Text style={styles.menuItemText}>Attendance</Text>
-            </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuIconContainer}>
-                <FontAwesomeIcon icon={faBell} size={18} color='#007AFF' />
-              </View>
-              <Text style={styles.menuItemText}>Notifications</Text>
-            </TouchableOpacity>
+              {/* Third row of tiles */}
+              <View style={styles.tileRow}>
+                <TouchableOpacity style={styles.tile}>
+                  <View
+                    style={[
+                      styles.tileIconContainer,
+                      { backgroundColor: 'rgba(175, 82, 222, 0.1)' },
+                    ]}
+                  >
+                    <FontAwesomeIcon icon={faBell} size={24} color='#AF52DE' />
+                  </View>
+                  <Text style={styles.tileText}>Notifications</Text>
+                </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuIconContainer}>
-                <FontAwesomeIcon icon={faCog} size={18} color='#007AFF' />
+                <TouchableOpacity style={styles.tile}>
+                  <View
+                    style={[
+                      styles.tileIconContainer,
+                      { backgroundColor: 'rgba(88, 86, 214, 0.1)' },
+                    ]}
+                  >
+                    <FontAwesomeIcon icon={faCog} size={24} color='#5856D6' />
+                  </View>
+                  <Text style={styles.tileText}>Settings</Text>
+                </TouchableOpacity>
               </View>
-              <Text style={styles.menuItemText}>Settings</Text>
-            </TouchableOpacity>
+            </View>
 
-            <TouchableOpacity
-              style={[styles.menuItem, styles.logoutButton]}
-              onPress={handleLogout}
-            >
-              <View
-                style={[styles.menuIconContainer, styles.logoutIconContainer]}
-              >
-                <FontAwesomeIcon
-                  icon={faSignOutAlt}
-                  size={18}
-                  color='#FF3B30'
-                />
-              </View>
-              <Text style={[styles.menuItemText, styles.logoutText]}>
-                Logout
-              </Text>
-            </TouchableOpacity>
+            {/* Logout button moved to header */}
           </View>
         </ScrollView>
       )}
@@ -218,9 +279,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#007AFF',
     padding: 15,
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  backButton: {
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
@@ -251,6 +317,34 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+  },
+  userInfoHeader: {
+    flexDirection: 'row',
+    marginBottom: 15,
+  },
+  photoContainer: {
+    marginRight: 15,
+  },
+  userPhoto: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2,
+    borderColor: '#007AFF',
+  },
+  photoPlaceholder: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#007AFF',
+  },
+  userInfoTitleContainer: {
+    flex: 1,
+    justifyContent: 'center',
   },
   userInfoTitle: {
     fontSize: 18,
@@ -285,6 +379,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  tilesContainer: {
+    width: '100%',
+    marginTop: 10,
+  },
+  tileRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+  tile: {
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    padding: 20,
+    width: '48%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  tileIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  tileText: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
   menuIconContainer: {
     width: 36,
     height: 36,
@@ -294,21 +423,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  logoutIconContainer: {
-    backgroundColor: 'rgba(255, 59, 48, 0.1)',
-  },
+  // Logout icon container style removed
   menuItemText: {
     fontSize: 16,
     color: '#333',
     fontWeight: '500',
   },
   logoutButton: {
-    backgroundColor: '#f8f8f8',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    marginTop: 10,
-  },
-  logoutText: {
-    color: '#FF3B30',
+    paddingHorizontal: 10,
   },
 });

@@ -10,6 +10,8 @@ import HomeScreen from './src/screens/HomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import TeacherScreen from './src/screens/TeacherScreen';
 import ParentScreen from './src/screens/ParentScreen';
+import WebViewScreen from './src/screens/WebViewScreen';
+import WebViewWithAuth from './src/screens/WebViewWithAuth';
 import {
   requestUserPermission,
   notificationListener,
@@ -29,12 +31,23 @@ export default function App() {
 
     // Request notification permissions and setup Firebase messaging
     const setupFirebase = async () => {
-      await requestUserPermission();
-      notificationListener();
+      try {
+        // Request permission with our custom UI flow
+        await requestUserPermission();
 
-      const token = await getToken();
-      setFcmToken(token);
-      console.log('Firebase Messaging Token:', token);
+        // Setup notification listeners
+        notificationListener();
+
+        // Get the token if permission was granted
+        const token = await getToken();
+        if (token) {
+          setFcmToken(token);
+          console.log('Firebase Messaging Token:', token);
+        }
+      } catch (error) {
+        console.error('Error setting up Firebase:', error);
+        // Continue with app initialization even if notifications fail
+      }
     };
 
     // Run initialization tasks
@@ -83,6 +96,8 @@ export default function App() {
           <Stack.Screen name='Login' component={LoginScreen} />
           <Stack.Screen name='TeacherScreen' component={TeacherScreen} />
           <Stack.Screen name='ParentScreen' component={ParentScreen} />
+          <Stack.Screen name='WebView' component={WebViewScreen} />
+          <Stack.Screen name='WebViewWithAuth' component={WebViewWithAuth} />
         </Stack.Navigator>
         {/* <DevTokenDisplay /> */}
       </NavigationContainer>

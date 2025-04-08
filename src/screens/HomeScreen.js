@@ -14,7 +14,7 @@ import {
   faUserGraduate,
   faCalendarAlt,
   faInfoCircle,
-  faAddressBook,
+  faEnvelope,
   faQuestionCircle,
   faShareAlt,
 } from '@fortawesome/free-solid-svg-icons';
@@ -114,7 +114,12 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.resourcesContainer}>
             <TouchableOpacity
               style={styles.resourceButton}
-              onPress={() => alert('Calendar feature coming soon!')}
+              onPress={() =>
+                navigation.navigate('WebView', {
+                  url: 'https://sis.bfi.edu.mm/mobile-api/calendar',
+                  title: 'School Calendar',
+                })
+              }
             >
               <View
                 style={[
@@ -133,7 +138,12 @@ export default function HomeScreen({ navigation }) {
 
             <TouchableOpacity
               style={styles.resourceButton}
-              onPress={() => alert('About Us feature coming soon!')}
+              onPress={() =>
+                navigation.navigate('WebView', {
+                  url: 'https://sis.bfi.edu.mm/mobile-api/about',
+                  title: 'About Us',
+                })
+              }
             >
               <View
                 style={[
@@ -152,7 +162,12 @@ export default function HomeScreen({ navigation }) {
 
             <TouchableOpacity
               style={styles.resourceButton}
-              onPress={() => alert('Contacts feature coming soon!')}
+              onPress={() =>
+                navigation.navigate('WebView', {
+                  url: 'https://sis.bfi.edu.mm/mobile-api/contacts',
+                  title: 'Contact Us',
+                })
+              }
             >
               <View
                 style={[
@@ -160,18 +175,19 @@ export default function HomeScreen({ navigation }) {
                   { backgroundColor: 'rgba(255, 69, 58, 0.1)' },
                 ]}
               >
-                <FontAwesomeIcon
-                  icon={faAddressBook}
-                  size={20}
-                  color='#FF3B30'
-                />
+                <FontAwesomeIcon icon={faEnvelope} size={20} color='#FF3B30' />
               </View>
-              <Text style={styles.resourceText}>Contacts</Text>
+              <Text style={styles.resourceText}>Contact Us</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.resourceButton}
-              onPress={() => alert('FAQ feature coming soon!')}
+              onPress={() =>
+                navigation.navigate('WebView', {
+                  url: 'https://sis.bfi.edu.mm/mobile-api/faq',
+                  title: 'FAQ',
+                })
+              }
             >
               <View
                 style={[
