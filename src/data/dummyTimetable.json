@@ -1,0 +1,37 @@
+{
+  "Monday": [
+    { "time": "08:00-09:00", "subject": "Math" },
+    { "time": "09:15-10:15", "subject": "English" },
+    { "time": "10:30-11:30", "subject": "Physics" },
+    { "time": "11:45-12:45", "subject": "History" },
+    { "time": "13:30-14:30", "subject": "PE" }
+  ],
+  "Tuesday": [
+    { "time": "08:00-09:00", "subject": "Biology" },
+    { "time": "09:15-10:15", "subject": "Chemistry" },
+    { "time": "10:30-11:30", "subject": "Geography" },
+    { "time": "11:45-12:45", "subject": "Art" },
+    { "time": "13:30-14:30", "subject": "Music" }
+  ],
+  "Wednesday": [
+    { "time": "08:00-09:00", "subject": "Computer Science" },
+    { "time": "09:15-10:15", "subject": "Math" },
+    { "time": "10:30-11:30", "subject": "English" },
+    { "time": "11:45-12:45", "subject": "Physics" },
+    { "time": "13:30-14:30", "subject": "Health" }
+  ],
+  "Thursday": [
+    { "time": "08:00-09:00", "subject": "History" },
+    { "time": "09:15-10:15", "subject": "Biology" },
+    { "time": "10:30-11:30", "subject": "Chemistry" },
+    { "time": "11:45-12:45", "subject": "Physical Education" },
+    { "time": "13:30-14:30", "subject": "Drama" }
+  ],
+  "Friday": [
+    { "time": "08:00-09:00", "subject": "Geography" },
+    { "time": "09:15-10:15", "subject": "Art" },
+    { "time": "10:30-11:30", "subject": "Music" },
+    { "time": "11:45-12:45", "subject": "Math" },
+    { "time": "13:30-14:30", "subject": "Computer Lab" }
+  ]
+}

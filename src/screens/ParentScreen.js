@@ -53,7 +53,6 @@ export default function ParentScreen({ navigation }) {
   const handleStudentPress = (student) => {
     // Set the selected student
     setSelectedStudent(student);
-    console.log(selectedStudent);
   };
 
   const handleMenuItemPress = (action) => {
@@ -104,10 +103,8 @@ export default function ParentScreen({ navigation }) {
         });
         break;
       case 'schedule':
-        navigation.navigate('WebViewWithAuth', {
-          baseUrl: baseUrl,
-          endpoint: '/get-student-timetable',
-          title: 'Schedule',
+        navigation.navigate('TimetableScreen', {
+          studentName: selectedStudent.name,
           authCode: selectedStudent.authCode,
         });
         break;
@@ -417,7 +414,7 @@ export default function ParentScreen({ navigation }) {
                   color='#AF52DE'
                 />
               </View>
-              <Text style={styles.menuItemText}>Schedule</Text>
+              <Text style={styles.menuItemText}>Timetable</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -432,7 +429,7 @@ export default function ParentScreen({ navigation }) {
               >
                 <FontAwesomeIcon icon={faGavel} size={24} color='#5856D6' />
               </View>
-              <Text style={styles.menuItemText}>Discipline</Text>
+              <Text style={styles.menuItemText}>Behavior</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -624,7 +621,7 @@ const styles = StyleSheet.create({
   },
   // No longer needed with FontAwesome icon
   studentName: {
-    fontSize: 16,
+    fontSize: 11,
     fontWeight: '600',
     color: '#333',
     marginBottom: 8,

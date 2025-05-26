@@ -10,6 +10,7 @@ import HomeScreen from './src/screens/HomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import TeacherScreen from './src/screens/TeacherScreen';
 import ParentScreen from './src/screens/ParentScreen';
+import TimetableScreen from './src/screens/TimetableScreen';
 import WebViewScreen from './src/screens/WebViewScreen';
 import WebViewWithAuth from './src/screens/WebViewWithAuth';
 import {
@@ -96,6 +97,7 @@ export default function App() {
           <Stack.Screen name='Login' component={LoginScreen} />
           <Stack.Screen name='TeacherScreen' component={TeacherScreen} />
           <Stack.Screen name='ParentScreen' component={ParentScreen} />
+          <Stack.Screen name='TimetableScreen' component={TimetableScreen} />
           <Stack.Screen name='WebView' component={WebViewScreen} />
           <Stack.Screen name='WebViewWithAuth' component={WebViewWithAuth} />
         </Stack.Navigator>

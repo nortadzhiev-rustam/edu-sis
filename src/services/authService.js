@@ -101,10 +101,12 @@ export const studentLogin = async (username, password, deviceToken) => {
       console.log(response.status);
       if (response.status === 200 || response.status === 201) {
         const data = await response.json();
-        return {
-          ...data,
-          userType: 'student',
-        };
+        if (data !== 0) {
+          return {
+            ...data,
+            userType: 'student',
+          };
+        }
       } else {
         console.error('Student login failed with status:', response.status);
         return null;
