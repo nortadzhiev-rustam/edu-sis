@@ -79,10 +79,8 @@ export default function ParentScreen({ navigation }) {
     // Handle different menu actions
     switch (action) {
       case 'grades':
-        navigation.navigate('WebViewWithAuth', {
-          baseUrl: baseUrl,
-          endpoint: '/get-student-assessment',
-          title: 'Grades',
+        navigation.navigate('GradesScreen', {
+          studentName: selectedStudent.name,
           authCode: selectedStudent.authCode,
         });
         break;

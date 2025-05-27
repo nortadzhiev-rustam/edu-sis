@@ -3,7 +3,7 @@
     "name": "edu-sis",
     "slug": "edu-sis",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/app_logo.jpg",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,

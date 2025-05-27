@@ -1,3 +1,4 @@
+import 'react-native-get-random-values';
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet } from 'react-native';
@@ -11,6 +12,7 @@ import LoginScreen from './src/screens/LoginScreen';
 import TeacherScreen from './src/screens/TeacherScreen';
 import ParentScreen from './src/screens/ParentScreen';
 import TimetableScreen from './src/screens/TimetableScreen';
+import GradesScreen from './src/screens/GradesScreen';
 import WebViewScreen from './src/screens/WebViewScreen';
 import WebViewWithAuth from './src/screens/WebViewWithAuth';
 import {
@@ -98,6 +100,7 @@ export default function App() {
           <Stack.Screen name='TeacherScreen' component={TeacherScreen} />
           <Stack.Screen name='ParentScreen' component={ParentScreen} />
           <Stack.Screen name='TimetableScreen' component={TimetableScreen} />
+          <Stack.Screen name='GradesScreen' component={GradesScreen} />
           <Stack.Screen name='WebView' component={WebViewScreen} />
           <Stack.Screen name='WebViewWithAuth' component={WebViewWithAuth} />
         </Stack.Navigator>

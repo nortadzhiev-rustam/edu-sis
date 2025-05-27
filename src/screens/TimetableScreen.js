@@ -9,12 +9,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import {
-  faArrowLeft,
-  faCalendarAlt,
-  faClock,
-} from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
 import timetableData from '../data/dummyTimetable.json';
+import { useScreenOrientation } from '../hooks/useScreenOrientation';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -28,6 +25,10 @@ export default function TimetableScreen({ navigation, route }) {
     'Friday',
   ]);
   const { studentName, authCode } = route.params || {};
+
+  // Enable rotation for this screen (optional - you can remove this if you want timetable to stay portrait)
+  // useScreenOrientation(true);
+
   const baseDays = [
     'Monday',
     'Tuesday',
@@ -196,7 +197,6 @@ export default function TimetableScreen({ navigation, route }) {
     const fetchAndSetTimetable = async () => {
       const data = await fetchTimetable();
       if (data) {
-        console.log(data);
         setTimetable(data);
       }
     };
