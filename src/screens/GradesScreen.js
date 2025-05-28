@@ -20,6 +20,11 @@ export default function GradesScreen({ navigation, route }) {
   const [grades, setGrades] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Subject filtering state
+  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [availableSubjects, setAvailableSubjects] = useState([]);
+  const [showSubjectList, setShowSubjectList] = useState(true);
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10); // Number of items per page
@@ -91,10 +96,54 @@ export default function GradesScreen({ navigation, route }) {
     fetchGrades();
   }, [authCode]);
 
-  // Reset pagination when tab changes
+  // Extract unique subjects from grades data
+  const extractSubjects = (gradesData) => {
+    const subjects = new Set();
+
+    if (gradesData?.summative && Array.isArray(gradesData.summative)) {
+      gradesData.summative.forEach((item) => {
+        if (item.subject_name) {
+          subjects.add(item.subject_name);
+        }
+      });
+    }
+
+    if (gradesData?.formative && Array.isArray(gradesData.formative)) {
+      gradesData.formative.forEach((item) => {
+        if (item.subject_name) {
+          subjects.add(item.subject_name);
+        }
+      });
+    }
+
+    // If no API data, extract from dummy data
+    if (
+      (!gradesData?.summative || gradesData.summative.length === 0) &&
+      (!gradesData?.formative || gradesData.formative.length === 0)
+    ) {
+      // Add dummy subjects for testing
+      ['Mathematics', 'English', 'Physics', 'Chemistry', 'Biology'].forEach(
+        (subject) => {
+          subjects.add(subject);
+        }
+      );
+    }
+
+    return Array.from(subjects);
+  };
+
+  // Update available subjects when grades data changes
+  useEffect(() => {
+    if (grades) {
+      const subjects = extractSubjects(grades);
+      setAvailableSubjects(subjects);
+    }
+  }, [grades]);
+
+  // Reset pagination when tab or subject changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab]);
+  }, [activeTab, selectedSubject, showSubjectList]);
 
   // Utility function to calculate and format score display
   const formatScore = (score, percentage) => {
@@ -154,6 +203,29 @@ export default function GradesScreen({ navigation, route }) {
     }
   };
 
+  const handleSubjectSelect = (subject) => {
+    setSelectedSubject(subject);
+    setShowSubjectList(false);
+    setCurrentPage(1); // Reset pagination when selecting a subject
+  };
+
+  const handleBackToSubjects = () => {
+    setSelectedSubject(null);
+    setShowSubjectList(true);
+    setCurrentPage(1);
+  };
+
+  const renderSubjectCard = (subject) => (
+    <TouchableOpacity
+      key={subject}
+      style={styles.subjectCard}
+      onPress={() => handleSubjectSelect(subject)}
+    >
+      <Text style={styles.subjectCardTitle}>{subject}</Text>
+      <Text style={styles.subjectCardSubtitle}>View grades</Text>
+    </TouchableOpacity>
+  );
+
   const renderTabButton = (tabName, title) => (
     <TouchableOpacity
       key={tabName}
@@ -180,7 +252,6 @@ export default function GradesScreen({ navigation, route }) {
       return (
         <View style={styles.tableHeader}>
           <Text style={[styles.headerCell, styles.dateColumn]}>Date</Text>
-          <Text style={[styles.headerCell, styles.subjectColumn]}>Subject</Text>
           <Text style={[styles.headerCell, styles.strandColumn]}>Strand</Text>
           <Text style={[styles.headerCell, styles.titleColumn]}>Title</Text>
           <Text style={[styles.headerCell, styles.scoreColumn]}>Score</Text>
@@ -195,9 +266,6 @@ export default function GradesScreen({ navigation, route }) {
         <View style={styles.tableHeader}>
           <Text style={[styles.headerCell, styles.portraitDateColumn]}>
             Date
-          </Text>
-          <Text style={[styles.headerCell, styles.portraitSubjectColumn]}>
-            Subject
           </Text>
           <Text style={[styles.headerCell, styles.portraitTitleColumn]}>
             Title
@@ -220,9 +288,6 @@ export default function GradesScreen({ navigation, route }) {
         <View style={[styles.tableRow, index % 2 === 0 && styles.evenRow]}>
           <Text style={[styles.cell, styles.dateColumn]}>
             {item.date || 'N/A'}
-          </Text>
-          <Text style={[styles.cell, styles.subjectColumn]}>
-            {item.subject || 'N/A'}
           </Text>
           <Text style={[styles.cell, styles.strandColumn]}>
             {item.strand || 'N/A'}
@@ -250,9 +315,6 @@ export default function GradesScreen({ navigation, route }) {
         <View style={[styles.tableRow, index % 2 === 0 && styles.evenRow]}>
           <Text style={[styles.cell, styles.portraitDateColumn]}>
             {item.date || 'N/A'}
-          </Text>
-          <Text style={[styles.cell, styles.portraitSubjectColumn]}>
-            {item.subject || 'N/A'}
           </Text>
           <Text style={[styles.cell, styles.portraitTitleColumn]}>
             {item.title || 'N/A'}
@@ -525,6 +587,13 @@ export default function GradesScreen({ navigation, route }) {
       ];
     }
 
+    // Filter by selected subject
+    if (selectedSubject) {
+      summativeData = summativeData.filter(
+        (item) => item.subject === selectedSubject
+      );
+    }
+
     // Safety check: ensure currentPage doesn't exceed totalPages
     const totalPages = getTotalPages(summativeData);
     if (currentPage > totalPages && totalPages > 0) {
@@ -605,12 +674,21 @@ export default function GradesScreen({ navigation, route }) {
       });
     }
 
+    // Filter by selected subject
+    if (selectedSubject) {
+      formativeData = formativeData.filter(
+        (item) => item.subject === selectedSubject
+      );
+    }
+
     if (formativeData.length === 0) {
       return (
         <View style={styles.comingSoon}>
           <Text style={styles.comingSoonText}>
             {loading
               ? 'Loading formative grades...'
+              : selectedSubject
+              ? `No formative grades available for ${selectedSubject}`
               : 'No formative grades available'}
           </Text>
         </View>
@@ -675,11 +753,13 @@ export default function GradesScreen({ navigation, route }) {
         <View style={styles.headerCenter}>
           <FontAwesomeIcon icon={faChartLine} size={20} color='#fff' />
           <Text style={styles.headerTitle}>
-            {isLandscape
-              ? `Grades - ${
+            {showSubjectList
+              ? 'Grades - Select Subject'
+              : isLandscape
+              ? `${selectedSubject} - ${
                   activeTab === 'summative' ? 'Summative' : 'Formative'
                 }`
-              : 'Grades'}
+              : selectedSubject || 'Grades'}
           </Text>
         </View>
         <View style={styles.headerRight}>
@@ -700,39 +780,68 @@ export default function GradesScreen({ navigation, route }) {
         </View>
       </View>
 
-      {!isLandscape && studentName && (
+      {/* {!isLandscape && studentName && (
         <View style={styles.studentInfo}>
           <Text style={styles.studentNameText}>Grades for {studentName}</Text>
         </View>
-      )}
+      )} */}
 
       <View style={styles.content}>
-        {/* Tab Buttons - Hidden in landscape mode */}
-        {!isLandscape && (
-          <View style={styles.tabContainer}>
-            {renderTabButton('summative', 'Summative')}
-            {renderTabButton('formative', 'Formative')}
+        {showSubjectList ? (
+          // Show subject selection screen
+          <View style={styles.subjectListContainer}>
+            <Text style={styles.subjectListTitle}>Select a Subject</Text>
+            <ScrollView
+              style={{ width: '100%' }}
+              contentContainerStyle={styles.subjectGrid}
+            >
+              {availableSubjects.map((subject) => renderSubjectCard(subject))}
+            </ScrollView>
           </View>
-        )}
-
-        {/* Tab Content */}
-        {isLandscape ? (
-          // In landscape mode, show content with horizontal scroll based on active tab
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.scrollContainer}
-          >
-            {activeTab === 'summative'
-              ? renderSummativeContent()
-              : renderFormativeContent()}
-          </ScrollView>
         ) : (
-          // In portrait mode, show content based on selected tab
-          <View style={styles.scrollContainer}>
-            {activeTab === 'summative'
-              ? renderSummativeContent()
-              : renderFormativeContent()}
+          // Show grades table for selected subject
+          <View style={styles.gradesContainer}>
+            {/* Back button and subject info */}
+            <View style={styles.subjectHeader}>
+              <TouchableOpacity
+                style={styles.backToSubjectsButton}
+                onPress={handleBackToSubjects}
+              >
+                <Text style={styles.backToSubjectsText}>
+                  ← Back to Subjects
+                </Text>
+              </TouchableOpacity>
+             
+            </View>
+
+            {/* Tab Buttons - Hidden in landscape mode */}
+            {!isLandscape && (
+              <View style={styles.tabContainer}>
+                {renderTabButton('summative', 'Summative')}
+                {renderTabButton('formative', 'Formative')}
+              </View>
+            )}
+
+            {/* Tab Content */}
+            {isLandscape ? (
+              // In landscape mode, show content with horizontal scroll based on active tab
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.scrollContainer}
+              >
+                {activeTab === 'summative'
+                  ? renderSummativeContent()
+                  : renderFormativeContent()}
+              </ScrollView>
+            ) : (
+              // In portrait mode, show content based on selected tab
+              <View style={styles.scrollContainer}>
+                {activeTab === 'summative'
+                  ? renderSummativeContent()
+                  : renderFormativeContent()}
+              </View>
+            )}
           </View>
         )}
       </View>
@@ -806,6 +915,82 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 15,
   },
+  // Subject List Screen Styles
+  subjectListContainer: {
+    flex: 1,
+    alignItems: 'center',
+    paddingTop: 20,
+  },
+  subjectListTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 30,
+    textAlign: 'center',
+  },
+  subjectGrid: {
+    // flexDirection: 'row', // Removed for list view
+    // flexWrap: 'wrap', // Removed for list view
+    // justifyContent: 'center', // Adjusted for list view
+    alignItems: 'center', // Center items in the list
+    width: '100%',
+  },
+  subjectCard: {
+    backgroundColor: '#fff',
+    width: '90%', // Make cards take most of the width
+    minHeight: 80, // Adjust height as needed for list items
+    marginVertical: 8, // Add vertical margin for spacing
+    // margin: '4%', // Removed, using marginVertical instead
+    borderRadius: 15,
+    padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 }, // Adjusted shadow for a flatter list item look
+    shadowOpacity: 0.05, // Reduced opacity
+    shadowRadius: 4, // Adjusted radius
+    elevation: 3,
+    borderWidth: 1, // Adjusted border
+    borderColor: '#e0e0e0', // Softer border color
+  },
+  subjectCardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  subjectCardSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  },
+  // Grades Screen Styles
+  gradesContainer: {
+    flex: 1,
+  },
+  subjectHeader: {
+    marginBottom: 15,
+  },
+  backToSubjectsButton: {
+    alignSelf: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+    
+  },
+  backToSubjectsText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '600',
+  },
+  selectedSubjectTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+  },
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: '#fff',
@@ -849,10 +1034,11 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     flex: 1,
-    minHeight: 200,
+    minHeight: 180,
   },
   landscapeTableContainer: {
     minWidth: Dimensions.get('window'), // Make table scrollable horizontally in landscape
+    width: '100%'
   },
   tableHeader: {
     flexDirection: 'row',
@@ -869,7 +1055,7 @@ const styles = StyleSheet.create({
   },
   tableBody: {
     maxHeight: 500, // Constrain table height to ensure pagination is visible
-    minHeight: 150, // Ensure minimum visible height
+    minHeight: 120, // Ensure minimum visible height
   },
   tableRow: {
     flexDirection: 'row',
@@ -891,14 +1077,11 @@ const styles = StyleSheet.create({
   dateColumn: {
     width: 80,
   },
-  subjectColumn: {
-    width: 100,
-  },
   strandColumn: {
     width: 90,
   },
   titleColumn: {
-    width: 120,
+    width: 150,
   },
   scoreColumn: {
     width: 60,
@@ -910,7 +1093,7 @@ const styles = StyleSheet.create({
     width: 80,
   },
   teacherColumn: {
-    width: 100,
+    width: 170,
   },
   comingSoon: {
     flex: 1,
@@ -932,13 +1115,10 @@ const styles = StyleSheet.create({
   },
   // Portrait mode column widths (important columns only)
   portraitDateColumn: {
-    width: 70,
-  },
-  portraitSubjectColumn: {
-    width: 80,
+    width: 90,
   },
   portraitTitleColumn: {
-    width: 100,
+    width: 150,
   },
   portraitScoreColumn: {
     width: 60,
@@ -950,10 +1130,11 @@ const styles = StyleSheet.create({
   tableWithPagination: {
     flex: 1,
     flexDirection: 'column',
+    width: Dimensions.get('window'),
   },
   tableSection: {
     flex: 1,
-    minHeight: 250, // Ensure minimum height for table visibility
+    minHeight: 160, // Ensure minimum height for table visibility
   },
   paginationSection: {
     flexShrink: 0, // Prevent pagination from shrinking
@@ -970,7 +1151,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
-    marginTop: 8,
+    marginTop: 20,
     borderRadius: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
