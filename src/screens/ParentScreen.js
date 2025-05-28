@@ -85,18 +85,14 @@ export default function ParentScreen({ navigation }) {
         });
         break;
       case 'attendance':
-        navigation.navigate('WebViewWithAuth', {
-          baseUrl: baseUrl,
-          endpoint: '/get-student-attendance',
-          title: 'Attendance',
+        navigation.navigate('AttendanceScreen', {
+          studentName: selectedStudent.name,
           authCode: selectedStudent.authCode,
         });
         break;
       case 'assignments':
-        navigation.navigate('WebViewWithAuth', {
-          baseUrl: baseUrl,
-          endpoint: '/get-student-homework',
-          title: 'Assignments',
+        navigation.navigate('AssignmentsScreen', {
+          studentName: selectedStudent.name,
           authCode: selectedStudent.authCode,
         });
         break;
@@ -431,18 +427,23 @@ export default function ParentScreen({ navigation }) {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => handleMenuItemPress('messages')}
+              style={[styles.menuItem, styles.disabledMenuItem]}
+              disabled={true}
             >
               <View
                 style={[
                   styles.menuIconContainer,
-                  { backgroundColor: 'rgba(90, 200, 250, 0.1)' },
+                  { backgroundColor: 'rgba(90, 200, 250, 0.05)' },
                 ]}
               >
-                <FontAwesomeIcon icon={faComments} size={24} color='#5AC8FA' />
+                <FontAwesomeIcon icon={faComments} size={24} color='#B0B0B0' />
               </View>
-              <Text style={styles.menuItemText}>Messages</Text>
+              <Text style={[styles.menuItemText, styles.disabledMenuText]}>
+                Messages
+              </Text>
+              <View style={styles.comingSoonBadge}>
+                <Text style={styles.comingSoonText}>Coming Soon</Text>
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -696,5 +697,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
     textAlign: 'center',
+  },
+  disabledMenuItem: {
+    opacity: 0.6,
+    backgroundColor: '#f8f8f8',
+  },
+  disabledMenuText: {
+    color: '#999',
+  },
+  comingSoonBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: '#FF9500',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  comingSoonText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
 });
