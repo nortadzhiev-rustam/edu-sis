@@ -1344,7 +1344,7 @@ const styles = StyleSheet.create({
   },
   backToSubjectsText: {
     fontSize: 14,
-    color: '#666',
+    color: '#FF9500',
     fontWeight: '600',
   },
   selectedSubjectTitle: {

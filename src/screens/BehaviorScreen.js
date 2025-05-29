@@ -32,6 +32,7 @@ export default function BehaviorScreen({ navigation, route }) {
   const [loading, setLoading] = useState(true);
   const [selectedView, setSelectedView] = useState('summary'); // 'summary', 'behavior', 'detention'
   const [selectedDetentionType, setSelectedDetentionType] = useState(null); // 'served', 'not_served'
+  const [selectedBehaviorType, setSelectedBehaviorType] = useState(null); // 'PRS', 'DPS'
 
   const isLandscape = screenData.width > screenData.height;
 
@@ -356,6 +357,12 @@ export default function BehaviorScreen({ navigation, route }) {
     setSelectedView('detention');
   };
 
+  // Handle behavior card click
+  const handleBehaviorCardClick = (type) => {
+    setSelectedBehaviorType(type);
+    setSelectedView('behavior');
+  };
+
   // Get filtered detention data based on selected type
   const getFilteredDetentionData = () => {
     if (selectedDetentionType === 'served') {
@@ -364,6 +371,24 @@ export default function BehaviorScreen({ navigation, route }) {
       return detentionData.filter((item) => item.is_served === 0);
     }
     return detentionData;
+  };
+
+  // Get filtered behavior data based on selected type
+  const getFilteredBehaviorData = () => {
+    if (selectedBehaviorType === 'PRS') {
+      return behaviorData.filter((item) => {
+        const type = (item.item_type || item.type || '').toUpperCase();
+        const points = parseInt(item.item_point || item.points) || 0;
+        return type === 'PRS' || points > 0;
+      });
+    } else if (selectedBehaviorType === 'DPS') {
+      return behaviorData.filter((item) => {
+        const type = (item.item_type || item.type || '').toUpperCase();
+        const points = parseInt(item.item_point || item.points) || 0;
+        return type === 'DPS' || points < 0;
+      });
+    }
+    return behaviorData;
   };
 
   return (
@@ -398,7 +423,7 @@ export default function BehaviorScreen({ navigation, route }) {
               <View style={styles.summaryCard}>
                 <View style={styles.summaryHeader}>
                   <FontAwesomeIcon icon={faStar} size={24} color='#FF9500' />
-                  <Text style={styles.summaryTitle}>Total Points</Text>
+                  <Text style={styles.summaryTitle}>Reward Points</Text>
                 </View>
                 <Text
                   style={[
@@ -423,37 +448,73 @@ export default function BehaviorScreen({ navigation, route }) {
               </View>
             </View>
 
-            {/* Behavior Statistics */}
-            <View style={styles.statsContainer}>
+            {/* Behavior Points Cards */}
+            <View style={styles.behaviorContainer}>
               <Text style={styles.sectionTitle}>Behavior Points</Text>
-              <View style={styles.statsGrid}>
-                <View style={styles.statItem}>
-                  <View
-                    style={[styles.statBadge, { backgroundColor: '#34C759' }]}
-                  >
-                    <FontAwesomeIcon icon={faThumbsUp} size={16} color='#fff' />
-                  </View>
-                  <Text style={styles.statNumber}>
-                    {getBehaviorStats().positive}
-                  </Text>
-                  <Text style={styles.statLabel}>Positive</Text>
-                </View>
-
-                <View style={styles.statItem}>
-                  <View
-                    style={[styles.statBadge, { backgroundColor: '#FF3B30' }]}
-                  >
+              <View style={styles.behaviorGrid}>
+                <TouchableOpacity
+                  style={styles.behaviorCard}
+                  onPress={() => handleBehaviorCardClick('PRS')}
+                >
+                  <View style={styles.behaviorCardHeader}>
+                    <View
+                      style={[
+                        styles.behaviorIconContainer,
+                        { backgroundColor: '#34C75915' },
+                      ]}
+                    >
+                      <FontAwesomeIcon
+                        icon={faThumbsUp}
+                        size={24}
+                        color='#34C759'
+                      />
+                    </View>
                     <FontAwesomeIcon
-                      icon={faThumbsDown}
+                      icon={faChevronRight}
                       size={16}
-                      color='#fff'
+                      color='#999'
                     />
                   </View>
-                  <Text style={styles.statNumber}>
+                  <Text style={styles.behaviorCardTitle}>PRS</Text>
+                  <Text style={styles.behaviorCardNumber}>
+                    {getBehaviorStats().positive}
+                  </Text>
+                  <Text style={styles.behaviorCardSubtext}>
+                    Positive Reinforcement System
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.behaviorCard}
+                  onPress={() => handleBehaviorCardClick('DPS')}
+                >
+                  <View style={styles.behaviorCardHeader}>
+                    <View
+                      style={[
+                        styles.behaviorIconContainer,
+                        { backgroundColor: '#FF3B3015' },
+                      ]}
+                    >
+                      <FontAwesomeIcon
+                        icon={faThumbsDown}
+                        size={24}
+                        color='#FF3B30'
+                      />
+                    </View>
+                    <FontAwesomeIcon
+                      icon={faChevronRight}
+                      size={16}
+                      color='#999'
+                    />
+                  </View>
+                  <Text style={styles.behaviorCardTitle}>DPS</Text>
+                  <Text style={styles.behaviorCardNumber}>
                     {getBehaviorStats().negative}
                   </Text>
-                  <Text style={styles.statLabel}>Negative</Text>
-                </View>
+                  <Text style={styles.behaviorCardSubtext}>
+                    Disciplinary Points System
+                  </Text>
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -527,6 +588,120 @@ export default function BehaviorScreen({ navigation, route }) {
               </View>
             </View>
           </ScrollView>
+        ) : selectedView === 'behavior' ? (
+          <View style={styles.behaviorDetailContainer}>
+            {/* Header with back button */}
+            <View style={styles.behaviorDetailHeader}>
+              <TouchableOpacity
+                style={styles.behaviorBackButton}
+                onPress={() => setSelectedView('summary')}
+              >
+                <FontAwesomeIcon
+                  icon={faChevronLeft}
+                  size={16}
+                  color='#5856D6'
+                />
+                <Text style={styles.behaviorBackText}>Back</Text>
+              </TouchableOpacity>
+              <Text style={styles.behaviorDetailTitle}>
+                {selectedBehaviorType === 'PRS'
+                  ? 'Positive Reinforcement System (PRS)'
+                  : 'Disciplinary Point System (DPS)'}
+              </Text>
+            </View>
+
+            {/* Behavior Details List */}
+            <ScrollView style={styles.behaviorDetailScroll}>
+              {getFilteredBehaviorData().length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <FontAwesomeIcon
+                    icon={faClipboardList}
+                    size={48}
+                    color='#8E8E93'
+                  />
+                  <Text style={styles.emptyText}>No behavior points found</Text>
+                  <Text style={styles.emptySubtext}>
+                    {selectedBehaviorType === 'PRS'
+                      ? 'No positive behavior points to display'
+                      : 'No negative behavior points to display'}
+                  </Text>
+                </View>
+              ) : (
+                getFilteredBehaviorData().map((item) => (
+                  <View key={item.id} style={styles.behaviorDetailCard}>
+                    <View style={styles.behaviorDetailCardHeader}>
+                      <View style={styles.behaviorDetailLeft}>
+                        <Text style={styles.behaviorDetailItemTitle}>
+                          {item.item_title}
+                        </Text>
+                        <Text style={styles.behaviorDetailDate}>
+                          {formatDate(item.date)}
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.behaviorPointsBadge,
+                          {
+                            backgroundColor:
+                              parseInt(item.item_point || item.points) >= 0
+                                ? '#34C759'
+                                : '#FF3B30',
+                          },
+                        ]}
+                      >
+                        <Text style={styles.behaviorPointsText}>
+                          {item.item_point || item.points}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.behaviorDetailBody}>
+                      <View style={styles.behaviorDetailRow}>
+                        <Text style={styles.behaviorDetailLabel}>Type:</Text>
+                        <Text style={styles.behaviorDetailValue}>
+                          {item.item_type || item.type}
+                        </Text>
+                      </View>
+
+                      <View style={styles.behaviorDetailRow}>
+                        <Text style={styles.behaviorDetailLabel}>Points:</Text>
+                        <Text
+                          style={[
+                            styles.behaviorDetailValue,
+                            {
+                              color:
+                                parseInt(item.item_point || item.points) >= 0
+                                  ? '#34C759'
+                                  : '#FF3B30',
+                              fontWeight: 'bold',
+                            },
+                          ]}
+                        >
+                          {item.item_point || item.points}
+                        </Text>
+                      </View>
+
+                      <View style={styles.behaviorDetailRow}>
+                        <Text style={styles.behaviorDetailLabel}>Teacher:</Text>
+                        <Text style={styles.behaviorDetailValue}>
+                          {item.teacher_name}
+                        </Text>
+                      </View>
+
+                      {item.note && (
+                        <View style={styles.behaviorDetailRow}>
+                          <Text style={styles.behaviorDetailLabel}>Note:</Text>
+                          <Text style={styles.behaviorDetailValue}>
+                            {item.note}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                ))
+              )}
+            </ScrollView>
+          </View>
         ) : selectedView === 'detention' ? (
           <View style={styles.detentionDetailContainer}>
             {/* Header with back button */}
@@ -928,6 +1103,149 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
     fontWeight: '600',
+  },
+
+  // Behavior Styles
+  behaviorContainer: {
+    marginBottom: 20,
+  },
+  behaviorGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  behaviorCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    width: '48%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  behaviorCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  behaviorIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  behaviorCardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+  },
+  behaviorCardNumber: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+  },
+  behaviorCardSubtext: {
+    fontSize: 12,
+    color: '#666',
+  },
+
+  // Behavior Detail Styles
+  behaviorDetailContainer: {
+    flex: 1,
+  },
+  behaviorDetailHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    marginBottom: 15,
+  },
+  behaviorBackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  behaviorBackText: {
+    fontSize: 16,
+    color: '#5856D6',
+    marginLeft: 5,
+  },
+  behaviorDetailTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  behaviorDetailScroll: {
+    flex: 1,
+  },
+  behaviorDetailCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  behaviorDetailCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 15,
+  },
+  behaviorDetailLeft: {
+    flex: 1,
+    marginRight: 15,
+  },
+  behaviorDetailItemTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+  },
+  behaviorDetailDate: {
+    fontSize: 14,
+    color: '#666',
+  },
+  behaviorPointsBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    minWidth: 50,
+    alignItems: 'center',
+  },
+  behaviorPointsText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  behaviorDetailBody: {
+    gap: 12,
+  },
+  behaviorDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  behaviorDetailLabel: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '600',
+    flex: 1,
+  },
+  behaviorDetailValue: {
+    fontSize: 14,
+    color: '#333',
+    flex: 2,
+    textAlign: 'right',
   },
 
   // Detention Styles

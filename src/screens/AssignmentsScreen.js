@@ -929,7 +929,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingHorizontal: 15,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
