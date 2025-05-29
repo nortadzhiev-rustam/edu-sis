@@ -15,6 +15,7 @@ import TimetableScreen from './src/screens/TimetableScreen';
 import GradesScreen from './src/screens/GradesScreen';
 import AttendanceScreen from './src/screens/AttendanceScreen';
 import AssignmentsScreen from './src/screens/AssignmentsScreen';
+import BehaviorScreen from './src/screens/BehaviorScreen';
 import WebViewScreen from './src/screens/WebViewScreen';
 import WebViewWithAuth from './src/screens/WebViewWithAuth';
 import {
@@ -108,6 +109,7 @@ export default function App() {
             name='AssignmentsScreen'
             component={AssignmentsScreen}
           />
+          <Stack.Screen name='BehaviorScreen' component={BehaviorScreen} />
           <Stack.Screen name='WebView' component={WebViewScreen} />
           <Stack.Screen name='WebViewWithAuth' component={WebViewWithAuth} />
         </Stack.Navigator>

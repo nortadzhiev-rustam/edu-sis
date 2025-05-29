@@ -14,6 +14,32 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
   faArrowLeft,
   faClipboardList,
+  faCalculator,
+  faFlask,
+  faMicroscope,
+  faAtom,
+  faRunning,
+  faLaptopCode,
+  faGlobe,
+  faPalette,
+  faLandmark,
+  faMapMarkedAlt,
+  faLanguage,
+  faMusic,
+  faTheaterMasks,
+  faCameraRetro,
+  faTools,
+  faBusinessTime,
+  faBalanceScale,
+  faHeartbeat,
+  faLeaf,
+  faBook,
+  faChevronRight,
+  faUser,
+  faClock,
+  faCalendarAlt,
+  faCheckCircle,
+  faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons';
 import { useScreenOrientation } from '../hooks/useScreenOrientation';
 
@@ -39,6 +65,189 @@ export default function AssignmentsScreen({ navigation, route }) {
 
   const isLandscape = screenData.width > screenData.height;
 
+  // Helper function to get specific subject icon (same as GradesScreen)
+  const getSubjectIcon = (subject) => {
+    const subjectLower = subject.toLowerCase();
+
+    // Mathematics
+    if (
+      subjectLower.includes('math') ||
+      subjectLower.includes('algebra') ||
+      subjectLower.includes('geometry') ||
+      subjectLower.includes('calculus') ||
+      subjectLower.includes('statistics')
+    ) {
+      return faCalculator;
+    }
+
+    // Sciences
+    if (subjectLower.includes('physics')) return faAtom;
+    if (subjectLower.includes('chemistry')) return faFlask;
+    if (
+      subjectLower.includes('biology') ||
+      subjectLower.includes('life science')
+    )
+      return faMicroscope;
+    if (subjectLower.includes('science') && !subjectLower.includes('computer'))
+      return faFlask;
+
+    // Languages
+    if (
+      subjectLower.includes('english') ||
+      subjectLower.includes('language arts') ||
+      subjectLower.includes('literature') ||
+      subjectLower.includes('writing')
+    ) {
+      return faLanguage;
+    }
+
+    // Social Studies
+    if (subjectLower.includes('history')) return faLandmark;
+    if (subjectLower.includes('geography') || subjectLower.includes('geo'))
+      return faMapMarkedAlt;
+    if (
+      subjectLower.includes('global perspective') ||
+      subjectLower.includes('global studies') ||
+      subjectLower.includes('world studies')
+    )
+      return faGlobe;
+
+    // Technology & Computing
+    if (
+      subjectLower.includes('ict') ||
+      subjectLower.includes('computer') ||
+      subjectLower.includes('computing') ||
+      subjectLower.includes('technology') ||
+      subjectLower.includes('programming') ||
+      subjectLower.includes('coding')
+    ) {
+      return faLaptopCode;
+    }
+
+    // Arts
+    if (
+      subjectLower.includes('art') ||
+      subjectLower.includes('drawing') ||
+      subjectLower.includes('painting') ||
+      subjectLower.includes('design')
+    ) {
+      return faPalette;
+    }
+    if (
+      subjectLower.includes('music') ||
+      subjectLower.includes('band') ||
+      subjectLower.includes('orchestra') ||
+      subjectLower.includes('choir')
+    ) {
+      return faMusic;
+    }
+    if (
+      subjectLower.includes('drama') ||
+      subjectLower.includes('theater') ||
+      subjectLower.includes('theatre') ||
+      subjectLower.includes('acting')
+    ) {
+      return faTheaterMasks;
+    }
+    if (
+      subjectLower.includes('photography') ||
+      subjectLower.includes('media')
+    ) {
+      return faCameraRetro;
+    }
+
+    // Physical Education & Health
+    if (
+      subjectLower.includes('physical education') ||
+      subjectLower.includes('pe') ||
+      subjectLower.includes('sport') ||
+      subjectLower.includes('fitness') ||
+      subjectLower.includes('gym') ||
+      subjectLower.includes('athletics')
+    ) {
+      return faRunning;
+    }
+    if (subjectLower.includes('health') || subjectLower.includes('wellness')) {
+      return faHeartbeat;
+    }
+
+    // Business & Economics
+    if (
+      subjectLower.includes('business') ||
+      subjectLower.includes('economics') ||
+      subjectLower.includes('finance') ||
+      subjectLower.includes('accounting')
+    ) {
+      return faBusinessTime;
+    }
+
+    // Law & Government
+    if (
+      subjectLower.includes('law') ||
+      subjectLower.includes('government') ||
+      subjectLower.includes('civics') ||
+      subjectLower.includes('politics')
+    ) {
+      return faBalanceScale;
+    }
+
+    // Environmental Studies
+    if (
+      subjectLower.includes('environmental') ||
+      subjectLower.includes('ecology') ||
+      subjectLower.includes('earth science')
+    ) {
+      return faLeaf;
+    }
+
+    // Technical/Vocational
+    if (
+      subjectLower.includes('engineering') ||
+      subjectLower.includes('technical') ||
+      subjectLower.includes('workshop') ||
+      subjectLower.includes('construction')
+    ) {
+      return faTools;
+    }
+
+    // Default fallback
+    return faBook;
+  };
+
+  // Helper function to get random but consistent color for each subject (same as GradesScreen)
+  const getSubjectColor = (subject) => {
+    // Array of beautiful colors
+    const colors = [
+      '#FF9500', // Orange
+      '#007AFF', // Blue
+      '#34C759', // Green
+      '#AF52DE', // Purple
+      '#FF3B30', // Red
+      '#5856D6', // Indigo
+      '#FF2D92', // Pink
+      '#FF9F0A', // Amber
+      '#30D158', // Mint
+      '#64D2FF', // Cyan
+      '#BF5AF2', // Violet
+      '#FF6482', // Rose
+      '#32ADE6', // Light Blue
+      '#FFD60A', // Yellow
+      '#AC8E68', // Brown
+    ];
+
+    // Generate a consistent hash from the subject name
+    let hash = 0;
+    for (let i = 0; i < subject.length; i++) {
+      const char = subject.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+
+    // Use the hash to pick a color consistently
+    const colorIndex = Math.abs(hash) % colors.length;
+    return colors[colorIndex];
+  };
+
   useEffect(() => {
     if (authCode) {
       fetchAssignmentsData();
@@ -47,10 +256,47 @@ export default function AssignmentsScreen({ navigation, route }) {
 
   // Helper function to group assignments by subject
   const getSubjectGroups = () => {
-    if (!assignments || !Array.isArray(assignments)) return [];
+    console.log('getSubjectGroups called with assignments:', assignments);
 
-    const groups = assignments.reduce((acc, assignment) => {
-      const subject = assignment.subject || 'Unknown Subject';
+    // Handle different possible API response structures
+    let assignmentsArray = [];
+
+    if (Array.isArray(assignments)) {
+      assignmentsArray = assignments;
+    } else if (
+      assignments &&
+      assignments.data &&
+      Array.isArray(assignments.data)
+    ) {
+      assignmentsArray = assignments.data;
+    } else if (assignments && typeof assignments === 'object') {
+      // If assignments is an object, try to find an array property
+      const possibleArrays = Object.values(assignments).filter((val) =>
+        Array.isArray(val)
+      );
+      if (possibleArrays.length > 0) {
+        assignmentsArray = possibleArrays[0];
+      }
+    }
+
+    console.log('Processed assignments array:', assignmentsArray);
+
+    if (!assignmentsArray || assignmentsArray.length === 0) {
+      console.log('No assignments found in array');
+      return [];
+    }
+
+    const groups = assignmentsArray.reduce((acc, assignment) => {
+      // Try different possible field names for subject
+      const subject =
+        assignment.subject ||
+        assignment.subject_name ||
+        assignment.subjectName ||
+        assignment.Subject ||
+        'Unknown Subject';
+
+      console.log('Processing assignment:', assignment, 'Subject:', subject);
+
       if (!acc[subject]) {
         acc[subject] = [];
       }
@@ -58,8 +304,10 @@ export default function AssignmentsScreen({ navigation, route }) {
       return acc;
     }, {});
 
+    console.log('Grouped assignments:', groups);
+
     // Convert to array and add counts
-    return Object.keys(groups).map((subject) => ({
+    const result = Object.keys(groups).map((subject) => ({
       subject,
       assignments: groups[subject],
       totalCount: groups[subject].length,
@@ -70,6 +318,9 @@ export default function AssignmentsScreen({ navigation, route }) {
         (a) => a.completed || a.is_completed
       ).length,
     }));
+
+    console.log('Final subject groups:', result);
+    return result;
   };
 
   // Helper function to get filtered and sorted assignments for a subject
@@ -107,20 +358,40 @@ export default function AssignmentsScreen({ navigation, route }) {
     });
   };
 
-  // Helper function to get assignment status
+  // Helper function to get assignment status with modern icons
   const getAssignmentStatus = (assignment) => {
     // Since API doesn't provide completion status, we'll determine based on deadline
     const deadline = new Date(assignment.deadline || 0);
     const today = new Date();
 
     if (assignment.completed || assignment.is_completed) {
-      return { status: 'completed', color: '#34C759', icon: '✓' };
+      return {
+        status: 'completed',
+        color: '#34C759',
+        icon: faCheckCircle,
+        label: 'Completed',
+      };
     } else if (deadline < today) {
-      return { status: 'overdue', color: '#FF3B30', icon: '⚠️' };
+      return {
+        status: 'overdue',
+        color: '#FF3B30',
+        icon: faExclamationTriangle,
+        label: 'Overdue',
+      };
     } else if (deadline.toDateString() === today.toDateString()) {
-      return { status: 'due_today', color: '#FF9500', icon: '📅' };
+      return {
+        status: 'due_today',
+        color: '#FF9500',
+        icon: faCalendarAlt,
+        label: 'Due Today',
+      };
     } else {
-      return { status: 'pending', color: '#007AFF', icon: '📝' };
+      return {
+        status: 'pending',
+        color: '#007AFF',
+        icon: faClock,
+        label: 'Pending',
+      };
     }
   };
 
@@ -219,40 +490,73 @@ export default function AssignmentsScreen({ navigation, route }) {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.subjectsGrid}>
-          {subjectGroups.map((group, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.subjectCard}
-              onPress={() => setSelectedSubject(group)}
-            >
-              <View style={styles.subjectHeader}>
-                <Text style={styles.subjectName}>{group.subject}</Text>
-                <Text style={styles.subjectTotal}>
-                  {group.totalCount} total
-                </Text>
-              </View>
+          {subjectGroups.map((group) => {
+            const subjectColor = getSubjectColor(group.subject);
+            const subjectIcon = getSubjectIcon(group.subject);
 
-              <View style={styles.subjectStats}>
-                <View style={styles.statItem}>
-                  <Text style={[styles.statNumber, { color: '#FF3B30' }]}>
-                    {group.incompleteCount}
-                  </Text>
-                  <Text style={styles.statLabel}>Pending</Text>
+            return (
+              <TouchableOpacity
+                key={group.subject}
+                style={[
+                  styles.modernSubjectCard,
+                  { borderLeftColor: subjectColor },
+                ]}
+                onPress={() => setSelectedSubject(group)}
+              >
+                <View style={styles.subjectCardHeader}>
+                  <View
+                    style={[
+                      styles.subjectIconContainer,
+                      { backgroundColor: `${subjectColor}15` },
+                    ]}
+                  >
+                    <FontAwesomeIcon
+                      icon={subjectIcon}
+                      size={24}
+                      color={subjectColor}
+                    />
+                  </View>
+                  <View style={styles.subjectInfo}>
+                    <Text style={styles.modernSubjectTitle}>
+                      {group.subject}
+                    </Text>
+                    <Text style={styles.subjectAssignmentCount}>
+                      {group.totalCount} assignments
+                    </Text>
+                  </View>
+                  <FontAwesomeIcon
+                    icon={faChevronRight}
+                    size={16}
+                    color='#999'
+                  />
                 </View>
 
-                <View style={styles.statItem}>
-                  <Text style={[styles.statNumber, { color: '#34C759' }]}>
-                    {group.completedCount}
-                  </Text>
-                  <Text style={styles.statLabel}>Completed</Text>
-                </View>
-              </View>
+                <View style={styles.modernSubjectStats}>
+                  <View style={styles.modernStatItem}>
+                    <View
+                      style={[styles.statBadge, { backgroundColor: '#FF3B30' }]}
+                    >
+                      <Text style={styles.statBadgeText}>
+                        {group.incompleteCount}
+                      </Text>
+                    </View>
+                    <Text style={styles.modernStatLabel}>Pending</Text>
+                  </View>
 
-              <View style={styles.subjectFooter}>
-                <Text style={styles.tapHint}>Tap to view assignments</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+                  <View style={styles.modernStatItem}>
+                    <View
+                      style={[styles.statBadge, { backgroundColor: '#34C759' }]}
+                    >
+                      <Text style={styles.statBadgeText}>
+                        {group.completedCount}
+                      </Text>
+                    </View>
+                    <Text style={styles.modernStatLabel}>Completed</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </ScrollView>
     );
@@ -316,47 +620,73 @@ export default function AssignmentsScreen({ navigation, route }) {
             {filteredAssignments.map((assignment, index) => {
               const status = getAssignmentStatus(assignment);
               return (
-                <View key={index} style={styles.assignmentCard}>
-                  <View style={styles.assignmentHeader}>
-                    <Text style={styles.assignmentTitle}>
-                      {assignment.title || 'Untitled Assignment'}
-                    </Text>
-                    <View
-                      style={[
-                        styles.statusBadge,
-                        { backgroundColor: status.color },
-                      ]}
-                    >
-                      <Text style={styles.statusIcon}>{status.icon}</Text>
+                <View
+                  key={assignment.uuid || assignment.id || index}
+                  style={styles.modernAssignmentCard}
+                >
+                  <View style={styles.assignmentCardHeader}>
+                    <View style={styles.assignmentCardLeft}>
+                      <Text style={styles.modernAssignmentTitle}>
+                        {assignment.title || 'Untitled Assignment'}
+                      </Text>
+                      <Text style={styles.assignmentDate}>
+                        Due: {formatDate(assignment.deadline)}
+                      </Text>
+                    </View>
+                    <View style={styles.assignmentCardRight}>
+                      <View
+                        style={[
+                          styles.modernStatusBadge,
+                          { backgroundColor: status.color },
+                        ]}
+                      >
+                        <FontAwesomeIcon
+                          icon={status.icon}
+                          size={16}
+                          color='#fff'
+                        />
+                      </View>
                     </View>
                   </View>
 
                   {assignment.homework_data && (
                     <Text
                       style={styles.assignmentDescription}
-                      numberOfLines={2}
+                      numberOfLines={3}
                     >
-                      {assignment.homework_data.replace(/<[^>]*>/g, '')}{' '}
-                      {/* Remove HTML tags */}
+                      {assignment.homework_data.replace(/<[^>]*>/g, '')}
                     </Text>
                   )}
 
-                  <View style={styles.assignmentFooter}>
-                    <Text style={styles.assignmentDate}>
-                      Due: {formatDate(assignment.deadline)}
-                    </Text>
-                    <Text
-                      style={[styles.assignmentStatus, { color: status.color }]}
-                    >
-                      {status.status.replace('_', ' ').toUpperCase()}
-                    </Text>
+                  <View style={styles.assignmentCardBody}>
+                    <View style={styles.assignmentDetails}>
+                      {assignment.teacher_name && (
+                        <View style={styles.assignmentDetailItem}>
+                          <FontAwesomeIcon
+                            icon={faUser}
+                            size={14}
+                            color='#666'
+                          />
+                          <Text style={styles.assignmentDetailText}>
+                            {assignment.teacher_name}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+
+                    <View style={styles.assignmentStatusContainer}>
+                      <View
+                        style={[
+                          styles.assignmentStatusBadge,
+                          { backgroundColor: status.color },
+                        ]}
+                      >
+                        <Text style={styles.assignmentStatusText}>
+                          {status.label}
+                        </Text>
+                      </View>
+                    </View>
                   </View>
-
-                  {assignment.teacher_name && (
-                    <Text style={styles.teacherName}>
-                      Teacher: {assignment.teacher_name}
-                    </Text>
-                  )}
                 </View>
               );
             })}
@@ -509,62 +839,79 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   subjectsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    paddingHorizontal: 10,
   },
-  subjectCard: {
+
+  // Modern Subject Card Styles (similar to GradesScreen)
+  modernSubjectCard: {
     backgroundColor: '#fff',
-    borderRadius: 12,
+    width: '100%',
+    marginVertical: 8,
+    borderRadius: 16,
     padding: 20,
-    width: '48%',
-    marginBottom: 15,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 4,
+    borderLeftWidth: 4,
   },
-  subjectHeader: {
+  subjectCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 15,
   },
-  subjectName: {
-    fontSize: 18,
+  subjectIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  subjectInfo: {
+    flex: 1,
+  },
+  modernSubjectTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 5,
+    marginBottom: 4,
   },
-  subjectTotal: {
-    fontSize: 12,
+  subjectAssignmentCount: {
+    fontSize: 14,
     color: '#666',
   },
-  subjectStats: {
+
+  // Modern Stats Styles
+  modernSubjectStats: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 15,
-  },
-  statItem: {
+    justifyContent: 'space-around',
     alignItems: 'center',
   },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 2,
+  modernStatItem: {
+    alignItems: 'center',
   },
-  statLabel: {
+  statBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  statBadgeText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  modernStatLabel: {
     fontSize: 12,
     color: '#666',
-  },
-  subjectFooter: {
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    paddingTop: 10,
-  },
-  tapHint: {
-    fontSize: 12,
-    color: '#007AFF',
-    textAlign: 'center',
-    fontStyle: 'italic',
+    fontWeight: '600',
   },
   // Assignments view styles
   assignmentsContainer: {
@@ -632,67 +979,84 @@ const styles = StyleSheet.create({
   assignmentsList: {
     flex: 1,
   },
-  assignmentCard: {
+
+  // Modern Assignment Card Styles
+  modernAssignmentCard: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 15,
+    borderRadius: 16,
+    padding: 20,
     marginBottom: 15,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  assignmentHeader: {
+  assignmentCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 10,
+    marginBottom: 15,
   },
-  assignmentTitle: {
-    fontSize: 16,
+  assignmentCardLeft: {
+    flex: 1,
+    marginRight: 15,
+  },
+  modernAssignmentTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
-    flex: 1,
-    marginRight: 10,
+    marginBottom: 6,
   },
-  statusBadge: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+  assignmentDate: {
+    fontSize: 14,
+    color: '#666',
+  },
+  assignmentCardRight: {
+    alignItems: 'flex-end',
+  },
+  modernStatusBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  statusIcon: {
-    fontSize: 16,
-    color: '#fff',
   },
   assignmentDescription: {
     fontSize: 14,
     color: '#666',
     lineHeight: 20,
-    marginBottom: 10,
+    marginBottom: 15,
   },
-  assignmentFooter: {
+  assignmentCardBody: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    paddingTop: 10,
   },
-  assignmentDate: {
-    fontSize: 12,
+  assignmentDetails: {
+    flex: 1,
+  },
+  assignmentDetailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  assignmentDetailText: {
+    fontSize: 14,
     color: '#666',
+    marginLeft: 8,
   },
-  assignmentStatus: {
-    fontSize: 12,
-    fontWeight: 'bold',
+  assignmentStatusContainer: {
+    alignItems: 'flex-end',
   },
-  teacherName: {
+  assignmentStatusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  assignmentStatusText: {
     fontSize: 12,
-    color: '#999',
-    marginTop: 5,
-    fontStyle: 'italic',
+    fontWeight: '600',
+    color: '#fff',
   },
 });

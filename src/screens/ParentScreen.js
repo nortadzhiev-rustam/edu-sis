@@ -103,12 +103,9 @@ export default function ParentScreen({ navigation }) {
         });
         break;
       case 'discipline':
-        navigation.navigate('WebViewWithAuth', {
-          baseUrl: baseUrl,
-          endpoint: '/get-student-bps',
-          title: 'Behavior Points',
+        navigation.navigate('BehaviorScreen', {
+          studentName: selectedStudent.name,
           authCode: selectedStudent.authCode,
-          studentId: selectedStudent.id,
         });
         break;
       case 'messages':
