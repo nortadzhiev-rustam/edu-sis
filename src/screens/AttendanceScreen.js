@@ -94,7 +94,7 @@ export default function AttendanceScreen({ navigation, route }) {
   const getAttendanceStats = () => {
     const totalDays = attendance.length;
     const presentCount = attendance.filter(
-      (item) => item.status === 'PRESENT'
+      (item) => item.status === 'PRESENT' || item.status === 'LATE'
     ).length;
     const absentCount = attendance.filter(
       (item) => item.status === 'ABSENT'

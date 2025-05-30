@@ -309,7 +309,13 @@ export default function BehaviorScreen({ navigation, route }) {
   const getTotalPoints = () => {
     return behaviorData.reduce((total, item) => {
       const points = parseInt(item.item_point || item.points) || 0;
-      return total + points;
+      const typeCode = item.item_type?.toUpperCase() || ''; // Получаем код типа поведения
+
+      // Суммируем только если тип 'PRS' и баллы положительные
+      if (typeCode === 'PRS' && points > 0) {
+        return total + points;
+      }
+      return total; // В противном случае не добавляем к сумме
     }, 0);
   };
 
@@ -477,7 +483,7 @@ export default function BehaviorScreen({ navigation, route }) {
                   </View>
                   <Text style={styles.behaviorCardTitle}>PRS</Text>
                   <Text style={styles.behaviorCardNumber}>
-                    {getBehaviorStats().positive}
+                    +{getBehaviorStats().positive}
                   </Text>
                   <Text style={styles.behaviorCardSubtext}>
                     Positive Reinforcement System
@@ -509,7 +515,7 @@ export default function BehaviorScreen({ navigation, route }) {
                   </View>
                   <Text style={styles.behaviorCardTitle}>DPS</Text>
                   <Text style={styles.behaviorCardNumber}>
-                    {getBehaviorStats().negative}
+                    -{getBehaviorStats().negative}
                   </Text>
                   <Text style={styles.behaviorCardSubtext}>
                     Disciplinary Points System
@@ -899,7 +905,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
-    marginLeft: 10,
+    marginLeft: 5,
   },
   summaryValue: {
     fontSize: 32,

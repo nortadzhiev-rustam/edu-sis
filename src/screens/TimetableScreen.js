@@ -4,16 +4,39 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  FlatList,
-  Dimensions,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faArrowLeft, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
+import {
+  faArrowLeft,
+  faCalendarAlt,
+  faClock,
+  faUser,
+  faChevronRight,
+  faCircle,
+  faCalculator,
+  faFlask,
+  faMicroscope,
+  faAtom,
+  faRunning,
+  faLaptopCode,
+  faGlobe,
+  faPalette,
+  faLandmark,
+  faMapMarkedAlt,
+  faLanguage,
+  faMusic,
+  faTheaterMasks,
+  faCameraRetro,
+  faTools,
+  faBusinessTime,
+  faBalanceScale,
+  faHeartbeat,
+  faLeaf,
+  faBook,
+} from '@fortawesome/free-solid-svg-icons';
 import timetableData from '../data/dummyTimetable.json';
-import { useScreenOrientation } from '../hooks/useScreenOrientation';
-
-const screenWidth = Dimensions.get('window').width;
 
 export default function TimetableScreen({ navigation, route }) {
   const [timetable, setTimetable] = useState(null);
@@ -24,7 +47,7 @@ export default function TimetableScreen({ navigation, route }) {
     'Thursday',
     'Friday',
   ]);
-  const { studentName, authCode } = route.params || {};
+  const { authCode } = route.params || {};
 
   // Enable rotation for this screen (optional - you can remove this if you want timetable to stay portrait)
   // useScreenOrientation(true);
@@ -231,55 +254,270 @@ export default function TimetableScreen({ navigation, route }) {
     setSelectedDay(currentDay);
   }, [availableDays]);
 
-  const getPeriodColor = (period) => {
-    const colors = {
-      1: '#FF6B6B', // Period 1 - Red
-      2: '#4ECDC4', // Period 2 - Teal
-      3: '#45B7D1', // Period 3 - Blue
-      4: '#96CEB4', // Period 4 - Green
-      5: '#FFEAA7', // Period 5 - Yellow
-      6: '#DDA0DD', // Period 6 - Purple
-      7: '#98D8C8', // Period 7 - Light Green
-      8: '#F7DC6F', // Period 8 - Light Yellow
-      9: '#BB8FCE', // Period 9 - Light Purple
-      10: '#85C1E9', // Period 10 - Light Blue
+  // Modern gradient colors for periods
+  const getPeriodGradient = (period) => {
+    const gradients = {
+      1: { start: '#FF6B6B', end: '#FF8E8E' }, // Red gradient
+      2: { start: '#4ECDC4', end: '#6EDDD6' }, // Teal gradient
+      3: { start: '#45B7D1', end: '#67C5DD' }, // Blue gradient
+      4: { start: '#96CEB4', end: '#A8D6C2' }, // Green gradient
+      5: { start: '#FFEAA7', end: '#FFEFB8' }, // Yellow gradient
+      6: { start: '#DDA0DD', end: '#E5B3E5' }, // Purple gradient
+      7: { start: '#98D8C8', end: '#A6DFD1' }, // Light Green gradient
+      8: { start: '#F7DC6F', end: '#F9E285' }, // Light Yellow gradient
+      9: { start: '#BB8FCE', end: '#C7A2D6' }, // Light Purple gradient
+      10: { start: '#85C1E9', end: '#9BCAED' }, // Light Blue gradient
     };
-    return colors[period] || '#BDC3C7';
+    return gradients[period] || { start: '#BDC3C7', end: '#D5DBDB' };
   };
 
-  const renderTimeSlot = ({ item, index }) => (
-    <View style={styles.timeSlotContainer}>
-      <View style={styles.periodContainer}>
-        <Text style={styles.periodText}>{item.period || index + 1}</Text>
-      </View>
-      <View
-        style={[
-          styles.subjectContainer,
-          { backgroundColor: getPeriodColor(item.period || index + 1) },
-        ]}
-      >
-        <Text style={styles.subjectText}>{item.subject}</Text>
-        <Text style={styles.teacherText}>{item.teacher}</Text>
-      </View>
-    </View>
-  );
+  // Get subject icon based on subject name (same as GradesScreen)
+  const getSubjectIcon = (subject) => {
+    const subjectLower = subject.toLowerCase();
 
-  const renderDayTab = (day) => (
-    <TouchableOpacity
-      key={day}
-      style={[styles.dayTab, selectedDay === day && styles.selectedDayTab]}
-      onPress={() => setSelectedDay(day)}
-    >
-      <Text
-        style={[
-          styles.dayTabText,
-          selectedDay === day && styles.selectedDayTabText,
-        ]}
+    // Mathematics
+    if (
+      subjectLower.includes('math') ||
+      subjectLower.includes('algebra') ||
+      subjectLower.includes('geometry') ||
+      subjectLower.includes('calculus') ||
+      subjectLower.includes('statistics')
+    ) {
+      return faCalculator;
+    }
+
+    // Sciences
+    if (subjectLower.includes('physics')) return faAtom;
+    if (subjectLower.includes('chemistry')) return faFlask;
+    if (
+      subjectLower.includes('biology') ||
+      subjectLower.includes('life science')
+    )
+      return faMicroscope;
+    if (subjectLower.includes('science') && !subjectLower.includes('computer'))
+      return faFlask;
+
+    // Languages
+    if (
+      subjectLower.includes('english') ||
+      subjectLower.includes('language arts') ||
+      subjectLower.includes('literature') ||
+      subjectLower.includes('writing')
+    ) {
+      return faLanguage;
+    }
+
+    // Social Studies
+    if (subjectLower.includes('history')) return faLandmark;
+    if (subjectLower.includes('geography') || subjectLower.includes('geo'))
+      return faMapMarkedAlt;
+    if (
+      subjectLower.includes('global perspective') ||
+      subjectLower.includes('global studies') ||
+      subjectLower.includes('world studies')
+    )
+      return faGlobe;
+
+    // Technology & Computing
+    if (
+      subjectLower.includes('ict') ||
+      subjectLower.includes('computer') ||
+      subjectLower.includes('computing') ||
+      subjectLower.includes('technology') ||
+      subjectLower.includes('programming') ||
+      subjectLower.includes('coding')
+    ) {
+      return faLaptopCode;
+    }
+
+    // Arts
+    if (
+      subjectLower.includes('art') ||
+      subjectLower.includes('drawing') ||
+      subjectLower.includes('painting') ||
+      subjectLower.includes('design')
+    ) {
+      return faPalette;
+    }
+    if (
+      subjectLower.includes('music') ||
+      subjectLower.includes('band') ||
+      subjectLower.includes('orchestra') ||
+      subjectLower.includes('choir')
+    ) {
+      return faMusic;
+    }
+    if (
+      subjectLower.includes('drama') ||
+      subjectLower.includes('theater') ||
+      subjectLower.includes('theatre') ||
+      subjectLower.includes('acting')
+    ) {
+      return faTheaterMasks;
+    }
+    if (
+      subjectLower.includes('photography') ||
+      subjectLower.includes('media')
+    ) {
+      return faCameraRetro;
+    }
+
+    // Physical Education & Health
+    if (
+      subjectLower.includes('physical education') ||
+      subjectLower.includes('pe') ||
+      subjectLower.includes('sport') ||
+      subjectLower.includes('fitness') ||
+      subjectLower.includes('gym') ||
+      subjectLower.includes('athletics')
+    ) {
+      return faRunning;
+    }
+    if (subjectLower.includes('health') || subjectLower.includes('wellness')) {
+      return faHeartbeat;
+    }
+
+    // Business & Economics
+    if (
+      subjectLower.includes('business') ||
+      subjectLower.includes('economics') ||
+      subjectLower.includes('finance') ||
+      subjectLower.includes('accounting')
+    ) {
+      return faBusinessTime;
+    }
+
+    // Law & Government
+    if (
+      subjectLower.includes('law') ||
+      subjectLower.includes('government') ||
+      subjectLower.includes('civics') ||
+      subjectLower.includes('politics')
+    ) {
+      return faBalanceScale;
+    }
+
+    // Environmental Studies
+    if (
+      subjectLower.includes('environmental') ||
+      subjectLower.includes('ecology') ||
+      subjectLower.includes('earth science')
+    ) {
+      return faLeaf;
+    }
+
+    // Technical/Vocational
+    if (
+      subjectLower.includes('engineering') ||
+      subjectLower.includes('technical') ||
+      subjectLower.includes('workshop') ||
+      subjectLower.includes('construction')
+    ) {
+      return faTools;
+    }
+
+    // Default fallback
+    return faBook;
+  };
+
+  const renderTimeSlot = ({ item, index }) => {
+    const period = item.period || index + 1;
+    const gradient = getPeriodGradient(period);
+    const isLastItem =
+      index ===
+      (timetable
+        ? timetable[selectedDay]?.length - 1
+        : timetableData[selectedDay]?.length - 1);
+
+    return (
+      <View style={styles.modernTimeSlotContainer}>
+        {/* Timeline connector */}
+        <View style={styles.timelineContainer}>
+          <View
+            style={[styles.timelineDot, { backgroundColor: gradient.start }]}
+          >
+            <Text style={styles.periodNumber}>{period}</Text>
+          </View>
+          {!isLastItem && <View style={styles.timelineLine} />}
+        </View>
+
+        {/* Subject card */}
+        <View
+          style={[
+            styles.modernSubjectCard,
+            { borderLeftColor: gradient.start },
+          ]}
+        >
+          <View style={styles.subjectCardHeader}>
+            <View style={styles.subjectInfo}>
+              <Text style={styles.modernSubjectText}>{item.subject}</Text>
+              <View style={styles.teacherRow}>
+                <FontAwesomeIcon icon={faUser} size={14} color='#666' />
+                <Text style={styles.modernTeacherText}>{item.teacher}</Text>
+              </View>
+            </View>
+            <View style={styles.periodBadgeContainer}>
+              <View
+                style={[
+                  styles.periodBadge,
+                  { backgroundColor: gradient.start },
+                ]}
+              >
+                <FontAwesomeIcon icon={faClock} size={12} color='#fff' />
+              </View>
+              <FontAwesomeIcon icon={faChevronRight} size={16} color='#ccc' />
+            </View>
+          </View>
+
+          {/* Subject icon and additional info */}
+          <View style={styles.subjectCardFooter}>
+            <View
+              style={[
+                styles.subjectIconContainer,
+                { backgroundColor: `${gradient.start}15` },
+              ]}
+            >
+              <FontAwesomeIcon
+                icon={getSubjectIcon(item.subject)}
+                size={16}
+                color={gradient.start}
+              />
+            </View>
+            <Text style={styles.periodLabel}>Period {period}</Text>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  const renderDayTab = (day) => {
+    const isSelected = selectedDay === day;
+    const dayAbbr = day.substring(0, 3);
+
+    return (
+      <TouchableOpacity
+        key={day}
+        style={[styles.modernDayTab, isSelected && styles.selectedModernDayTab]}
+        onPress={() => setSelectedDay(day)}
       >
-        {day.substring(0, 3)}
-      </Text>
-    </TouchableOpacity>
-  );
+        <View
+          style={[
+            styles.dayTabIndicator,
+            isSelected && styles.selectedDayTabIndicator,
+          ]}
+        />
+        <Text
+          style={[
+            styles.modernDayTabText,
+            isSelected && styles.selectedModernDayTabText,
+          ]}
+        >
+          {dayAbbr}
+        </Text>
+        {isSelected && <View style={styles.dayTabGlow} />}
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -298,19 +536,54 @@ export default function TimetableScreen({ navigation, route }) {
       </View>
 
       <View style={styles.content}>
-        {/* Selected Day Schedule */}
-        <View style={styles.scheduleContainer}>
-          <Text style={styles.dayTitle}>{selectedDay}</Text>
-          <FlatList
-            data={
-              timetable ? timetable[selectedDay] : timetableData[selectedDay]
-            }
-            renderItem={renderTimeSlot}
-            keyExtractor={(item, index) => `${selectedDay}-${index}`}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scheduleList}
-          />
+        {/* Modern Day Header */}
+        <View style={styles.modernDayHeader}>
+          <View style={styles.dayHeaderLeft}>
+            <Text style={styles.modernDayTitle}>{selectedDay}</Text>
+            <Text style={styles.daySubtitle}>
+              {new Date().toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+              })}
+            </Text>
+          </View>
+          <View style={styles.dayHeaderRight}>
+            <View style={styles.scheduleIndicator}>
+              <FontAwesomeIcon icon={faCircle} size={8} color='#34C759' />
+              <Text style={styles.scheduleIndicatorText}>
+                {(timetable
+                  ? timetable[selectedDay]
+                  : timetableData[selectedDay]
+                )?.length || 0}{' '}
+                classes
+              </Text>
+            </View>
+          </View>
         </View>
+
+        {/* Timeline Schedule */}
+        <ScrollView
+          style={styles.modernScheduleContainer}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.modernScheduleList}
+        >
+          {(timetable ? timetable[selectedDay] : timetableData[selectedDay])
+            ?.length > 0 ? (
+            (timetable
+              ? timetable[selectedDay]
+              : timetableData[selectedDay]
+            ).map((item, index) => renderTimeSlot({ item, index }))
+          ) : (
+            <View style={styles.emptyScheduleContainer}>
+              <FontAwesomeIcon icon={faCalendarAlt} size={48} color='#ccc' />
+              <Text style={styles.emptyScheduleText}>No classes scheduled</Text>
+              <Text style={styles.emptyScheduleSubtext}>
+                Enjoy your free day!
+              </Text>
+            </View>
+          )}
+        </ScrollView>
       </View>
 
       {/* Day Tabs at Bottom */}
@@ -324,7 +597,7 @@ export default function TimetableScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8f9fa',
   },
   header: {
     backgroundColor: '#AF52DE',
@@ -332,11 +605,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
   },
   backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -349,127 +627,248 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
-    marginLeft: 8,
+    marginLeft: 10,
   },
   headerRight: {
-    width: 36,
-  },
-  studentInfo: {
-    backgroundColor: '#fff',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  studentNameText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    textAlign: 'center',
+    width: 40,
   },
   content: {
     flex: 1,
-    padding: 15,
+    padding: 20,
   },
+
+  // Modern Day Header
+  modernDayHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 25,
+    paddingHorizontal: 5,
+  },
+  dayHeaderLeft: {
+    flex: 1,
+  },
+  modernDayTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginBottom: 4,
+  },
+  daySubtitle: {
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '500',
+  },
+  dayHeaderRight: {
+    alignItems: 'flex-end',
+  },
+  scheduleIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f9ff',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  scheduleIndicatorText: {
+    fontSize: 14,
+    color: '#0369a1',
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+
+  // Modern Schedule Container
+  modernScheduleContainer: {
+    flex: 1,
+  },
+  modernScheduleList: {
+    paddingBottom: 20,
+  },
+
+  // Timeline Styles
+  modernTimeSlotContainer: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    alignItems: 'flex-start',
+  },
+  timelineContainer: {
+    alignItems: 'center',
+    marginRight: 20,
+    width: 60,
+  },
+  timelineDot: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  periodNumber: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  timelineLine: {
+    width: 3,
+    height: 40,
+    backgroundColor: '#e5e7eb',
+    marginTop: 10,
+  },
+
+  // Modern Subject Card
+  modernSubjectCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    borderLeftWidth: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  subjectCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 15,
+  },
+  subjectInfo: {
+    flex: 1,
+    marginRight: 15,
+  },
+  modernSubjectText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginBottom: 8,
+  },
+  teacherRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  modernTeacherText: {
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 6,
+    fontWeight: '500',
+  },
+  periodBadgeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  periodBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  subjectCardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  subjectIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  periodLabel: {
+    fontSize: 12,
+    color: '#999',
+    fontWeight: '600',
+  },
+
+  // Modern Day Tabs
   bottomTabsContainer: {
     flexDirection: 'row',
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#fff',
     paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
+    paddingVertical: 20,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
     elevation: 10,
   },
-  dayTab: {
+  modernDayTab: {
     flex: 1,
-    backgroundColor: 'transparent',
-    paddingVertical: 10,
-    paddingHorizontal: 4,
-    borderRadius: 15,
-    marginHorizontal: 2,
     alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 20,
+    marginHorizontal: 4,
+    position: 'relative',
   },
-  selectedDayTab: {
+  selectedModernDayTab: {
     backgroundColor: '#AF52DE',
-    borderColor: '#9A4BD4',
     shadowColor: '#AF52DE',
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 5,
+    shadowRadius: 8,
     elevation: 6,
   },
-  dayTabText: {
-    fontSize: 12,
+  dayTabIndicator: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'transparent',
+    marginBottom: 6,
+  },
+  selectedDayTabIndicator: {
+    backgroundColor: '#fff',
+  },
+  modernDayTabText: {
+    fontSize: 13,
     fontWeight: '600',
     color: '#8E8E93',
-    textAlign: 'center',
   },
-  selectedDayTabText: {
+  selectedModernDayTabText: {
     color: '#fff',
     fontWeight: '700',
-    fontSize: 13,
   },
-  scheduleContainer: {
+  dayTabGlow: {
+    position: 'absolute',
+    top: -2,
+    left: -2,
+    right: -2,
+    bottom: -2,
+    borderRadius: 22,
+    backgroundColor: 'rgba(175, 82, 222, 0.2)',
+    zIndex: -1,
+  },
+
+  // Empty State
+  emptyScheduleContainer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
   },
-  dayTitle: {
+  emptyScheduleText: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 15,
-    textAlign: 'center',
+    color: '#666',
+    marginTop: 20,
+    marginBottom: 8,
   },
-  scheduleList: {
-    paddingBottom: 10,
-  },
-  timeSlotContainer: {
-    flexDirection: 'row',
-    marginBottom: 10,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  periodContainer: {
-    marginRight: 10,
-    justifyContent: 'center',
-  },
-  periodText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  teacherContainer: {
-    marginLeft: 'auto',
-    justifyContent: 'center',
-  },
-  teacherText: {
-    fontSize: 12,
-    color: '#333',
-    textAlign: 'center',
-  },
-  subjectContainer: {
-    flex: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 8,
-    justifyContent: 'center',
-  },
-  subjectText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#333',
+  emptyScheduleSubtext: {
+    fontSize: 16,
+    color: '#999',
     textAlign: 'center',
   },
 });
