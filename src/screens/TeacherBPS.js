@@ -413,7 +413,7 @@ export default function TeacherBPS({ route, navigation }) {
           <View style={styles.branchInfo}>
             <View style={styles.branchHeader}>
               <View style={styles.branchIconContainer}>
-                <FontAwesomeIcon icon={faBuilding} size={20} color='#AF52DE' />
+                <FontAwesomeIcon icon={faBuilding} size={20} color='#007AFF' />
               </View>
               <View style={styles.branchDetails}>
                 <Text style={styles.branchName}>
@@ -821,7 +821,7 @@ export default function TeacherBPS({ route, navigation }) {
             {modalStep === 2 && (
               <View style={styles.stepContainer}>
                 <View style={styles.stepHeader}>
-                  <FontAwesomeIcon icon={faGavel} size={24} color='#AF52DE' />
+                  <FontAwesomeIcon icon={faGavel} size={24} color='#007AFF' />
                   <Text style={styles.stepTitle}>Choose Behavior Type</Text>
                   <Text style={styles.stepDescription}>
                     Select the type of behavior you want to record
@@ -1051,7 +1051,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
   },
   header: {
-    backgroundColor: '#AF52DE',
+    backgroundColor: '#007AFF',
     padding: 15,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1148,7 +1148,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   selectedBranchTab: {
-    backgroundColor: '#AF52DE',
+    backgroundColor: '#007AFF',
   },
   branchTabText: {
     fontSize: 14,
@@ -1182,7 +1182,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#AF52DE15',
+    backgroundColor: '#007AFF15',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
@@ -1244,7 +1244,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   selectedFilterTab: {
-    backgroundColor: '#AF52DE',
+    backgroundColor: '#007AFF',
   },
   filterTabText: {
     fontSize: 12,
