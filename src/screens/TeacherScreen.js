@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { Config, buildApiUrl } from '../config/env';
 import {
   faUser,
   faCog,
@@ -54,11 +55,10 @@ export default function TeacherScreen({ route, navigation }) {
     if (!userData.authCode) return;
 
     try {
-      console.log(
-        'Fetching teacher timetable with authCode:',
-        userData.authCode
-      );
-      const url = `https://sis.bfi.edu.mm/mobile-api/get-teacher-timetable-data/?authCode=${userData.authCode}`;
+      
+      const url = buildApiUrl(Config.API_ENDPOINTS.GET_TEACHER_TIMETABLE, {
+        authCode: userData.authCode,
+      });
 
       const response = await fetch(url, {
         method: 'GET',
@@ -70,7 +70,6 @@ export default function TeacherScreen({ route, navigation }) {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Teacher timetable data:', data);
         setTimetableData(data);
 
         // Calculate stats
@@ -106,8 +105,10 @@ export default function TeacherScreen({ route, navigation }) {
     if (!userData.authCode) return;
 
     try {
-      console.log('Fetching teacher BPS with authCode:', userData.authCode);
-      const url = `https://sis.bfi.edu.mm/mobile-api/get-teacher-bps-data/?authCode=${userData.authCode}`;
+     
+      const url = buildApiUrl(Config.API_ENDPOINTS.GET_TEACHER_BPS, {
+        authCode: userData.authCode,
+      });
 
       const response = await fetch(url, {
         method: 'GET',
@@ -119,7 +120,7 @@ export default function TeacherScreen({ route, navigation }) {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Teacher BPS data:', data);
+        
         setBpsData(data);
 
         // Calculate stats
@@ -246,14 +247,13 @@ export default function TeacherScreen({ route, navigation }) {
           try {
             // Clear user data from AsyncStorage
             await AsyncStorage.removeItem('userData');
-            console.log('User logged out successfully');
             // Navigate back to home screen
             navigation.reset({
               index: 0,
               routes: [{ name: 'Home' }],
             });
           } catch (error) {
-            console.error('Error logging out:', error);
+            // Handle error silently
           }
         },
         style: 'destructive',

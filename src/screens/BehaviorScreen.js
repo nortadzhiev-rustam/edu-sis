@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { Config, buildApiUrl } from '../config/env';
 import {
   faArrowLeft,
   faGavel,
@@ -102,7 +103,9 @@ export default function BehaviorScreen({ navigation, route }) {
     setLoading(true);
     try {
       console.log('Fetching behavior data with authCode:', authCode);
-      const url = `https://sis.bfi.edu.mm/mobile-api/get-student-bps-data?authCode=${authCode}`;
+      const url = buildApiUrl(Config.API_ENDPOINTS.GET_STUDENT_BPS, {
+        authCode,
+      });
       console.log('Request URL:', url);
 
       const response = await fetch(url, {

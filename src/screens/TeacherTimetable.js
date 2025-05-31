@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { Config, buildApiUrl } from '../config/env';
 import {
   faArrowLeft,
   faCalendarAlt,
@@ -67,10 +68,10 @@ export default function TeacherTimetable({ route, navigation }) {
     return () => pulseAnimation.stop();
   }, [todayTabAnimation]);
 
-  // Get current day of week (1 = Monday, 7 = Sunday)
+  // Get current day of week (1 = Monday, 5=Friday) if Saturday or Sunday, set it to Monday
   const getCurrentDay = () => {
     const today = new Date().getDay();
-    return today === 0 ? 7 : today; // Convert Sunday from 0 to 7
+    return today === 0 || today === 6 ? 1 : today;
   };
 
   const [selectedDay, setSelectedDay] = useState(getCurrentDay());
@@ -81,7 +82,9 @@ export default function TeacherTimetable({ route, navigation }) {
 
     try {
       setRefreshing(true);
-      const url = `https://sis.bfi.edu.mm/mobile-api/get-teacher-timetable-data/?authCode=${authCode}`;
+      const url = buildApiUrl(Config.API_ENDPOINTS.GET_TEACHER_TIMETABLE, {
+        authCode,
+      });
 
       const response = await fetch(url, {
         method: 'GET',
@@ -98,7 +101,6 @@ export default function TeacherTimetable({ route, navigation }) {
         Alert.alert('Error', 'Failed to fetch timetable data');
       }
     } catch (error) {
-      console.error('Error fetching timetable:', error);
       Alert.alert('Error', 'Network error occurred');
     } finally {
       setRefreshing(false);
@@ -138,8 +140,10 @@ export default function TeacherTimetable({ route, navigation }) {
   const fetchAttendanceDetails = async (timetableId) => {
     try {
       setLoadingAttendance(true);
-      const url = `https://sis.bfi.edu.mm/mobile-api/get-attendance-details/?authCode=${authCode}&timetableId=${timetableId}`;
-      console.log('Fetching attendance details with URL:', url);
+      const url = buildApiUrl(Config.API_ENDPOINTS.GET_ATTENDANCE_DETAILS, {
+        authCode,
+        timetableId,
+      });
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -150,14 +154,11 @@ export default function TeacherTimetable({ route, navigation }) {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Attendance details:', data);
         return data;
       } else {
-        console.error('Failed to fetch attendance details:', response);
         return null;
       }
     } catch (error) {
-      console.error('Error fetching attendance details:', error);
       return null;
     } finally {
       setLoadingAttendance(false);
@@ -343,7 +344,7 @@ export default function TeacherTimetable({ route, navigation }) {
             horizontal
             showsHorizontalScrollIndicator={false}
           >
-            {[1, 2, 3, 4, 5, 6, 7].map((day) => {
+            {[1, 2, 3, 4, 5].map((day) => {
               const isToday = day === getCurrentDay();
 
               if (isToday) {

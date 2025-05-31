@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { Config, buildApiUrl } from '../config/env';
 import {
   faArrowLeft,
   faGavel,
@@ -21,7 +22,6 @@ import {
   faRefresh,
   faThumbsUp,
   faThumbsDown,
-  faTrash,
   faCalendarAlt,
   faUser,
   faTimes,
@@ -30,6 +30,10 @@ import {
   faChevronDown,
   faChevronRight,
   faUsers,
+  faCheckSquare,
+  faSquare,
+  faUserCheck,
+  faUserPlus,
 } from '@fortawesome/free-solid-svg-icons';
 
 export default function TeacherBPS({ route, navigation }) {
@@ -41,12 +45,18 @@ export default function TeacherBPS({ route, navigation }) {
   const [loading, setLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedStudents, setSelectedStudents] = useState([]); // For multiple selection
+  const [selectedItem, setSelectedItem] = useState(null); // For single behavior (legacy)
+  const [selectedItems, setSelectedItems] = useState([]); // For multiple behaviors
   const [note, setNote] = useState('');
   const [filterType, setFilterType] = useState('all'); // 'all', 'dps', 'prs'
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedClasses, setExpandedClasses] = useState(new Set());
   const [modalStep, setModalStep] = useState(1); // 1: Student, 2: Behavior, 3: Review
+  const [isMultipleSelection, setIsMultipleSelection] = useState(false);
+  const [submissionErrors, setSubmissionErrors] = useState([]);
+  const [selectedBehaviorType, setSelectedBehaviorType] = useState(null); // 'prs' or 'dps'
+  const [isMultipleBehaviorMode, setIsMultipleBehaviorMode] = useState(true); // Enable multiple behavior selection by default
 
   // Fetch fresh BPS data
   const fetchBPSData = async () => {
@@ -54,7 +64,9 @@ export default function TeacherBPS({ route, navigation }) {
 
     try {
       setRefreshing(true);
-      const url = `https://sis.bfi.edu.mm/mobile-api/get-teacher-bps-data/?authCode=${authCode}`;
+      const url = buildApiUrl(Config.API_ENDPOINTS.GET_TEACHER_BPS, {
+        authCode,
+      });
 
       const response = await fetch(url, {
         method: 'GET',
@@ -71,106 +83,136 @@ export default function TeacherBPS({ route, navigation }) {
         Alert.alert('Error', 'Failed to fetch BPS data');
       }
     } catch (error) {
-      console.error('Error fetching BPS data:', error);
       Alert.alert('Error', 'Network error occurred');
     } finally {
       setRefreshing(false);
     }
   };
 
-  // Add new BPS record
+  // Add new BPS record(s)
   const addBPSRecord = async () => {
-    if (!selectedStudent || !selectedItem) {
-      Alert.alert('Error', 'Please select a student and discipline item');
+    const studentsToProcess = isMultipleSelection
+      ? selectedStudents
+      : [selectedStudent];
+
+    // Check if we have selected behaviors (support both single and multiple)
+    const behaviorsToSubmit =
+      selectedItems.length > 0
+        ? selectedItems
+        : selectedItem
+        ? [selectedItem]
+        : [];
+
+    if (studentsToProcess.length === 0 || behaviorsToSubmit.length === 0) {
+      Alert.alert(
+        'Error',
+        'Please select at least one student and at least one behavior'
+      );
       return;
     }
 
     setLoading(true);
+    setSubmissionErrors([]);
+
+    const errors = [];
+    let successCount = 0;
+    const totalExpectedRecords =
+      studentsToProcess.length * behaviorsToSubmit.length;
+
     try {
-      const url = 'https://sis.bfi.edu.mm/mobile-api/discipline/store-bps';
+      const url = buildApiUrl(Config.API_ENDPOINTS.STORE_BPS);
 
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          authCode: authCode,
-          student_id: selectedStudent.student_id,
-          discipline_item_id: selectedItem.discipline_item_id,
-          note: note.trim(),
-        }),
-      });
+      // Process each student with each behavior
+      for (const student of studentsToProcess) {
+        for (const behavior of behaviorsToSubmit) {
+          try {
+            const response = await fetch(url, {
+              method: 'POST',
+              headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                authCode: authCode,
+                student_id: student.student_id,
+                discipline_item_id: behavior.discipline_item_id,
+                note: note.trim(),
+              }),
+            });
 
-      if (response.ok) {
-        Alert.alert('Success', 'BPS record added successfully!');
+            if (response.ok) {
+              successCount++;
+            } else {
+              const errorText = await response.text();
+              errors.push(
+                `${student.name} - ${behavior.item_title}: ${
+                  errorText || 'Failed to add record'
+                }`
+              );
+            }
+          } catch (studentError) {
+            errors.push(
+              `${student.name} - ${behavior.item_title}: Network error`
+            );
+          }
+        }
+      }
+
+      // Show results
+      if (errors.length === 0) {
+        Alert.alert(
+          'Success',
+          `All ${successCount} BPS record(s) added successfully!`
+        );
         setShowAddModal(false);
         resetForm();
         await fetchBPSData();
+      } else if (successCount > 0) {
+        Alert.alert(
+          'Partial Success',
+          `${successCount} record(s) added successfully.\n\nErrors:\n${errors.join(
+            '\n'
+          )}`,
+          [
+            {
+              text: 'Continue',
+              onPress: () => {
+                setShowAddModal(false);
+                resetForm();
+                fetchBPSData();
+              },
+            },
+            { text: 'Review Errors', style: 'cancel' },
+          ]
+        );
+        setSubmissionErrors(errors);
       } else {
-        Alert.alert('Error', 'Failed to add BPS record');
+        Alert.alert(
+          'All Failed',
+          `Failed to add any records:\n\n${errors.join('\n')}`,
+          [{ text: 'OK' }]
+        );
+        setSubmissionErrors(errors);
       }
     } catch (error) {
-      console.error('Error adding BPS record:', error);
-      Alert.alert('Error', 'Network error occurred');
+      Alert.alert('Error', 'Network error occurred while processing requests');
+      setSubmissionErrors(['Network error occurred']);
     } finally {
       setLoading(false);
     }
   };
 
-  // Delete BPS record
-  const deleteBPSRecord = async (recordId) => {
-    Alert.alert(
-      'Delete Record',
-      'Are you sure you want to delete this BPS record?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setLoading(true);
-            try {
-              const url =
-                'https://sis.bfi.edu.mm/mobile-api/discipline/delete-bps';
-
-              const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                  Accept: 'application/json',
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  authCode: authCode,
-                  discipline_record_id: recordId,
-                }),
-              });
-
-              if (response.ok) {
-                Alert.alert('Success', 'BPS record deleted successfully!');
-                await fetchBPSData();
-              } else {
-                Alert.alert('Error', 'Failed to delete BPS record');
-              }
-            } catch (error) {
-              console.error('Error deleting BPS record:', error);
-              Alert.alert('Error', 'Network error occurred');
-            } finally {
-              setLoading(false);
-            }
-          },
-        },
-      ]
-    );
-  };
-
   const resetForm = () => {
     setSelectedStudent(null);
+    setSelectedStudents([]);
     setSelectedItem(null);
+    setSelectedItems([]);
     setNote('');
     setSearchQuery('');
     setModalStep(1);
+    setIsMultipleSelection(false);
+    setSubmissionErrors([]);
+    setSelectedBehaviorType(null);
 
     // Auto-expand the first class when modal opens
     const groupedStudents = getGroupedStudents();
@@ -240,6 +282,247 @@ export default function TeacherBPS({ route, navigation }) {
     setExpandedClasses(newExpanded);
   };
 
+  // Handle student selection (single or multiple)
+  const handleStudentSelection = (student) => {
+    if (isMultipleSelection) {
+      const isSelected = selectedStudents.some(
+        (s) => s.student_id === student.student_id
+      );
+      if (isSelected) {
+        setSelectedStudents(
+          selectedStudents.filter((s) => s.student_id !== student.student_id)
+        );
+      } else {
+        setSelectedStudents([...selectedStudents, student]);
+      }
+    } else {
+      setSelectedStudent(student);
+    }
+  };
+
+  // Select all students in a class
+  const selectWholeClass = (className) => {
+    const groupedStudents = getFilteredStudents();
+    const classStudents = groupedStudents[className] || [];
+
+    if (isMultipleSelection) {
+      // Check if all students in this class are already selected
+      const allSelected = classStudents.every((student) =>
+        selectedStudents.some((s) => s.student_id === student.student_id)
+      );
+
+      if (allSelected) {
+        // Deselect all students from this class
+        setSelectedStudents(
+          selectedStudents.filter(
+            (selected) =>
+              !classStudents.some(
+                (classStudent) =>
+                  classStudent.student_id === selected.student_id
+              )
+          )
+        );
+      } else {
+        // Select all students from this class (avoiding duplicates)
+        const newSelections = classStudents.filter(
+          (student) =>
+            !selectedStudents.some((s) => s.student_id === student.student_id)
+        );
+        setSelectedStudents([...selectedStudents, ...newSelections]);
+      }
+    }
+  };
+
+  // Check if a student is selected
+  const isStudentSelected = (student) => {
+    if (isMultipleSelection) {
+      return selectedStudents.some((s) => s.student_id === student.student_id);
+    } else {
+      return selectedStudent?.student_id === student.student_id;
+    }
+  };
+
+  // Check if all students in a class are selected
+  const isWholeClassSelected = (className) => {
+    if (!isMultipleSelection) return false;
+    const groupedStudents = getFilteredStudents();
+    const classStudents = groupedStudents[className] || [];
+    return (
+      classStudents.length > 0 &&
+      classStudents.every((student) =>
+        selectedStudents.some((s) => s.student_id === student.student_id)
+      )
+    );
+  };
+
+  // Handle behavior category selection
+  const handleBehaviorCategorySelect = (behaviorType) => {
+    setSelectedBehaviorType(behaviorType);
+    // Don't use separate modal, just show the list inline
+  };
+
+  // Handle behavior item selection (supports multiple selection)
+  const handleBehaviorItemSelect = (item) => {
+    // Check if item is already selected
+    const isAlreadySelected = selectedItems.some(
+      (selectedItem) =>
+        selectedItem.discipline_item_id === item.discipline_item_id
+    );
+
+    if (isAlreadySelected) {
+      // Remove from selection
+      setSelectedItems(
+        selectedItems.filter(
+          (selectedItem) =>
+            selectedItem.discipline_item_id !== item.discipline_item_id
+        )
+      );
+    } else {
+      // Add to selection
+      setSelectedItems([...selectedItems, item]);
+    }
+
+    // Keep legacy single selection for backward compatibility
+    setSelectedItem(item);
+  };
+
+  // Check if a behavior item is selected
+  const isBehaviorItemSelected = (item) => {
+    return selectedItems.some(
+      (selectedItem) =>
+        selectedItem.discipline_item_id === item.discipline_item_id
+    );
+  };
+
+  // Clear all selected behaviors
+  const clearSelectedBehaviors = () => {
+    setSelectedItems([]);
+    setSelectedItem(null);
+    setSelectedBehaviorType(null);
+  };
+
+  // Calculate total points from selected behaviors
+  const getTotalPoints = () => {
+    if (selectedItems.length > 0) {
+      return selectedItems.reduce(
+        (total, behavior) => total + (behavior.item_point || 0),
+        0
+      );
+    }
+    return selectedItem?.item_point || 0;
+  };
+
+  // Get filtered behavior items by type
+  const getFilteredBehaviorItems = () => {
+    if (!selectedBehaviorType) return [];
+
+    // Try multiple sources for discipline items
+    let disciplineItems = null;
+
+    // 1. Try current branch discipline_items
+    const branch = getCurrentBranch();
+    if (branch?.discipline_items) {
+      disciplineItems = branch.discipline_items;
+    }
+    // 2. Try global bpsData discipline_items
+    else if (bpsData?.discipline_items) {
+      disciplineItems = bpsData.discipline_items;
+    }
+    // 3. Try first branch if available
+    else if (bpsData?.branches?.[0]?.discipline_items) {
+      disciplineItems = bpsData.branches[0].discipline_items;
+    }
+
+    // If we have discipline items, filter by type
+    if (disciplineItems) {
+      // Handle array structure (most common)
+      if (Array.isArray(disciplineItems)) {
+        const filtered = disciplineItems.filter(
+          (item) =>
+            item.item_type &&
+            item.item_type.toLowerCase() === selectedBehaviorType.toLowerCase()
+        );
+        if (filtered.length > 0) {
+          return filtered;
+        }
+      }
+
+      // Handle object structure with separate arrays
+      if (typeof disciplineItems === 'object') {
+        if (selectedBehaviorType === 'dps' && disciplineItems.dps_items) {
+          return disciplineItems.dps_items;
+        }
+
+        if (selectedBehaviorType === 'prs' && disciplineItems.prs_items) {
+          return disciplineItems.prs_items;
+        }
+      }
+    }
+
+    // Log when falling back to dummy data (can be removed in production)
+    console.log(
+      'No discipline items found in API data, using fallback dummy data'
+    );
+
+    // Fallback to dummy data if no real data is available
+    const dummyItems =
+      selectedBehaviorType === 'prs'
+        ? [
+            {
+              discipline_item_id: 'dummy_prs_1',
+              item_title: 'Good Behavior',
+              item_point: 5,
+              item_type: 'prs',
+            },
+            {
+              discipline_item_id: 'dummy_prs_2',
+              item_title: 'Helping Others',
+              item_point: 3,
+              item_type: 'prs',
+            },
+            {
+              discipline_item_id: 'dummy_prs_3',
+              item_title: 'Excellent Work',
+              item_point: 10,
+              item_type: 'prs',
+            },
+            {
+              discipline_item_id: 'dummy_prs_4',
+              item_title: 'Leadership',
+              item_point: 8,
+              item_type: 'prs',
+            },
+          ]
+        : [
+            {
+              discipline_item_id: 'dummy_dps_1',
+              item_title: 'Late to Class',
+              item_point: -2,
+              item_type: 'dps',
+            },
+            {
+              discipline_item_id: 'dummy_dps_2',
+              item_title: 'Disrupting Class',
+              item_point: -5,
+              item_type: 'dps',
+            },
+            {
+              discipline_item_id: 'dummy_dps_3',
+              item_title: 'Not Following Instructions',
+              item_point: -3,
+              item_type: 'dps',
+            },
+            {
+              discipline_item_id: 'dummy_dps_4',
+              item_title: 'Inappropriate Behavior',
+              item_point: -8,
+              item_type: 'dps',
+            },
+          ];
+
+    return dummyItems;
+  };
+
   // Get count of students with valid classrooms
   const getValidStudentsCount = () => {
     const branch = getCurrentBranch();
@@ -255,9 +538,11 @@ export default function TeacherBPS({ route, navigation }) {
   const canProceedToNextStep = () => {
     switch (modalStep) {
       case 1:
-        return selectedStudent !== null;
+        return isMultipleSelection
+          ? selectedStudents.length > 0
+          : selectedStudent !== null;
       case 2:
-        return selectedItem !== null;
+        return selectedItems.length > 0 || selectedItem !== null;
       case 3:
         return true;
       default:
@@ -310,14 +595,6 @@ export default function TeacherBPS({ route, navigation }) {
     }
 
     return records.sort((a, b) => new Date(b.date) - new Date(a.date));
-  };
-
-  // Get discipline items by type
-  const getDisciplineItems = (type) => {
-    if (!bpsData?.discipline_items) return [];
-    return type === 'dps'
-      ? bpsData.discipline_items.dps_items
-      : bpsData.discipline_items.prs_items;
   };
 
   useEffect(() => {
@@ -551,18 +828,6 @@ export default function TeacherBPS({ route, navigation }) {
                         {record.item_point}
                       </Text>
                     </View>
-                    <TouchableOpacity
-                      style={styles.deleteButton}
-                      onPress={() =>
-                        deleteBPSRecord(record.discipline_record_id)
-                      }
-                    >
-                      <FontAwesomeIcon
-                        icon={faTrash}
-                        size={14}
-                        color='#FF3B30'
-                      />
-                    </TouchableOpacity>
                   </View>
                 </View>
 
@@ -695,11 +960,86 @@ export default function TeacherBPS({ route, navigation }) {
               <View style={styles.stepContainer}>
                 <View style={styles.stepHeader}>
                   <FontAwesomeIcon icon={faUser} size={24} color='#007AFF' />
-                  <Text style={styles.stepTitle}>Choose a Student</Text>
+                  <Text style={styles.stepTitle}>
+                    {isMultipleSelection
+                      ? 'Choose Students'
+                      : 'Choose a Student'}
+                  </Text>
                   <Text style={styles.stepDescription}>
-                    Select the student you want to add a behavior record for
+                    {isMultipleSelection
+                      ? 'Select multiple students to add behavior records for'
+                      : 'Select the student you want to add a behavior record for'}
                   </Text>
                 </View>
+
+                {/* Selection Mode Toggle */}
+                <View style={styles.selectionModeContainer}>
+                  <TouchableOpacity
+                    style={[
+                      styles.selectionModeButton,
+                      !isMultipleSelection && styles.selectedModeButton,
+                    ]}
+                    onPress={() => {
+                      setIsMultipleSelection(false);
+                      setSelectedStudents([]);
+                    }}
+                  >
+                    <FontAwesomeIcon
+                      icon={faUser}
+                      size={16}
+                      color={!isMultipleSelection ? '#fff' : '#666'}
+                    />
+                    <Text
+                      style={[
+                        styles.selectionModeText,
+                        !isMultipleSelection && styles.selectedModeText,
+                      ]}
+                    >
+                      Single
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.selectionModeButton,
+                      isMultipleSelection && styles.selectedModeButton,
+                    ]}
+                    onPress={() => {
+                      setIsMultipleSelection(true);
+                      setSelectedStudent(null);
+                    }}
+                  >
+                    <FontAwesomeIcon
+                      icon={faUsers}
+                      size={16}
+                      color={isMultipleSelection ? '#fff' : '#666'}
+                    />
+                    <Text
+                      style={[
+                        styles.selectionModeText,
+                        isMultipleSelection && styles.selectedModeText,
+                      ]}
+                    >
+                      Multiple
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Selected Students Summary */}
+                {isMultipleSelection && selectedStudents.length > 0 && (
+                  <View style={styles.selectedSummary}>
+                    <Text style={styles.selectedSummaryText}>
+                      {selectedStudents.length} student
+                      {selectedStudents.length !== 1 ? 's' : ''} selected
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.clearAllButton}
+                      onPress={() => setSelectedStudents([])}
+                    >
+                      <Text style={styles.clearAllText}>Clear All</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
 
                 {/* Search Input */}
                 <View style={styles.searchContainer}>
@@ -732,73 +1072,120 @@ export default function TeacherBPS({ route, navigation }) {
                       return (
                         <View key={className} style={styles.classGroup}>
                           {/* Class Header */}
-                          <TouchableOpacity
-                            style={styles.classHeader}
-                            onPress={() => toggleClassExpansion(className)}
-                          >
-                            <FontAwesomeIcon
-                              icon={isExpanded ? faChevronDown : faChevronRight}
-                              size={14}
-                              color='#666'
-                            />
-                            <FontAwesomeIcon
-                              icon={faUsers}
-                              size={16}
-                              color='#007AFF'
-                              style={styles.classIcon}
-                            />
-                            <Text style={styles.className}>{className}</Text>
-                            <View style={styles.studentCount}>
-                              <Text style={styles.studentCountText}>
-                                {students.length}
-                              </Text>
-                            </View>
-                          </TouchableOpacity>
+                          <View style={styles.classHeaderContainer}>
+                            <TouchableOpacity
+                              style={styles.classHeader}
+                              onPress={() => toggleClassExpansion(className)}
+                            >
+                              <FontAwesomeIcon
+                                icon={
+                                  isExpanded ? faChevronDown : faChevronRight
+                                }
+                                size={14}
+                                color='#666'
+                              />
+                              <FontAwesomeIcon
+                                icon={faUsers}
+                                size={16}
+                                color='#007AFF'
+                                style={styles.classIcon}
+                              />
+                              <Text style={styles.className}>{className}</Text>
+                              <View style={styles.studentCount}>
+                                <Text style={styles.studentCountText}>
+                                  {students.length}
+                                </Text>
+                              </View>
+                            </TouchableOpacity>
+
+                            {/* Select All Class Button */}
+                            {isMultipleSelection && (
+                              <TouchableOpacity
+                                style={[
+                                  styles.selectAllButton,
+                                  isWholeClassSelected(className) &&
+                                    styles.selectAllButtonSelected,
+                                ]}
+                                onPress={() => selectWholeClass(className)}
+                              >
+                                <FontAwesomeIcon
+                                  icon={
+                                    isWholeClassSelected(className)
+                                      ? faCheckSquare
+                                      : faSquare
+                                  }
+                                  size={14}
+                                  color={
+                                    isWholeClassSelected(className)
+                                      ? '#007AFF'
+                                      : '#666'
+                                  }
+                                />
+                                <Text
+                                  style={[
+                                    styles.selectAllText,
+                                    isWholeClassSelected(className) &&
+                                      styles.selectAllTextSelected,
+                                  ]}
+                                >
+                                  {isWholeClassSelected(className)
+                                    ? 'Deselect All'
+                                    : 'Select All'}
+                                </Text>
+                              </TouchableOpacity>
+                            )}
+                          </View>
 
                           {/* Students List */}
                           {isExpanded && (
                             <View style={styles.studentsContainer}>
-                              {students.map((student) => (
-                                <TouchableOpacity
-                                  key={student.student_id}
-                                  style={[
-                                    styles.studentItem,
-                                    selectedStudent?.student_id ===
-                                      student.student_id &&
-                                      styles.selectedStudentItem,
-                                  ]}
-                                  onPress={() => setSelectedStudent(student)}
-                                >
-                                  <FontAwesomeIcon
-                                    icon={faUser}
-                                    size={14}
-                                    color={
-                                      selectedStudent?.student_id ===
-                                      student.student_id
-                                        ? '#007AFF'
-                                        : '#999'
-                                    }
-                                  />
-                                  <Text
+                              {students.map((student) => {
+                                const isSelected = isStudentSelected(student);
+                                return (
+                                  <TouchableOpacity
+                                    key={student.student_id}
                                     style={[
-                                      styles.modalStudentName,
-                                      selectedStudent?.student_id ===
-                                        student.student_id &&
-                                        styles.selectedModalStudentName,
+                                      styles.studentItem,
+                                      isSelected && styles.selectedStudentItem,
                                     ]}
+                                    onPress={() =>
+                                      handleStudentSelection(student)
+                                    }
                                   >
-                                    {student.name}
-                                  </Text>
-                                  {selectedStudent?.student_id ===
-                                    student.student_id && (
-                                    <FontAwesomeIcon
-                                      icon={faCheck}
-                                      size={14}
-                                      color='#007AFF'
-                                    />
-                                  )}
-                                </TouchableOpacity>
-                              ))}
+                                    {isMultipleSelection ? (
+                                      <FontAwesomeIcon
+                                        icon={
+                                          isSelected ? faCheckSquare : faSquare
+                                        }
+                                        size={16}
+                                        color={isSelected ? '#007AFF' : '#999'}
+                                      />
+                                    ) : (
+                                      <FontAwesomeIcon
+                                        icon={faUser}
+                                        size={14}
+                                        color={isSelected ? '#007AFF' : '#999'}
+                                      />
+                                    )}
+                                    <Text
+                                      style={[
+                                        styles.modalStudentName,
+                                        isSelected &&
+                                          styles.selectedModalStudentName,
+                                      ]}
+                                    >
+                                      {student.name}
+                                    </Text>
+                                    {isSelected && !isMultipleSelection && (
+                                      <FontAwesomeIcon
+                                        icon={faCheck}
+                                        size={14}
+                                        color='#007AFF'
+                                      />
+                                    )}
+                                  </TouchableOpacity>
+                                );
+                              })}
                             </View>
                           )}
                         </View>
@@ -828,141 +1215,222 @@ export default function TeacherBPS({ route, navigation }) {
                   </Text>
                 </View>
 
-                {/* Selected Student Info */}
-                {selectedStudent && (
+                {/* Selected Student(s) Info */}
+                {(selectedStudent || selectedStudents.length > 0) && (
                   <View style={styles.selectedStudentInfo}>
-                    <FontAwesomeIcon icon={faUser} size={16} color='#007AFF' />
+                    <FontAwesomeIcon
+                      icon={isMultipleSelection ? faUsers : faUser}
+                      size={16}
+                      color='#007AFF'
+                    />
                     <Text style={styles.selectedStudentText}>
-                      {selectedStudent.name} - {selectedStudent.classroom_name}
+                      {isMultipleSelection
+                        ? `${selectedStudents.length} students selected`
+                        : `${selectedStudent.name} - ${selectedStudent.classroom_name}`}
                     </Text>
                   </View>
                 )}
 
-                {/* Behavior Type Tabs */}
-                <View style={styles.behaviorTypeTabs}>
-                  <TouchableOpacity
-                    style={[styles.behaviorTypeTab, styles.positiveTab]}
-                    onPress={() => {
-                      /* Will show positive items */
-                    }}
-                  >
-                    <FontAwesomeIcon
-                      icon={faThumbsUp}
-                      size={20}
-                      color='#34C759'
-                    />
-                    <Text style={styles.behaviorTypeTabText}>
-                      Positive Behavior
-                    </Text>
-                    <Text style={styles.behaviorTypeSubtext}>
-                      Reward good behavior
-                    </Text>
-                  </TouchableOpacity>
+                {/* Selected Behaviors Display */}
+                {selectedItems.length > 0 && (
+                  <View style={styles.selectedBehaviorsContainer}>
+                    <View style={styles.selectedBehaviorsHeader}>
+                      <Text style={styles.selectedBehaviorsTitle}>
+                        Selected Behaviors ({selectedItems.length})
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.clearAllBehaviorsButton}
+                        onPress={() => {
+                          setSelectedItems([]);
+                          setSelectedItem(null);
+                        }}
+                      >
+                        <Text style={styles.clearAllBehaviorsText}>
+                          Clear All
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
 
-                  <TouchableOpacity
-                    style={[styles.behaviorTypeTab, styles.negativeTab]}
-                    onPress={() => {
-                      /* Will show negative items */
-                    }}
-                  >
-                    <FontAwesomeIcon
-                      icon={faThumbsDown}
-                      size={20}
-                      color='#FF3B30'
-                    />
-                    <Text style={styles.behaviorTypeTabText}>
-                      Negative Behavior
-                    </Text>
-                    <Text style={styles.behaviorTypeSubtext}>
-                      Address misconduct
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                    <View style={styles.selectedBehaviorsList}>
+                      {selectedItems.map((behavior) => (
+                        <View
+                          key={behavior.discipline_item_id}
+                          style={styles.selectedBehaviorChip}
+                        >
+                          <FontAwesomeIcon
+                            icon={
+                              behavior.item_type === 'prs'
+                                ? faThumbsUp
+                                : faThumbsDown
+                            }
+                            size={12}
+                            color={
+                              behavior.item_type === 'prs'
+                                ? '#34C759'
+                                : '#FF3B30'
+                            }
+                          />
+                          <Text style={styles.selectedBehaviorChipText}>
+                            {behavior.item_title} (
+                            {behavior.item_point > 0 ? '+' : ''}
+                            {behavior.item_point})
+                          </Text>
+                          <TouchableOpacity
+                            style={styles.removeBehaviorButton}
+                            onPress={() => {
+                              setSelectedItems(
+                                selectedItems.filter(
+                                  (item) =>
+                                    item.discipline_item_id !==
+                                    behavior.discipline_item_id
+                                )
+                              );
+                            }}
+                          >
+                            <FontAwesomeIcon
+                              icon={faTimes}
+                              size={10}
+                              color='#666'
+                            />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                )}
 
-                {/* Behavior Items */}
-                <View style={styles.behaviorItemsContainer}>
-                  {/* Positive Items */}
-                  <Text style={styles.itemCategoryTitle}>
-                    Positive Behaviors
-                  </Text>
-                  {getDisciplineItems('prs').map((item) => (
+                {/* Behavior Type Selection or Behavior List */}
+                {!selectedBehaviorType && (
+                  <View style={styles.behaviorTypeContainer}>
                     <TouchableOpacity
-                      key={`prs-${item.discipline_item_id}`}
-                      style={[
-                        styles.behaviorItem,
-                        selectedItem?.discipline_item_id ===
-                          item.discipline_item_id &&
-                          styles.selectedBehaviorItem,
-                      ]}
-                      onPress={() => setSelectedItem(item)}
+                      style={[styles.behaviorTypeTab, styles.positiveTab]}
+                      onPress={() => handleBehaviorCategorySelect('prs')}
                     >
-                      <View style={styles.behaviorItemIcon}>
-                        <FontAwesomeIcon
-                          icon={faThumbsUp}
-                          size={16}
-                          color='#34C759'
-                        />
-                      </View>
-                      <View style={styles.behaviorItemInfo}>
-                        <Text style={styles.behaviorItemTitle}>
-                          {item.item_title}
-                        </Text>
-                        <Text style={styles.behaviorItemPoints}>
-                          +{item.item_point} points
-                        </Text>
-                      </View>
-                      {selectedItem?.discipline_item_id ===
-                        item.discipline_item_id && (
-                        <FontAwesomeIcon
-                          icon={faCheck}
-                          size={16}
-                          color='#34C759'
-                        />
-                      )}
+                      <FontAwesomeIcon
+                        icon={faThumbsUp}
+                        size={20}
+                        color='#34C759'
+                      />
+                      <Text style={styles.behaviorTypeTabText}>
+                        Positive Behavior
+                      </Text>
+                      <Text style={styles.behaviorTypeSubtext}>
+                        Recognize good conduct
+                      </Text>
                     </TouchableOpacity>
-                  ))}
 
-                  {/* Negative Items */}
-                  <Text style={styles.itemCategoryTitle}>
-                    Negative Behaviors
-                  </Text>
-                  {getDisciplineItems('dps').map((item) => (
                     <TouchableOpacity
-                      key={`dps-${item.discipline_item_id}`}
-                      style={[
-                        styles.behaviorItem,
-                        selectedItem?.discipline_item_id ===
-                          item.discipline_item_id &&
-                          styles.selectedBehaviorItem,
-                      ]}
-                      onPress={() => setSelectedItem(item)}
+                      style={[styles.behaviorTypeTab, styles.negativeTab]}
+                      onPress={() => handleBehaviorCategorySelect('dps')}
                     >
-                      <View style={styles.behaviorItemIcon}>
-                        <FontAwesomeIcon
-                          icon={faThumbsDown}
-                          size={16}
-                          color='#FF3B30'
-                        />
-                      </View>
-                      <View style={styles.behaviorItemInfo}>
-                        <Text style={styles.behaviorItemTitle}>
-                          {item.item_title}
-                        </Text>
-                        <Text style={styles.behaviorItemPoints}>
-                          {item.item_point} points
-                        </Text>
-                      </View>
-                      {selectedItem?.discipline_item_id ===
-                        item.discipline_item_id && (
-                        <FontAwesomeIcon
-                          icon={faCheck}
-                          size={16}
-                          color='#FF3B30'
-                        />
-                      )}
+                      <FontAwesomeIcon
+                        icon={faThumbsDown}
+                        size={20}
+                        color='#FF3B30'
+                      />
+                      <Text style={styles.behaviorTypeTabText}>
+                        Negative Behavior
+                      </Text>
+                      <Text style={styles.behaviorTypeSubtext}>
+                        Address misconduct
+                      </Text>
                     </TouchableOpacity>
-                  ))}
-                </View>
+                  </View>
+                )}
+
+                {/* Behavior Items List */}
+                {selectedBehaviorType && (
+                  <View style={styles.behaviorSelectionContainer}>
+                    <View style={styles.behaviorSelectionHeader}>
+                      <TouchableOpacity
+                        style={styles.backToCategoriesButton}
+                        onPress={() => setSelectedBehaviorType(null)}
+                      >
+                        <FontAwesomeIcon
+                          icon={faArrowLeft}
+                          size={16}
+                          color='#007AFF'
+                        />
+                        <Text style={styles.backToCategoriesText}>
+                          Back to Categories
+                        </Text>
+                      </TouchableOpacity>
+                      <Text style={styles.behaviorSelectionTitle}>
+                        {selectedBehaviorType === 'prs'
+                          ? 'Positive Behaviors'
+                          : 'Negative Behaviors'}
+                      </Text>
+                      <Text style={styles.behaviorSelectionSubtitle}>
+                        Tap to select multiple behaviors
+                      </Text>
+                    </View>
+
+                    <View style={styles.behaviorItemsContainer}>
+                      {getFilteredBehaviorItems().map((item) => {
+                        const isSelected = isBehaviorItemSelected(item);
+                        return (
+                          <TouchableOpacity
+                            key={item.discipline_item_id}
+                            style={[
+                              styles.behaviorItem,
+                              isSelected && styles.behaviorItemSelected,
+                            ]}
+                            onPress={() => handleBehaviorItemSelect(item)}
+                          >
+                            <View
+                              style={[
+                                styles.behaviorItemIcon,
+                                isSelected && styles.behaviorItemIconSelected,
+                              ]}
+                            >
+                              <FontAwesomeIcon
+                                icon={
+                                  selectedBehaviorType === 'prs'
+                                    ? faThumbsUp
+                                    : faThumbsDown
+                                }
+                                size={16}
+                                color={
+                                  isSelected
+                                    ? '#fff'
+                                    : selectedBehaviorType === 'prs'
+                                    ? '#34C759'
+                                    : '#FF3B30'
+                                }
+                              />
+                            </View>
+                            <View style={styles.behaviorItemInfo}>
+                              <Text
+                                style={[
+                                  styles.behaviorItemTitle,
+                                  isSelected &&
+                                    styles.behaviorItemTitleSelected,
+                                ]}
+                              >
+                                {item.item_title}
+                              </Text>
+                              <Text
+                                style={[
+                                  styles.behaviorItemPoints,
+                                  isSelected &&
+                                    styles.behaviorItemPointsSelected,
+                                ]}
+                              >
+                                {item.item_point > 0 ? '+' : ''}
+                                {item.item_point} points
+                              </Text>
+                            </View>
+                            <FontAwesomeIcon
+                              icon={isSelected ? faCheck : faChevronRight}
+                              size={14}
+                              color={isSelected ? '#34C759' : '#666'}
+                            />
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+                )}
               </View>
             )}
 
@@ -980,38 +1448,122 @@ export default function TeacherBPS({ route, navigation }) {
                 {/* Review Summary */}
                 <View style={styles.reviewSummary}>
                   <View style={styles.reviewItem}>
-                    <Text style={styles.reviewLabel}>Student:</Text>
+                    <Text style={styles.reviewLabel}>
+                      {isMultipleSelection ? 'Students:' : 'Student:'}
+                    </Text>
                     <Text style={styles.reviewValue}>
-                      {selectedStudent?.name} ({selectedStudent?.classroom_name}
-                      )
+                      {isMultipleSelection
+                        ? `${selectedStudents.length} students selected`
+                        : `${selectedStudent?.name} (${selectedStudent?.classroom_name})`}
                     </Text>
                   </View>
 
+                  {/* Show selected students list in multiple mode */}
+                  {isMultipleSelection && selectedStudents.length > 0 && (
+                    <View style={styles.selectedStudentsList}>
+                      {selectedStudents.slice(0, 3).map((student) => (
+                        <Text
+                          key={student.student_id}
+                          style={styles.selectedStudentItem}
+                        >
+                          • {student.name} ({student.classroom_name})
+                        </Text>
+                      ))}
+                      {selectedStudents.length > 3 && (
+                        <Text style={styles.moreStudentsText}>
+                          ... and {selectedStudents.length - 3} more
+                        </Text>
+                      )}
+                    </View>
+                  )}
+
                   <View style={styles.reviewItem}>
-                    <Text style={styles.reviewLabel}>Behavior:</Text>
-                    <Text style={styles.reviewValue}>
-                      {selectedItem?.item_title}
+                    <Text style={styles.reviewLabel}>
+                      {selectedItems.length > 1 ? 'Behaviors:' : 'Behavior:'}
                     </Text>
+                    {selectedItems.length > 0 ? (
+                      <View style={styles.reviewBehaviorsList}>
+                        {selectedItems.map((behavior) => (
+                          <View
+                            key={behavior.discipline_item_id}
+                            style={styles.reviewBehaviorItem}
+                          >
+                            <FontAwesomeIcon
+                              icon={
+                                behavior.item_type === 'prs'
+                                  ? faThumbsUp
+                                  : faThumbsDown
+                              }
+                              size={12}
+                              color={
+                                behavior.item_type === 'prs'
+                                  ? '#34C759'
+                                  : '#FF3B30'
+                              }
+                            />
+                            <Text style={styles.reviewBehaviorText}>
+                              {behavior.item_title} (
+                              {behavior.item_point > 0 ? '+' : ''}
+                              {behavior.item_point} pts)
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    ) : (
+                      <Text style={styles.reviewValue}>
+                        {selectedItem?.item_title || 'No behavior selected'}
+                      </Text>
+                    )}
                   </View>
 
                   <View style={styles.reviewItem}>
-                    <Text style={styles.reviewLabel}>Points:</Text>
+                    <Text style={styles.reviewLabel}>
+                      Total Points per Student:
+                    </Text>
                     <Text
                       style={[
                         styles.reviewValue,
                         styles.reviewPoints,
                         {
                           color:
-                            selectedItem?.item_point > 0
+                            getTotalPoints() > 0
                               ? '#34C759'
-                              : '#FF3B30',
+                              : getTotalPoints() < 0
+                              ? '#FF3B30'
+                              : '#666',
                         },
                       ]}
                     >
-                      {selectedItem?.item_point > 0 ? '+' : ''}
-                      {selectedItem?.item_point}
+                      {getTotalPoints() > 0 ? '+' : ''}
+                      {getTotalPoints()}
                     </Text>
                   </View>
+
+                  {(isMultipleSelection ? selectedStudents.length : 1) > 1 && (
+                    <View style={styles.reviewItem}>
+                      <Text style={styles.reviewLabel}>
+                        Grand Total Points:
+                      </Text>
+                      <Text
+                        style={[
+                          styles.reviewValue,
+                          styles.reviewPoints,
+                          {
+                            color:
+                              getTotalPoints() > 0
+                                ? '#34C759'
+                                : getTotalPoints() < 0
+                                ? '#FF3B30'
+                                : '#666',
+                          },
+                        ]}
+                      >
+                        {getTotalPoints() > 0 ? '+' : ''}
+                        {getTotalPoints() *
+                          (isMultipleSelection ? selectedStudents.length : 1)}
+                      </Text>
+                    </View>
+                  )}
                 </View>
 
                 {/* Note Input */}
@@ -1595,6 +2147,11 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
+  behaviorItemSelected: {
+    borderWidth: 2,
+    borderColor: '#007AFF',
+    backgroundColor: '#007AFF05',
+  },
   selectedBehaviorItem: {
     borderWidth: 2,
     borderColor: '#007AFF',
@@ -1609,6 +2166,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 15,
   },
+  behaviorItemIconSelected: {
+    backgroundColor: '#007AFF',
+  },
   behaviorItemInfo: {
     flex: 1,
   },
@@ -1618,10 +2178,16 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     marginBottom: 4,
   },
+  behaviorItemTitleSelected: {
+    color: '#007AFF',
+  },
   behaviorItemPoints: {
     fontSize: 14,
     color: '#666',
     fontWeight: '500',
+  },
+  behaviorItemPointsSelected: {
+    color: '#007AFF',
   },
 
   modalSection: {
@@ -1712,6 +2278,24 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+  reviewBehaviorsList: {
+    marginTop: 8,
+  },
+  reviewBehaviorItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+  reviewBehaviorText: {
+    fontSize: 14,
+    color: '#1a1a1a',
+    marginLeft: 6,
+    fontWeight: '500',
+  },
 
   // Note Section
   noteSection: {
@@ -1783,9 +2367,7 @@ const styles = StyleSheet.create({
   classHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    flex: 1,
   },
   classIcon: {
     marginLeft: 10,
@@ -1846,6 +2428,284 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   noStudentsText: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 15,
+    textAlign: 'center',
+  },
+
+  // Selection Mode
+  selectionModeContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 20,
+  },
+  selectionModeButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: 'transparent',
+  },
+  selectedModeButton: {
+    backgroundColor: '#007AFF',
+  },
+  selectionModeText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    marginLeft: 6,
+  },
+  selectedModeText: {
+    color: '#fff',
+  },
+
+  // Selected Summary
+  selectedSummary: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#007AFF15',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#007AFF',
+  },
+  selectedSummaryText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#007AFF',
+  },
+  clearAllButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#FF3B30',
+    borderRadius: 6,
+  },
+  clearAllText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  // Class Header Container
+  classHeaderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+
+  // Select All Button
+  selectAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: '#f8f9fa',
+  },
+  selectAllButtonSelected: {
+    backgroundColor: '#007AFF15',
+  },
+  selectAllText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#666',
+    marginLeft: 4,
+  },
+  selectAllTextSelected: {
+    color: '#007AFF',
+  },
+
+  // Selected Students List
+  selectedStudentsList: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  moreStudentsText: {
+    fontSize: 14,
+    color: '#666',
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
+
+  // Selected Behaviors Display (Multiple)
+  selectedBehaviorsContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  selectedBehaviorsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  selectedBehaviorsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
+  },
+  clearAllBehaviorsButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#FF3B30',
+    borderRadius: 6,
+  },
+  clearAllBehaviorsText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  selectedBehaviorsList: {
+    padding: 16,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  selectedBehaviorChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  selectedBehaviorChipText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#1a1a1a',
+    marginLeft: 6,
+    marginRight: 8,
+  },
+  removeBehaviorButton: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#e0e0e0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Selected Behavior Display (Legacy Single)
+  selectedBehaviorDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  selectedBehaviorIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f8f9fa',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  selectedBehaviorInfo: {
+    flex: 1,
+  },
+  selectedBehaviorTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 4,
+  },
+  selectedBehaviorPoints: {
+    fontSize: 14,
+    color: '#666',
+  },
+  changeBehaviorButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#007AFF',
+    borderRadius: 6,
+  },
+  changeBehaviorText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  // Behavior Type Container
+  behaviorTypeContainer: {
+    gap: 15,
+  },
+
+  // Behavior Selection Container
+  behaviorSelectionContainer: {
+    flex: 1,
+  },
+  behaviorSelectionHeader: {
+    marginBottom: 20,
+  },
+  backToCategoriesButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#007AFF15',
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    marginBottom: 15,
+  },
+  backToCategoriesText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#007AFF',
+    marginLeft: 6,
+  },
+  behaviorSelectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    textAlign: 'center',
+  },
+  behaviorSelectionSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 4,
+  },
+
+  // No Behavior Items
+  noBehaviorItems: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    marginBottom: 20,
+  },
+  noBehaviorItemsText: {
     fontSize: 16,
     color: '#666',
     marginTop: 15,

@@ -1,6 +1,7 @@
-// API URLs
-export const api_url_check_teacher_credentials = 'https://api.example.com/check-teacher-credentials';
+// Import configuration from environment
+import { Config } from '../config/env';
 
-// Other global constants
-export const APP_NAME = 'EduSIS';
-export const APP_VERSION = '1.0.0';
+// Export configuration for backward compatibility
+export const APP_NAME = Config.APP.NAME;
+export const APP_VERSION = Config.APP.VERSION;
+export const API_BASE_URL = Config.API_BASE_URL;

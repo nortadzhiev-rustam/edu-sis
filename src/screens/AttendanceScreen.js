@@ -27,6 +27,7 @@ import {
   faClipboardCheck,
 } from '@fortawesome/free-solid-svg-icons';
 import { useScreenOrientation } from '../hooks/useScreenOrientation';
+import { Config, buildApiUrl } from '../config/env';
 
 export default function AttendanceScreen({ navigation, route }) {
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
@@ -56,7 +57,9 @@ export default function AttendanceScreen({ navigation, route }) {
   const fetchAttendanceData = async () => {
     try {
       setLoading(true);
-      const url = `https://sis.bfi.edu.mm/mobile-api/get-student-attendance-data?authCode=${authCode}`;
+      const url = buildApiUrl(Config.API_ENDPOINTS.GET_STUDENT_ATTENDANCE, {
+        authCode,
+      });
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -67,19 +70,12 @@ export default function AttendanceScreen({ navigation, route }) {
 
       if (response.ok) {
         const data = await response.json();
-        console.log(data);
         setAttendance(data.data);
       } else {
-        console.error(
-          'Failed to fetch attendance:',
-          response.status,
-          response.statusText
-        );
-        const errorText = await response.text();
-        console.error('Error response body:', errorText);
+        // Handle error silently
       }
     } catch (error) {
-      console.error('Error fetching attendance:', error);
+      // Handle error silently
     } finally {
       setLoading(false);
     }

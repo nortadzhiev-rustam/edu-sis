@@ -4,12 +4,10 @@
  */
 
 import { findTeacher, findStudent } from '../data/dummyUsers';
+import { Config, buildApiUrl } from '../config/env';
 
 // Flag to toggle between dummy data and real API
-const USE_DUMMY_DATA = false;
-
-// Base API URL - replace with your actual API endpoint if not using dummy data
-const BASE_URL = 'https://sis.bfi.edu.mm/mobile-api';
+const USE_DUMMY_DATA = Config.DEV.USE_DUMMY_DATA;
 
 // Helper function to encode string to base64
 const encodeToBase64 = (str) => {
@@ -33,24 +31,25 @@ export const teacherLogin = async (username, password, deviceToken) => {
   await new Promise((resolve) => setTimeout(resolve, 800));
 
   if (USE_DUMMY_DATA) {
-    console.log('Using dummy data for teacher login');
     const teacher = findTeacher(username, password);
 
     if (teacher) {
-      console.log('Teacher login successful:', teacher.name);
       return teacher;
     } else {
-      console.error('Teacher login failed: Invalid credentials');
       return null;
     }
   } else {
     try {
       // Use the API for real authentication
       const encodedToken = deviceToken ? encodeToBase64(deviceToken) : '';
-      const apiUrl = `${BASE_URL}/check-staff-credentials?username=${username}&password=${password}&deviceType=ios&deviceToken=${encodedToken}`;
+      const apiUrl = buildApiUrl(Config.API_ENDPOINTS.CHECK_STAFF_CREDENTIALS, {
+        username,
+        password,
+        deviceType: Config.DEVICE.DEFAULT_TYPE,
+        deviceToken: encodedToken,
+      });
 
       const response = await fetch(apiUrl);
-      console.log('Teacher login response:', response);
 
       if (response.status === 200 || response.status === 201) {
         const data = await response.json();
@@ -59,11 +58,9 @@ export const teacherLogin = async (username, password, deviceToken) => {
           userType: 'teacher',
         };
       } else {
-        console.error('Teacher login failed with status:', response.status);
         return null;
       }
     } catch (error) {
-      console.error('Teacher login error:', error);
       return null;
     }
   }
@@ -81,24 +78,28 @@ export const studentLogin = async (username, password, deviceToken) => {
   await new Promise((resolve) => setTimeout(resolve, 800));
 
   if (USE_DUMMY_DATA) {
-    console.log('Using dummy data for student login');
     const student = findStudent(username, password);
 
     if (student) {
-      console.log('Student login successful:', student.name);
       return student;
     } else {
-      console.error('Student login failed: Invalid credentials');
       return null;
     }
   } else {
     try {
       // Use the API for real authentication
       const encodedToken = deviceToken ? encodeToBase64(deviceToken) : '';
-      const apiUrl = `${BASE_URL}/check-student-credentials?username=${username}&password=${password}&deviceType=ios&deviceToken=${encodedToken}`;
+      const apiUrl = buildApiUrl(
+        Config.API_ENDPOINTS.CHECK_STUDENT_CREDENTIALS,
+        {
+          username,
+          password,
+          deviceType: Config.DEVICE.DEFAULT_TYPE,
+          deviceToken: encodedToken,
+        }
+      );
 
       const response = await fetch(apiUrl);
-      console.log(response.status);
       if (response.status === 200 || response.status === 201) {
         const data = await response.json();
         if (data !== 0) {
@@ -108,11 +109,9 @@ export const studentLogin = async (username, password, deviceToken) => {
           };
         }
       } else {
-        console.error('Student login failed with status:', response.status);
         return null;
       }
     } catch (error) {
-      console.error('Student login error:', error);
       return null;
     }
   }
@@ -126,10 +125,8 @@ export const studentLogin = async (username, password, deviceToken) => {
 export const saveUserData = async (userData, AsyncStorage) => {
   try {
     await AsyncStorage.setItem('userData', JSON.stringify(userData));
-    console.log('User data saved to AsyncStorage');
     return true;
   } catch (error) {
-    console.error('Error saving user data:', error);
     return false;
   }
 };

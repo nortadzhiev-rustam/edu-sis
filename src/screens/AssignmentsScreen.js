@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { Config, buildApiUrl } from '../config/env';
 import {
   faArrowLeft,
   faClipboardList,
@@ -304,8 +305,6 @@ export default function AssignmentsScreen({ navigation, route }) {
       return acc;
     }, {});
 
-    console.log('Grouped assignments:', groups);
-
     // Convert to array and add counts
     const result = Object.keys(groups).map((subject) => ({
       subject,
@@ -319,7 +318,6 @@ export default function AssignmentsScreen({ navigation, route }) {
       ).length,
     }));
 
-    console.log('Final subject groups:', result);
     return result;
   };
 
@@ -403,9 +401,9 @@ export default function AssignmentsScreen({ navigation, route }) {
 
     setLoading(true);
     try {
-      console.log('Fetching assignments with authCode:', authCode);
-      const url = `https://sis.bfi.edu.mm/mobile-api/get-student-homework-data?authCode=${authCode}`;
-      console.log('Request URL:', url);
+      const url = buildApiUrl(Config.API_ENDPOINTS.GET_STUDENT_HOMEWORK, {
+        authCode,
+      });
 
       const response = await fetch(url, {
         method: 'GET',
@@ -415,53 +413,13 @@ export default function AssignmentsScreen({ navigation, route }) {
         },
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
-
       if (response.ok) {
         const data = await response.json();
-        console.log('Raw assignments data:', JSON.stringify(data, null, 2));
-
-        // Log the structure of the data
-        console.log('Data type:', typeof data);
-        console.log('Data keys:', Object.keys(data));
-
-        if (Array.isArray(data)) {
-          console.log('Data is an array with length:', data.length);
-          if (data.length > 0) {
-            console.log('First item structure:', Object.keys(data[0]));
-            console.log('First item:', JSON.stringify(data[0], null, 2));
-          }
-        } else if (data && typeof data === 'object') {
-          console.log('Data is an object');
-          if (data.data && Array.isArray(data.data)) {
-            console.log('data.data is an array with length:', data.data.length);
-            if (data.data.length > 0) {
-              console.log(
-                'First data item structure:',
-                Object.keys(data.data[0])
-              );
-              console.log(
-                'First data item:',
-                JSON.stringify(data.data[0], null, 2)
-              );
-            }
-          }
-        }
-
         setAssignments(data);
       } else {
-        console.error(
-          'Failed to fetch assignments:',
-          response.status,
-          response.statusText
-        );
-        const errorText = await response.text();
-        console.error('Error response body:', errorText);
         Alert.alert('Error', `Failed to fetch assignments: ${response.status}`);
       }
     } catch (error) {
-      console.error('Error fetching assignments:', error);
       Alert.alert('Error', 'Failed to connect to server');
     } finally {
       setLoading(false);

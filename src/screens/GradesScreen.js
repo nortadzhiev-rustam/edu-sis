@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { Config, buildApiUrl } from '../config/env';
 import {
   faArrowLeft,
   faChartLine,
@@ -76,14 +77,15 @@ export default function GradesScreen({ navigation, route }) {
   // Fetch grades data
   const fetchGrades = async () => {
     if (!authCode) {
-      console.log('No authCode provided');
       return;
     }
 
     try {
       setLoading(true);
 
-      const url = `https://sis.bfi.edu.mm/mobile-api/get-student-grades?authCode=${authCode}`;
+      const url = buildApiUrl(Config.API_ENDPOINTS.GET_STUDENT_GRADES, {
+        authCode,
+      });
 
       const response = await fetch(url, {
         method: 'GET',
@@ -95,24 +97,12 @@ export default function GradesScreen({ navigation, route }) {
 
       if (response.ok) {
         const data = await response.json();
-        console.log(data);
         setGrades(data);
       } else {
-        console.error(
-          'Failed to fetch grades:',
-          response.status,
-          response.statusText
-        );
-        const errorText = await response.text();
-        console.error('Error response body:', errorText);
+        // Handle error silently
       }
     } catch (error) {
-      console.error('Error fetching grades:', error);
-      console.error('Error details:', {
-        message: error.message,
-        name: error.name,
-        stack: error.stack,
-      });
+      // Handle error silently
     } finally {
       setLoading(false);
     }

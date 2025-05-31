@@ -141,14 +141,13 @@ export default function DashboardScreen({ route, navigation }) {
                       try {
                         // Clear user data from AsyncStorage
                         await AsyncStorage.removeItem('userData');
-                        console.log('User logged out successfully');
                         // Navigate back to login screen
                         navigation.reset({
                           index: 0,
                           routes: [{ name: 'Login' }],
                         });
                       } catch (error) {
-                        console.error('Error logging out:', error);
+                        // Handle error silently
                       }
                     },
                     style: 'destructive',

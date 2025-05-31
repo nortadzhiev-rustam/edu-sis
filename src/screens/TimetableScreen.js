@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { Config, buildApiUrl } from '../config/env';
 import {
   faArrowLeft,
   faCalendarAlt,
@@ -63,8 +64,6 @@ export default function TimetableScreen({ navigation, route }) {
 
   // Helper function to convert object response to array format
   const convertObjectToArrayFormat = (data) => {
-    console.log('Original API Response:', data); // Debug log to see your data structure
-
     // If data is already in the correct format (object with day keys containing arrays), return as is
     if (
       data &&
@@ -148,9 +147,6 @@ export default function TimetableScreen({ navigation, route }) {
         }
       });
 
-      console.log('Converted Data:', convertedData); // Debug log to see converted structure
-      console.log('Available Days:', finalAvailableDays); // Debug log to see available days
-
       // Update available days state
       setAvailableDays(finalAvailableDays);
 
@@ -162,9 +158,9 @@ export default function TimetableScreen({ navigation, route }) {
 
   const fetchTimetable = async () => {
     try {
-      console.log('Fetching timetable with authCode:', authCode);
-      const url = `https://sis.bfi.edu.mm/mobile-api/get-student-timetable2?authCode=${authCode}`;
-      console.log('Request URL:', url);
+      const url = buildApiUrl(Config.API_ENDPOINTS.GET_STUDENT_TIMETABLE, {
+        authCode,
+      });
 
       const response = await fetch(url, {
         method: 'GET',
@@ -174,45 +170,16 @@ export default function TimetableScreen({ navigation, route }) {
         },
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
-
       if (response.ok) {
         const data = await response.json();
-        console.log('Raw response data:', data);
 
         // Convert object to array format if needed
         const convertedData = convertObjectToArrayFormat(data);
         return convertedData;
       } else {
-        console.error(
-          'Failed to fetch timetable:',
-          response.status,
-          response.statusText
-        );
-        const errorText = await response.text();
-        console.error('Error response body:', errorText);
         return null;
       }
     } catch (error) {
-      console.error('Error fetching timetable:', error);
-      console.error('Error details:', {
-        message: error.message,
-        name: error.name,
-        stack: error.stack,
-      });
-
-      // Check if it's a network error
-      if (error.message.includes('Network request failed')) {
-        console.error('Network Error: This might be due to:');
-        console.error('1. No internet connection');
-        console.error('2. Server is down');
-        console.error(
-          '3. Android network security policy blocking HTTP requests'
-        );
-        console.error('4. Firewall or proxy blocking the request');
-      }
-
       return null;
     }
   };
@@ -490,13 +457,12 @@ export default function TimetableScreen({ navigation, route }) {
     );
   };
 
-  const renderDayTab = (day) => {
+  const renderDayTab = (day, index) => {
     const isSelected = selectedDay === day;
     const dayAbbr = day.substring(0, 3);
-
     return (
       <TouchableOpacity
-        key={day}
+        key={index}
         style={[styles.modernDayTab, isSelected && styles.selectedModernDayTab]}
         onPress={() => setSelectedDay(day)}
       >
@@ -556,7 +522,7 @@ export default function TimetableScreen({ navigation, route }) {
                   ? timetable[selectedDay]
                   : timetableData[selectedDay]
                 )?.length || 0}{' '}
-                classes
+                periods
               </Text>
             </View>
           </View>
@@ -573,7 +539,13 @@ export default function TimetableScreen({ navigation, route }) {
             (timetable
               ? timetable[selectedDay]
               : timetableData[selectedDay]
-            ).map((item, index) => renderTimeSlot({ item, index }))
+            ).map((item, index) => (
+              <View
+                key={`${selectedDay}-${item.period || index}-${item.subject}`}
+              >
+                {renderTimeSlot({ item, index })}
+              </View>
+            ))
           ) : (
             <View style={styles.emptyScheduleContainer}>
               <FontAwesomeIcon icon={faCalendarAlt} size={48} color='#ccc' />
@@ -588,7 +560,7 @@ export default function TimetableScreen({ navigation, route }) {
 
       {/* Day Tabs at Bottom */}
       <View style={styles.bottomTabsContainer}>
-        {availableDays.map(renderDayTab)}
+        {availableDays.map((day, index) => renderDayTab(day, index))}
       </View>
     </SafeAreaView>
   );

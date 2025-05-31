@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { Config } from '../config/env';
 import {
   faPlus,
   faChild,
@@ -65,7 +66,7 @@ export default function ParentScreen({ navigation }) {
     }
 
     // Base URL for the API
-    const baseUrl = 'https://sis.bfi.edu.mm/mobile-api';
+    const baseUrl = Config.API_BASE_URL;
 
     // Check if student has an authCode
     if (!selectedStudent.authCode) {
@@ -129,7 +130,7 @@ export default function ParentScreen({ navigation }) {
         setStudents(JSON.parse(savedStudents));
       }
     } catch (error) {
-      console.error('Error loading student accounts:', error);
+      // Handle error silently
     } finally {
       setLoading(false);
     }
@@ -174,7 +175,6 @@ export default function ParentScreen({ navigation }) {
               // Show success message
               Alert.alert('Success', 'Student removed successfully');
             } catch (error) {
-              console.error('Error deleting student:', error);
               Alert.alert('Error', 'Failed to remove student');
 
               // Reload the original list if there was an error
@@ -318,7 +318,6 @@ export default function ParentScreen({ navigation }) {
               decelerationRate='fast'
               snapToInterval={176} // Width of tile (160) + margin (16)
               onScrollToIndexFailed={(info) => {
-                console.warn('Scroll to index failed:', info);
                 // Handle the failure by scrolling to a nearby item
                 setTimeout(() => {
                   if (flatListRef.current && students.length > 0) {

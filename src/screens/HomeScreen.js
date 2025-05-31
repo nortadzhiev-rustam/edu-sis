@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { Config, buildWebUrl } from '../config/env';
 import {
   faChalkboardTeacher,
   faUserGraduate,
@@ -46,7 +47,6 @@ export default function HomeScreen({ navigation }) {
       // If not logged in or not a teacher, go to login screen with teacher type
       navigation.navigate('Login', { loginType: 'teacher' });
     } catch (error) {
-      console.error('Error checking login status:', error);
       navigation.navigate('Login', { loginType: 'teacher' });
     }
   };
@@ -116,7 +116,7 @@ export default function HomeScreen({ navigation }) {
               style={styles.resourceButton}
               onPress={() =>
                 navigation.navigate('WebView', {
-                  url: 'https://sis.bfi.edu.mm/mobile-api/calendar',
+                  url: buildWebUrl(Config.WEB_ENDPOINTS.CALENDAR),
                   title: 'School Calendar',
                 })
               }
@@ -140,7 +140,7 @@ export default function HomeScreen({ navigation }) {
               style={styles.resourceButton}
               onPress={() =>
                 navigation.navigate('WebView', {
-                  url: 'https://sis.bfi.edu.mm/mobile-api/about',
+                  url: buildWebUrl(Config.WEB_ENDPOINTS.ABOUT),
                   title: 'About Us',
                 })
               }
@@ -164,7 +164,7 @@ export default function HomeScreen({ navigation }) {
               style={styles.resourceButton}
               onPress={() =>
                 navigation.navigate('WebView', {
-                  url: 'https://sis.bfi.edu.mm/mobile-api/contacts',
+                  url: buildWebUrl(Config.WEB_ENDPOINTS.CONTACTS),
                   title: 'Contact Us',
                 })
               }
@@ -184,7 +184,7 @@ export default function HomeScreen({ navigation }) {
               style={styles.resourceButton}
               onPress={() =>
                 navigation.navigate('WebView', {
-                  url: 'https://sis.bfi.edu.mm/mobile-api/faq',
+                  url: buildWebUrl(Config.WEB_ENDPOINTS.FAQ),
                   title: 'FAQ',
                 })
               }

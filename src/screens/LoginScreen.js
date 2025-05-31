@@ -70,7 +70,6 @@ export default function LoginScreen({ route, navigation }) {
         'Login Error',
         'An unexpected error occurred. Please try again.'
       );
-      console.error('Login error:', error);
       return null;
     }
   };
@@ -88,12 +87,6 @@ export default function LoginScreen({ route, navigation }) {
 
     if (userData) {
       // Handle successful login
-      console.log(
-        `${
-          loginType.charAt(0).toUpperCase() + loginType.slice(1)
-        } login successful:`,
-        userData
-      );
 
       // If adding a student account
       if (isAddingStudent) {
@@ -119,7 +112,6 @@ export default function LoginScreen({ route, navigation }) {
           Alert.alert('Success', 'Student account added successfully');
           navigation.goBack();
         } catch (error) {
-          console.error('Error saving student account:', error);
           Alert.alert('Error', 'Failed to save student account');
         }
       } else {

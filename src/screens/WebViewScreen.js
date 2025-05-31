@@ -60,17 +60,8 @@ export default function WebViewScreen({ route, navigation }) {
 
   // Handle WebView errors
   const handleError = (error) => {
-    console.error('WebView error:', error);
     setLoading(false);
     setUseHtmlFallback(true);
-
-    // Log more detailed error information for debugging
-    if (error && error.nativeEvent) {
-      const { description, domain, code } = error.nativeEvent;
-      console.log(
-        `WebView Error - Domain: ${domain}, Code: ${code}, Description: ${description}`
-      );
-    }
   };
 
   // Handle messages from WebView
