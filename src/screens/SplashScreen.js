@@ -8,6 +8,7 @@ import Animated, {
   interpolate,
   Easing,
 } from 'react-native-reanimated';
+import { useTheme } from '../contexts/ThemeContext'; // Import useTheme
 
 const { width, height } = Dimensions.get('window');
 const TYPING_SPEED = 50; // Increased for better visibility
@@ -17,6 +18,7 @@ const TEXT_LINE2 = 'Building Brighter Futures';
 const FULL_TEXT = TEXT_LINE1 + '\n' + TEXT_LINE2;
 
 export default function SplashScreen({ onAnimationComplete }) {
+  const { theme } = useTheme(); // Get theme from context
   const [displayText, setDisplayText] = useState('');
   const [startTyping, setStartTyping] = useState(false);
   const animation = useSharedValue(0);
@@ -89,13 +91,13 @@ export default function SplashScreen({ onAnimationComplete }) {
   }, [startTyping]);
 
   return (
-    <SafeAreaView style={styles.container} edges={[]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={[]}>
       <Animated.Image
-        source={require('../../assets/app_logo.jpg')}
+        source={require('../../assets/app_logo.png')}
         style={[styles.logo, logoStyle]}
         resizeMode='contain'
       />
-      <Animated.Text style={[styles.text, textStyle]}>
+      <Animated.Text style={[styles.text, { color: theme.colors.primary }, textStyle]}>
         {displayText}
       </Animated.Text>
     </SafeAreaView>
@@ -105,7 +107,7 @@ export default function SplashScreen({ onAnimationComplete }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    // backgroundColor: '#ffffff', // Will be set by theme
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -117,7 +119,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     fontSize: 22,
     fontWeight: '600',
-    color: '#007AFF',
+    // color: '#007AFF', // Will be set by theme
     textAlign: 'center',
     paddingHorizontal: 20,
     fontFamily: Platform.OS === 'ios' ? 'Helvetica Neue' : 'sans-serif',

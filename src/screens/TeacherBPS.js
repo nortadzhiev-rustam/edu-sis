@@ -848,8 +848,8 @@ export default function TeacherBPS({ route, navigation }) {
 
       <Modal
         visible={showAddModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
+        animationType='slide'
+        presentationStyle='pageSheet'
         onRequestClose={() => setShowAddModal(false)}
       >
         <SafeAreaView style={styles.modalContainer}>
@@ -898,7 +898,7 @@ export default function TeacherBPS({ route, navigation }) {
                 >
                   {loading ? (
                     <ActivityIndicator
-                      size="small"
+                      size='small'
                       color={theme.colors.headerText}
                     />
                   ) : (
@@ -1049,10 +1049,10 @@ export default function TeacherBPS({ route, navigation }) {
                   />
                   <TextInput
                     style={styles.searchInput}
-                    placeholder="Search students by name..."
+                    placeholder='Search students by name...'
                     value={searchQuery}
                     onChangeText={setSearchQuery}
-                    autoCapitalize="words"
+                    autoCapitalize='words'
                     placeholderTextColor={theme.colors.textLight}
                   />
                   {searchQuery.length > 0 && (
@@ -1396,8 +1396,7 @@ export default function TeacherBPS({ route, navigation }) {
                               <View
                                 style={[
                                   styles.behaviorItemIcon,
-                                  isSelected &&
-                                    styles.behaviorItemIconSelected,
+                                  isSelected && styles.behaviorItemIconSelected,
                                 ]}
                               >
                                 <FontAwesomeIcon
@@ -1503,19 +1502,19 @@ export default function TeacherBPS({ route, navigation }) {
 
                   {isMultipleSelection && selectedStudents.length > 0 && (
                     <View style={styles.selectedStudentsList}>
-                      {selectedStudents.slice(0, 3).map((student) => (
-                        <Text
-                          key={student.student_id}
-                          style={styles.selectedStudentItemText}
-                        >
-                          • {student.name} ({student.classroom_name})
-                        </Text>
-                      ))}
-                      {selectedStudents.length > 3 && (
-                        <Text style={styles.moreStudentsText}>
-                          ... and {selectedStudents.length - 3} more
-                        </Text>
-                      )}
+                      <ScrollView
+                        style={styles.allStudentsScrollView}
+                        nestedScrollEnabled={true}
+                      >
+                        {selectedStudents.map((student) => (
+                          <Text
+                            key={student.student_id}
+                            style={styles.selectedStudentItemText}
+                          >
+                            {student.name} ({student.classroom_name})
+                          </Text>
+                        ))}
+                      </ScrollView>
                     </View>
                   )}
 
@@ -1614,12 +1613,12 @@ export default function TeacherBPS({ route, navigation }) {
                   </Text>
                   <TextInput
                     style={styles.noteInput}
-                    placeholder="Add additional details about this behavior..."
+                    placeholder='Add additional details about this behavior...'
                     value={note}
                     onChangeText={setNote}
                     multiline
                     numberOfLines={4}
-                    textAlignVertical="top"
+                    textAlignVertical='top'
                     placeholderTextColor={theme.colors.textLight}
                   />
                 </View>
@@ -1631,7 +1630,7 @@ export default function TeacherBPS({ route, navigation }) {
 
       {loading && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={theme.colors.secondary} />
+          <ActivityIndicator size='large' color={theme.colors.secondary} />
           <Text style={styles.loadingText}>Processing...</Text>
         </View>
       )}
@@ -2005,7 +2004,7 @@ const getStyles = (theme) =>
     },
     submitButton: {
       backgroundColor: theme.colors.success,
-      paddingHorizontal: 16,
+      paddingHorizontal: 14,
       paddingVertical: 8,
       borderRadius: 20,
     },
@@ -2439,7 +2438,8 @@ const getStyles = (theme) =>
     selectedStudentItemText: {
       fontSize: 14,
       color: theme.colors.textSecondary,
-      marginBottom: 4,
+      marginBottom: 4, // Adjusted slightly for better spacing in a list
+      // Ensure this style provides enough distinction for each item
     },
     modalStudentName: {
       flex: 1,
@@ -2557,19 +2557,18 @@ const getStyles = (theme) =>
     },
 
     selectedStudentsList: {
-      marginTop: 10,
-      paddingTop: 10,
-      borderTopWidth: 1,
-      borderTopColor: theme.colors.border,
-      alignItems: 'flex-end',
-      marginLeft: 15,
+      marginTop: 5,
+      // Add any existing padding/margin here if needed, e.g., paddingHorizontal: 10
     },
-    moreStudentsText: {
-      fontSize: 14,
-      color: theme.colors.textSecondary,
-      fontStyle: 'italic',
-      marginTop: 4,
-      textAlign: 'right',
+    allStudentsScrollView: {
+      maxHeight: 120, // Adjust as needed, e.g., for 4-5 items
+      paddingVertical: 5, // Optional: for some spacing within the scroll view
+    },
+    selectedStudentItemText: {
+      fontSize: 18,
+      color: theme.colors.text,
+      marginBottom: 4, // Adjusted slightly for better spacing in a list
+      // Ensure this style provides enough distinction for each item
     },
 
     selectedBehaviorsContainer: {
