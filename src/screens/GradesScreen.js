@@ -39,11 +39,16 @@ import {
   faLeaf,
 } from '@fortawesome/free-solid-svg-icons';
 import { useScreenOrientation } from '../hooks/useScreenOrientation';
+import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // Simple separator component - only shows in portrait mode
 const GradeSeparator = () => null; // We'll use marginVertical on cards instead
 
 export default function GradesScreen({ navigation, route }) {
+  const { theme } = useTheme();
+  const { t } = useLanguage();
+
   const [activeTab, setActiveTab] = useState('summative');
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
   const { authCode } = route.params || {};
@@ -73,6 +78,8 @@ export default function GradesScreen({ navigation, route }) {
 
   // Determine if device is in landscape mode
   const isLandscape = screenData.width > screenData.height;
+
+  const styles = createStyles(theme);
 
   // Fetch grades data
   const fetchGrades = async () => {
@@ -1095,12 +1102,12 @@ export default function GradesScreen({ navigation, route }) {
           <FontAwesomeIcon icon={faChartLine} size={20} color='#fff' />
           <Text style={styles.headerTitle}>
             {showSubjectList
-              ? 'Grades - Select Subject'
+              ? `${t('grades')} - Select Subject`
               : isLandscape
               ? `${selectedSubject} - ${
                   activeTab === 'summative' ? 'Summative' : 'Formative'
                 }`
-              : selectedSubject || 'Grades'}
+              : selectedSubject || t('grades')}
           </Text>
         </View>
         <View style={styles.headerRight}>
@@ -1169,447 +1176,448 @@ export default function GradesScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#FF9500',
-    padding: 15,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerCenter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-  headerRight: {
-    width: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  switchButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  switchButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  studentInfo: {
-    backgroundColor: '#fff',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  studentNameText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    textAlign: 'center',
-  },
-  content: {
-    flex: 1,
-    padding: 15,
-  },
-  landscapeContent: {
-    paddingHorizontal: 20, // More padding in landscape for better use of space
-  },
-  // Subject List Screen Styles
-  subjectListContainer: {
-    flex: 1,
-    alignItems: 'center',
-    paddingTop: 20,
-  },
-  subjectListTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 30,
-    textAlign: 'center',
-  },
-  subjectGrid: {
-    alignItems: 'center',
-    width: '100%',
-    paddingHorizontal: 20,
-  },
+const createStyles = (theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    header: {
+      backgroundColor: theme.colors.warning,
+      padding: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    backButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    headerCenter: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      justifyContent: 'center',
+    },
+    headerTitle: {
+      color: '#fff',
+      fontSize: 20,
+      fontWeight: 'bold',
+      marginLeft: 8,
+    },
+    headerRight: {
+      width: 36,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    switchButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    switchButtonText: {
+      color: '#fff',
+      fontSize: 14,
+      fontWeight: 'bold',
+    },
+    studentInfo: {
+      backgroundColor: '#fff',
+      padding: 15,
+      borderBottomWidth: 1,
+      borderBottomColor: '#e0e0e0',
+    },
+    studentNameText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#333',
+      textAlign: 'center',
+    },
+    content: {
+      flex: 1,
+      padding: 15,
+    },
+    landscapeContent: {
+      paddingHorizontal: 20, // More padding in landscape for better use of space
+    },
+    // Subject List Screen Styles
+    subjectListContainer: {
+      flex: 1,
+      alignItems: 'center',
+      paddingTop: 20,
+    },
+    subjectListTitle: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      color: '#333',
+      marginBottom: 30,
+      textAlign: 'center',
+    },
+    subjectGrid: {
+      alignItems: 'center',
+      width: '100%',
+      paddingHorizontal: 20,
+    },
 
-  // Modern Subject Card Styles
-  modernSubjectCard: {
-    backgroundColor: '#fff',
-    width: '100%',
-    marginVertical: 8,
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    borderLeftWidth: 4,
-  },
-  subjectCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  subjectIconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-  },
-  subjectInfo: {
-    flex: 1,
-  },
-  modernSubjectTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  subjectGradeCount: {
-    fontSize: 14,
-    color: '#666',
-  },
-  subjectCardRight: {
-    alignItems: 'flex-end',
-  },
-  averageContainer: {
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  averageText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  averageLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-  },
-  // Grades Screen Styles
-  gradesContainer: {
-    flex: 1,
-  },
-  subjectHeader: {
-    marginBottom: 15,
-  },
-  backToSubjectsButton: {
-    alignSelf: 'flex-start',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  backToSubjectsText: {
-    fontSize: 14,
-    color: '#FF9500',
-    fontWeight: '600',
-  },
-  selectedSubjectTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    textAlign: 'center',
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 25,
-    padding: 4,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  tabButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    alignItems: 'center',
-  },
-  activeTabButton: {
-    backgroundColor: '#FF9500',
-  },
-  tabButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-  },
-  activeTabButtonText: {
-    color: '#fff',
-  },
-  scrollContainer: {
-    flex: 1,
-  },
-  // Modern Grades Container Styles
-  modernGradesContainer: {
-    flex: 1,
-    width: '100%', // Ensure full width usage
-  },
-  gradesList: {
-    paddingBottom: 20,
-    paddingHorizontal: 2, // Minimal horizontal padding to maximize width usage
-  },
-  gradeSeparator: {
-    height: 12,
-  },
+    // Modern Subject Card Styles
+    modernSubjectCard: {
+      backgroundColor: '#fff',
+      width: '100%',
+      marginVertical: 8,
+      borderRadius: 16,
+      padding: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 4,
+      borderLeftWidth: 4,
+    },
+    subjectCardHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    subjectIconContainer: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 15,
+    },
+    subjectInfo: {
+      flex: 1,
+    },
+    modernSubjectTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: '#333',
+      marginBottom: 4,
+    },
+    subjectGradeCount: {
+      fontSize: 14,
+      color: '#666',
+    },
+    subjectCardRight: {
+      alignItems: 'flex-end',
+    },
+    averageContainer: {
+      alignItems: 'center',
+      marginRight: 10,
+    },
+    averageText: {
+      fontSize: 18,
+      fontWeight: 'bold',
+    },
+    averageLabel: {
+      fontSize: 12,
+      color: '#666',
+      marginTop: 2,
+    },
+    // Grades Screen Styles
+    gradesContainer: {
+      flex: 1,
+    },
+    subjectHeader: {
+      marginBottom: 15,
+    },
+    backToSubjectsButton: {
+      alignSelf: 'flex-start',
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      backgroundColor: '#fff',
+      borderRadius: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+      elevation: 2,
+    },
+    backToSubjectsText: {
+      fontSize: 14,
+      color: '#FF9500',
+      fontWeight: '600',
+    },
+    selectedSubjectTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: '#333',
+      textAlign: 'center',
+    },
+    tabContainer: {
+      flexDirection: 'row',
+      backgroundColor: '#fff',
+      borderRadius: 25,
+      padding: 4,
+      marginBottom: 15,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    tabButton: {
+      flex: 1,
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+      borderRadius: 20,
+      alignItems: 'center',
+    },
+    activeTabButton: {
+      backgroundColor: '#FF9500',
+    },
+    tabButtonText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: '#666',
+    },
+    activeTabButtonText: {
+      color: '#fff',
+    },
+    scrollContainer: {
+      flex: 1,
+    },
+    // Modern Grades Container Styles
+    modernGradesContainer: {
+      flex: 1,
+      width: '100%', // Ensure full width usage
+    },
+    gradesList: {
+      paddingBottom: 20,
+      paddingHorizontal: 2, // Minimal horizontal padding to maximize width usage
+    },
+    gradeSeparator: {
+      height: 12,
+    },
 
-  // Modern Grade Card Styles
-  gradeCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    marginHorizontal: 2, // Minimal horizontal margin for better width usage
-    marginVertical: 6, // Add vertical margin for better spacing in two-column layout
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    flex: 1, // Allow cards to expand in landscape mode
-  },
-  evenGradeCard: {
-    backgroundColor: '#fafafa',
-  },
-  gradeCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 15,
-  },
-  gradeCardLeft: {
-    flex: 1,
-    marginRight: 15,
-  },
-  gradeTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 6,
-  },
-  gradeDate: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 2,
-  },
-  gradeCardRight: {
-    alignItems: 'flex-end',
-  },
-  gradeScoreContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-    minWidth: 80,
-  },
-  gradeScore: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  gradePercentage: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  gradeCardBody: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  gradeDetails: {
-    flex: 1,
-  },
-  gradeDetailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  gradeDetailText: {
-    fontSize: 14,
-    color: '#666',
-    marginLeft: 8,
-  },
-  gradePerformanceContainer: {
-    alignItems: 'flex-end',
-  },
-  gradePerformanceBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  gradePerformanceText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#fff',
-  },
+    // Modern Grade Card Styles
+    gradeCard: {
+      backgroundColor: '#fff',
+      borderRadius: 16,
+      padding: 20,
+      marginHorizontal: 2, // Minimal horizontal margin for better width usage
+      marginVertical: 6, // Add vertical margin for better spacing in two-column layout
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 4,
+      flex: 1, // Allow cards to expand in landscape mode
+    },
+    evenGradeCard: {
+      backgroundColor: '#fafafa',
+    },
+    gradeCardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: 15,
+    },
+    gradeCardLeft: {
+      flex: 1,
+      marginRight: 15,
+    },
+    gradeTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#333',
+      marginBottom: 6,
+    },
+    gradeDate: {
+      fontSize: 14,
+      color: '#666',
+      marginBottom: 2,
+    },
+    gradeCardRight: {
+      alignItems: 'flex-end',
+    },
+    gradeScoreContainer: {
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 12,
+      alignItems: 'center',
+      minWidth: 80,
+    },
+    gradeScore: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      marginBottom: 2,
+    },
+    gradePercentage: {
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    gradeCardBody: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    gradeDetails: {
+      flex: 1,
+    },
+    gradeDetailItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    gradeDetailText: {
+      fontSize: 14,
+      color: '#666',
+      marginLeft: 8,
+    },
+    gradePerformanceContainer: {
+      alignItems: 'flex-end',
+    },
+    gradePerformanceBadge: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+    },
+    gradePerformanceText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: '#fff',
+    },
 
-  // Landscape-specific styles for grade cards
-  landscapeGradeCard: {
-    width: '49%', // Two cards per row with minimal margin for full width usage
-    marginHorizontal: '0.5%',
-  },
-  landscapeGradeTitle: {
-    fontSize: 16, // Slightly smaller for landscape
-  },
-  landscapeScoreContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    minWidth: 70,
-  },
-  landscapeGradeScore: {
-    fontSize: 14,
-  },
-  landscapeGradePercentage: {
-    fontSize: 12,
-  },
-  landscapeDetailText: {
-    fontSize: 12,
-  },
-  landscapePerformanceBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  landscapePerformanceText: {
-    fontSize: 10,
-  },
+    // Landscape-specific styles for grade cards
+    landscapeGradeCard: {
+      width: '49%', // Two cards per row with minimal margin for full width usage
+      marginHorizontal: '0.5%',
+    },
+    landscapeGradeTitle: {
+      fontSize: 16, // Slightly smaller for landscape
+    },
+    landscapeScoreContainer: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      minWidth: 70,
+    },
+    landscapeGradeScore: {
+      fontSize: 14,
+    },
+    landscapeGradePercentage: {
+      fontSize: 12,
+    },
+    landscapeDetailText: {
+      fontSize: 12,
+    },
+    landscapePerformanceBadge: {
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+    },
+    landscapePerformanceText: {
+      fontSize: 10,
+    },
 
-  // Assessment Criteria Styles for Formative Grades
-  assessmentCriteriaContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    maxWidth: 140,
-  },
-  criteriaItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginLeft: 6,
-    marginBottom: 6,
-    minWidth: 40,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  criteriaLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-  },
-  comingSoon: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 40,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  comingSoonText: {
-    fontSize: 16,
-    color: '#666',
-    fontStyle: 'italic',
-  },
-  // Pagination styles
-  paginationSection: {
-    flexShrink: 0, // Prevent pagination from shrinking
-  },
-  landscapePaginationSection: {
-    marginBottom: 20, // Add bottom margin in landscape mode
-  },
-  paginationContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    marginTop: 20,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    minHeight: 60, // Ensure minimum height for pagination
-  },
-  paginationButton: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    backgroundColor: '#FF9500',
-    borderRadius: 20,
-    minWidth: 80,
-    alignItems: 'center',
-  },
-  disabledButton: {
-    backgroundColor: '#ccc',
-  },
-  paginationButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  disabledText: {
-    color: '#999',
-  },
-  pageInfo: {
-    alignItems: 'center',
-  },
-  pageInfoText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  itemsInfoText: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-  },
-});
+    // Assessment Criteria Styles for Formative Grades
+    assessmentCriteriaContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'flex-end',
+      alignItems: 'center',
+      maxWidth: 140,
+    },
+    criteriaItem: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      marginLeft: 6,
+      marginBottom: 6,
+      minWidth: 40,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    criteriaLabel: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: '#fff',
+      textAlign: 'center',
+    },
+    comingSoon: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: '#fff',
+      borderRadius: 10,
+      padding: 40,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    comingSoonText: {
+      fontSize: 16,
+      color: '#666',
+      fontStyle: 'italic',
+    },
+    // Pagination styles
+    paginationSection: {
+      flexShrink: 0, // Prevent pagination from shrinking
+    },
+    landscapePaginationSection: {
+      marginBottom: 20, // Add bottom margin in landscape mode
+    },
+    paginationContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 15,
+      paddingVertical: 12,
+      backgroundColor: '#fff',
+      borderTopWidth: 1,
+      borderTopColor: '#e0e0e0',
+      marginTop: 20,
+      borderRadius: 10,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+      minHeight: 60, // Ensure minimum height for pagination
+    },
+    paginationButton: {
+      paddingHorizontal: 15,
+      paddingVertical: 8,
+      backgroundColor: '#FF9500',
+      borderRadius: 20,
+      minWidth: 80,
+      alignItems: 'center',
+    },
+    disabledButton: {
+      backgroundColor: '#ccc',
+    },
+    paginationButtonText: {
+      color: '#fff',
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    disabledText: {
+      color: '#999',
+    },
+    pageInfo: {
+      alignItems: 'center',
+    },
+    pageInfoText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: '#333',
+    },
+    itemsInfoText: {
+      fontSize: 12,
+      color: '#666',
+      marginTop: 2,
+    },
+  });

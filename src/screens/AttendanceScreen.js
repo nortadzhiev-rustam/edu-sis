@@ -28,8 +28,13 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useScreenOrientation } from '../hooks/useScreenOrientation';
 import { Config, buildApiUrl } from '../config/env';
+import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function AttendanceScreen({ navigation, route }) {
+  const { theme } = useTheme();
+  const { t } = useLanguage();
+
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
   const { studentName, authCode } = route.params || {};
   const [attendance, setAttendance] = useState([]);
@@ -39,6 +44,8 @@ export default function AttendanceScreen({ navigation, route }) {
   // Pagination state for detail views
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+
+  const styles = createStyles(theme);
 
   // Enable rotation for this screen
   useScreenOrientation(true);
@@ -551,7 +558,7 @@ export default function AttendanceScreen({ navigation, route }) {
         >
           <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Attendance</Text>
+        <Text style={styles.headerTitle}>{t('attendance')}</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -586,316 +593,305 @@ export default function AttendanceScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#34C759',
-    padding: 15,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  headerRight: {
-    width: 36,
-  },
-  studentSection: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  studentName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 5,
-  },
-  sectionSubtitle: {
-    fontSize: 16,
-    color: '#666',
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  scrollContainer: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#666',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginTop: 20,
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  tableWithPagination: {
-    flex: 1,
-  },
-  tableSection: {
-    flex: 1,
-  },
-  tableContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  landscapeTableContainer: {
-    minWidth: 700,
-  },
-  tableHeader: {
-    flexDirection: 'row',
-    backgroundColor: '#34C759',
-    paddingVertical: 15,
-    paddingHorizontal: 10,
-  },
-  landscapeTableHeader: {
-    paddingHorizontal: 15,
-  },
-  headerText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  tableBody: {
-    maxHeight: 400,
-  },
-  tableRow: {
-    flexDirection: 'row',
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    alignItems: 'center',
-  },
-  landscapeTableRow: {
-    paddingHorizontal: 15,
-  },
-  cellText: {
-    fontSize: 13,
-    color: '#333',
-    textAlign: 'center',
-  },
-  dateColumn: {
-    flex: 2,
-  },
-  weekdayColumn: {
-    flex: 1.5,
-  },
-  subjectColumn: {
-    flex: 2.5,
-  },
-  periodColumn: {
-    flex: 1,
-  },
-  statusColumn: {
-    flex: 2,
-  },
-  statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statusIcon: {
-    fontSize: 16,
-    marginRight: 5,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  paginationSection: {
-    marginTop: 15,
-  },
-  landscapePaginationSection: {
-    marginTop: 20,
-  },
-  paginationContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  paginationButton: {
-    backgroundColor: '#34C759',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  disabledButton: {
-    backgroundColor: '#ccc',
-  },
-  paginationButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  disabledButtonText: {
-    color: '#999',
-  },
-  paginationInfo: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
-  },
-  // Summary View Styles
-  summaryContainer: {
-    flex: 1,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  statCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    width: '48%',
-    marginBottom: 15,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  totalDaysCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#007AFF',
-  },
-  presentCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#34C759',
-  },
-  absentCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#FF3B30',
-  },
-  lateCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#FF9500',
-  },
-  statNumber: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 5,
-  },
-  statLabel: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '600',
-  },
-  clickHint: {
-    fontSize: 10,
-    color: '#999',
-    marginTop: 5,
-    fontStyle: 'italic',
-  },
-  attendanceRateCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
-    alignItems: 'center',
-  },
-  attendanceRateLabel: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 10,
-  },
-  attendanceRateValue: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#34C759',
-    marginBottom: 15,
-  },
-  progressBar: {
-    width: '100%',
-    height: 8,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#34C759',
-    borderRadius: 4,
-  },
-  backToSummaryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  backToSummaryText: {
-    marginLeft: 8,
-    fontSize: 16,
-    color: '#34C759',
-    fontWeight: '600',
-  },
-});
+const createStyles = (theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    header: {
+      backgroundColor: theme.colors.success,
+      padding: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    backButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    headerTitle: {
+      color: '#fff',
+      fontSize: 20,
+      fontWeight: 'bold',
+    },
+    headerRight: {
+      width: 36,
+    },
+    studentSection: {
+      backgroundColor: theme.colors.surface,
+      padding: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    studentName: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 5,
+    },
+    sectionSubtitle: {
+      fontSize: 16,
+      color: theme.colors.textSecondary,
+    },
+    content: {
+      flex: 1,
+      padding: 20,
+    },
+    scrollContainer: {
+      flex: 1,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      marginTop: 10,
+      fontSize: 16,
+      color: '#666',
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 40,
+    },
+    emptyText: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: '#333',
+      marginTop: 20,
+      marginBottom: 10,
+      textAlign: 'center',
+    },
+    emptySubtext: {
+      fontSize: 14,
+      color: '#666',
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+    tableWithPagination: {
+      flex: 1,
+    },
+    tableSection: {
+      flex: 1,
+    },
+    tableContainer: {
+      backgroundColor: '#fff',
+      borderRadius: 12,
+      overflow: 'hidden',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 3,
+      elevation: 3,
+    },
+    landscapeTableContainer: {
+      minWidth: 700,
+    },
+    tableHeader: {
+      flexDirection: 'row',
+      backgroundColor: '#34C759',
+      paddingVertical: 15,
+      paddingHorizontal: 10,
+    },
+    landscapeTableHeader: {
+      paddingHorizontal: 15,
+    },
+    headerText: {
+      color: '#fff',
+      fontSize: 14,
+      fontWeight: 'bold',
+      textAlign: 'center',
+    },
+    tableBody: {
+      maxHeight: 400,
+    },
+    tableRow: {
+      flexDirection: 'row',
+      paddingVertical: 12,
+      paddingHorizontal: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: '#f0f0f0',
+      alignItems: 'center',
+    },
+    landscapeTableRow: {
+      paddingHorizontal: 15,
+    },
+    cellText: {
+      fontSize: 13,
+      color: '#333',
+      textAlign: 'center',
+    },
+    dateColumn: {
+      flex: 2,
+    },
+    weekdayColumn: {
+      flex: 1.5,
+    },
+    subjectColumn: {
+      flex: 2.5,
+    },
+    periodColumn: {
+      flex: 1,
+    },
+    statusColumn: {
+      flex: 2,
+    },
+    statusContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    statusIcon: {
+      fontSize: 16,
+      marginRight: 5,
+    },
+    statusText: {
+      fontSize: 12,
+      fontWeight: '600',
+    },
+    paginationSection: {
+      marginTop: 15,
+    },
+    landscapePaginationSection: {
+      marginTop: 20,
+    },
+    paginationContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: '#fff',
+      padding: 15,
+      borderRadius: 8,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+      elevation: 2,
+    },
+    paginationButton: {
+      backgroundColor: '#34C759',
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 8,
+    },
+    disabledButton: {
+      backgroundColor: '#ccc',
+    },
+    paginationButtonText: {
+      color: '#fff',
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    disabledButtonText: {
+      color: '#999',
+    },
+    paginationInfo: {
+      fontSize: 14,
+      color: '#666',
+      fontWeight: '500',
+    },
+    // Summary View Styles
+    summaryContainer: {
+      flex: 1,
+    },
+    statsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      marginBottom: 20,
+    },
+    statCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 12,
+      padding: 20,
+      width: '48%',
+      marginBottom: 15,
+      alignItems: 'center',
+      ...theme.shadows.medium,
+    },
+    totalDaysCard: {
+      borderLeftWidth: 4,
+      borderLeftColor: '#007AFF',
+    },
+    presentCard: {
+      borderLeftWidth: 4,
+      borderLeftColor: '#34C759',
+    },
+    absentCard: {
+      borderLeftWidth: 4,
+      borderLeftColor: '#FF3B30',
+    },
+    lateCard: {
+      borderLeftWidth: 4,
+      borderLeftColor: '#FF9500',
+    },
+    statNumber: {
+      fontSize: 32,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 5,
+    },
+    statLabel: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      fontWeight: '600',
+    },
+    clickHint: {
+      fontSize: 10,
+      color: theme.colors.textSecondary,
+      marginTop: 5,
+      fontStyle: 'italic',
+    },
+    attendanceRateCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 12,
+      padding: 20,
+      alignItems: 'center',
+      ...theme.shadows.medium,
+    },
+    attendanceRateLabel: {
+      fontSize: 16,
+      color: theme.colors.textSecondary,
+      marginBottom: 10,
+    },
+    attendanceRateValue: {
+      fontSize: 36,
+      fontWeight: 'bold',
+      color: '#34C759',
+      marginBottom: 15,
+    },
+    progressBar: {
+      width: '100%',
+      height: 8,
+      backgroundColor: theme.colors.border,
+      borderRadius: 4,
+      overflow: 'hidden',
+    },
+    progressFill: {
+      height: '100%',
+      backgroundColor: '#34C759',
+      borderRadius: 4,
+    },
+    backToSummaryButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.colors.surface,
+      padding: 12,
+      borderRadius: 8,
+      marginBottom: 15,
+      ...theme.shadows.small,
+    },
+    backToSummaryText: {
+      marginLeft: 8,
+      fontSize: 16,
+      color: '#34C759',
+      fontWeight: '600',
+    },
+  });

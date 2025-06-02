@@ -16,7 +16,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { Config, buildApiUrl } from '../config/env';
 import {
   faUser,
-  faCog,
   faSignOutAlt,
   faArrowLeft,
   faCalendarAlt,
@@ -29,10 +28,14 @@ import {
   faChevronRight,
 } from '@fortawesome/free-solid-svg-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 export default function TeacherScreen({ route, navigation }) {
+  const { theme } = useTheme();
+  const { t } = useLanguage();
   // Get user data from navigation params or AsyncStorage
   const [userData, setUserData] = useState(route?.params?.userData || {});
   const [loading, setLoading] = useState(true);
@@ -50,12 +53,13 @@ export default function TeacherScreen({ route, navigation }) {
     branches: 0,
   });
 
+  const styles = createStyles(theme);
+
   // Fetch teacher timetable data
   const fetchTeacherTimetable = async () => {
     if (!userData.authCode) return;
 
     try {
-      
       const url = buildApiUrl(Config.API_ENDPOINTS.GET_TEACHER_TIMETABLE, {
         authCode: userData.authCode,
       });
@@ -105,7 +109,6 @@ export default function TeacherScreen({ route, navigation }) {
     if (!userData.authCode) return;
 
     try {
-     
       const url = buildApiUrl(Config.API_ENDPOINTS.GET_TEACHER_BPS, {
         authCode: userData.authCode,
       });
@@ -120,7 +123,7 @@ export default function TeacherScreen({ route, navigation }) {
 
       if (response.ok) {
         const data = await response.json();
-        
+
         setBpsData(data);
 
         // Calculate stats
@@ -236,13 +239,13 @@ export default function TeacherScreen({ route, navigation }) {
   }, [timetableData, bpsData]);
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
+    Alert.alert(t('logout'), 'Are you sure you want to logout?', [
       {
-        text: 'Cancel',
+        text: t('cancel'),
         style: 'cancel',
       },
       {
-        text: 'Logout',
+        text: t('logout'),
         onPress: async () => {
           try {
             // Clear user data from AsyncStorage
@@ -271,7 +274,7 @@ export default function TeacherScreen({ route, navigation }) {
           >
             <FontAwesomeIcon icon={faArrowLeft} size={20} color='#fff' />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Teacher Dashboard</Text>
+          <Text style={styles.headerTitle}>{t('teacherDashboard')}</Text>
         </View>
 
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -282,7 +285,7 @@ export default function TeacherScreen({ route, navigation }) {
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size='large' color='#007AFF' />
-          <Text style={styles.loadingText}>Loading teacher dashboard...</Text>
+          <Text style={styles.loadingText}>{t('loading')}</Text>
         </View>
       ) : (
         <ScrollView
@@ -405,7 +408,7 @@ export default function TeacherScreen({ route, navigation }) {
 
           {/* Quick Actions */}
           <View style={styles.quickActionsContainer}>
-            <Text style={styles.sectionTitle}>Quick Actions</Text>
+            <Text style={styles.sectionTitle}>{t('quickActions')}</Text>
             <View style={styles.actionGrid}>
               <TouchableOpacity
                 style={styles.actionCard}
@@ -429,7 +432,7 @@ export default function TeacherScreen({ route, navigation }) {
                     color='#34C759'
                   />
                 </View>
-                <Text style={styles.actionTitle}>My Timetable</Text>
+                <Text style={styles.actionTitle}>{t('viewTimetable')}</Text>
                 <Text style={styles.actionSubtitle}>
                   View schedule & take attendance
                 </Text>
@@ -460,7 +463,7 @@ export default function TeacherScreen({ route, navigation }) {
                 >
                   <FontAwesomeIcon icon={faGavel} size={24} color='#AF52DE' />
                 </View>
-                <Text style={styles.actionTitle}>BPS Management</Text>
+                <Text style={styles.actionTitle}>{t('manageBPS')}</Text>
                 <Text style={styles.actionSubtitle}>
                   Manage student behavior points
                 </Text>
@@ -475,7 +478,7 @@ export default function TeacherScreen({ route, navigation }) {
 
           {/* Additional Features */}
           <View style={styles.featuresContainer}>
-            <Text style={styles.sectionTitle}>Additional Features</Text>
+            <Text style={styles.sectionTitle}>{t('features')}</Text>
             <View style={styles.featuresList}>
               <TouchableOpacity style={styles.featureItem}>
                 <View
@@ -512,24 +515,6 @@ export default function TeacherScreen({ route, navigation }) {
                   <Text style={styles.featureTitle}>Analytics</Text>
                   <Text style={styles.featureSubtitle}>
                     View teaching performance metrics
-                  </Text>
-                </View>
-                <FontAwesomeIcon icon={faChevronRight} size={16} color='#ccc' />
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.featureItem}>
-                <View
-                  style={[
-                    styles.featureIconContainer,
-                    { backgroundColor: '#5856D615' },
-                  ]}
-                >
-                  <FontAwesomeIcon icon={faCog} size={20} color='#5856D6' />
-                </View>
-                <View style={styles.featureContent}>
-                  <Text style={styles.featureTitle}>Settings</Text>
-                  <Text style={styles.featureSubtitle}>
-                    App preferences and notifications
                   </Text>
                 </View>
                 <FontAwesomeIcon icon={faChevronRight} size={16} color='#ccc' />
@@ -594,325 +579,318 @@ export default function TeacherScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  header: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: 'bold',
-  },
-  logoutButton: {
-    paddingHorizontal: 10,
-  },
+const createStyles = (theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    header: {
+      backgroundColor: theme.colors.headerBackground,
+      padding: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      ...theme.shadows.medium,
+    },
+    headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    headerButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    headerTitle: {
+      color: theme.colors.headerText,
+      fontSize: 22,
+      fontWeight: 'bold',
+    },
+    logoutButton: {
+      paddingHorizontal: 10,
+    },
 
-  // Loading
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-  },
-  loadingText: {
-    marginTop: 15,
-    fontSize: 16,
-    color: '#666',
-    fontWeight: '500',
-  },
+    // Loading
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: theme.colors.background,
+    },
+    loadingText: {
+      marginTop: 15,
+      fontSize: 16,
+      color: theme.colors.textSecondary,
+      fontWeight: '500',
+    },
 
-  // Scroll View
-  scrollView: {
-    flex: 1,
-  },
+    // Scroll View
+    scrollView: {
+      flex: 1,
+    },
 
-  // Teacher Info Header
-  teacherInfoHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    margin: 20,
-    marginBottom: 15,
-    padding: 20,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  teacherInfoLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  photoContainer: {
-    marginRight: 15,
-  },
-  userPhoto: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-  },
-  photoPlaceholder: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  teacherInfoText: {
-    flex: 1,
-  },
-  teacherName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 4,
-  },
-  teacherRole: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
-  },
-  refreshButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f0f9ff',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+    // Teacher Info Header
+    teacherInfoHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: theme.colors.surface,
+      margin: 20,
+      marginBottom: 15,
+      padding: 20,
+      borderRadius: 16,
+      ...theme.shadows.medium,
+    },
+    teacherInfoLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
+    photoContainer: {
+      marginRight: 15,
+    },
+    userPhoto: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+    },
+    photoPlaceholder: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      backgroundColor: theme.colors.border, // Changed from '#f0f0f0'
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    teacherInfoText: {
+      flex: 1,
+    },
+    teacherName: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 4,
+    },
+    teacherRole: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      fontWeight: '500',
+    },
+    refreshButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: theme.colors.surface, // Changed from '#f0f9ff'
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderColor: theme.colors.primary,
+      borderWidth: 1,
+    },
 
-  // Stats Container
-  statsContainer: {
-    marginHorizontal: 20,
-    marginBottom: 25,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 15,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  statCard: {
-    width: (screenWidth - 60) / 2,
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 15,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  statIconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
-    textAlign: 'center',
-  },
+    // Stats Container
+    statsContainer: {
+      marginHorizontal: 20,
+      marginBottom: 25,
+    },
+    sectionTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 15,
+    },
+    statsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+    },
+    statCard: {
+      width: (screenWidth - 60) / 2,
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 15,
+      alignItems: 'center',
+      ...theme.shadows.medium,
+    },
+    statIconContainer: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    statNumber: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: theme.colors.text, // Changed from '#1a1a1a'
+      marginBottom: 4,
+    },
+    statLabel: {
+      fontSize: 14,
+      color: theme.colors.textSecondary, // Changed from '#666'
+      fontWeight: '500',
+      textAlign: 'center',
+    },
 
-  // Quick Actions
-  quickActionsContainer: {
-    marginHorizontal: 20,
-    marginBottom: 25,
-  },
-  actionGrid: {
-    gap: 15,
-  },
-  actionCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  actionIconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  actionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 6,
-  },
-  actionSubtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 12,
-  },
-  actionBadge: {
-    backgroundColor: '#f0f9ff',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    alignSelf: 'flex-start',
-  },
-  actionBadgeText: {
-    fontSize: 12,
-    color: '#0369a1',
-    fontWeight: '600',
-  },
+    // Quick Actions
+    quickActionsContainer: {
+      marginHorizontal: 20,
+      marginBottom: 25,
+    },
+    actionGrid: {
+      gap: 15,
+    },
+    actionCard: {
+      backgroundColor: theme.colors.surface, // Changed from '#fff'
+      borderRadius: 16,
+      padding: 20,
+      shadowColor: theme.colors.shadow, // Changed from '#000'
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    actionIconContainer: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 15,
+    },
+    actionTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: theme.colors.text, // Changed from '#1a1a1a'
+      marginBottom: 6,
+    },
+    actionSubtitle: {
+      fontSize: 14,
+      color: theme.colors.textSecondary, // Changed from '#666'
+      marginBottom: 12,
+    },
+    actionBadge: {
+      backgroundColor: theme.colors.surface, // Changed from '#f0f9ff'
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+      alignSelf: 'flex-start',
+      borderColor: theme.colors.info,
+      borderWidth: 1,
+    },
+    actionBadgeText: {
+      fontSize: 12,
+      color: theme.colors.info, // Changed from '#0369a1'
+      fontWeight: '600',
+    },
 
-  // Features
-  featuresContainer: {
-    marginHorizontal: 20,
-    marginBottom: 25,
-  },
-  featuresList: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  featureIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-  },
-  featureContent: {
-    flex: 1,
-  },
-  featureTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 4,
-  },
-  featureSubtitle: {
-    fontSize: 14,
-    color: '#666',
-  },
+    // Features
+    featuresContainer: {
+      marginHorizontal: 20,
+      marginBottom: 25,
+    },
+    featuresList: {
+      backgroundColor: theme.colors.surface, // Changed from '#fff'
+      borderRadius: 16,
+      shadowColor: theme.colors.shadow, // Changed from '#000'
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    featureItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border, // Changed from '#f0f0f0'
+    },
+    featureIconContainer: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 15,
+    },
+    featureContent: {
+      flex: 1,
+    },
+    featureTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.colors.text, // Changed from '#1a1a1a'
+      marginBottom: 4,
+    },
+    featureSubtitle: {
+      fontSize: 14,
+      color: theme.colors.textSecondary, // Changed from '#666'
+    },
 
-  // Branch Information
-  branchContainer: {
-    marginHorizontal: 20,
-    marginBottom: 25,
-  },
-  branchCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  branchHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  branchIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-  },
-  branchInfo: {
-    flex: 1,
-  },
-  branchName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 4,
-  },
-  branchDetails: {
-    fontSize: 14,
-    color: '#666',
-  },
-  branchStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  branchStat: {
-    alignItems: 'center',
-  },
-  branchStatNumber: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 4,
-  },
-  branchStatLabel: {
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '500',
-  },
-});
+    // Branch Information
+    branchContainer: {
+      marginHorizontal: 20,
+      marginBottom: 25,
+    },
+    branchCard: {
+      backgroundColor: theme.colors.surface, // Changed from '#fff'
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 15,
+      shadowColor: theme.colors.shadow, // Changed from '#000'
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    branchHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 15,
+    },
+    branchIconContainer: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 15,
+    },
+    branchInfo: {
+      flex: 1,
+    },
+    branchName: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: theme.colors.text, // Changed from '#1a1a1a'
+      marginBottom: 4,
+    },
+    branchDetails: {
+      fontSize: 14,
+      color: theme.colors.textSecondary, // Changed from '#666'
+    },
+    branchStats: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+    },
+    branchStat: {
+      alignItems: 'center',
+    },
+    branchStatNumber: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: theme.colors.text, // Changed from '#1a1a1a'
+      marginBottom: 4,
+    },
+    branchStatLabel: {
+      fontSize: 12,
+      color: theme.colors.textSecondary, // Changed from '#666'
+      fontWeight: '500',
+    },
+  });

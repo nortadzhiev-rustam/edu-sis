@@ -22,10 +22,15 @@ import {
   studentLogin,
   saveUserData,
 } from '../services/authService';
+import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen({ route, navigation }) {
+  const { theme } = useTheme();
+  const { t } = useLanguage();
+
   // Get login type from route params or default to teacher
   const routeLoginType = route.params?.loginType;
   const isAddingStudent = route.params?.isAddingStudent || false;
@@ -38,6 +43,8 @@ export default function LoginScreen({ route, navigation }) {
 
   // Login type state (teacher or student)
   const [loginType, setLoginType] = useState(routeLoginType || 'teacher');
+
+  const styles = createStyles(theme);
 
   useEffect(() => {
     // Get device token when component mounts
@@ -66,20 +73,14 @@ export default function LoginScreen({ route, navigation }) {
       return userData;
     } catch (error) {
       setLoading(false);
-      Alert.alert(
-        'Login Error',
-        'An unexpected error occurred. Please try again.'
-      );
+      Alert.alert(t('error'), t('networkError'));
       return null;
     }
   };
 
   const handleLogin = async () => {
     if (!username || !password) {
-      Alert.alert(
-        'Validation Error',
-        'Please enter both username and password'
-      );
+      Alert.alert(t('error'), 'Please enter both username and password');
       return;
     }
 
@@ -109,7 +110,7 @@ export default function LoginScreen({ route, navigation }) {
           );
 
           // Navigate back to parent screen
-          Alert.alert('Success', 'Student account added successfully');
+          Alert.alert(t('success'), 'Student account added successfully');
           navigation.goBack();
         } catch (error) {
           Alert.alert('Error', 'Failed to save student account');
@@ -159,11 +160,8 @@ export default function LoginScreen({ route, navigation }) {
             {isAddingStudent
               ? 'Add Student Account'
               : routeLoginType
-              ? `${
-                  routeLoginType.charAt(0).toUpperCase() +
-                  routeLoginType.slice(1)
-                } Login`
-              : 'Please Login'}
+              ? `${t(routeLoginType)} ${t('login')}`
+              : t('login')}
           </Text>
 
           {/* Login Type Selector - only show if not coming from a specific route */}
@@ -182,7 +180,7 @@ export default function LoginScreen({ route, navigation }) {
                     loginType === 'teacher' && styles.activeLoginTypeText,
                   ]}
                 >
-                  Teacher
+                  {t('teacher')}
                 </Text>
               </TouchableOpacity>
 
@@ -199,7 +197,7 @@ export default function LoginScreen({ route, navigation }) {
                     loginType === 'student' && styles.activeLoginTypeText,
                   ]}
                 >
-                  Student
+                  {t('student')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -208,6 +206,7 @@ export default function LoginScreen({ route, navigation }) {
           <TextInput
             style={styles.input}
             placeholder={loginType === 'teacher' ? 'Teacher ID' : 'Student ID'}
+            placeholderTextColor={theme.colors.textLight}
             value={username}
             onChangeText={setUsername}
             autoCapitalize='none'
@@ -215,7 +214,8 @@ export default function LoginScreen({ route, navigation }) {
 
           <TextInput
             style={styles.input}
-            placeholder='Password'
+            placeholder={t('password')}
+            placeholderTextColor={theme.colors.textLight}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -230,13 +230,13 @@ export default function LoginScreen({ route, navigation }) {
               <ActivityIndicator color='#fff' size='small' />
             ) : (
               <Text style={styles.loginButtonText}>
-                {loginType === 'teacher' ? 'Teacher Login' : 'Student Login'}
+                {`${t(loginType)} ${t('login')}`}
               </Text>
             )}
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.forgotPassword}>
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            <Text style={styles.forgotPasswordText}>{t('forgotPassword')}</Text>
           </TouchableOpacity>
         </Animated.View>
       </ScrollView>
@@ -244,104 +244,109 @@ export default function LoginScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  scrollContainer: {
-    flexGrow: 1,
-    alignItems: 'center',
-  },
-  backButton: {
-    position: 'absolute',
-    top: 40,
-    left: 20,
-    zIndex: 10,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  logo: {
-    width: width * 0.3,
-    height: height * 0.15,
-    marginTop: height * 0.1,
-  },
-  formContainer: {
-    width: '100%',
-    paddingHorizontal: 30,
-    marginTop: height * 0.05,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 30,
-    textAlign: 'center',
-    fontFamily: Platform.OS === 'ios' ? 'Helvetica Neue' : 'sans-serif',
-  },
-  input: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
-    marginBottom: 15,
-    paddingHorizontal: 15,
-    fontSize: 16,
-  },
-  loginButton: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#007AFF',
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 15,
-  },
-  loginButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  forgotPassword: {
-    marginTop: 15,
-    alignItems: 'center',
-  },
-  forgotPasswordText: {
-    color: '#007AFF',
-    fontSize: 14,
-  },
-  loginTypeContainer: {
-    flexDirection: 'row',
-    marginBottom: 20,
-    borderRadius: 10,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  loginTypeButton: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-  },
-  activeLoginType: {
-    backgroundColor: '#007AFF',
-  },
-  loginTypeText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#666',
-  },
-  activeLoginTypeText: {
-    color: '#fff',
-  },
-});
+const createStyles = (theme) =>
+  StyleSheet.create({
+    scrollContainer: {
+      flexGrow: 1,
+      alignItems: 'center',
+    },
+    backButton: {
+      position: 'absolute',
+      top: 40,
+      left: 20,
+      zIndex: 10,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: 'rgba(255, 255, 255, 0.8)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 3,
+      elevation: 2,
+    },
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    logo: {
+      width: width * 0.3,
+      height: height * 0.15,
+      marginTop: height * 0.1,
+    },
+    formContainer: {
+      width: '100%',
+      paddingHorizontal: 30,
+      marginTop: height * 0.05,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: '600',
+      color: theme.colors.text,
+      marginBottom: 30,
+      textAlign: 'center',
+      fontFamily: Platform.OS === 'ios' ? 'Helvetica Neue' : 'sans-serif',
+    },
+    input: {
+      width: '100%',
+      height: 50,
+      backgroundColor: theme.colors.surface,
+      borderRadius: 10,
+      marginBottom: 15,
+      paddingHorizontal: 15,
+      fontSize: 16,
+      color: theme.colors.text,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    loginButton: {
+      width: '100%',
+      height: 50,
+      backgroundColor: theme.colors.primary,
+      borderRadius: 10,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginTop: 15,
+      ...theme.shadows.small,
+    },
+    loginButtonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    forgotPassword: {
+      marginTop: 15,
+      alignItems: 'center',
+    },
+    forgotPasswordText: {
+      color: theme.colors.primary,
+      fontSize: 14,
+    },
+    loginTypeContainer: {
+      flexDirection: 'row',
+      marginBottom: 20,
+      borderRadius: 10,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    loginTypeButton: {
+      flex: 1,
+      paddingVertical: 12,
+      alignItems: 'center',
+      backgroundColor: theme.colors.surface,
+    },
+    activeLoginType: {
+      backgroundColor: theme.colors.primary,
+    },
+    loginTypeText: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: theme.colors.textSecondary,
+    },
+    activeLoginTypeText: {
+      color: '#fff',
+    },
+  });

@@ -38,8 +38,13 @@ import {
   faBook,
 } from '@fortawesome/free-solid-svg-icons';
 import timetableData from '../data/dummyTimetable.json';
+import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function TimetableScreen({ navigation, route }) {
+  const { theme } = useTheme();
+  const { t } = useLanguage();
+
   const [timetable, setTimetable] = useState(null);
   const [availableDays, setAvailableDays] = useState([
     'Monday',
@@ -49,6 +54,8 @@ export default function TimetableScreen({ navigation, route }) {
     'Friday',
   ]);
   const { authCode } = route.params || {};
+
+  const styles = createStyles(theme);
 
   // Enable rotation for this screen (optional - you can remove this if you want timetable to stay portrait)
   // useScreenOrientation(true);
@@ -496,7 +503,7 @@ export default function TimetableScreen({ navigation, route }) {
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <FontAwesomeIcon icon={faCalendarAlt} size={20} color='#fff' />
-          <Text style={styles.headerTitle}>Timetable</Text>
+          <Text style={styles.headerTitle}>{t('timetable')}</Text>
         </View>
         <View style={styles.headerRight} />
       </View>
@@ -566,281 +573,270 @@ export default function TimetableScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  header: {
-    backgroundColor: '#AF52DE',
-    padding: 15,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerCenter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginLeft: 10,
-  },
-  headerRight: {
-    width: 40,
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
+const createStyles = (theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    header: {
+      backgroundColor: theme.colors.secondary,
+      padding: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      ...theme.shadows.small,
+    },
+    backButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    headerCenter: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      justifyContent: 'center',
+    },
+    headerTitle: {
+      color: '#fff',
+      fontSize: 22,
+      fontWeight: 'bold',
+      marginLeft: 10,
+    },
+    headerRight: {
+      width: 40,
+    },
+    content: {
+      flex: 1,
+      padding: 20,
+    },
 
-  // Modern Day Header
-  modernDayHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 25,
-    paddingHorizontal: 5,
-  },
-  dayHeaderLeft: {
-    flex: 1,
-  },
-  modernDayTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 4,
-  },
-  daySubtitle: {
-    fontSize: 16,
-    color: '#666',
-    fontWeight: '500',
-  },
-  dayHeaderRight: {
-    alignItems: 'flex-end',
-  },
-  scheduleIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f0f9ff',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  scheduleIndicatorText: {
-    fontSize: 14,
-    color: '#0369a1',
-    fontWeight: '600',
-    marginLeft: 6,
-  },
+    // Modern Day Header
+    modernDayHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 25,
+      paddingHorizontal: 5,
+    },
+    dayHeaderLeft: {
+      flex: 1,
+    },
+    modernDayTitle: {
+      fontSize: 32,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 4,
+    },
+    daySubtitle: {
+      fontSize: 16,
+      color: theme.colors.textSecondary,
+      fontWeight: '500',
+    },
+    dayHeaderRight: {
+      alignItems: 'flex-end',
+    },
+    scheduleIndicator: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.colors.primaryLight,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+    },
+    scheduleIndicatorText: {
+      fontSize: 14,
+      color: theme.colors.primary,
+      fontWeight: '600',
+      marginLeft: 6,
+    },
 
-  // Modern Schedule Container
-  modernScheduleContainer: {
-    flex: 1,
-  },
-  modernScheduleList: {
-    paddingBottom: 20,
-  },
+    // Modern Schedule Container
+    modernScheduleContainer: {
+      flex: 1,
+    },
+    modernScheduleList: {
+      paddingBottom: 20,
+    },
 
-  // Timeline Styles
-  modernTimeSlotContainer: {
-    flexDirection: 'row',
-    marginBottom: 20,
-    alignItems: 'flex-start',
-  },
-  timelineContainer: {
-    alignItems: 'center',
-    marginRight: 20,
-    width: 60,
-  },
-  timelineDot: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  periodNumber: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  timelineLine: {
-    width: 3,
-    height: 40,
-    backgroundColor: '#e5e7eb',
-    marginTop: 10,
-  },
+    // Timeline Styles
+    modernTimeSlotContainer: {
+      flexDirection: 'row',
+      marginBottom: 20,
+      alignItems: 'flex-start',
+    },
+    timelineContainer: {
+      alignItems: 'center',
+      marginRight: 20,
+      width: 60,
+    },
+    timelineDot: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    periodNumber: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: '#fff',
+    },
+    timelineLine: {
+      width: 3,
+      height: 40,
+      backgroundColor: theme.colors.border,
+      marginTop: 10,
+    },
 
-  // Modern Subject Card
-  modernSubjectCard: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    borderLeftWidth: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  subjectCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 15,
-  },
-  subjectInfo: {
-    flex: 1,
-    marginRight: 15,
-  },
-  modernSubjectText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 8,
-  },
-  teacherRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  modernTeacherText: {
-    fontSize: 14,
-    color: '#666',
-    marginLeft: 6,
-    fontWeight: '500',
-  },
-  periodBadgeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  periodBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  subjectCardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  subjectIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  periodLabel: {
-    fontSize: 12,
-    color: '#999',
-    fontWeight: '600',
-  },
+    // Modern Subject Card
+    modernSubjectCard: {
+      flex: 1,
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      padding: 20,
+      borderLeftWidth: 4,
+      ...theme.shadows.medium,
+    },
+    subjectCardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: 15,
+    },
+    subjectInfo: {
+      flex: 1,
+      marginRight: 15,
+    },
+    modernSubjectText: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 8,
+    },
+    teacherRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    modernTeacherText: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      marginLeft: 6,
+      fontWeight: '500',
+    },
+    periodBadgeContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    periodBadge: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 8,
+    },
+    subjectCardFooter: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    subjectIconContainer: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    periodLabel: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      fontWeight: '600',
+    },
 
-  // Modern Day Tabs
-  bottomTabsContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 10,
-  },
-  modernDayTab: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: 20,
-    marginHorizontal: 4,
-    position: 'relative',
-  },
-  selectedModernDayTab: {
-    backgroundColor: '#AF52DE',
-    shadowColor: '#AF52DE',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  dayTabIndicator: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'transparent',
-    marginBottom: 6,
-  },
-  selectedDayTabIndicator: {
-    backgroundColor: '#fff',
-  },
-  modernDayTabText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#8E8E93',
-  },
-  selectedModernDayTabText: {
-    color: '#fff',
-    fontWeight: '700',
-  },
-  dayTabGlow: {
-    position: 'absolute',
-    top: -2,
-    left: -2,
-    right: -2,
-    bottom: -2,
-    borderRadius: 22,
-    backgroundColor: 'rgba(175, 82, 222, 0.2)',
-    zIndex: -1,
-  },
+    // Modern Day Tabs
+    bottomTabsContainer: {
+      flexDirection: 'row',
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 20,
+      paddingVertical: 20,
+      borderTopLeftRadius: 30,
+      borderTopRightRadius: 30,
+      ...theme.shadows.large,
+    },
+    modernDayTab: {
+      flex: 1,
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 8,
+      borderRadius: 20,
+      marginHorizontal: 4,
+      position: 'relative',
+    },
+    selectedModernDayTab: {
+      backgroundColor: '#AF52DE',
+      shadowColor: '#AF52DE',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 6,
+    },
+    dayTabIndicator: {
+      width: 4,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: 'transparent',
+      marginBottom: 6,
+    },
+    selectedDayTabIndicator: {
+      backgroundColor: '#fff',
+    },
+    modernDayTabText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: theme.colors.textSecondary,
+    },
+    selectedModernDayTabText: {
+      color: '#fff',
+      fontWeight: '700',
+    },
+    dayTabGlow: {
+      position: 'absolute',
+      top: -2,
+      left: -2,
+      right: -2,
+      bottom: -2,
+      borderRadius: 22,
+      backgroundColor: 'rgba(175, 82, 222, 0.2)',
+      zIndex: -1,
+    },
 
-  // Empty State
-  emptyScheduleContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 60,
-  },
-  emptyScheduleText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#666',
-    marginTop: 20,
-    marginBottom: 8,
-  },
-  emptyScheduleSubtext: {
-    fontSize: 16,
-    color: '#999',
-    textAlign: 'center',
-  },
-});
+    // Empty State
+    emptyScheduleContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: 60,
+    },
+    emptyScheduleText: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: theme.colors.textSecondary,
+      marginTop: 20,
+      marginBottom: 8,
+    },
+    emptyScheduleSubtext: {
+      fontSize: 16,
+      color: theme.colors.textSecondary,
+      textAlign: 'center',
+    },
+  });

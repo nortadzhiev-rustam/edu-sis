@@ -24,8 +24,12 @@ import {
   faChevronRight,
   faChevronLeft,
 } from '@fortawesome/free-solid-svg-icons';
+import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function BehaviorScreen({ navigation, route }) {
+  const { theme } = useTheme();
+  const { t } = useLanguage();
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
   const { authCode } = route.params || {};
   const [behaviorData, setBehaviorData] = useState([]);
@@ -36,6 +40,7 @@ export default function BehaviorScreen({ navigation, route }) {
   const [selectedBehaviorType, setSelectedBehaviorType] = useState(null); // 'PRS', 'DPS'
 
   const isLandscape = screenData.width > screenData.height;
+  const styles = createStyles(theme);
 
   useEffect(() => {
     const subscription = Dimensions.addEventListener('change', ({ window }) => {
@@ -411,7 +416,7 @@ export default function BehaviorScreen({ navigation, route }) {
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <FontAwesomeIcon icon={faGavel} size={20} color='#fff' />
-          <Text style={styles.headerTitle}>Behavior Points</Text>
+          <Text style={styles.headerTitle}>{t('behaviorPoints')}</Text>
         </View>
         <View style={styles.headerRight} />
       </View>
@@ -420,7 +425,7 @@ export default function BehaviorScreen({ navigation, route }) {
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size='large' color='#5856D6' />
-            <Text style={styles.loadingText}>Loading behavior data...</Text>
+            <Text style={styles.loadingText}>{t('loading')}</Text>
           </View>
         ) : selectedView === 'summary' ? (
           <ScrollView
@@ -451,7 +456,7 @@ export default function BehaviorScreen({ navigation, route }) {
                     size={24}
                     color='#007AFF'
                   />
-                  <Text style={styles.summaryTitle}>Total Records</Text>
+                  <Text style={styles.summaryTitle}>{t('totalRecords')}</Text>
                 </View>
                 <Text style={styles.summaryValue}>{behaviorData.length}</Text>
               </View>
@@ -459,7 +464,7 @@ export default function BehaviorScreen({ navigation, route }) {
 
             {/* Behavior Points Cards */}
             <View style={styles.behaviorContainer}>
-              <Text style={styles.sectionTitle}>Behavior Points</Text>
+              <Text style={styles.sectionTitle}>{t('behaviorPoints')}</Text>
               <View style={styles.behaviorGrid}>
                 <TouchableOpacity
                   style={styles.behaviorCard}
@@ -824,574 +829,556 @@ export default function BehaviorScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#5856D6',
-    padding: 15,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerCenter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-  headerRight: {
-    width: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    flex: 1,
-    padding: 15,
-  },
-  landscapeContent: {
-    paddingHorizontal: 20,
-  },
-  scrollContainer: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#666',
-  },
+const createStyles = (theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    header: {
+      backgroundColor: theme.colors.headerBackground,
+      padding: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    backButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    headerCenter: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      justifyContent: 'center',
+    },
+    headerTitle: {
+      color: theme.colors.headerText,
+      fontSize: 20,
+      fontWeight: 'bold',
+      marginLeft: 8,
+    },
+    headerRight: {
+      width: 36,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    content: {
+      flex: 1,
+      padding: 15,
+    },
+    landscapeContent: {
+      paddingHorizontal: 20,
+    },
+    scrollContainer: {
+      flex: 1,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      marginTop: 10,
+      fontSize: 16,
+      color: '#666',
+    },
 
-  // Summary Cards
-  summaryContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  summaryCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    width: '48%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  summaryHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  summaryTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginLeft: 5,
-  },
-  summaryValue: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
+    // Summary Cards
+    summaryContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 20,
+    },
+    summaryCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      padding: 20,
+      width: '48%',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    summaryHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    summaryTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.colors.text,
+      marginLeft: 5,
+    },
+    summaryValue: {
+      fontSize: 32,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      color: theme.colors.text,
+    },
 
-  // Statistics
-  statsContainer: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 15,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '600',
-  },
+    // Statistics
+    statsContainer: {
+      marginBottom: 20,
+    },
+    sectionTitle: {
+      fontSize: 22,
+      fontWeight: 'bold',
+      color: '#333',
+      marginBottom: 15,
+    },
+    statsGrid: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      backgroundColor: '#fff',
+      borderRadius: 16,
+      padding: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    statItem: {
+      alignItems: 'center',
+    },
+    statBadge: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    statNumber: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: '#333',
+      marginBottom: 4,
+    },
+    statLabel: {
+      fontSize: 12,
+      color: '#666',
+      fontWeight: '600',
+    },
 
-  // Records
-  recordsContainer: {
-    marginBottom: 20,
-  },
+    // Records
+    recordsContainer: {
+      marginBottom: 20,
+    },
 
-  // Behavior Cards
-  behaviorCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  evenCard: {
-    backgroundColor: '#fafafa',
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 15,
-  },
-  cardLeft: {
-    flexDirection: 'row',
-    flex: 1,
-    marginRight: 15,
-  },
-  typeIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  cardInfo: {
-    flex: 1,
-  },
-  cardReason: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  cardDate: {
-    fontSize: 14,
-    color: '#666',
-  },
-  cardRight: {
-    alignItems: 'flex-end',
-  },
-  pointsBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    minWidth: 50,
-    alignItems: 'center',
-  },
-  pointsText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  cardBody: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  cardDetails: {
-    flex: 1,
-  },
-  cardDetailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  cardDetailText: {
-    fontSize: 14,
-    color: '#666',
-    marginLeft: 8,
-  },
-  cardTypeContainer: {
-    alignItems: 'flex-end',
-  },
-  typeBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  typeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#fff',
-  },
+    // Behavior Cards
+    behaviorCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 15,
+      ...theme.shadows.medium,
+    },
+    evenCard: {
+      backgroundColor: theme.colors.surfaceVariant,
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: 15,
+    },
+    cardLeft: {
+      flexDirection: 'row',
+      flex: 1,
+      marginRight: 15,
+    },
+    typeIconContainer: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    cardInfo: {
+      flex: 1,
+    },
+    cardReason: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 4,
+    },
+    cardDate: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+    },
+    cardRight: {
+      alignItems: 'flex-end',
+    },
+    pointsBadge: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 12,
+      minWidth: 50,
+      alignItems: 'center',
+    },
+    pointsText: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: '#fff',
+    },
+    cardBody: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    cardDetails: {
+      flex: 1,
+    },
+    cardDetailItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    cardDetailText: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      marginLeft: 8,
+    },
+    cardTypeContainer: {
+      alignItems: 'flex-end',
+    },
+    typeBadge: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+    },
+    typeText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: '#fff',
+    },
 
-  // Empty State
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-    paddingVertical: 60,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginTop: 20,
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
+    // Empty State
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 40,
+      paddingVertical: 60,
+    },
+    emptyText: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: theme.colors.text,
+      marginTop: 20,
+      marginBottom: 10,
+      textAlign: 'center',
+    },
+    emptySubtext: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
 
-  // Pagination
-  paginationContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 20,
-    paddingHorizontal: 10,
-  },
-  paginationButton: {
-    backgroundColor: '#5856D6',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  disabledButton: {
-    backgroundColor: '#ccc',
-  },
-  paginationButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  disabledButtonText: {
-    color: '#999',
-  },
-  paginationInfo: {
-    fontSize: 16,
-    color: '#333',
-    fontWeight: '600',
-  },
+    // Pagination
+    paginationContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 20,
+      paddingHorizontal: 10,
+    },
+    paginationButton: {
+      backgroundColor: '#5856D6',
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 8,
+    },
+    disabledButton: {
+      backgroundColor: '#ccc',
+    },
+    paginationButtonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    disabledButtonText: {
+      color: '#999',
+    },
+    paginationInfo: {
+      fontSize: 16,
+      color: theme.colors.text,
+      fontWeight: '600',
+    },
 
-  // Behavior Styles
-  behaviorContainer: {
-    marginBottom: 20,
-  },
-  behaviorGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  behaviorCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    width: '48%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  behaviorCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  behaviorIconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  behaviorCardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  behaviorCardNumber: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  behaviorCardSubtext: {
-    fontSize: 12,
-    color: '#666',
-  },
+    // Behavior Styles
+    behaviorContainer: {
+      marginBottom: 20,
+    },
+    behaviorGrid: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    behaviorCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      padding: 20,
+      width: '48%',
+      ...theme.shadows.medium,
+    },
+    behaviorCardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 15,
+    },
+    behaviorIconContainer: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    behaviorCardTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 8,
+    },
+    behaviorCardNumber: {
+      fontSize: 32,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 4,
+    },
+    behaviorCardSubtext: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+    },
 
-  // Behavior Detail Styles
-  behaviorDetailContainer: {
-    flex: 1,
-  },
-  behaviorDetailHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    marginBottom: 15,
-  },
-  behaviorBackButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 15,
-  },
-  behaviorBackText: {
-    fontSize: 16,
-    color: '#5856D6',
-    marginLeft: 5,
-  },
-  behaviorDetailTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  behaviorDetailScroll: {
-    flex: 1,
-  },
-  behaviorDetailCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  behaviorDetailCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 15,
-  },
-  behaviorDetailLeft: {
-    flex: 1,
-    marginRight: 15,
-  },
-  behaviorDetailItemTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  behaviorDetailDate: {
-    fontSize: 14,
-    color: '#666',
-  },
-  behaviorPointsBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    minWidth: 50,
-    alignItems: 'center',
-  },
-  behaviorPointsText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  behaviorDetailBody: {
-    gap: 12,
-  },
-  behaviorDetailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  behaviorDetailLabel: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '600',
-    flex: 1,
-  },
-  behaviorDetailValue: {
-    fontSize: 14,
-    color: '#333',
-    flex: 2,
-    textAlign: 'right',
-  },
+    // Behavior Detail Styles
+    behaviorDetailContainer: {
+      flex: 1,
+    },
+    behaviorDetailHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingBottom: 15,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+      marginBottom: 15,
+    },
+    behaviorBackButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginRight: 15,
+    },
+    behaviorBackText: {
+      fontSize: 16,
+      color: '#5856D6',
+      marginLeft: 5,
+    },
+    behaviorDetailTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+    },
+    behaviorDetailScroll: {
+      flex: 1,
+    },
+    behaviorDetailCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 15,
+      ...theme.shadows.medium,
+    },
+    behaviorDetailCardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: 15,
+    },
+    behaviorDetailLeft: {
+      flex: 1,
+      marginRight: 15,
+    },
+    behaviorDetailItemTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 4,
+    },
+    behaviorDetailDate: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+    },
+    behaviorPointsBadge: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 12,
+      minWidth: 50,
+      alignItems: 'center',
+    },
+    behaviorPointsText: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: '#fff',
+    },
+    behaviorDetailBody: {
+      gap: 12,
+    },
+    behaviorDetailRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+    },
+    behaviorDetailLabel: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      fontWeight: '600',
+      flex: 1,
+    },
+    behaviorDetailValue: {
+      fontSize: 14,
+      color: theme.colors.text,
+      flex: 2,
+      textAlign: 'right',
+    },
 
-  // Detention Styles
-  detentionContainer: {
-    marginBottom: 20,
-  },
-  detentionGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  detentionCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    width: '48%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  detentionCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  detentionIconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  detentionCardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  detentionCardNumber: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  detentionCardSubtext: {
-    fontSize: 12,
-    color: '#666',
-  },
+    // Detention Styles
+    detentionContainer: {
+      marginBottom: 20,
+    },
+    detentionGrid: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    detentionCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      padding: 20,
+      width: '48%',
+      ...theme.shadows.medium,
+    },
+    detentionCardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 15,
+    },
+    detentionIconContainer: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    detentionCardTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 8,
+    },
+    detentionCardNumber: {
+      fontSize: 32,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 4,
+    },
+    detentionCardSubtext: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+    },
 
-  // Detention Detail Styles
-  detentionDetailContainer: {
-    flex: 1,
-  },
-  detentionDetailHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    marginBottom: 15,
-  },
-  detentionBackButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 15,
-  },
-  detentionBackText: {
-    fontSize: 16,
-    color: '#5856D6',
-    marginLeft: 5,
-  },
-  detentionDetailTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  detentionDetailScroll: {
-    flex: 1,
-  },
-  detentionDetailCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  detentionDetailCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 15,
-  },
-  detentionDetailLeft: {
-    flex: 1,
-    marginRight: 15,
-  },
-  detentionDetailItemTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  detentionDetailDate: {
-    fontSize: 14,
-    color: '#666',
-  },
-  detentionStatusBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  detentionDetailBody: {
-    gap: 12,
-  },
-  detentionDetailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  detentionDetailLabel: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '600',
-    flex: 1,
-  },
-  detentionDetailValue: {
-    fontSize: 14,
-    color: '#333',
-    flex: 2,
-    textAlign: 'right',
-  },
-});
+    // Detention Detail Styles
+    detentionDetailContainer: {
+      flex: 1,
+    },
+    detentionDetailHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingBottom: 15,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+      marginBottom: 15,
+    },
+    detentionBackButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginRight: 15,
+    },
+    detentionBackText: {
+      fontSize: 16,
+      color: '#5856D6',
+      marginLeft: 5,
+    },
+    detentionDetailTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+    },
+    detentionDetailScroll: {
+      flex: 1,
+    },
+    detentionDetailCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 15,
+      ...theme.shadows.medium,
+    },
+    detentionDetailCardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: 15,
+    },
+    detentionDetailLeft: {
+      flex: 1,
+      marginRight: 15,
+    },
+    detentionDetailItemTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 4,
+    },
+    detentionDetailDate: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+    },
+    detentionStatusBadge: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    detentionDetailBody: {
+      gap: 12,
+    },
+    detentionDetailRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+    },
+    detentionDetailLabel: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      fontWeight: '600',
+      flex: 1,
+    },
+    detentionDetailValue: {
+      fontSize: 14,
+      color: theme.colors.text,
+      flex: 2,
+      textAlign: 'right',
+    },
+  });

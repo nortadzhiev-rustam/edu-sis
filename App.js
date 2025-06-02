@@ -20,6 +20,9 @@ import AssignmentsScreen from './src/screens/AssignmentsScreen';
 import BehaviorScreen from './src/screens/BehaviorScreen';
 import WebViewScreen from './src/screens/WebViewScreen';
 import WebViewWithAuth from './src/screens/WebViewWithAuth';
+import SettingsScreen from './src/screens/SettingsScreen';
+import { ThemeProvider } from './src/contexts/ThemeContext';
+import { LanguageProvider } from './src/contexts/LanguageContext';
 import {
   requestUserPermission,
   notificationListener,
@@ -94,31 +97,48 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
-        <StatusBar style='auto' />
-        <Stack.Navigator
-          initialRouteName='Home'
-          screenOptions={{ headerShown: false }}
-        >
-          <Stack.Screen name='Home' component={HomeScreen} />
-          <Stack.Screen name='Login' component={LoginScreen} />
-          <Stack.Screen name='TeacherScreen' component={TeacherScreen} />
-          <Stack.Screen name='TeacherTimetable' component={TeacherTimetable} />
-          <Stack.Screen name='TeacherBPS' component={TeacherBPS} />
-          <Stack.Screen name='ParentScreen' component={ParentScreen} />
-          <Stack.Screen name='TimetableScreen' component={TimetableScreen} />
-          <Stack.Screen name='GradesScreen' component={GradesScreen} />
-          <Stack.Screen name='AttendanceScreen' component={AttendanceScreen} />
-          <Stack.Screen
-            name='AssignmentsScreen'
-            component={AssignmentsScreen}
-          />
-          <Stack.Screen name='BehaviorScreen' component={BehaviorScreen} />
-          <Stack.Screen name='WebView' component={WebViewScreen} />
-          <Stack.Screen name='WebViewWithAuth' component={WebViewWithAuth} />
-        </Stack.Navigator>
-        {/* <DevTokenDisplay /> */}
-      </NavigationContainer>
+      <ThemeProvider>
+        <LanguageProvider>
+          <NavigationContainer>
+            <StatusBar style='auto' />
+            <Stack.Navigator
+              initialRouteName='Home'
+              screenOptions={{ headerShown: false }}
+            >
+              <Stack.Screen name='Home' component={HomeScreen} />
+              <Stack.Screen name='Login' component={LoginScreen} />
+              <Stack.Screen name='TeacherScreen' component={TeacherScreen} />
+              <Stack.Screen
+                name='TeacherTimetable'
+                component={TeacherTimetable}
+              />
+              <Stack.Screen name='TeacherBPS' component={TeacherBPS} />
+              <Stack.Screen name='ParentScreen' component={ParentScreen} />
+              <Stack.Screen
+                name='TimetableScreen'
+                component={TimetableScreen}
+              />
+              <Stack.Screen name='GradesScreen' component={GradesScreen} />
+              <Stack.Screen
+                name='AttendanceScreen'
+                component={AttendanceScreen}
+              />
+              <Stack.Screen
+                name='AssignmentsScreen'
+                component={AssignmentsScreen}
+              />
+              <Stack.Screen name='BehaviorScreen' component={BehaviorScreen} />
+              <Stack.Screen name='SettingsScreen' component={SettingsScreen} />
+              <Stack.Screen name='WebView' component={WebViewScreen} />
+              <Stack.Screen
+                name='WebViewWithAuth'
+                component={WebViewWithAuth}
+              />
+            </Stack.Navigator>
+            {/* <DevTokenDisplay /> */}
+          </NavigationContainer>
+        </LanguageProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

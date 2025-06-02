@@ -43,14 +43,20 @@ import {
   faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons';
 import { useScreenOrientation } from '../hooks/useScreenOrientation';
+import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function AssignmentsScreen({ navigation, route }) {
+  const { theme } = useTheme();
+  const { t } = useLanguage();
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
   const { studentName, authCode } = route.params || {};
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [showCompleted, setShowCompleted] = useState(false);
+
+  const styles = createStyles(theme);
 
   // Enable rotation for this screen
   useScreenOrientation(true);
@@ -710,311 +716,300 @@ export default function AssignmentsScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  headerRight: {
-    width: 36,
-  },
-  studentSection: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  studentName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 5,
-  },
-  sectionSubtitle: {
-    fontSize: 16,
-    color: '#666',
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  scrollContainer: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#666',
-  },
-  // Empty state styles
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginTop: 20,
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  // Subjects view styles
-  subjectsContainer: {
-    flex: 1,
-  },
-  subjectsGrid: {
-    alignItems: 'center',
-    width: '100%',
-    paddingHorizontal: 10,
-  },
+const createStyles = (theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    header: {
+      backgroundColor: theme.colors.primary,
+      padding: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    backButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    headerTitle: {
+      color: '#fff',
+      fontSize: 20,
+      fontWeight: 'bold',
+    },
+    headerRight: {
+      width: 36,
+    },
+    studentSection: {
+      backgroundColor: theme.colors.surface,
+      padding: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    studentName: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 5,
+    },
+    sectionSubtitle: {
+      fontSize: 16,
+      color: theme.colors.textSecondary,
+    },
+    content: {
+      flex: 1,
+      padding: 20,
+    },
+    scrollContainer: {
+      flex: 1,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      marginTop: 10,
+      fontSize: 16,
+      color: theme.colors.textSecondary,
+    },
+    // Empty state styles
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 40,
+    },
+    emptyText: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: theme.colors.text,
+      marginTop: 20,
+      marginBottom: 10,
+      textAlign: 'center',
+    },
+    emptySubtext: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+    // Subjects view styles
+    subjectsContainer: {
+      flex: 1,
+    },
+    subjectsGrid: {
+      alignItems: 'center',
+      width: '100%',
+      paddingHorizontal: 10,
+    },
 
-  // Modern Subject Card Styles (similar to GradesScreen)
-  modernSubjectCard: {
-    backgroundColor: '#fff',
-    width: '100%',
-    marginVertical: 8,
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    borderLeftWidth: 4,
-  },
-  subjectCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 15,
-  },
-  subjectIconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-  },
-  subjectInfo: {
-    flex: 1,
-  },
-  modernSubjectTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  subjectAssignmentCount: {
-    fontSize: 14,
-    color: '#666',
-  },
+    // Modern Subject Card Styles (similar to GradesScreen)
+    modernSubjectCard: {
+      backgroundColor: theme.colors.surface,
+      width: '100%',
+      marginVertical: 8,
+      borderRadius: 16,
+      padding: 20,
+      borderLeftWidth: 4,
+      ...theme.shadows.medium,
+    },
+    subjectCardHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 15,
+    },
+    subjectIconContainer: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 15,
+    },
+    subjectInfo: {
+      flex: 1,
+    },
+    modernSubjectTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 4,
+    },
+    subjectAssignmentCount: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+    },
 
-  // Modern Stats Styles
-  modernSubjectStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
-  modernStatItem: {
-    alignItems: 'center',
-  },
-  statBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  statBadgeText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  modernStatLabel: {
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '600',
-  },
-  // Assignments view styles
-  assignmentsContainer: {
-    flex: 1,
-  },
-  assignmentsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  backToSubjectsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  backToSubjectsText: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-  filterButton: {
-    backgroundColor: '#f0f0f0',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  filterButtonActive: {
-    backgroundColor: '#007AFF',
-  },
-  filterButtonText: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '600',
-  },
-  filterButtonTextActive: {
-    color: '#fff',
-  },
-  selectedSubjectTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  emptyAssignmentsContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyAssignmentsText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-  },
-  assignmentsList: {
-    flex: 1,
-  },
+    // Modern Stats Styles
+    modernSubjectStats: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      alignItems: 'center',
+    },
+    modernStatItem: {
+      alignItems: 'center',
+    },
+    statBadge: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    statBadgeText: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: '#fff',
+    },
+    modernStatLabel: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      fontWeight: '600',
+    },
+    // Assignments view styles
+    assignmentsContainer: {
+      flex: 1,
+    },
+    assignmentsHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    backToSubjectsButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 15,
+      paddingVertical: 10,
+      borderRadius: 20,
+      ...theme.shadows.small,
+    },
+    backToSubjectsText: {
+      marginLeft: 8,
+      fontSize: 14,
+      color: '#007AFF',
+      fontWeight: '600',
+    },
+    filterButton: {
+      backgroundColor: '#f0f0f0',
+      paddingHorizontal: 15,
+      paddingVertical: 10,
+      borderRadius: 8,
+    },
+    filterButtonActive: {
+      backgroundColor: '#007AFF',
+    },
+    filterButtonText: {
+      fontSize: 14,
+      color: '#666',
+      fontWeight: '600',
+    },
+    filterButtonTextActive: {
+      color: '#fff',
+    },
+    selectedSubjectTitle: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 20,
+      textAlign: 'center',
+    },
+    emptyAssignmentsContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    emptyAssignmentsText: {
+      fontSize: 16,
+      color: theme.colors.textSecondary,
+      textAlign: 'center',
+    },
+    assignmentsList: {
+      flex: 1,
+    },
 
-  // Modern Assignment Card Styles
-  modernAssignmentCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  assignmentCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 15,
-  },
-  assignmentCardLeft: {
-    flex: 1,
-    marginRight: 15,
-  },
-  modernAssignmentTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 6,
-  },
-  assignmentDate: {
-    fontSize: 14,
-    color: '#666',
-  },
-  assignmentCardRight: {
-    alignItems: 'flex-end',
-  },
-  modernStatusBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  assignmentDescription: {
-    fontSize: 14,
-    color: '#666',
-    lineHeight: 20,
-    marginBottom: 15,
-  },
-  assignmentCardBody: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  assignmentDetails: {
-    flex: 1,
-  },
-  assignmentDetailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  assignmentDetailText: {
-    fontSize: 14,
-    color: '#666',
-    marginLeft: 8,
-  },
-  assignmentStatusContainer: {
-    alignItems: 'flex-end',
-  },
-  assignmentStatusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  assignmentStatusText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#fff',
-  },
-});
+    // Modern Assignment Card Styles
+    modernAssignmentCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 15,
+      ...theme.shadows.medium,
+    },
+    assignmentCardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: 15,
+    },
+    assignmentCardLeft: {
+      flex: 1,
+      marginRight: 15,
+    },
+    modernAssignmentTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 6,
+    },
+    assignmentDate: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+    },
+    assignmentCardRight: {
+      alignItems: 'flex-end',
+    },
+    modernStatusBadge: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    assignmentDescription: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      lineHeight: 20,
+      marginBottom: 15,
+    },
+    assignmentCardBody: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    assignmentDetails: {
+      flex: 1,
+    },
+    assignmentDetailItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    assignmentDetailText: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      marginLeft: 8,
+    },
+    assignmentStatusContainer: {
+      alignItems: 'flex-end',
+    },
+    assignmentStatusBadge: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+    },
+    assignmentStatusText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: '#fff',
+    },
+  });

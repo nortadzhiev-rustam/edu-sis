@@ -18,6 +18,7 @@ import {
   faEnvelope,
   faQuestionCircle,
   faShareAlt,
+  faCog,
 } from '@fortawesome/free-solid-svg-icons';
 import {
   faFacebookF,
@@ -28,10 +29,16 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Platform } from 'expo-modules-core';
+import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const { width, height } = Dimensions.get('window');
 
 export default function HomeScreen({ navigation }) {
+  const { theme } = useTheme();
+  const { t } = useLanguage();
+
+  const styles = createStyles(theme);
   const handleTeacherPress = async () => {
     try {
       // Check if teacher is already logged in
@@ -58,6 +65,14 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      {/* Absolute positioned Settings Button */}
+      <TouchableOpacity
+        style={styles.settingsButton}
+        onPress={() => navigation.navigate('SettingsScreen')}
+      >
+        <FontAwesomeIcon icon={faCog} size={20} color={theme.colors.text} />
+      </TouchableOpacity>
+
       <View style={styles.content}>
         <Image
           source={require('../../assets/app_logo.png')}
@@ -65,7 +80,7 @@ export default function HomeScreen({ navigation }) {
           resizeMode='contain'
         />
 
-        <Text style={styles.title}>Welcome to SIS</Text>
+        <Text style={styles.title}>{t('welcome')} to SIS</Text>
         <Text style={styles.subtitle}>Choose your role to continue</Text>
 
         <Animated.View
@@ -85,7 +100,7 @@ export default function HomeScreen({ navigation }) {
                   color='#007AFF'
                 />
               </View>
-              <Text style={styles.roleText}>Teacher</Text>
+              <Text style={styles.roleText}>{t('teacher')}</Text>
               <Text style={styles.roleDescription} numberOfLines={2}>
                 Access classes and grades
               </Text>
@@ -102,7 +117,7 @@ export default function HomeScreen({ navigation }) {
                   color='#FF9500'
                 />
               </View>
-              <Text style={styles.roleText}>Parent</Text>
+              <Text style={styles.roleText}>{t('parent')}</Text>
               <Text style={styles.roleDescription} numberOfLines={2}>
                 Monitor student progress
               </Text>
@@ -253,172 +268,178 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-    marginTop: Platform.OS === 'android' ? 40 : 0,
-  },
-  content: {
-    flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  logo: {
-    width: width * 0.4,
-    height: height * 0.15,
-    marginTop: height * 0.05,
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  buttonsContainer: {
-    width: '100%',
-  },
-  roleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginBottom: 5,
-  },
-  roleButton: {
-    backgroundColor: '#fff',
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  roleButtonHorizontal: {
-    width: '48%',
-    height: 160,
-  },
-  iconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  teacherIconContainer: {
-    backgroundColor: 'rgba(0, 122, 255, 0.1)',
-  },
-  parentIconContainer: {
-    backgroundColor: 'rgba(255, 149, 0, 0.1)',
-  },
-  roleText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 6,
-  },
-  roleDescription: {
-    fontSize: 13,
-    color: '#666',
-    lineHeight: 18,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
-    marginTop: 5,
-    marginBottom: 10,
-    alignSelf: 'flex-start',
-  },
-  resourcesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  resourceButton: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 15,
-    width: '48%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  resourceIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  resourceText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#333',
-  },
-  socialMediaSection: {
-    width: '100%',
-    marginTop: 20,
-    marginBottom: 30,
-    alignItems: 'center',
-  },
-  socialMediaButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 25,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  socialMediaIconContainer: {
-    marginRight: 10,
-  },
-  socialMediaText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  socialIconsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  socialIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginHorizontal: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-});
+const createStyles = (theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+      marginTop: Platform.OS === 'android' ? 40 : 0,
+    },
+    settingsButton: {
+      position: 'absolute',
+      top: Platform.OS === 'android' ? 50 : 60,
+      left: 20,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: theme.colors.surface,
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000,
+      ...theme.shadows.small,
+    },
+    content: {
+      flex: 1,
+      alignItems: 'center',
+      paddingHorizontal: 20,
+    },
+    logo: {
+      width: width * 0.4,
+      height: height * 0.15,
+      marginTop: height * 0.05,
+      marginBottom: 20,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 10,
+      textAlign: 'center',
+    },
+    subtitle: {
+      fontSize: 16,
+      color: theme.colors.textSecondary,
+      marginBottom: 20,
+      textAlign: 'center',
+    },
+    buttonsContainer: {
+      width: '100%',
+    },
+    roleRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      width: '100%',
+      marginBottom: 5,
+    },
+    roleButton: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 15,
+      padding: 15,
+      marginBottom: 20,
+      ...theme.shadows.small,
+    },
+    roleButtonHorizontal: {
+      width: '48%',
+      height: 160,
+    },
+    iconContainer: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 15,
+    },
+    teacherIconContainer: {
+      backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    },
+    parentIconContainer: {
+      backgroundColor: 'rgba(255, 149, 0, 0.1)',
+    },
+    roleText: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: theme.colors.text,
+      marginBottom: 6,
+    },
+    roleDescription: {
+      fontSize: 13,
+      color: theme.colors.textSecondary,
+      lineHeight: 18,
+    },
+    sectionTitle: {
+      fontSize: 20,
+      fontWeight: '600',
+      color: theme.colors.text,
+      marginTop: 5,
+      marginBottom: 10,
+      alignSelf: 'flex-start',
+    },
+    resourcesContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      width: '100%',
+    },
+    resourceButton: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 12,
+      padding: 12,
+      marginBottom: 15,
+      width: '48%',
+      flexDirection: 'row',
+      alignItems: 'center',
+      ...theme.shadows.small,
+    },
+    resourceIconContainer: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 10,
+    },
+    resourceText: {
+      fontSize: 15,
+      fontWeight: '500',
+      color: theme.colors.text,
+    },
+    socialMediaSection: {
+      width: '100%',
+      marginTop: 20,
+      marginBottom: 30,
+      alignItems: 'center',
+    },
+    socialMediaButton: {
+      backgroundColor: '#007AFF',
+      borderRadius: 25,
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 15,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 3,
+      elevation: 3,
+    },
+    socialMediaIconContainer: {
+      marginRight: 10,
+    },
+    socialMediaText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    socialIconsRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      width: '100%',
+    },
+    socialIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: '#f0f0f0',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginHorizontal: 10,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+      elevation: 2,
+    },
+  });

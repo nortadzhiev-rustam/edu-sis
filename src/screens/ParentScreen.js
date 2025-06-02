@@ -24,12 +24,18 @@ import {
   faGavel,
 } from '@fortawesome/free-solid-svg-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-// Platform import removed as it's not being used
+import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
+
 export default function ParentScreen({ navigation }) {
+  const { theme } = useTheme();
+  const { t } = useLanguage();
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const flatListRef = React.useRef(null);
+
+  const styles = createStyles(theme);
 
   useEffect(() => {
     // Load saved student accounts
@@ -58,10 +64,7 @@ export default function ParentScreen({ navigation }) {
 
   const handleMenuItemPress = (action) => {
     if (!selectedStudent) {
-      Alert.alert(
-        'No Student Selected',
-        'Please select a student first to view their information.'
-      );
+      Alert.alert(t('noStudentSelected'), t('pleaseSelectStudent'));
       return;
     }
 
@@ -70,10 +73,7 @@ export default function ParentScreen({ navigation }) {
 
     // Check if student has an authCode
     if (!selectedStudent.authCode) {
-      Alert.alert(
-        'Authentication Error',
-        'Unable to authenticate this student. Please contact support.'
-      );
+      Alert.alert(t('authenticationError'), t('unableToAuthenticate'));
       return;
     }
 
@@ -138,17 +138,15 @@ export default function ParentScreen({ navigation }) {
 
   const handleDeleteStudent = (studentToDelete) => {
     Alert.alert(
-      'Delete Student',
-      `Are you sure you want to remove ${
-        studentToDelete.name || 'this student'
-      }?`,
+      t('deleteStudent'),
+      `${t('areYouSure')} ${studentToDelete.name || t('student')}?`,
       [
         {
-          text: 'Cancel',
+          text: t('cancel'),
           style: 'cancel',
         },
         {
-          text: 'Delete',
+          text: t('delete'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -173,9 +171,9 @@ export default function ParentScreen({ navigation }) {
               );
 
               // Show success message
-              Alert.alert('Success', 'Student removed successfully');
+              Alert.alert(t('success'), t('studentRemoved'));
             } catch (error) {
-              Alert.alert('Error', 'Failed to remove student');
+              Alert.alert(t('error'), t('failedToRemove'));
 
               // Reload the original list if there was an error
               loadStudents();
@@ -226,7 +224,7 @@ export default function ParentScreen({ navigation }) {
 
           {isSelected && (
             <View style={styles.selectedBadge}>
-              <Text style={styles.selectedBadgeText}>SELECTED</Text>
+              <Text style={styles.selectedBadgeText}>{t('selected')}</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -246,10 +244,8 @@ export default function ParentScreen({ navigation }) {
   const EmptyListComponent = () => (
     <View style={styles.emptyContainer}>
       <View style={styles.emptyCard}>
-        <Text style={styles.emptyText}>No student accounts added yet</Text>
-        <Text style={styles.emptySubtext}>
-          Tap the + button in the header to add your child's account
-        </Text>
+        <Text style={styles.emptyText}>{t('noStudentAccounts')}</Text>
+        <Text style={styles.emptySubtext}>{t('tapToAdd')}</Text>
       </View>
     </View>
   );
@@ -264,7 +260,7 @@ export default function ParentScreen({ navigation }) {
           >
             <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Parent Dashboard</Text>
+          <Text style={styles.headerTitle}>{t('parentDashboard')}</Text>
         </View>
         <TouchableOpacity style={styles.addButton} onPress={handleAddStudent}>
           <FontAwesomeIcon icon={faPlus} size={18} color='#fff' />
@@ -274,7 +270,7 @@ export default function ParentScreen({ navigation }) {
       <View style={styles.content}>
         <View style={styles.childrenSection}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Your Children</Text>
+            <Text style={styles.sectionTitle}>{t('yourChildren')}</Text>
             {students.length > 0 && (
               <TouchableOpacity
                 style={styles.scrollIndicator}
@@ -293,7 +289,7 @@ export default function ParentScreen({ navigation }) {
                 }}
               >
                 <Text style={styles.scrollIndicatorText}>
-                  {students.length > 1 ? 'Scroll for more →' : 'Your child'}
+                  {students.length > 1 ? t('scrollForMore') : t('yourChild')}
                 </Text>
               </TouchableOpacity>
             )}
@@ -336,7 +332,7 @@ export default function ParentScreen({ navigation }) {
         </View>
 
         <View style={styles.menuSection}>
-          <Text style={styles.sectionTitle}>Menu</Text>
+          <Text style={styles.sectionTitle}>{t('menu')}</Text>
 
           <View style={styles.menuGrid}>
             <TouchableOpacity
@@ -351,7 +347,7 @@ export default function ParentScreen({ navigation }) {
               >
                 <FontAwesomeIcon icon={faChartLine} size={24} color='#FF9500' />
               </View>
-              <Text style={styles.menuItemText}>Grades</Text>
+              <Text style={styles.menuItemText}>{t('grades')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -370,7 +366,7 @@ export default function ParentScreen({ navigation }) {
                   color='#34C759'
                 />
               </View>
-              <Text style={styles.menuItemText}>Attendance</Text>
+              <Text style={styles.menuItemText}>{t('attendance')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -385,7 +381,7 @@ export default function ParentScreen({ navigation }) {
               >
                 <FontAwesomeIcon icon={faBook} size={24} color='#007AFF' />
               </View>
-              <Text style={styles.menuItemText}>Assignments</Text>
+              <Text style={styles.menuItemText}>{t('assignments')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -404,7 +400,7 @@ export default function ParentScreen({ navigation }) {
                   color='#AF52DE'
                 />
               </View>
-              <Text style={styles.menuItemText}>Timetable</Text>
+              <Text style={styles.menuItemText}>{t('timetable')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -419,7 +415,7 @@ export default function ParentScreen({ navigation }) {
               >
                 <FontAwesomeIcon icon={faGavel} size={24} color='#5856D6' />
               </View>
-              <Text style={styles.menuItemText}>Behavior</Text>
+              <Text style={styles.menuItemText}>{t('behavior')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -448,271 +444,256 @@ export default function ParentScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  addButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  // No longer needed with FontAwesome icon
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  childrenSection: {
-    marginBottom: 5,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  scrollIndicator: {
-    backgroundColor: 'rgba(0, 122, 255, 0.1)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 122, 255, 0.3)',
-  },
-  scrollIndicatorText: {
-    color: '#007AFF',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  menuSection: {
-    flex: 1,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: '600',
-    marginBottom: 20,
-    color: '#333',
-  },
-  listContainer: {
-    paddingBottom: 20,
-    paddingLeft: 12,
-    paddingRight: 40,
-  },
-  studentTileContainer: {
-    position: 'relative',
-    margin: 8,
-    width: 160,
-    height: 180,
-  },
-  studentTile: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 15,
-    width: '100%',
-    height: '100%',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    // Use same styling for both platforms
-    borderWidth: 2,
-    borderColor: 'transparent',
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  deleteButton: {
-    position: 'absolute',
-    top: 5,
-    right: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1,
-    elevation: 2,
-    zIndex: 10,
-  },
-  selectedStudentTile: {
-    borderColor: '#007AFF',
-    backgroundColor: 'rgba(0, 122, 255, 0.05)',
-  },
-  selectedStudentIcon: {
-    backgroundColor: '#007AFF',
-  },
-  selectedStudentText: {
-    color: '#007AFF',
-  },
-  selectedBadge: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 10,
-  },
-  selectedBadgeText: {
-    color: '#fff',
-    fontSize: 8,
-    fontWeight: 'bold',
-  },
-  studentIconContainer: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: '#007AFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  studentPhoto: {
-    width: 90,
-    height: 90,
-    borderRadius: 50,
-    marginTop: 5,
-    marginBottom: 15,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  selectedStudentPhoto: {
-    borderColor: '#007AFF',
-  },
-  // No longer needed with FontAwesome icon
-  studentName: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  studentDetails: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  emptyContainer: {
-    width: '100%',
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-  },
-  emptyCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  menuGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  menuItem: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
-    width: '48%',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  menuIconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  menuItemText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    textAlign: 'center',
-  },
-  disabledMenuItem: {
-    opacity: 0.6,
-    backgroundColor: '#f8f8f8',
-  },
-  disabledMenuText: {
-    color: '#999',
-  },
-  comingSoonBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: '#FF9500',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  comingSoonText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-});
+const createStyles = (theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    header: {
+      backgroundColor: theme.colors.headerBackground,
+      padding: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    backButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 10,
+    },
+    headerTitle: {
+      color: theme.colors.headerText,
+      fontSize: 20,
+      fontWeight: 'bold',
+    },
+    addButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.3)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    // No longer needed with FontAwesome icon
+    content: {
+      flex: 1,
+      padding: 20,
+    },
+    childrenSection: {
+      marginBottom: 5,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 15,
+    },
+    scrollIndicator: {
+      backgroundColor: theme.colors.primaryLight,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 15,
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: theme.colors.primary + '50',
+    },
+    scrollIndicatorText: {
+      color: theme.colors.primary,
+      fontSize: 12,
+      fontWeight: '600',
+    },
+    menuSection: {
+      flex: 1,
+    },
+    sectionTitle: {
+      fontSize: 22,
+      fontWeight: '600',
+      marginBottom: 20,
+      color: theme.colors.text,
+    },
+    listContainer: {
+      paddingBottom: 20,
+      paddingLeft: 12,
+      paddingRight: 40,
+    },
+    studentTileContainer: {
+      position: 'relative',
+      margin: 8,
+      width: 160,
+      height: 180,
+    },
+    studentTile: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 12,
+      padding: 15,
+      width: '100%',
+      height: '100%',
+      alignItems: 'center',
+      ...theme.shadows.small,
+      borderWidth: 2,
+      borderColor: 'transparent',
+      position: 'relative',
+      overflow: 'hidden',
+    },
+    deleteButton: {
+      position: 'absolute',
+      top: 5,
+      right: 5,
+      backgroundColor: theme.colors.surface,
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 10,
+      ...theme.shadows.small,
+    },
+    selectedStudentTile: {
+      borderColor: theme.colors.primary,
+      backgroundColor: theme.colors.primary + '0D',
+    },
+    selectedStudentIcon: {
+      backgroundColor: theme.colors.primary,
+    },
+    selectedStudentText: {
+      color: theme.colors.primary,
+    },
+    selectedBadge: {
+      position: 'absolute',
+      top: 10,
+      left: 10,
+      backgroundColor: theme.colors.primary,
+      paddingHorizontal: 6,
+      paddingVertical: 3,
+      borderRadius: 10,
+    },
+    selectedBadgeText: {
+      color: '#fff',
+      fontSize: 8,
+      fontWeight: 'bold',
+    },
+    studentIconContainer: {
+      width: 70,
+      height: 70,
+      borderRadius: 35,
+      backgroundColor: theme.colors.primary,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 15,
+    },
+    studentPhoto: {
+      width: 90,
+      height: 90,
+      borderRadius: 50,
+      marginTop: 5,
+      marginBottom: 15,
+      borderWidth: 2,
+      borderColor: 'transparent',
+    },
+    selectedStudentPhoto: {
+      borderColor: theme.colors.primary,
+    },
+    // No longer needed with FontAwesome icon
+    studentName: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: theme.colors.text,
+      marginBottom: 8,
+      textAlign: 'center',
+    },
+    studentDetails: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      marginBottom: 4,
+      textAlign: 'center',
+    },
+    emptyContainer: {
+      width: '100%',
+      paddingVertical: 20,
+      paddingHorizontal: 20,
+    },
+    emptyCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 12,
+      padding: 20,
+      alignItems: 'center',
+      ...theme.shadows.small,
+    },
+    emptyText: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: theme.colors.text,
+      marginBottom: 10,
+      textAlign: 'center',
+    },
+    emptySubtext: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    menuGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+    },
+    menuItem: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 12,
+      padding: 15,
+      marginBottom: 15,
+      width: '48%',
+      alignItems: 'center',
+      ...theme.shadows.small,
+    },
+    menuIconContainer: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    menuItemText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.colors.text,
+      textAlign: 'center',
+    },
+    disabledMenuItem: {
+      opacity: 0.6,
+      backgroundColor: theme.colors.disabled,
+    },
+    disabledMenuText: {
+      color: theme.colors.textSecondary,
+    },
+    comingSoonBadge: {
+      position: 'absolute',
+      top: 8,
+      right: 8,
+      backgroundColor: '#FF9500',
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 8,
+    },
+    comingSoonText: {
+      color: '#fff',
+      fontSize: 10,
+      fontWeight: 'bold',
+    },
+  });
