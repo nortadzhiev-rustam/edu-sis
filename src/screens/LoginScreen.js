@@ -147,7 +147,7 @@ export default function LoginScreen({ route, navigation }) {
           <FontAwesomeIcon icon={faArrowLeft} size={20} color='#007AFF' />
         </TouchableOpacity>
         <Animated.Image
-          source={require('../../assets/app_logo.jpg')}
+          source={require('../../assets/app_logo.png')}
           style={styles.logo}
           resizeMode='contain'
         />

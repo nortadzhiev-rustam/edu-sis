@@ -1183,7 +1183,7 @@ const createStyles = (theme) =>
       backgroundColor: theme.colors.background,
     },
     header: {
-      backgroundColor: theme.colors.warning,
+      backgroundColor: theme.colors.headerBackground,
       padding: 15,
       flexDirection: 'row',
       justifyContent: 'space-between',

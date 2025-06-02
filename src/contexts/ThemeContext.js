@@ -28,7 +28,7 @@ const lightTheme = {
     error: '#FF3B30',
     info: '#007AFF',
     card: '#ffffff',
-    headerBackground: '#5856D6',
+    headerBackground: '#007AFF',
     headerText: '#ffffff',
     tabBackground: '#ffffff',
     tabActive: '#5856D6',
