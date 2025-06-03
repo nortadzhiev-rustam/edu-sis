@@ -112,92 +112,133 @@ export default function TeacherBPS({ route, navigation }) {
       return;
     }
 
+    // Get current branch information
+    const currentBranch = getCurrentBranch();
+    if (!currentBranch) {
+      Alert.alert('Error', 'No branch information available');
+      return;
+    }
+
     setLoading(true);
     setSubmissionErrors([]);
-
-    const errors = [];
-    let successCount = 0;
-    const totalExpectedRecords =
-      studentsToProcess.length * behaviorsToSubmit.length;
 
     try {
       const url = buildApiUrl(Config.API_ENDPOINTS.STORE_BPS);
 
-      for (const student of studentsToProcess) {
-        for (const behavior of behaviorsToSubmit) {
-          try {
-            const response = await fetch(url, {
-              method: 'POST',
-              headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                authCode: authCode,
-                student_id: student.student_id,
-                discipline_item_id: behavior.discipline_item_id,
-                note: note.trim(),
-              }),
-            });
+      // Prepare student IDs
+      const studentIds = studentsToProcess.map((student) => student.student_id);
 
-            if (response.ok) {
-              successCount++;
-            } else {
-              const errorText = await response.text();
-              errors.push(
-                `${student.name} - ${behavior.item_title}: ${
-                  errorText || 'Failed to add record'
-                }`
-              );
-            }
-          } catch (studentError) {
-            console.error(`Error processing student ${student.name} and behavior ${behavior.item_title}:`, studentError);
-            errors.push(
-              `${student.name} - ${behavior.item_title}: Network error`
-            );
-          }
-        }
+      // Prepare item IDs
+      const itemIds = behaviorsToSubmit.map(
+        (behavior) => behavior.discipline_item_id
+      );
+
+      // Validate that all behaviors are of the same type
+      const behaviorTypes = [
+        ...new Set(behaviorsToSubmit.map((b) => b.item_type)),
+      ];
+      if (behaviorTypes.length > 1) {
+        Alert.alert(
+          'Error',
+          'All selected behaviors must be of the same type (either all positive or all negative)'
+        );
+        setLoading(false);
+        return;
       }
 
-      if (errors.length === 0) {
-        Alert.alert(
-          'Success',
-          `All ${successCount} BPS record(s) added successfully!`
-        );
-        setShowAddModal(false);
-        resetForm();
-        await fetchBPSData();
-      } else if (successCount > 0) {
-        Alert.alert(
-          'Partial Success',
-          `${successCount} record(s) added successfully.\n\nErrors:\n${errors.join(
-            '\n'
-          )}`,
-          [
-            {
-              text: 'Continue',
-              onPress: () => {
-                setShowAddModal(false);
-                resetForm();
-                fetchBPSData();
-              },
-            },
-            { text: 'Review Errors', style: 'cancel' },
-          ]
-        );
-        setSubmissionErrors(errors);
+      // Determine case type from the behaviors
+      const caseType = behaviorsToSubmit[0].item_type?.toUpperCase() || 'PRS';
+
+      // Get current date in YYYY-MM-DD format
+      const currentDate = new Date().toISOString().split('T')[0];
+
+      // Prepare request payload according to backend format
+      const requestPayload = {
+        auth_code: authCode,
+        branch_id: currentBranch.branch_id,
+        case_type: caseType,
+        date: currentDate,
+        note: note.trim() || '',
+        students: studentIds,
+        items: itemIds,
+        // Include user_id if available from auth context
+        user_id: authCode, // Using authCode as user identifier for now
+      };
+
+      console.log('Sending BPS request:', requestPayload);
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestPayload),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('BPS response:', result);
+
+        if (result.success) {
+          const successMessage =
+            result.message ||
+            `${
+              result.successful_records || 0
+            } BPS record(s) created successfully`;
+
+          Alert.alert('Success', successMessage);
+          setShowAddModal(false);
+          resetForm();
+          await fetchBPSData();
+        } else {
+          // Handle partial success or errors from backend
+          const errorMessage = result.message || 'Failed to create BPS records';
+
+          if (result.successful_records && result.successful_records > 0) {
+            Alert.alert(
+              'Partial Success',
+              `${result.successful_records} out of ${result.total_records_attempted} records created successfully.\n\n${errorMessage}`,
+              [
+                {
+                  text: 'Continue',
+                  onPress: () => {
+                    setShowAddModal(false);
+                    resetForm();
+                    fetchBPSData();
+                  },
+                },
+                { text: 'OK', style: 'cancel' },
+              ]
+            );
+          } else {
+            Alert.alert('Error', errorMessage);
+
+            // Show detailed error information if available
+            if (result.results && Array.isArray(result.results)) {
+              const failedResults = result.results.filter(
+                (r) => r.status === 'error'
+              );
+              if (failedResults.length > 0) {
+                console.log('Failed BPS submissions:', failedResults);
+              }
+            }
+          }
+        }
       } else {
+        const errorText = await response.text();
+        console.error('BPS submission failed:', errorText);
         Alert.alert(
-          'All Failed',
-          `Failed to add any records:\n\n${errors.join('\n')}`,
-          [{ text: 'OK' }]
+          'Error',
+          `Failed to submit BPS records: ${errorText || 'Unknown error'}`
         );
-        setSubmissionErrors(errors);
       }
     } catch (error) {
       console.error('Error during BPS record submission:', error);
-      Alert.alert('Error', `Network error occurred while processing requests: ${error.message || 'Please try again.'}`);
-      setSubmissionErrors([`Network error: ${error.message || 'Please try again.'}`]);
+      Alert.alert(
+        'Error',
+        `Network error occurred: ${error.message || 'Please try again.'}`
+      );
     } finally {
       setLoading(false);
     }
@@ -361,6 +402,29 @@ export default function TeacherBPS({ route, navigation }) {
         )
       );
     } else {
+      // Check if this item type matches existing selections
+      if (selectedItems.length > 0) {
+        const existingType = selectedItems[0].item_type;
+        if (item.item_type !== existingType) {
+          Alert.alert(
+            'Mixed Behavior Types',
+            `You can only select behaviors of the same type. Currently selected: ${
+              existingType === 'prs' ? 'Positive' : 'Negative'
+            } behaviors.`,
+            [
+              {
+                text: 'Clear All & Select This',
+                onPress: () => {
+                  setSelectedItems([item]);
+                  setSelectedItem(item);
+                },
+              },
+              { text: 'Cancel', style: 'cancel' },
+            ]
+          );
+          return;
+        }
+      }
       setSelectedItems([...selectedItems, item]);
     }
 
@@ -372,12 +436,6 @@ export default function TeacherBPS({ route, navigation }) {
       (selectedItem) =>
         selectedItem.discipline_item_id === item.discipline_item_id
     );
-  };
-
-  const clearSelectedBehaviors = () => {
-    setSelectedItems([]);
-    setSelectedItem(null);
-    setSelectedBehaviorType(null);
   };
 
   const getTotalPoints = () => {
@@ -671,7 +729,7 @@ export default function TeacherBPS({ route, navigation }) {
                   {currentBranch.branch_name}
                 </Text>
                 <Text style={styles.branchSubtitle}>
-                  Academic Year: {currentBranch.academic_year_id}
+                  Academic Year: {bpsData.global_academic_year.academic_year}
                 </Text>
               </View>
             </View>

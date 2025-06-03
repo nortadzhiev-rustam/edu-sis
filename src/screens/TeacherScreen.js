@@ -547,7 +547,7 @@ export default function TeacherScreen({ route, navigation }) {
                         {branch.branch_name}
                       </Text>
                       <Text style={styles.branchDetails}>
-                        Academic Year: {branch.academic_year_id} • Week:{' '}
+                        Academic Year: {timetableData.global_academic_year.academic_year} • Week:{' '}
                         {branch.current_week}
                       </Text>
                     </View>
