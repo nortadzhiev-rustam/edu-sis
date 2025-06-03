@@ -104,12 +104,15 @@ export default function GradesScreen({ navigation, route }) {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Grades data:', data);
         setGrades(data);
       } else {
         // Handle error silently
+        console.error('Failed to fetch grades:', response.status);
       }
     } catch (error) {
       // Handle error silently
+      console.error('Failed to fetch grades:', error);
     } finally {
       setLoading(false);
     }

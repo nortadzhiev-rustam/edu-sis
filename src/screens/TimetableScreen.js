@@ -179,6 +179,7 @@ export default function TimetableScreen({ navigation, route }) {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Timetable data:', response);
 
         // Convert object to array format if needed
         const convertedData = convertObjectToArrayFormat(data);
@@ -187,6 +188,7 @@ export default function TimetableScreen({ navigation, route }) {
         return null;
       }
     } catch (error) {
+      console.error('Failed to fetch timetable:', error);
       return null;
     }
   };

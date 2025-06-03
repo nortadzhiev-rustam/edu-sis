@@ -75,6 +75,7 @@ export default function TeacherScreen({ route, navigation }) {
       if (response.ok) {
         const data = await response.json();
         setTimetableData(data);
+        console.log('Teacher timetable data:', data);
 
         // Calculate stats
         if (data.success && data.branches) {
@@ -123,7 +124,7 @@ export default function TeacherScreen({ route, navigation }) {
 
       if (response.ok) {
         const data = await response.json();
-
+        console.log('Teacher BPS data:', data);
         setBpsData(data);
 
         // Calculate stats

@@ -90,7 +90,9 @@ export default function App() {
   if (isLoading) {
     return (
       <SafeAreaProvider>
-        <SplashScreen onAnimationComplete={handleAnimationComplete} />
+        <ThemeProvider>
+          <SplashScreen onAnimationComplete={handleAnimationComplete} />
+        </ThemeProvider>
       </SafeAreaProvider>
     );
   }
