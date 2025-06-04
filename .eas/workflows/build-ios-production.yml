@@ -1,0 +1,35 @@
+name: iOS production build
+
+on:
+  push:
+    branches: ['main']
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Build profile'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - preview
+          - development
+
+jobs:
+  build_ios:
+    name: Build iOS
+    type: build
+    params:
+      platform: ios
+      profile: ${{ inputs.profile || 'production' }}
+      auto_submit: false
+      
+  notify_completion:
+    name: Notify Build Completion
+    type: function
+    needs: build_ios
+    params:
+      script: |
+        echo "iOS build completed successfully!"
+        echo "Build ID: ${{ needs.build_ios.outputs.build_id }}"
+        echo "Build URL: ${{ needs.build_ios.outputs.build_url }}"

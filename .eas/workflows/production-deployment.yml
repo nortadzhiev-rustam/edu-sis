@@ -1,0 +1,69 @@
+name: Production deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      auto_submit:
+        description: 'Auto-submit to app stores'
+        required: true
+        default: false
+        type: boolean
+      platform:
+        description: 'Platform to deploy'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - android
+          - ios
+
+jobs:
+  build_production:
+    name: Build Production
+    type: build
+    params:
+      platform: ${{ inputs.platform || 'all' }}
+      profile: production
+      auto_submit: ${{ inputs.auto_submit || false }}
+
+  publish_update:
+    name: Publish Production Update
+    type: update
+    needs: build_production
+    params:
+      branch: production
+      message: ${{ format('Production release {0}', github.sha) }}
+
+  submit_android:
+    name: Submit Android
+    type: submit
+    needs: build_production
+    if: ${{ inputs.auto_submit && (inputs.platform == 'all' || inputs.platform == 'android') }}
+    params:
+      platform: android
+      profile: production
+
+  submit_ios:
+    name: Submit iOS
+    type: submit
+    needs: build_production
+    if: ${{ inputs.auto_submit && (inputs.platform == 'all' || inputs.platform == 'ios') }}
+    params:
+      platform: ios
+      profile: production
+
+  notify_production:
+    name: Notify Production Deployment
+    type: function
+    needs: [build_production, publish_update]
+    params:
+      script: |
+        echo "Production deployment completed successfully!"
+        echo "Build ID: ${{ needs.build_production.outputs.build_id }}"
+        echo "Update ID: ${{ needs.publish_update.outputs.update_id }}"
+        if [ "${{ inputs.auto_submit }}" = "true" ]; then
+          echo "Apps have been submitted to app stores"
+        else
+          echo "Manual submission required"
+        fi

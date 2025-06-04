@@ -1,0 +1,34 @@
+name: Publish update
+
+on:
+  push:
+    branches: ['*']
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Update branch'
+        required: true
+        default: 'main'
+        type: string
+      message:
+        description: 'Update message'
+        required: false
+        type: string
+
+jobs:
+  update:
+    name: Update
+    type: update
+    params:
+      branch: ${{ inputs.branch || github.ref_name || 'main' }}
+      message: ${{ inputs.message || format('Update from {0}', github.sha) }}
+      
+  notify_update:
+    name: Notify Update
+    type: function
+    needs: update
+    params:
+      script: |
+        echo "Update published successfully!"
+        echo "Update ID: ${{ needs.update.outputs.update_id }}"
+        echo "Branch: ${{ needs.update.outputs.branch }}"

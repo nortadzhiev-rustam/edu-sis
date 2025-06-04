@@ -1,0 +1,44 @@
+name: Preview deployment
+
+on:
+  push:
+    branches: ['develop', 'staging']
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to build'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - android
+          - ios
+
+jobs:
+  build_preview:
+    name: Build Preview
+    type: build
+    params:
+      platform: ${{ inputs.platform || 'all' }}
+      profile: preview
+      auto_submit: false
+
+  publish_update:
+    name: Publish Preview Update
+    type: update
+    needs: build_preview
+    params:
+      branch: preview
+      message: ${{ format('Preview update from {0}', github.sha) }}
+
+  notify_preview:
+    name: Notify Preview Deployment
+    type: function
+    needs: [build_preview, publish_update]
+    params:
+      script: |
+        echo "Preview deployment completed successfully!"
+        echo "Build ID: ${{ needs.build_preview.outputs.build_id }}"
+        echo "Update ID: ${{ needs.publish_update.outputs.update_id }}"
+        echo "Preview branch updated with latest changes"

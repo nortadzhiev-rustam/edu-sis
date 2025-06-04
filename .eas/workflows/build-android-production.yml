@@ -1,0 +1,35 @@
+name: Android production build
+
+on:
+  push:
+    branches: ['main']
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Build profile'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - preview
+          - development
+
+jobs:
+  build_android:
+    name: Build Android
+    type: build
+    params:
+      platform: android
+      profile: ${{ inputs.profile || 'production' }}
+      auto_submit: false
+      
+  notify_completion:
+    name: Notify Build Completion
+    type: function
+    needs: build_android
+    params:
+      script: |
+        echo "Android build completed successfully!"
+        echo "Build ID: ${{ needs.build_android.outputs.build_id }}"
+        echo "Build URL: ${{ needs.build_android.outputs.build_url }}"

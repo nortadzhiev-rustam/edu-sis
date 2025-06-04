@@ -1,0 +1,34 @@
+name: Submit iOS app
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_id:
+        description: 'Build ID to submit (optional)'
+        required: false
+        type: string
+      profile:
+        description: 'Submit profile'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+
+jobs:
+  submit_ios:
+    name: Submit iOS
+    type: submit
+    params:
+      platform: ios
+      profile: ${{ inputs.profile || 'production' }}
+      build_id: ${{ inputs.build_id }}
+      
+  notify_submission:
+    name: Notify Submission
+    type: function
+    needs: submit_ios
+    params:
+      script: |
+        echo "iOS app submitted successfully!"
+        echo "Submission ID: ${{ needs.submit_ios.outputs.submission_id }}"
