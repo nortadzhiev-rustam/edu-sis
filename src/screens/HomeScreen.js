@@ -80,7 +80,7 @@ export default function HomeScreen({ navigation }) {
           resizeMode='contain'
         />
 
-        <Text style={styles.title}>{t('welcomeTo')} SIS</Text>
+        <Text style={styles.title}>{t('welcome')} to SIS</Text>
         <Text style={styles.subtitle}>Choose your role to continue</Text>
 
         <Animated.View
@@ -102,7 +102,7 @@ export default function HomeScreen({ navigation }) {
               </View>
               <Text style={styles.roleText}>{t('teacher')}</Text>
               <Text style={styles.roleDescription} numberOfLines={2}>
-                {t('Access classes and grades')}
+                Access classes and grades
               </Text>
             </TouchableOpacity>
 
@@ -119,7 +119,7 @@ export default function HomeScreen({ navigation }) {
               </View>
               <Text style={styles.roleText}>{t('parent')}</Text>
               <Text style={styles.roleDescription} numberOfLines={2}>
-                {t('Monitor student progress')}
+                Monitor student progress
               </Text>
             </TouchableOpacity>
           </View>
@@ -338,7 +338,7 @@ const createStyles = (theme) =>
       borderRadius: 30,
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: 10,
+      marginBottom: 15,
     },
     teacherIconContainer: {
       backgroundColor: 'rgba(0, 122, 255, 0.1)',
@@ -347,15 +347,15 @@ const createStyles = (theme) =>
       backgroundColor: 'rgba(255, 149, 0, 0.1)',
     },
     roleText: {
-      fontSize: 15,
+      fontSize: 18,
       fontWeight: '600',
       color: theme.colors.text,
-      
+      marginBottom: 6,
     },
     roleDescription: {
       fontSize: 13,
       color: theme.colors.textSecondary,
-      lineHeight: 15,
+      lineHeight: 18,
     },
     sectionTitle: {
       fontSize: 20,

@@ -334,57 +334,6 @@ export default function TeacherScreen({ route, navigation }) {
           </View>
 
           {/* Dashboard Stats */}
-          {/* Branch Information */}
-          {timetableData?.branches && timetableData.branches.length > 0 && (
-            <View style={styles.branchContainer}>
-              <Text style={styles.sectionTitle}>Branch Information</Text>
-              {timetableData.branches.map((branch) => (
-                <View key={branch.branch_id} style={styles.branchCard}>
-                  <View style={styles.branchHeader}>
-                    <View
-                      style={[
-                        styles.branchIconContainer,
-                        { backgroundColor: '#34C75915' },
-                      ]}
-                    >
-                      <FontAwesomeIcon
-                        icon={faBuilding}
-                        size={18}
-                        color='#34C759'
-                      />
-                    </View>
-                    <View style={styles.branchInfo}>
-                      <Text style={styles.branchName}>
-                        {branch.branch_name}
-                      </Text>
-                      <Text style={styles.branchDetails}>
-                        Academic Year: {timetableData.global_academic_year.academic_year} • Week:{' '}
-                        {branch.current_week}
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={styles.branchStats}>
-                    <View style={styles.branchStat}>
-                      <Text style={styles.branchStatNumber}>
-                        {branch.timetable.length}
-                      </Text>
-                      <Text style={styles.branchStatLabel}>Classes</Text>
-                    </View>
-                    <View style={styles.branchStat}>
-                      <Text style={styles.branchStatNumber}>
-                        {
-                          branch.timetable.filter(
-                            (item) => item.attendance_taken
-                          ).length
-                        }
-                      </Text>
-                      <Text style={styles.branchStatLabel}>Attended</Text>
-                    </View>
-                  </View>
-                </View>
-              ))}
-            </View>
-          )}
           <View style={styles.statsContainer}>
             <Text style={styles.sectionTitle}>Dashboard Overview</Text>
             <View style={styles.statsGrid}>
@@ -574,7 +523,57 @@ export default function TeacherScreen({ route, navigation }) {
             </View>
           </View>
 
-          
+          {/* Branch Information */}
+          {timetableData?.branches && timetableData.branches.length > 0 && (
+            <View style={styles.branchContainer}>
+              <Text style={styles.sectionTitle}>Branch Information</Text>
+              {timetableData.branches.map((branch) => (
+                <View key={branch.branch_id} style={styles.branchCard}>
+                  <View style={styles.branchHeader}>
+                    <View
+                      style={[
+                        styles.branchIconContainer,
+                        { backgroundColor: '#34C75915' },
+                      ]}
+                    >
+                      <FontAwesomeIcon
+                        icon={faBuilding}
+                        size={18}
+                        color='#34C759'
+                      />
+                    </View>
+                    <View style={styles.branchInfo}>
+                      <Text style={styles.branchName}>
+                        {branch.branch_name}
+                      </Text>
+                      <Text style={styles.branchDetails}>
+                        Academic Year: {timetableData.global_academic_year.academic_year} • Week:{' '}
+                        {branch.current_week}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.branchStats}>
+                    <View style={styles.branchStat}>
+                      <Text style={styles.branchStatNumber}>
+                        {branch.timetable.length}
+                      </Text>
+                      <Text style={styles.branchStatLabel}>Classes</Text>
+                    </View>
+                    <View style={styles.branchStat}>
+                      <Text style={styles.branchStatNumber}>
+                        {
+                          branch.timetable.filter(
+                            (item) => item.attendance_taken
+                          ).length
+                        }
+                      </Text>
+                      <Text style={styles.branchStatLabel}>Attended</Text>
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
         </ScrollView>
       )}
     </SafeAreaView>
