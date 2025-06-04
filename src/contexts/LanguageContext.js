@@ -75,7 +75,7 @@ const translations = {
     teacher: 'Teacher',
     parent: 'Parent',
     student: 'Student',
-    welcome: 'Welcome',
+    welcomeTo: 'Welcome to',
 
     // Academic
     grades: 'Grades',
@@ -200,7 +200,7 @@ const translations = {
     teacher: 'ဆရာ/ဆရာမ',
     parent: 'မိဘ',
     student: 'ကျောင်းသား/သူ',
-    welcome: 'ကြိုဆို',
+    welcomeTOTo: 'မှကြိုဆိုပါတယ်။',
 
     // Academic
     grades: 'အမှတ်များ',
@@ -325,7 +325,7 @@ const translations = {
     teacher: '教师',
     parent: '家长',
     student: '学生',
-    welcome: '欢迎',
+    welcomeTO: '欢迎来到',
 
     // Academic
     grades: '成绩',
@@ -448,7 +448,7 @@ const translations = {
     teacher: 'ครู',
     parent: 'ผู้ปกครอง',
     student: 'นักเรียน',
-    welcome: 'ยินดีต้อนรับ',
+    welcomeTO: 'ยินดีต้อนรับ',
 
     // Academic
     grades: 'เกรด',
