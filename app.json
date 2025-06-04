@@ -4,7 +4,7 @@
     "slug": "edu-sis",
     "version": "1.0.0",
     "orientation": "default",
-    "icon": "./assets/app_logo.jpg",
+    "icon": "./assets/app_logo.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "plugins": [
@@ -31,7 +31,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/app_logo.jpg",
+        "foregroundImage": "./assets/app_logo.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.edunovaasia.edusis",
