@@ -11,6 +11,7 @@ import HomeScreen from './src/screens/HomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import TeacherScreen from './src/screens/TeacherScreen';
 import TeacherTimetable from './src/screens/TeacherTimetable';
+import TeacherAttendanceScreen from './src/screens/TeacherAttendanceScreen';
 import TeacherBPS from './src/screens/TeacherBPS';
 import ParentScreen from './src/screens/ParentScreen';
 import TimetableScreen from './src/screens/TimetableScreen';
@@ -113,6 +114,10 @@ export default function App() {
               <Stack.Screen
                 name='TeacherTimetable'
                 component={TeacherTimetable}
+              />
+              <Stack.Screen
+                name='TeacherAttendance'
+                component={TeacherAttendanceScreen}
               />
               <Stack.Screen name='TeacherBPS' component={TeacherBPS} />
               <Stack.Screen name='ParentScreen' component={ParentScreen} />

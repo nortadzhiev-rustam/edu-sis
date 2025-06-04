@@ -6,10 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  ActivityIndicator,
   RefreshControl,
-  Modal,
-  Image,
   Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,8 +19,6 @@ import {
   faBuilding,
   faRefresh,
   faUserCheck,
-  faUsers,
-  faTimes,
   faEye,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
@@ -40,11 +35,7 @@ export default function TeacherTimetable({ route, navigation }) {
   const [timetableData, setTimetableData] = useState(initialData);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [showAttendanceModal, setShowAttendanceModal] = useState(false);
-  const [selectedClassAttendance, setSelectedClassAttendance] = useState(null);
-  const [attendanceDetails, setAttendanceDetails] = useState(null);
-  const [loadingAttendance, setLoadingAttendance] = useState(false);
+  // Removed unused state variables since we now navigate to separate screen
 
   // Animation for today tab
   const todayTabAnimation = useRef(new Animated.Value(1)).current;
@@ -111,73 +102,27 @@ export default function TeacherTimetable({ route, navigation }) {
   };
 
   // Take attendance for a class
-  const takeAttendance = async (timetableId, subjectName, gradeName) => {
-    Alert.alert(
-      'Take Attendance',
-      `Take attendance for ${subjectName} - ${gradeName}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Take Attendance',
-          onPress: async () => {
-            setLoading(true);
-            try {
-              // Here you would call the attendance API
-              // For now, we'll simulate success and refresh data
-              await new Promise((resolve) => setTimeout(resolve, 1000));
-
-              Alert.alert('Success', 'Attendance taken successfully!');
-              await fetchTimetableData();
-            } catch (error) {
-              Alert.alert('Error', 'Failed to take attendance');
-            } finally {
-              setLoading(false);
-            }
-          },
-        },
-      ]
-    );
+  const takeAttendance = (timetableId, subjectName, gradeName) => {
+    navigation.navigate('TeacherAttendance', {
+      timetableId,
+      subjectName,
+      gradeName,
+      authCode,
+      isUpdate: false,
+    });
   };
 
-  // Fetch attendance details for a specific class
-  const fetchAttendanceDetails = async (timetableId) => {
-    try {
-      setLoadingAttendance(true);
-      const url = buildApiUrl(Config.API_ENDPOINTS.GET_ATTENDANCE_DETAILS, {
-        authCode,
-        timetableId,
-      });
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        return data;
-      } else {
-        return null;
-      }
-    } catch (error) {
-      return null;
-    } finally {
-      setLoadingAttendance(false);
-    }
-  };
+  // Removed fetchAttendanceDetails function since we now navigate to separate screen
 
   // View attendance details for a class
-  const viewAttendanceDetails = async (classItem) => {
-    setSelectedClassAttendance(classItem);
-    setShowAttendanceModal(true);
-
-    // Fetch real attendance data
-    const details = await fetchAttendanceDetails(classItem.timetable_id);
-    if (details) {
-      setAttendanceDetails(details);
-    }
+  const viewAttendanceDetails = (classItem) => {
+    navigation.navigate('TeacherAttendance', {
+      timetableId: classItem.timetable_id,
+      subjectName: classItem.subject_name,
+      gradeName: classItem.grade_name,
+      authCode,
+      isUpdate: true,
+    });
   };
 
   // Get current branch data
@@ -318,7 +263,8 @@ export default function TeacherTimetable({ route, navigation }) {
                   {currentBranch.branch_name}
                 </Text>
                 <Text style={styles.branchSubtitle}>
-                  Academic Year: {timetableData.global_academic_year.academic_year} • Week:{' '}
+                  Academic Year:{' '}
+                  {timetableData.global_academic_year.academic_year} • Week:{' '}
                   {currentBranch.current_week}
                 </Text>
               </View>
@@ -466,23 +412,13 @@ export default function TeacherTimetable({ route, navigation }) {
                               classItem.grade_name
                             )
                           }
-                          disabled={loading}
                         >
-                          {loading ? (
-                            <ActivityIndicator
-                              size='small'
-                              color={theme.colors.headerText}
-                            /> // Use theme color
-                          ) : (
-                            <>
-                              <FontAwesomeIcon
-                                icon={faUserCheck}
-                                size={16}
-                                color={theme.colors.headerText} // Use theme color
-                              />
-                              <Text style={styles.buttonText}>Take</Text>
-                            </>
-                          )}
+                          <FontAwesomeIcon
+                            icon={faUserCheck}
+                            size={16}
+                            color={theme.colors.headerText} // Use theme color
+                          />
+                          <Text style={styles.buttonText}>Take</Text>
                         </TouchableOpacity>
                       )}
                     </View>
@@ -526,205 +462,6 @@ export default function TeacherTimetable({ route, navigation }) {
           )}
         </View>
       </ScrollView>
-
-      {loading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size='large' color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Taking attendance...</Text>
-        </View>
-      )}
-
-      {/* Attendance Details Modal */}
-      <Modal
-        visible={showAttendanceModal}
-        animationType='slide'
-        presentationStyle='pageSheet'
-        onRequestClose={() => {
-          setShowAttendanceModal(false);
-          setAttendanceDetails(null);
-        }}
-      >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={() => {
-                setShowAttendanceModal(false);
-                setAttendanceDetails(null);
-              }}
-            >
-              <FontAwesomeIcon
-                icon={faTimes}
-                size={20}
-                color={theme.colors.textSecondary}
-              />
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>Attendance Details</Text>
-            <View style={styles.modalHeaderRight} />
-          </View>
-
-          {selectedClassAttendance && (
-            <ScrollView style={styles.modalContent}>
-              {/* Class Info */}
-              <View style={styles.classInfoCard}>
-                <View style={styles.classInfoHeader}>
-                  <View style={styles.periodBadge}>
-                    <Text style={styles.periodText}>
-                      P{selectedClassAttendance.week_time}
-                    </Text>
-                  </View>
-                  <View style={styles.classInfoDetails}>
-                    <Text style={styles.modalSubjectName}>
-                      {selectedClassAttendance.subject_name}
-                    </Text>
-                    <Text style={styles.modalGradeName}>
-                      {selectedClassAttendance.grade_name}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
-              {/* Attendance Summary */}
-              <View style={styles.attendanceSummary}>
-                <Text style={styles.summaryTitle}>Attendance Summary</Text>
-                {loadingAttendance ? (
-                  <View style={styles.loadingContainer}>
-                    <ActivityIndicator
-                      size='small'
-                      color={theme.colors.primary}
-                    />
-                    <Text style={styles.loadingText}>
-                      Loading attendance data...
-                    </Text>
-                  </View>
-                ) : attendanceDetails ? (
-                  <View style={styles.summaryStats}>
-                    <View style={styles.summaryItem}>
-                      <Text style={styles.summaryNumber}>
-                        {attendanceDetails.total_students || 0}
-                      </Text>
-                      <Text style={styles.summaryLabel}>Total Students</Text>
-                    </View>
-                    <View style={styles.summaryItem}>
-                      <Text
-                        style={[
-                          styles.summaryNumber,
-                          { color: theme.colors.success },
-                        ]}
-                      >
-                        {attendanceDetails.attendance_summary.present_count ||
-                          0}
-                      </Text>
-                      <Text style={styles.summaryLabel}>Present</Text>
-                    </View>
-                    <View style={styles.summaryItem}>
-                      <Text
-                        style={[
-                          styles.summaryNumber,
-                          { color: theme.colors.error },
-                        ]}
-                      >
-                        {attendanceDetails.attendance_summary.absent_count || 0}
-                      </Text>
-                      <Text style={styles.summaryLabel}>Absent</Text>
-                    </View>
-                    <View style={styles.summaryItem}>
-                      <Text
-                        style={[
-                          styles.summaryNumber,
-                          { color: theme.colors.warning },
-                        ]}
-                      >
-                        {attendanceDetails.attendance_summary.late_count || 0}
-                      </Text>
-                      <Text style={styles.summaryLabel}>Late</Text>
-                    </View>
-                  </View>
-                ) : (
-                  <Text style={styles.noDataText}>
-                    No attendance data available
-                  </Text>
-                )}
-              </View>
-
-              {/* Students List */}
-              <View style={styles.studentsListContainer}>
-                <Text style={styles.studentsListTitle}>Students</Text>
-
-                {loadingAttendance ? (
-                  <View style={styles.loadingContainer}>
-                    <ActivityIndicator
-                      size='small'
-                      color={theme.colors.primary}
-                    />
-                    <Text style={styles.loadingText}>
-                      Loading student data...
-                    </Text>
-                  </View>
-                ) : attendanceDetails?.students ? (
-                  attendanceDetails.students.map((student) => (
-                    <View
-                      key={student.student_id || student.id}
-                      style={styles.studentItem}
-                    >
-                      <View style={styles.studentInfo}>
-                        {student.student_photo ? (
-                          <Image
-                            source={{
-                              uri: `https://sis.bfi.edu.mm/${student.student_photo}`,
-                            }}
-                            style={styles.studentPhoto}
-                          />
-                        ) : (
-                          <View style={styles.defaultPhotoContainer}>
-                            <FontAwesomeIcon
-                              icon={faUsers}
-                              size={16}
-                              color={theme.colors.textSecondary}
-                            />
-                          </View>
-                        )}
-                        <Text style={styles.studentName}>
-                          {student.student_name || student.name}
-                        </Text>
-                      </View>
-                      <View
-                        style={[
-                          styles.statusBadge,
-                          student.attendance_status === 'present' &&
-                            styles.presentBadge,
-                          student.attendance_status === 'absent' &&
-                            styles.absentBadge,
-                          student.attendance_status === 'late' &&
-                            styles.lateBadge,
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.statusText,
-                            student.attendance_status === 'present' &&
-                              styles.presentText,
-                            student.attendance_status === 'absent' &&
-                              styles.absentText,
-                            student.attendance_status === 'late' &&
-                              styles.lateText,
-                          ]}
-                        >
-                          {student.attendance_status || 'Unknown'}
-                        </Text>
-                      </View>
-                    </View>
-                  ))
-                ) : (
-                  <Text style={styles.noDataText}>
-                    No student data available
-                  </Text>
-                )}
-              </View>
-            </ScrollView>
-          )}
-        </SafeAreaView>
-      </Modal>
     </SafeAreaView>
   );
 }

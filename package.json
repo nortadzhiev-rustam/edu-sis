@@ -50,18 +50,6 @@
     "@react-navigation/elements": "^2.3.1",
     "@react-navigation/native": "^7.0.19",
     "@react-navigation/native-stack": "^7.3.3",
-<<<<<<< HEAD
-    "expo": "^53.0.0",
-    "expo-build-properties": "~0.14.6",
-    "expo-dev-client": "~5.1.8",
-    "expo-modules-core": "^2.3.13",
-    "expo-screen-orientation": "~8.1.6",
-    "expo-status-bar": "~2.2.3",
-    "expo-updates": "^0.28.13",
-    "react": "19.0.0",
-    "react-native": "0.79.2",
-    "react-native-get-random-values": "~1.11.0",
-=======
     "expo": "~52.0.46",
     "expo-build-properties": "~0.13.3",
     "expo-dev-client": "~5.0.20",
@@ -72,7 +60,6 @@
     "react": "18.3.1",
     "react-native": "0.76.9",
     "react-native-get-random-values": "^1.11.0",
->>>>>>> af552b16b3ad9d8e17ef4f75261f2536817e3507
     "react-native-orientation-locker": "^1.7.0",
     "react-native-reanimated": "~3.16.1",
     "react-native-safe-area-context": "^4.12.0",
