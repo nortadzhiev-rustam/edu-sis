@@ -318,7 +318,7 @@ export default function TeacherTimetable({ route, navigation }) {
                   {currentBranch.branch_name}
                 </Text>
                 <Text style={styles.branchSubtitle}>
-                  Academic Year: {currentBranch.academic_year_id} • Week:{' '}
+                  Academic Year: {timetableData.global_academic_year.academic_year} • Week:{' '}
                   {currentBranch.current_week}
                 </Text>
               </View>
