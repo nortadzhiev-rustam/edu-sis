@@ -39,11 +39,78 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [attendanceSummary, setAttendanceSummary] = useState({
+    present_count: 0,
+    late_count: 0,
+    absent_count: 0,
+    not_taken_count: 0,
+  });
 
   // Load students data
   useEffect(() => {
-    loadStudents();
+    fetchAttendanceDetails();
   }, []);
+
+  //fetch attendance details
+  const fetchAttendanceDetails = async () => {
+    try {
+      setLoading(true);
+      const url = buildApiUrl(Config.API_ENDPOINTS.GET_ATTENDANCE_DETAILS, {
+        authCode,
+        timetableId,
+      });
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Attendance details:', data);
+
+        if (data.success) {
+          // Set students data
+          setStudents(
+            data.students.map((student) => ({
+              ...student,
+              student_id: student.student_id,
+              student_name: student.student_name,
+              student_photo: student.student_photo || null,
+              roll_number: student.roll_number || student.student_id,
+              classroom_name: student.classroom_name,
+              attendance_status: student.attendance_status || null,
+            }))
+          );
+
+          // Set attendance summary
+          if (data.attendance_summary) {
+            setAttendanceSummary(data.attendance_summary);
+          }
+
+          // Set timetable info if needed
+          if (data.timetable_info) {
+            // You can use this data if needed
+            console.log('Timetable info:', data.timetable_info);
+          }
+        } else {
+          Alert.alert('Error', 'Failed to load attendance details');
+          loadStudents(); // Fallback
+        }
+      } else {
+        Alert.alert('Error', 'Failed to load attendance details');
+        loadStudents(); // Fallback
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Network error occurred while loading attendance');
+      loadStudents(); // Fallback
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadStudents = async () => {
     try {
@@ -64,6 +131,7 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
 
       if (response.ok) {
         const bpsData = await response.json();
+        console.log('BPS data:', bpsData);
 
         // Find students for this grade/classroom
         let studentsData = [];
@@ -146,24 +214,26 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
     try {
       setSubmitting(true);
 
-      const attendanceData = students.map((student) => ({
-        student_id: student.student_id,
-        attendance_status: student.attendance_status,
-      }));
+      // Format attendance data according to backend expectations
+      // Format: studentId|attendanceStatus|attendanceNote
+      const formattedAttendance = students.map(student => 
+        `${student.student_id}|${student.attendance_status}|`
+      ).join('/');
 
       // Prepare API request
-      const endpoint = isUpdate
-        ? Config.API_ENDPOINTS.UPDATE_ATTENDANCE
-        : Config.API_ENDPOINTS.TAKE_ATTENDANCE;
-
+      const endpoint = Config.API_ENDPOINTS.TAKE_ATTENDANCE;
       const url = buildApiUrl(endpoint, { authCode });
 
+      console.log('Submitting attendance to URL:', url);
+      
       const requestPayload = {
         auth_code: authCode,
-        timetable_id: timetableId,
-        attendance_date: new Date().toISOString().split('T')[0],
-        students: attendanceData,
+        timetable: timetableId,
+        attendance: formattedAttendance,
+        topic: '' // Optional topic field
       };
+      
+      console.log('Request payload:', JSON.stringify(requestPayload));
 
       const response = await fetch(url, {
         method: 'POST',
@@ -174,30 +244,44 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
         body: JSON.stringify(requestPayload),
       });
 
-      if (response.ok) {
-        const result = await response.json();
-
-        if (result.success) {
-          Alert.alert(
-            'Success',
-            isUpdate
-              ? 'Attendance updated successfully!'
-              : 'Attendance submitted successfully!',
-            [
-              {
-                text: 'OK',
-                onPress: () => navigation.goBack(),
-              },
-            ]
-          );
-        } else {
-          Alert.alert('Error', result.message || 'Failed to submit attendance');
+      console.log('Response status:', response.status);
+      
+      // Get the raw response text first
+      const responseText = await response.text();
+      console.log('Raw response:', responseText);
+      
+      // Only try to parse as JSON if there's actual content
+      let result;
+      if (responseText && responseText.trim()) {
+        try {
+          result = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}...`);
         }
       } else {
-        Alert.alert('Error', 'Failed to submit attendance');
+        throw new Error('Empty response from server');
+      }
+
+      if (result && result.success) {
+        Alert.alert(
+          'Success',
+          isUpdate
+            ? 'Attendance updated successfully!'
+            : 'Attendance submitted successfully!',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.goBack(),
+            },
+          ]
+        );
+      } else {
+        Alert.alert('Error', (result && result.message) || 'Failed to submit attendance');
       }
     } catch (error) {
-      Alert.alert('Error', 'Network error occurred');
+      console.error('Submit attendance error:', error);
+      Alert.alert('Error', `Network error: ${error.message || 'Unknown error'}`);
     } finally {
       setSubmitting(false);
     }
@@ -205,6 +289,17 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
 
   // Get attendance summary
   const getAttendanceSummary = () => {
+    // If we have attendance summary from API, use it
+    if (isUpdate && attendanceSummary) {
+      return {
+        present: attendanceSummary.present_count,
+        absent: attendanceSummary.absent_count,
+        late: attendanceSummary.late_count,
+        total: students.length,
+      };
+    }
+
+    // Otherwise calculate from current students state
     const present = students.filter(
       (s) => s.attendance_status === 'present'
     ).length;

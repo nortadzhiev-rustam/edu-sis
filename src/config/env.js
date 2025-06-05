@@ -20,7 +20,7 @@ export const Config = {
     GET_TEACHER_BPS: '/get-teacher-bps-data/',
     GET_ATTENDANCE_DETAILS: '/get-attendance-details/',
     GET_CLASS_STUDENTS: '/get-class-students/',
-    TAKE_ATTENDANCE: '/take-attendance/',
+    TAKE_ATTENDANCE: '/attendance/api-store',
     UPDATE_ATTENDANCE: '/update-attendance/',
     STORE_BPS: '/discipline/store-bps',
     DELETE_BPS: '/discipline/delete-bps',

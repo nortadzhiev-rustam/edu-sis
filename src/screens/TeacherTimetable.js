@@ -90,6 +90,7 @@ export default function TeacherTimetable({ route, navigation }) {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Teacher timetable data:', data);
         setTimetableData(data);
       } else {
         Alert.alert('Error', 'Failed to fetch timetable data');
