@@ -679,18 +679,7 @@ export default function TeacherScreen({ route, navigation }) {
                     </Text>
                   </View>
                 )}
-                {/* Debug info - remove in production */}
-                {__DEV__ && (
-                  <View style={{ position: 'absolute', bottom: 5, left: 5 }}>
-                    <Text
-                      style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)' }}
-                    >
-                      Debug: {dashboardStats.totalStudents} | SC:{' '}
-                      {Object.keys(studentCounts).length} | BSC:{' '}
-                      {Object.keys(branchStudentCounts).length}
-                    </Text>
-                  </View>
-                )}
+               
               </TouchableOpacity>
 
               {/* Quick Attendance Tile */}
