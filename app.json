@@ -35,11 +35,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.edunovaasia.edusis",
-      "googleServicesFile": "./GoogleService-Info.plist",
-      "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"],
-        "NSUserNotificationsUsageDescription": "This app uses notifications to send you important updates about your education, including grades, attendance, and school announcements."
-      }
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
@@ -47,13 +43,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.edunovaasia.edusis",
-      "googleServicesFile": "./google-services.json",
-      "permissions": [
-        "RECEIVE_BOOT_COMPLETED",
-        "VIBRATE",
-        "WAKE_LOCK",
-        "com.google.android.c2dm.permission.RECEIVE"
-      ]
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/app_logo.png"

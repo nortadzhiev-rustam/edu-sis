@@ -14,21 +14,6 @@ Notifications.setNotificationHandler({
   }),
 });
 
-// Helper function to register device for remote messages on iOS
-async function registerDeviceForRemoteMessages() {
-  if (Platform.OS === 'ios') {
-    try {
-      const isRegistered = messaging().isDeviceRegisteredForRemoteMessages;
-      if (!isRegistered) {
-        await messaging().registerDeviceForRemoteMessages();
-        console.log('Device registered for remote messages');
-      }
-    } catch (error) {
-      console.log('Error registering device for remote messages:', error);
-    }
-  }
-}
-
 export async function requestUserPermission() {
   try {
     // Check if we've already asked for permission before
@@ -71,10 +56,6 @@ export async function requestUserPermission() {
 
               if (enabled) {
                 console.log('Notification permission granted');
-
-                // Register device for remote messages on iOS
-                await registerDeviceForRemoteMessages();
-
                 getFCMToken();
               } else {
                 console.log('Notification permission denied by system');
@@ -93,10 +74,6 @@ export async function requestUserPermission() {
 
       if (enabled) {
         console.log('Notification permission already granted');
-
-        // Register device for remote messages on iOS if not already registered
-        await registerDeviceForRemoteMessages();
-
         getFCMToken();
       } else {
         console.log('Notification permission not granted');
@@ -129,9 +106,6 @@ export async function getFCMToken() {
   try {
     const fcmToken = await AsyncStorage.getItem('fcmToken');
     if (!fcmToken) {
-      // Register device for remote messages first (required for iOS)
-      await registerDeviceForRemoteMessages();
-
       const newToken = await messaging().getToken();
       if (newToken) {
         await AsyncStorage.setItem('fcmToken', newToken);
@@ -148,7 +122,13 @@ export async function getFCMToken() {
 export async function getToken() {
   try {
     // Register device for remote messages first (required for iOS)
-    await registerDeviceForRemoteMessages();
+    if (Platform.OS === 'ios') {
+      const isRegistered = messaging().isDeviceRegisteredForRemoteMessages;
+      if (!isRegistered) {
+        await messaging().registerDeviceForRemoteMessages();
+        console.log('Device registered for remote messages');
+      }
+    }
 
     // Get the device token directly from Firebase messaging
     const token = await messaging().getToken();
