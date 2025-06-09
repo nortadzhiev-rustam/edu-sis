@@ -123,7 +123,7 @@ export async function getToken() {
   try {
     // Register device for remote messages first (required for iOS)
     if (Platform.OS === 'ios') {
-      const isRegistered = messaging().isDeviceRegisteredForRemoteMessages;
+      const isRegistered = await messaging().isDeviceRegisteredForRemoteMessages;
       if (!isRegistered) {
         await messaging().registerDeviceForRemoteMessages();
         console.log('Device registered for remote messages');

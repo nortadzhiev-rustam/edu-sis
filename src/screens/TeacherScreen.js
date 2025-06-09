@@ -762,25 +762,7 @@ export default function TeacherScreen({ route, navigation }) {
                 <Text style={styles.tileSubtitle}>Resources & Files</Text>
               </TouchableOpacity>
 
-              {/* Notifications Tile */}
-              <TouchableOpacity
-                style={[styles.actionTile, { backgroundColor: '#5856D6' }]}
-                onPress={() => navigation.navigate('NotificationScreen')}
-                activeOpacity={0.8}
-              >
-                <View style={styles.tileIconContainer}>
-                  <FontAwesomeIcon icon={faBell} size={28} color='#fff' />
-                </View>
-                <Text style={styles.tileTitle}>Notifications</Text>
-                <Text style={styles.tileSubtitle}>Updates & Alerts</Text>
-                {unreadCount > 0 && (
-                  <View style={styles.tileBadge}>
-                    <Text style={styles.tileBadgeText}>
-                      {unreadCount > 99 ? '99+' : unreadCount}
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
+              
             </View>
           </View>
 

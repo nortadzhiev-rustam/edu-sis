@@ -421,8 +421,8 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
               alignItems: 'baseline',
             }}
           >
-            <Text style={styles.subjectName}>{subjectName} </Text>
-            <Text style={styles.gradeName}>- {gradeName}</Text>
+            <Text style={styles.subjectName}>{gradeName} </Text>
+            
           </View>
 
           <Text style={styles.dateText}>
