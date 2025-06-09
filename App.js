@@ -22,19 +22,21 @@ import BehaviorScreen from './src/screens/BehaviorScreen';
 import WebViewScreen from './src/screens/WebViewScreen';
 import WebViewWithAuth from './src/screens/WebViewWithAuth';
 import SettingsScreen from './src/screens/SettingsScreen';
+import NotificationScreen from './src/screens/NotificationScreen';
 import { ThemeProvider } from './src/contexts/ThemeContext';
 import { LanguageProvider } from './src/contexts/LanguageContext';
+import { NotificationProvider } from './src/contexts/NotificationContext';
 import {
   requestUserPermission,
   notificationListener,
   getToken,
+  setupLocalNotifications,
 } from './src/utils/messaging';
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
-  const [fcmToken, setFcmToken] = useState(null);
 
   useEffect(() => {
     // We don't need to check login status here anymore
@@ -47,13 +49,15 @@ export default function App() {
         // Request permission with our custom UI flow
         await requestUserPermission();
 
+        // Setup local notifications
+        await setupLocalNotifications();
+
         // Setup notification listeners
         notificationListener();
 
         // Get the token if permission was granted
         const token = await getToken();
         if (token) {
-          setFcmToken(token);
           console.log('Firebase Messaging Token:', token);
         }
       } catch (error) {
@@ -102,48 +106,60 @@ export default function App() {
     <SafeAreaProvider>
       <ThemeProvider>
         <LanguageProvider>
-          <NavigationContainer>
-            <StatusBar style='auto' />
-            <Stack.Navigator
-              initialRouteName='Home'
-              screenOptions={{ headerShown: false }}
-            >
-              <Stack.Screen name='Home' component={HomeScreen} />
-              <Stack.Screen name='Login' component={LoginScreen} />
-              <Stack.Screen name='TeacherScreen' component={TeacherScreen} />
-              <Stack.Screen
-                name='TeacherTimetable'
-                component={TeacherTimetable}
-              />
-              <Stack.Screen
-                name='TeacherAttendance'
-                component={TeacherAttendanceScreen}
-              />
-              <Stack.Screen name='TeacherBPS' component={TeacherBPS} />
-              <Stack.Screen name='ParentScreen' component={ParentScreen} />
-              <Stack.Screen
-                name='TimetableScreen'
-                component={TimetableScreen}
-              />
-              <Stack.Screen name='GradesScreen' component={GradesScreen} />
-              <Stack.Screen
-                name='AttendanceScreen'
-                component={AttendanceScreen}
-              />
-              <Stack.Screen
-                name='AssignmentsScreen'
-                component={AssignmentsScreen}
-              />
-              <Stack.Screen name='BehaviorScreen' component={BehaviorScreen} />
-              <Stack.Screen name='SettingsScreen' component={SettingsScreen} />
-              <Stack.Screen name='WebView' component={WebViewScreen} />
-              <Stack.Screen
-                name='WebViewWithAuth'
-                component={WebViewWithAuth}
-              />
-            </Stack.Navigator>
-            {/* <DevTokenDisplay /> */}
-          </NavigationContainer>
+          <NotificationProvider>
+            <NavigationContainer>
+              <StatusBar style='auto' />
+              <Stack.Navigator
+                initialRouteName='Home'
+                screenOptions={{ headerShown: false }}
+              >
+                <Stack.Screen name='Home' component={HomeScreen} />
+                <Stack.Screen name='Login' component={LoginScreen} />
+                <Stack.Screen name='TeacherScreen' component={TeacherScreen} />
+                <Stack.Screen
+                  name='TeacherTimetable'
+                  component={TeacherTimetable}
+                />
+                <Stack.Screen
+                  name='TeacherAttendance'
+                  component={TeacherAttendanceScreen}
+                />
+                <Stack.Screen name='TeacherBPS' component={TeacherBPS} />
+                <Stack.Screen name='ParentScreen' component={ParentScreen} />
+                <Stack.Screen
+                  name='TimetableScreen'
+                  component={TimetableScreen}
+                />
+                <Stack.Screen name='GradesScreen' component={GradesScreen} />
+                <Stack.Screen
+                  name='AttendanceScreen'
+                  component={AttendanceScreen}
+                />
+                <Stack.Screen
+                  name='AssignmentsScreen'
+                  component={AssignmentsScreen}
+                />
+                <Stack.Screen
+                  name='BehaviorScreen'
+                  component={BehaviorScreen}
+                />
+                <Stack.Screen
+                  name='SettingsScreen'
+                  component={SettingsScreen}
+                />
+                <Stack.Screen name='WebView' component={WebViewScreen} />
+                <Stack.Screen
+                  name='WebViewWithAuth'
+                  component={WebViewWithAuth}
+                />
+                <Stack.Screen
+                  name='NotificationScreen'
+                  component={NotificationScreen}
+                />
+              </Stack.Navigator>
+              {/* <DevTokenDisplay /> */}
+            </NavigationContainer>
+          </NotificationProvider>
         </LanguageProvider>
       </ThemeProvider>
     </SafeAreaProvider>

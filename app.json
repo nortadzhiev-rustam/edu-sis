@@ -11,6 +11,14 @@
       "@react-native-firebase/app",
       "@react-native-firebase/messaging",
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#007AFF",
+          "sounds": ["./assets/notification-sound.wav"]
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "ios": {
@@ -27,7 +35,11 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.edunovaasia.edusis",
-      "googleServicesFile": "./GoogleService-Info.plist"
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"],
+        "NSUserNotificationsUsageDescription": "This app uses notifications to send you important updates about your education, including grades, attendance, and school announcements."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -35,7 +47,13 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.edunovaasia.edusis",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "WAKE_LOCK",
+        "com.google.android.c2dm.permission.RECEIVE"
+      ]
     },
     "web": {
       "favicon": "./assets/app_logo.png"

@@ -27,16 +27,21 @@ import {
   faUserCheck,
   faBookOpen,
   faUsers,
+  faBell,
 } from '@fortawesome/free-solid-svg-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useNotifications } from '../contexts/NotificationContext';
+import NotificationBadge from '../components/NotificationBadge';
+import { sendMultipleDemoNotifications } from '../utils/demoNotifications';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 export default function TeacherScreen({ route, navigation }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
+  const { unreadCount } = useNotifications();
   // Get user data from navigation params or AsyncStorage
   const [userData, setUserData] = useState(route?.params?.userData || {});
   const [loading, setLoading] = useState(true);
@@ -457,9 +462,19 @@ export default function TeacherScreen({ route, navigation }) {
           <Text style={styles.headerTitle}>{t('teacherDashboard')}</Text>
         </View>
 
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <FontAwesomeIcon icon={faSignOutAlt} size={22} color='#fff' />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.notificationButton}
+            onPress={() => navigation.navigate('NotificationScreen')}
+          >
+            <FontAwesomeIcon icon={faBell} size={20} color='#fff' />
+            <NotificationBadge />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <FontAwesomeIcon icon={faSignOutAlt} size={22} color='#fff' />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {loading ? (
@@ -515,15 +530,33 @@ export default function TeacherScreen({ route, navigation }) {
                 <FontAwesomeIcon icon={faRefresh} size={18} color='#007AFF' />
               </TouchableOpacity>
               {__DEV__ && (
-                <TouchableOpacity
-                  style={[styles.refreshButton, { backgroundColor: '#FF9500' }]}
-                  onPress={() => {
-                    console.log('Manual student count refresh');
-                    fetchAllStudentCounts();
-                  }}
-                >
-                  <FontAwesomeIcon icon={faUsers} size={16} color='#fff' />
-                </TouchableOpacity>
+                <>
+                  <TouchableOpacity
+                    style={[
+                      styles.refreshButton,
+                      { backgroundColor: '#FF9500' },
+                    ]}
+                    onPress={() => {
+                      console.log('Manual student count refresh');
+                      fetchAllStudentCounts();
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faUsers} size={16} color='#fff' />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.refreshButton,
+                      { backgroundColor: '#5856D6' },
+                    ]}
+                    onPress={() => {
+                      console.log('Sending demo notifications');
+                      sendMultipleDemoNotifications();
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faBell} size={16} color='#fff' />
+                  </TouchableOpacity>
+                </>
               )}
             </View>
           </View>
@@ -679,7 +712,6 @@ export default function TeacherScreen({ route, navigation }) {
                     </Text>
                   </View>
                 )}
-               
               </TouchableOpacity>
 
               {/* Quick Attendance Tile */}
@@ -728,6 +760,26 @@ export default function TeacherScreen({ route, navigation }) {
                 </View>
                 <Text style={styles.tileTitle}>Materials</Text>
                 <Text style={styles.tileSubtitle}>Resources & Files</Text>
+              </TouchableOpacity>
+
+              {/* Notifications Tile */}
+              <TouchableOpacity
+                style={[styles.actionTile, { backgroundColor: '#5856D6' }]}
+                onPress={() => navigation.navigate('NotificationScreen')}
+                activeOpacity={0.8}
+              >
+                <View style={styles.tileIconContainer}>
+                  <FontAwesomeIcon icon={faBell} size={28} color='#fff' />
+                </View>
+                <Text style={styles.tileTitle}>Notifications</Text>
+                <Text style={styles.tileSubtitle}>Updates & Alerts</Text>
+                {unreadCount > 0 && (
+                  <View style={styles.tileBadge}>
+                    <Text style={styles.tileBadgeText}>
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </Text>
+                  </View>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -814,6 +866,20 @@ const createStyles = (theme) =>
       color: theme.colors.headerText,
       fontSize: 22,
       fontWeight: 'bold',
+    },
+    headerActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    notificationButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      position: 'relative',
     },
     logoutButton: {
       paddingHorizontal: 10,
