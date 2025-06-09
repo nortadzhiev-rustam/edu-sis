@@ -10,32 +10,32 @@
 		13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.mm */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
-		3BF0C04561814B159EE97C3F /* noop-file.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAE02E4C64624723988A1805 /* noop-file.swift */; };
+		1ED3EAFDE59F4F5885885207 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 65936C42A1904C668BC1D649 /* GoogleService-Info.plist */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		90DF7E98B239942591AF497E /* Pods_BFIEducationSIS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F47E60BDB123F7D49FA37B03 /* Pods_BFIEducationSIS.framework */; };
+		964B770C3953A9A45B945BA5 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 3500A839CAF660BD4C6FCBCA /* PrivacyInfo.xcprivacy */; };
 		B18059E884C0ABDD17F3DC3D /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAC715A2D49A985799AEE119 /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		C1AEF0E7AA8B3B8C763061E9 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 291EA82B82E450E35C81DE37 /* PrivacyInfo.xcprivacy */; };
-		DBC3A23EF906483593F7057A /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 0C58D828D7374DF1BD0CCBD1 /* GoogleService-Info.plist */; };
+		C70247E33CBB515D6192D217 /* Pods_BFIEducationSIS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 98AA442CCB42A68F5F6DBBE5 /* Pods_BFIEducationSIS.framework */; };
+		C771FA514DBE48C8B06FD5B4 /* noop-file.swift in Sources */ = {isa = PBXBuildFile; fileRef = F39DEF751486454692821C93 /* noop-file.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		0C58D828D7374DF1BD0CCBD1 /* GoogleService-Info.plist */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "BFIEducationSIS/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* BFIEducationSIS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BFIEducationSIS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FAF1A68108700A75B9A /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = BFIEducationSIS/AppDelegate.h; sourceTree = "<group>"; };
 		13B07FB01A68108700A75B9A /* AppDelegate.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AppDelegate.mm; path = BFIEducationSIS/AppDelegate.mm; sourceTree = "<group>"; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = BFIEducationSIS/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = BFIEducationSIS/Info.plist; sourceTree = "<group>"; };
 		13B07FB71A68108700A75B9A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = BFIEducationSIS/main.m; sourceTree = "<group>"; };
-		291EA82B82E450E35C81DE37 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = BFIEducationSIS/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		15E90C26A3944A2C8F5FDDAF /* BFIEducationSIS-Bridging-Header.h */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.h; name = "BFIEducationSIS-Bridging-Header.h"; path = "BFIEducationSIS/BFIEducationSIS-Bridging-Header.h"; sourceTree = "<group>"; };
+		3500A839CAF660BD4C6FCBCA /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = BFIEducationSIS/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		65936C42A1904C668BC1D649 /* GoogleService-Info.plist */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "BFIEducationSIS/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		6C2E3173556A471DD304B334 /* Pods-BFIEducationSIS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BFIEducationSIS.debug.xcconfig"; path = "Target Support Files/Pods-BFIEducationSIS/Pods-BFIEducationSIS.debug.xcconfig"; sourceTree = "<group>"; };
-		6D379FF5FDF447AC81E0ABF5 /* BFIEducationSIS-Bridging-Header.h */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.h; name = "BFIEducationSIS-Bridging-Header.h"; path = "BFIEducationSIS/BFIEducationSIS-Bridging-Header.h"; sourceTree = "<group>"; };
 		7A4D352CD337FB3A3BF06240 /* Pods-BFIEducationSIS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BFIEducationSIS.release.xcconfig"; path = "Target Support Files/Pods-BFIEducationSIS/Pods-BFIEducationSIS.release.xcconfig"; sourceTree = "<group>"; };
+		98AA442CCB42A68F5F6DBBE5 /* Pods_BFIEducationSIS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_BFIEducationSIS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = BFIEducationSIS/SplashScreen.storyboard; sourceTree = "<group>"; };
-		BAE02E4C64624723988A1805 /* noop-file.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = "noop-file.swift"; path = "BFIEducationSIS/noop-file.swift"; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		F47E60BDB123F7D49FA37B03 /* Pods_BFIEducationSIS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_BFIEducationSIS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		F39DEF751486454692821C93 /* noop-file.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = "noop-file.swift"; path = "BFIEducationSIS/noop-file.swift"; sourceTree = "<group>"; };
 		FAC715A2D49A985799AEE119 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-BFIEducationSIS/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -44,7 +44,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				90DF7E98B239942591AF497E /* Pods_BFIEducationSIS.framework in Frameworks */,
+				C70247E33CBB515D6192D217 /* Pods_BFIEducationSIS.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -61,10 +61,10 @@
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				13B07FB71A68108700A75B9A /* main.m */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				0C58D828D7374DF1BD0CCBD1 /* GoogleService-Info.plist */,
-				BAE02E4C64624723988A1805 /* noop-file.swift */,
-				6D379FF5FDF447AC81E0ABF5 /* BFIEducationSIS-Bridging-Header.h */,
-				291EA82B82E450E35C81DE37 /* PrivacyInfo.xcprivacy */,
+				65936C42A1904C668BC1D649 /* GoogleService-Info.plist */,
+				F39DEF751486454692821C93 /* noop-file.swift */,
+				15E90C26A3944A2C8F5FDDAF /* BFIEducationSIS-Bridging-Header.h */,
+				3500A839CAF660BD4C6FCBCA /* PrivacyInfo.xcprivacy */,
 			);
 			name = BFIEducationSIS;
 			sourceTree = "<group>";
@@ -73,7 +73,7 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				F47E60BDB123F7D49FA37B03 /* Pods_BFIEducationSIS.framework */,
+				98AA442CCB42A68F5F6DBBE5 /* Pods_BFIEducationSIS.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -150,14 +150,14 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "BFIEducationSIS" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				2927169A3064CD874F118FC0 /* [Expo] Configure project */,
+				ED5AA9C5F3FE2EE9BADB9D52 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				19EBB9441B47B07D10D04C82 /* [CP] Embed Pods Frameworks */,
-				F79B4E63B8DD537FE853A5F3 /* [CP-User] [RNFB] Core Configuration */,
+				35E42E974B91E71FAFC40DE9 /* [CP] Embed Pods Frameworks */,
+				F7FFEDC977692CA7CE476886 /* [CP-User] [RNFB] Core Configuration */,
 			);
 			buildRules = (
 			);
@@ -207,8 +207,8 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				DBC3A23EF906483593F7057A /* GoogleService-Info.plist in Resources */,
-				C1AEF0E7AA8B3B8C763061E9 /* PrivacyInfo.xcprivacy in Resources */,
+				1ED3EAFDE59F4F5885885207 /* GoogleService-Info.plist in Resources */,
+				964B770C3953A9A45B945BA5 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -252,7 +252,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		19EBB9441B47B07D10D04C82 /* [CP] Embed Pods Frameworks */ = {
+		35E42E974B91E71FAFC40DE9 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -269,25 +269,6 @@
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-BFIEducationSIS/Pods-BFIEducationSIS-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
-		};
-		2927169A3064CD874F118FC0 /* [Expo] Configure project */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "[Expo] Configure project";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-BFIEducationSIS/expo-configure-project.sh\"\n";
 		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -355,7 +336,26 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-BFIEducationSIS/Pods-BFIEducationSIS-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		F79B4E63B8DD537FE853A5F3 /* [CP-User] [RNFB] Core Configuration */ = {
+		ED5AA9C5F3FE2EE9BADB9D52 /* [Expo] Configure project */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "[Expo] Configure project";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-BFIEducationSIS/expo-configure-project.sh\"\n";
+		};
+		F7FFEDC977692CA7CE476886 /* [CP-User] [RNFB] Core Configuration */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -378,7 +378,7 @@
 				13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,
 				B18059E884C0ABDD17F3DC3D /* ExpoModulesProvider.swift in Sources */,
-				3BF0C04561814B159EE97C3F /* noop-file.swift in Sources */,
+				C771FA514DBE48C8B06FD5B4 /* noop-file.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
