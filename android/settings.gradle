@@ -21,7 +21,7 @@ extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
   }
 }
 
-rootProject.name = 'edu-sis'
+rootProject.name = 'BFI Education SIS'
 
 dependencyResolutionManagement {
   versionCatalogs {
