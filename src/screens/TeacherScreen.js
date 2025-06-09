@@ -19,13 +19,14 @@ import {
   faSignOutAlt,
   faArrowLeft,
   faCalendarAlt,
-  faUsers,
   faGavel,
   faChartLine,
-  faCheckCircle,
   faRefresh,
   faBuilding,
   faChevronRight,
+  faUserCheck,
+  faBookOpen,
+  faUsers,
 } from '@fortawesome/free-solid-svg-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../contexts/ThemeContext';
@@ -44,6 +45,8 @@ export default function TeacherScreen({ route, navigation }) {
   const [timetableData, setTimetableData] = useState(null);
   const [bpsData, setBpsData] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [studentCounts, setStudentCounts] = useState({}); // Store student counts per timetable ID
+  const [branchStudentCounts, setBranchStudentCounts] = useState({}); // Store unique student counts per branch
 
   const [dashboardStats, setDashboardStats] = useState({
     totalClasses: 0,
@@ -57,7 +60,7 @@ export default function TeacherScreen({ route, navigation }) {
 
   // Fetch teacher timetable data
   const fetchTeacherTimetable = async () => {
-    if (!userData.authCode) return;
+    if (!userData.authCode) return null;
 
     try {
       const url = buildApiUrl(Config.API_ENDPOINTS.GET_TEACHER_TIMETABLE, {
@@ -75,7 +78,6 @@ export default function TeacherScreen({ route, navigation }) {
       if (response.ok) {
         const data = await response.json();
         setTimetableData(data);
-        console.log('Teacher timetable data:', data);
 
         // Calculate stats
         if (data.success && data.branches) {
@@ -96,13 +98,18 @@ export default function TeacherScreen({ route, navigation }) {
             attendanceTaken,
             branches: data.total_branches,
           }));
+
+          // Immediately fetch student counts with the fresh data
+          await fetchAllStudentCounts(data);
         }
-      } else {
-        console.error('Failed to fetch teacher timetable:', response.status);
+
+        return data;
       }
     } catch (error) {
-      console.error('Error fetching teacher timetable:', error);
+      console.log('Error fetching teacher timetable:', error);
     }
+
+    return null;
   };
 
   // Fetch teacher BPS data
@@ -124,7 +131,6 @@ export default function TeacherScreen({ route, navigation }) {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Teacher BPS data:', data);
         setBpsData(data);
 
         // Calculate stats
@@ -139,59 +145,197 @@ export default function TeacherScreen({ route, navigation }) {
             totalBpsRecords,
           }));
         }
-      } else {
-        console.error('Failed to fetch teacher BPS:', response.status);
       }
     } catch (error) {
-      console.error('Error fetching teacher BPS:', error);
+      // Handle error silently
     }
   };
 
-  // Calculate students taught by this teacher
-  const calculateStudentsTaught = () => {
-    if (!timetableData?.branches || !bpsData?.branches) return 0;
+  // Fetch student list for a specific timetable entry
+  const fetchStudentListForTimetable = async (timetableId) => {
+    if (!userData.authCode || !timetableId) {
+      console.log(
+        'fetchStudentListForTimetable: Missing authCode or timetableId',
+        {
+          hasAuthCode: !!userData.authCode,
+          timetableId,
+        }
+      );
+      return [];
+    }
 
-    const taughtStudents = new Set();
+    try {
+      const url = buildApiUrl(Config.API_ENDPOINTS.GET_ATTENDANCE_DETAILS, {
+        authCode: userData.authCode,
+        timetableId: timetableId,
+      });
 
-    // Get all classes/grades the teacher teaches from timetable
-    const taughtClasses = new Set();
-    timetableData.branches.forEach((branch) => {
+      console.log(`Fetching students for timetable ${timetableId} from:`, url);
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`Response for timetable ${timetableId}:`, {
+          success: data.success,
+          studentCount: data.students?.length || 0,
+          hasStudents: !!data.students,
+        });
+
+        if (data.success && data.students) {
+          return data.students; // Return the full student list
+        } else {
+          console.log(`No students found for timetable ${timetableId}:`, data);
+        }
+      } else {
+        console.log(
+          `HTTP error for timetable ${timetableId}:`,
+          response.status,
+          response.statusText
+        );
+      }
+    } catch (error) {
+      console.log(
+        `Error fetching students for timetable ${timetableId}:`,
+        error
+      );
+    }
+
+    return [];
+  };
+
+  // Fetch student lists for all timetable entries and count unique students
+  const fetchAllStudentCounts = async (currentTimetableData = null) => {
+    // Use passed data or current state
+    const dataToUse = currentTimetableData || timetableData;
+
+    if (!dataToUse?.branches || !userData.authCode) {
+      console.log('fetchAllStudentCounts: Missing data or authCode', {
+        hasBranches: !!dataToUse?.branches,
+        hasAuthCode: !!userData.authCode,
+        branchCount: dataToUse?.branches?.length || 0,
+      });
+      return;
+    }
+
+    console.log(
+      'fetchAllStudentCounts: Starting to fetch student counts for',
+      dataToUse.branches.length,
+      'branches'
+    );
+
+    const counts = {};
+    const allUniqueStudents = new Set(); // Track unique students across all classes
+    const branchStudents = {}; // Track unique students per branch
+
+    // Collect all timetable IDs and fetch student lists
+    const timetablePromises = [];
+    dataToUse.branches.forEach((branch) => {
+      branchStudents[branch.branch_id] = new Set();
+
       branch.timetable.forEach((classItem) => {
-        if (classItem.grade) {
-          taughtClasses.add(classItem.grade.toLowerCase().trim());
+        if (classItem.timetable_id) {
+          timetablePromises.push(
+            fetchStudentListForTimetable(classItem.timetable_id)
+              .then((students) => {
+                counts[classItem.timetable_id] = students.length;
+                console.log(
+                  `Timetable ${classItem.timetable_id}: ${students.length} students`
+                );
+
+                // Add students to unique sets
+                students.forEach((student) => {
+                  if (student.student_id) {
+                    allUniqueStudents.add(student.student_id);
+                    branchStudents[branch.branch_id].add(student.student_id);
+                  }
+                });
+
+                return {
+                  timetableId: classItem.timetable_id,
+                  count: students.length,
+                  branchId: branch.branch_id,
+                  students: students,
+                };
+              })
+              .catch((error) => {
+                console.log(
+                  `Error fetching students for timetable ${classItem.timetable_id}:`,
+                  error
+                );
+                counts[classItem.timetable_id] = 0;
+                return {
+                  timetableId: classItem.timetable_id,
+                  count: 0,
+                  branchId: branch.branch_id,
+                  students: [],
+                };
+              })
+          );
         }
       });
     });
 
-    // Find students in those classes from BPS data
-    bpsData.branches.forEach((branch) => {
-      if (branch.students) {
-        branch.students.forEach((student) => {
-          // Only count students with valid classrooms
-          if (student.classroom_name && student.classroom_name.trim() !== '') {
-            // Extract grade/class from classroom name (e.g., "Grade 5A" -> "grade 5")
-            const classroomLower = student.classroom_name.toLowerCase();
+    // Wait for all requests to complete
+    try {
+      await Promise.all(timetablePromises);
 
-            // Check if this student's class matches any class the teacher teaches
-            for (const taughtClass of taughtClasses) {
-              if (classroomLower.includes(taughtClass)) {
-                taughtStudents.add(student.student_id);
-                break;
-              }
-            }
-          }
-        });
-      }
+      // Convert branch student sets to counts
+      const branchCounts = Object.fromEntries(
+        Object.entries(branchStudents).map(([branchId, studentSet]) => [
+          branchId,
+          studentSet.size,
+        ])
+      );
+
+      console.log('Student count results:', {
+        totalUniqueStudents: allUniqueStudents.size,
+        branchCounts,
+        timetableCounts: counts,
+      });
+
+      setStudentCounts(counts);
+      setBranchStudentCounts(branchCounts);
+      setDashboardStats((prev) => ({
+        ...prev,
+        totalStudents: allUniqueStudents.size,
+      }));
+    } catch (error) {
+      console.log('Error in fetchAllStudentCounts:', error);
+    }
+  };
+
+  // Debug function to log current state
+  const logCurrentState = () => {
+    console.log('Current state debug:', {
+      hasUserData: !!userData.authCode,
+      hasTimetableData: !!timetableData?.branches,
+      timetableBranchCount: timetableData?.branches?.length || 0,
+      studentCountsKeys: Object.keys(studentCounts).length,
+      branchStudentCountsKeys: Object.keys(branchStudentCounts).length,
+      totalStudents: dashboardStats.totalStudents,
+      refreshing,
     });
-
-    return taughtStudents.size;
   };
 
   // Load all teacher data
   const loadTeacherData = async () => {
     setRefreshing(true);
-    await Promise.all([fetchTeacherTimetable(), fetchTeacherBPS()]);
-    setRefreshing(false);
+
+    try {
+      // Load timetable and BPS data - timetable will automatically fetch student counts
+      await Promise.all([fetchTeacherTimetable(), fetchTeacherBPS()]);
+    } catch (error) {
+      console.log('Error loading teacher data:', error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   useEffect(() => {
@@ -211,14 +355,13 @@ export default function TeacherScreen({ route, navigation }) {
             }
           }
         } catch (error) {
-          console.error('Error retrieving user data:', error);
+          // Handle error silently
         }
       }
       setLoading(false);
     };
 
     getUserData();
-    console.log(userData);
   }, [userData]);
 
   // Load teacher data when userData is available
@@ -228,16 +371,52 @@ export default function TeacherScreen({ route, navigation }) {
     }
   }, [userData.authCode, loading]);
 
-  // Calculate students taught when both datasets are available
-  useEffect(() => {
-    if (timetableData && bpsData) {
-      const studentsTaught = calculateStudentsTaught();
-      setDashboardStats((prev) => ({
-        ...prev,
-        totalStudents: studentsTaught,
-      }));
+  // Calculate unique students taught per branch using API data
+  const calculateStudentsPerBranch = (branchId) => {
+    if (!timetableData?.branches) return 0;
+
+    // If we have the accurate branch student count from API, use that
+    if (branchStudentCounts[branchId] !== undefined) {
+      return branchStudentCounts[branchId];
     }
-  }, [timetableData, bpsData]);
+
+    // Find the branch for fallback calculation
+    const targetBranch = timetableData.branches.find(
+      (b) => b.branch_id === branchId
+    );
+    if (!targetBranch) return 0;
+
+    // Fallback: estimate based on average class size
+    // This is not accurate but better than summing all periods
+    const classCount = targetBranch.timetable.length;
+    if (classCount > 0 && Object.keys(studentCounts).length > 0) {
+      // Get average students per class for this branch
+      let totalStudentsInPeriods = 0;
+      let periodsWithData = 0;
+
+      targetBranch.timetable.forEach((classItem) => {
+        if (classItem.timetable_id && studentCounts[classItem.timetable_id]) {
+          totalStudentsInPeriods += studentCounts[classItem.timetable_id];
+          periodsWithData++;
+        }
+      });
+
+      if (periodsWithData > 0) {
+        // Estimate unique students (assuming some overlap between periods)
+        const avgStudentsPerPeriod = totalStudentsInPeriods / periodsWithData;
+        // Rough estimate: if teacher has multiple periods, assume 70% overlap
+        const estimatedUniqueStudents = Math.round(
+          avgStudentsPerPeriod * Math.min(periodsWithData, 2)
+        );
+        return estimatedUniqueStudents;
+      }
+    }
+
+    return 0;
+  };
+
+  // Note: Student counts are now fetched directly in fetchTeacherTimetable
+  // This eliminates race conditions and ensures data consistency
 
   const handleLogout = () => {
     Alert.alert(t('logout'), 'Are you sure you want to logout?', [
@@ -325,12 +504,28 @@ export default function TeacherScreen({ route, navigation }) {
                 </Text>
               </View>
             </View>
-            <TouchableOpacity
-              style={styles.refreshButton}
-              onPress={loadTeacherData}
-            >
-              <FontAwesomeIcon icon={faRefresh} size={18} color='#007AFF' />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <TouchableOpacity
+                style={styles.refreshButton}
+                onPress={() => {
+                  logCurrentState();
+                  loadTeacherData();
+                }}
+              >
+                <FontAwesomeIcon icon={faRefresh} size={18} color='#007AFF' />
+              </TouchableOpacity>
+              {__DEV__ && (
+                <TouchableOpacity
+                  style={[styles.refreshButton, { backgroundColor: '#FF9500' }]}
+                  onPress={() => {
+                    console.log('Manual student count refresh');
+                    fetchAllStudentCounts();
+                  }}
+                >
+                  <FontAwesomeIcon icon={faUsers} size={16} color='#fff' />
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
 
           {/* Dashboard Stats */}
@@ -358,8 +553,9 @@ export default function TeacherScreen({ route, navigation }) {
                         {branch.branch_name}
                       </Text>
                       <Text style={styles.branchDetails}>
-                        Academic Year: {timetableData.global_academic_year.academic_year} • Week:{' '}
-                        {branch.current_week}
+                        Academic Year:{' '}
+                        {timetableData.global_academic_year.academic_year} •
+                        Week: {branch.current_week}
                       </Text>
                     </View>
                   </View>
@@ -368,7 +564,16 @@ export default function TeacherScreen({ route, navigation }) {
                       <Text style={styles.branchStatNumber}>
                         {branch.timetable.length}
                       </Text>
-                      <Text style={styles.branchStatLabel}>Classes</Text>
+                      <Text style={styles.branchStatLabel}>Weekly Classes</Text>
+                    </View>
+                    <View style={styles.branchStat}>
+                      <Text style={styles.branchStatNumber}>
+                        {Object.keys(branchStudentCounts).length === 0 &&
+                        Object.keys(studentCounts).length === 0
+                          ? '...'
+                          : calculateStudentsPerBranch(branch.branch_id)}
+                      </Text>
+                      <Text style={styles.branchStatLabel}>My Students</Text>
                     </View>
                     <View style={styles.branchStat}>
                       <Text style={styles.branchStatNumber}>
@@ -378,92 +583,26 @@ export default function TeacherScreen({ route, navigation }) {
                           ).length
                         }
                       </Text>
-                      <Text style={styles.branchStatLabel}>Attended</Text>
+                      <Text style={styles.branchStatLabel}>
+                        Attendance Taken
+                      </Text>
                     </View>
                   </View>
                 </View>
               ))}
             </View>
           )}
-          <View style={styles.statsContainer}>
-            <Text style={styles.sectionTitle}>Dashboard Overview</Text>
-            <View style={styles.statsGrid}>
-              <View style={styles.statCard}>
-                <View
-                  style={[
-                    styles.statIconContainer,
-                    { backgroundColor: '#34C75915' },
-                  ]}
-                >
-                  <FontAwesomeIcon
-                    icon={faCalendarAlt}
-                    size={20}
-                    color='#34C759'
-                  />
-                </View>
-                <Text style={styles.statNumber}>
-                  {dashboardStats.totalClasses}
-                </Text>
-                <Text style={styles.statLabel}>Total Classes</Text>
-              </View>
-
-              <View style={styles.statCard}>
-                <View
-                  style={[
-                    styles.statIconContainer,
-                    { backgroundColor: '#007AFF15' },
-                  ]}
-                >
-                  <FontAwesomeIcon
-                    icon={faCheckCircle}
-                    size={20}
-                    color='#007AFF'
-                  />
-                </View>
-                <Text style={styles.statNumber}>
-                  {dashboardStats.attendanceTaken}
-                </Text>
-                <Text style={styles.statLabel}>Attendance Taken</Text>
-              </View>
-
-              <View style={styles.statCard}>
-                <View
-                  style={[
-                    styles.statIconContainer,
-                    { backgroundColor: '#FF950015' },
-                  ]}
-                >
-                  <FontAwesomeIcon icon={faUsers} size={20} color='#FF9500' />
-                </View>
-                <Text style={styles.statNumber}>
-                  {dashboardStats.totalStudents}
-                </Text>
-                <Text style={styles.statLabel}>My Students</Text>
-              </View>
-
-              <View style={styles.statCard}>
-                <View
-                  style={[
-                    styles.statIconContainer,
-                    { backgroundColor: '#AF52DE15' },
-                  ]}
-                >
-                  <FontAwesomeIcon icon={faGavel} size={20} color='#AF52DE' />
-                </View>
-                <Text style={styles.statNumber}>
-                  {dashboardStats.totalBpsRecords}
-                </Text>
-                <Text style={styles.statLabel}>BPS Records</Text>
-              </View>
-            </View>
-          </View>
 
           {/* Quick Actions */}
           <View style={styles.quickActionsContainer}>
             <Text style={styles.sectionTitle}>{t('quickActions')}</Text>
-            <View style={styles.actionGrid}>
+            <View style={styles.actionTilesGrid}>
+              {/* Timetable Tile */}
               <TouchableOpacity
-                style={styles.actionCard}
+                style={[
+                  styles.actionTile,
+                  { backgroundColor: theme.colors.primary },
+                ]}
                 onPress={() =>
                   navigation.navigate('TeacherTimetable', {
                     authCode: userData.authCode,
@@ -471,34 +610,31 @@ export default function TeacherScreen({ route, navigation }) {
                     timetableData: timetableData,
                   })
                 }
+                activeOpacity={0.8}
               >
-                <View
-                  style={[
-                    styles.actionIconContainer,
-                    { backgroundColor: '#34C75915' },
-                  ]}
-                >
+                <View style={styles.tileIconContainer}>
                   <FontAwesomeIcon
                     icon={faCalendarAlt}
-                    size={24}
-                    color='#34C759'
+                    size={28}
+                    color={theme.colors.headerText}
                   />
                 </View>
-                <Text style={styles.actionTitle}>{t('viewTimetable')}</Text>
-                <Text style={styles.actionSubtitle}>
-                  View schedule & take attendance
-                </Text>
-                <View style={styles.actionBadge}>
-                  <Text style={styles.actionBadgeText}>
-                    {dashboardStats.totalClasses -
-                      dashboardStats.attendanceTaken}{' '}
-                    pending
-                  </Text>
-                </View>
+                <Text style={styles.tileTitle}>{t('viewTimetable')}</Text>
+                <Text style={styles.tileSubtitle}>Schedule & Attendance</Text>
+                {dashboardStats.totalClasses - dashboardStats.attendanceTaken >
+                  0 && (
+                  <View style={styles.tileBadge}>
+                    <Text style={styles.tileBadgeText}>
+                      {dashboardStats.totalClasses -
+                        dashboardStats.attendanceTaken}
+                    </Text>
+                  </View>
+                )}
               </TouchableOpacity>
 
+              {/* BPS Management Tile */}
               <TouchableOpacity
-                style={styles.actionCard}
+                style={[styles.actionTile, { backgroundColor: '#AF52DE' }]}
                 onPress={() =>
                   navigation.navigate('TeacherBPS', {
                     authCode: userData.authCode,
@@ -506,24 +642,103 @@ export default function TeacherScreen({ route, navigation }) {
                     bpsData: bpsData,
                   })
                 }
+                activeOpacity={0.8}
               >
-                <View
-                  style={[
-                    styles.actionIconContainer,
-                    { backgroundColor: '#AF52DE15' },
-                  ]}
-                >
-                  <FontAwesomeIcon icon={faGavel} size={24} color='#AF52DE' />
+                <View style={styles.tileIconContainer}>
+                  <FontAwesomeIcon icon={faGavel} size={28} color='#fff' />
                 </View>
-                <Text style={styles.actionTitle}>{t('manageBPS')}</Text>
-                <Text style={styles.actionSubtitle}>
-                  Manage student behavior points
-                </Text>
-                <View style={styles.actionBadge}>
-                  <Text style={styles.actionBadgeText}>
-                    {dashboardStats.totalBpsRecords} records
-                  </Text>
+                <Text style={styles.tileTitle}>{t('manageBPS')}</Text>
+                <Text style={styles.tileSubtitle}>Behavior Points</Text>
+                {dashboardStats.totalBpsRecords > 0 && (
+                  <View style={styles.tileBadge}>
+                    <Text style={styles.tileBadgeText}>
+                      {dashboardStats.totalBpsRecords}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              {/* Students Overview Tile */}
+              <TouchableOpacity
+                style={[styles.actionTile, { backgroundColor: '#34C759' }]}
+                onPress={() => {
+                  // Navigate to students overview or show alert for now
+                  Alert.alert('Students Overview', 'Feature coming soon!');
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={styles.tileIconContainer}>
+                  <FontAwesomeIcon icon={faUsers} size={28} color='#fff' />
                 </View>
+                <Text style={styles.tileTitle}>My Students</Text>
+                <Text style={styles.tileSubtitle}>Overview & Reports</Text>
+                {dashboardStats.totalStudents > 0 && (
+                  <View style={styles.tileBadge}>
+                    <Text style={styles.tileBadgeText}>
+                      {dashboardStats.totalStudents}
+                    </Text>
+                  </View>
+                )}
+                {/* Debug info - remove in production */}
+                {__DEV__ && (
+                  <View style={{ position: 'absolute', bottom: 5, left: 5 }}>
+                    <Text
+                      style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)' }}
+                    >
+                      Debug: {dashboardStats.totalStudents} | SC:{' '}
+                      {Object.keys(studentCounts).length} | BSC:{' '}
+                      {Object.keys(branchStudentCounts).length}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              {/* Quick Attendance Tile */}
+              <TouchableOpacity
+                style={[styles.actionTile, { backgroundColor: '#FF9500' }]}
+                onPress={() => {
+                  // Navigate to quick attendance or show alert for now
+                  Alert.alert('Quick Attendance', 'Feature coming soon!');
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={styles.tileIconContainer}>
+                  <FontAwesomeIcon icon={faUserCheck} size={28} color='#fff' />
+                </View>
+                <Text style={styles.tileTitle}>Quick Attendance</Text>
+                <Text style={styles.tileSubtitle}>Mark Present/Absent</Text>
+              </TouchableOpacity>
+
+              {/* Reports Tile */}
+              <TouchableOpacity
+                style={[styles.actionTile, { backgroundColor: '#007AFF' }]}
+                onPress={() => {
+                  // Navigate to reports or show alert for now
+                  Alert.alert('Reports', 'Feature coming soon!');
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={styles.tileIconContainer}>
+                  <FontAwesomeIcon icon={faChartLine} size={28} color='#fff' />
+                </View>
+                <Text style={styles.tileTitle}>Reports</Text>
+                <Text style={styles.tileSubtitle}>Analytics & Stats</Text>
+              </TouchableOpacity>
+
+              {/* Class Materials Tile */}
+              <TouchableOpacity
+                style={[styles.actionTile, { backgroundColor: '#FF3B30' }]}
+                onPress={() => {
+                  // Navigate to class materials or show alert for now
+                  Alert.alert('Class Materials', 'Feature coming soon!');
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={styles.tileIconContainer}>
+                  <FontAwesomeIcon icon={faBookOpen} size={28} color='#fff' />
+                </View>
+                <Text style={styles.tileTitle}>Materials</Text>
+                <Text style={styles.tileSubtitle}>Resources & Files</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -573,8 +788,6 @@ export default function TeacherScreen({ route, navigation }) {
               </TouchableOpacity>
             </View>
           </View>
-
-          
         </ScrollView>
       )}
     </SafeAreaView>
@@ -683,6 +896,12 @@ const createStyles = (theme) =>
       color: theme.colors.textSecondary,
       fontWeight: '500',
     },
+    teacherStats: {
+      fontSize: 12,
+      color: theme.colors.textLight,
+      fontWeight: '400',
+      marginTop: 4,
+    },
     refreshButton: {
       width: 40,
       height: 40,
@@ -740,19 +959,91 @@ const createStyles = (theme) =>
       textAlign: 'center',
     },
 
-    // Quick Actions
+    // Quick Actions - Tile Layout
     quickActionsContainer: {
       marginHorizontal: 20,
       marginBottom: 25,
     },
+    actionTilesGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      gap: 12,
+    },
+    actionTile: {
+      width: (screenWidth - 56) / 2, // 2 tiles per row with margins and gap
+      aspectRatio: 1, // Square tiles
+      borderRadius: 24,
+      padding: 20,
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.2,
+      shadowRadius: 12,
+      elevation: 8,
+      position: 'relative',
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    tileIconContainer: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: 'rgba(255, 255, 255, 0.25)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.3)',
+    },
+    tileTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: '#fff',
+      marginBottom: 4,
+      letterSpacing: 0.3,
+    },
+    tileSubtitle: {
+      fontSize: 12,
+      color: 'rgba(255, 255, 255, 0.8)',
+      fontWeight: '500',
+      marginBottom: 8,
+    },
+    tileBadge: {
+      position: 'absolute',
+      top: 16,
+      right: 16,
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderRadius: 14,
+      minWidth: 28,
+      height: 28,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 10,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    tileBadgeText: {
+      fontSize: 13,
+      fontWeight: '800',
+      color: '#333',
+      letterSpacing: 0.2,
+    },
+
+    // Legacy Quick Actions (keeping for backward compatibility)
     actionGrid: {
       gap: 15,
     },
     actionCard: {
-      backgroundColor: theme.colors.surface, // Changed from '#fff'
+      backgroundColor: theme.colors.surface,
       borderRadius: 16,
       padding: 20,
-      shadowColor: theme.colors.shadow, // Changed from '#000'
+      shadowColor: theme.colors.shadow,
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1,
       shadowRadius: 8,
@@ -769,16 +1060,16 @@ const createStyles = (theme) =>
     actionTitle: {
       fontSize: 18,
       fontWeight: 'bold',
-      color: theme.colors.text, // Changed from '#1a1a1a'
+      color: theme.colors.text,
       marginBottom: 6,
     },
     actionSubtitle: {
       fontSize: 14,
-      color: theme.colors.textSecondary, // Changed from '#666'
+      color: theme.colors.textSecondary,
       marginBottom: 12,
     },
     actionBadge: {
-      backgroundColor: theme.colors.surface, // Changed from '#f0f9ff'
+      backgroundColor: theme.colors.surface,
       paddingHorizontal: 12,
       paddingVertical: 6,
       borderRadius: 20,
@@ -788,7 +1079,7 @@ const createStyles = (theme) =>
     },
     actionBadgeText: {
       fontSize: 12,
-      color: theme.colors.info, // Changed from '#0369a1'
+      color: theme.colors.info,
       fontWeight: '600',
     },
 

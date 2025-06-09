@@ -20,6 +20,7 @@ import {
   faRefresh,
   faUserCheck,
   faEye,
+  faChevronRight,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -426,25 +427,48 @@ export default function TeacherTimetable({ route, navigation }) {
                   </View>
 
                   {classItem.attendance_taken && (
-                    <TouchableOpacity
-                      style={styles.attendanceDetails}
-                      onPress={() => viewAttendanceDetails(classItem)}
-                    >
-                      <FontAwesomeIcon
-                        icon={faCheckCircle}
-                        size={14}
-                        color={theme.colors.success} // Use theme color
-                      />
-                      <Text style={styles.attendanceCount}>
-                        Attendance completed
-                      </Text>
-                      <FontAwesomeIcon
-                        icon={faEye}
-                        size={14}
-                        color={theme.colors.primary} // Use theme color
-                        style={styles.viewIcon}
-                      />
-                    </TouchableOpacity>
+                    <View style={styles.attendanceDetailsContainer}>
+                      <View style={styles.attendanceStatusInfo}>
+                        <View style={styles.statusIconContainer}>
+                          <FontAwesomeIcon
+                            icon={faCheckCircle}
+                            size={16}
+                            color={theme.colors.success}
+                          />
+                        </View>
+                        <View style={styles.statusTextContainer}>
+                          <Text style={styles.attendanceCompletedText}>
+                            Attendance Completed
+                          </Text>
+                          <Text style={styles.attendanceTimestamp}>
+                            Tap to view details
+                          </Text>
+                        </View>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.modernViewButton}
+                        onPress={() => viewAttendanceDetails(classItem)}
+                        activeOpacity={0.7}
+                      >
+                        <View style={styles.viewButtonContent}>
+                          <FontAwesomeIcon
+                            icon={faEye}
+                            size={16}
+                            color={theme.colors.headerText}
+                          />
+                          <Text style={styles.viewButtonText}>
+                            View Details
+                          </Text>
+                        </View>
+                        <View style={styles.viewButtonArrow}>
+                          <FontAwesomeIcon
+                            icon={faChevronRight}
+                            size={12}
+                            color={theme.colors.headerText}
+                          />
+                        </View>
+                      </TouchableOpacity>
+                    </View>
                   )}
                 </View>
               ))
@@ -741,21 +765,107 @@ const createStyles = (theme) =>
       fontWeight: '600',
       marginLeft: 6,
     },
+    // Redesigned Attendance Details Section
+    attendanceDetailsContainer: {
+      paddingTop: 15,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border,
+    },
+    attendanceStatusInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    statusIconContainer: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: theme.colors.success + '15',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    statusTextContainer: {
+      flex: 1,
+    },
+    attendanceCompletedText: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: theme.colors.success,
+      marginBottom: 3,
+      letterSpacing: 0.2,
+    },
+    attendanceTimestamp: {
+      fontSize: 13,
+      color: theme.colors.textSecondary,
+      fontWeight: '500',
+    },
+
+    // Modern View Button
+    modernViewButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: theme.colors.primary,
+      paddingHorizontal: 18,
+      paddingVertical: 14,
+      borderRadius: 14,
+      shadowColor: theme.colors.primary,
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.25,
+      shadowRadius: 6,
+      elevation: 5,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    viewButtonContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
+    viewButtonText: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: theme.colors.headerText,
+      marginLeft: 10,
+      letterSpacing: 0.3,
+    },
+    viewButtonArrow: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: 'rgba(255, 255, 255, 0.15)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.1)',
+    },
+
+    // Legacy styles (keeping for backward compatibility)
     attendanceDetails: {
       flexDirection: 'row',
       alignItems: 'center',
       paddingTop: 10,
       borderTopWidth: 1,
-      borderTopColor: theme.colors.border, // Changed from '#f0f0f0'
+      borderTopColor: theme.colors.border,
     },
     attendanceCount: {
       fontSize: 14,
-      color: theme.colors.textSecondary, // Changed from '#666'
+      color: theme.colors.textSecondary,
       marginLeft: 8,
       flex: 1,
     },
     viewIcon: {
       marginLeft: 8,
+    },
+    viewText: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      marginLeft: 6,
+    },
+    viewIconContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
     },
 
     // Empty State

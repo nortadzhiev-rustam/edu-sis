@@ -146,8 +146,21 @@ export default function TeacherBPS({ route, navigation }) {
         return;
       }
 
-      // Determine case type from the behaviors
-      const caseType = behaviorsToSubmit[0].item_type?.toUpperCase() || 'PRS';
+      // Determine case type from the behaviors and convert to numeric format
+      // API expects: "0" for PRS (Positive Reinforcement System), "1" for DPS (Discipline Point System)
+      const behaviorType =
+        behaviorsToSubmit[0].item_type?.toUpperCase()?.trim() || 'PRS';
+
+      // Convert behavior type to numeric case_type for API
+      let caseType;
+      if (behaviorType === 'PRS' || behaviorType === 'POSITIVE') {
+        caseType = '0';
+      } else if (behaviorType === 'DPS' || behaviorType === 'NEGATIVE') {
+        caseType = '1';
+      } else {
+        // Default to PRS if unknown type
+        caseType = '0';
+      }
 
       // Get current date in YYYY-MM-DD format
       const currentDate = new Date().toISOString().split('T')[0];

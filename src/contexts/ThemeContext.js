@@ -15,8 +15,8 @@ export const useTheme = () => {
 const lightTheme = {
   mode: 'light',
   colors: {
-    primary: '#5856D6',
-    secondary: '#007AFF',
+    primary: '#007AFF',
+    secondary: '#5856D6',
     background: '#f5f5f5',
     surface: '#ffffff',
     text: '#333333',
@@ -162,9 +162,7 @@ export const ThemeProvider = ({ children }) => {
   };
 
   return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
   );
 };
 

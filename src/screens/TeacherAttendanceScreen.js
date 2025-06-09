@@ -216,23 +216,23 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
 
       // Format attendance data according to backend expectations
       // Format: studentId|attendanceStatus|attendanceNote
-      const formattedAttendance = students.map(student => 
-        `${student.student_id}|${student.attendance_status}|`
-      ).join('/');
+      const formattedAttendance = students
+        .map((student) => `${student.student_id}|${student.attendance_status}|`)
+        .join('/');
 
       // Prepare API request
       const endpoint = Config.API_ENDPOINTS.TAKE_ATTENDANCE;
       const url = buildApiUrl(endpoint, { authCode });
 
       console.log('Submitting attendance to URL:', url);
-      
+
       const requestPayload = {
         auth_code: authCode,
         timetable: timetableId,
         attendance: formattedAttendance,
-        topic: '' // Optional topic field
+        topic: '', // Optional topic field
       };
-      
+
       console.log('Request payload:', JSON.stringify(requestPayload));
 
       const response = await fetch(url, {
@@ -245,43 +245,79 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
       });
 
       console.log('Response status:', response.status);
-      
-      // Get the raw response text first
-      const responseText = await response.text();
-      console.log('Raw response:', responseText);
-      
-      // Only try to parse as JSON if there's actual content
-      let result;
-      if (responseText && responseText.trim()) {
-        try {
-          result = JSON.parse(responseText);
-        } catch (parseError) {
-          console.error('JSON parse error:', parseError);
-          throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}...`);
+
+      // Check if response is successful (200 status)
+      if (response.status === 200) {
+        // Get the raw response text first
+        const responseText = await response.text();
+        console.log('Raw response:', responseText);
+
+        let result = null;
+
+        // Try to parse JSON if there's content
+        if (responseText && responseText.trim()) {
+          try {
+            result = JSON.parse(responseText);
+          } catch (parseError) {
+            console.error('JSON parse error:', parseError);
+            // For 200 status, even if JSON parsing fails, we can treat as success
+            console.log(
+              'Treating as successful submission despite JSON parse error'
+            );
+          }
+        }
+
+        // For 200 status, treat as success regardless of response content
+        // Some APIs return empty responses on successful operations
+        const isSuccessful = !result || result.success !== false;
+
+        if (isSuccessful) {
+          // Fetch updated attendance details to refresh the state
+          console.log('Fetching updated attendance details...');
+          await fetchAttendanceDetails();
+
+          Alert.alert(
+            'Success',
+            isUpdate
+              ? 'Attendance updated successfully!'
+              : 'Attendance submitted successfully!',
+            [
+              {
+                text: 'OK',
+                onPress: () => navigation.goBack(),
+              },
+            ]
+          );
+        } else {
+          Alert.alert(
+            'Error',
+            (result && result.message) || 'Failed to submit attendance'
+          );
         }
       } else {
-        throw new Error('Empty response from server');
-      }
+        // Handle non-200 status codes
+        const responseText = await response.text();
+        console.log('Error response:', responseText);
 
-      if (result && result.success) {
-        Alert.alert(
-          'Success',
-          isUpdate
-            ? 'Attendance updated successfully!'
-            : 'Attendance submitted successfully!',
-          [
-            {
-              text: 'OK',
-              onPress: () => navigation.goBack(),
-            },
-          ]
-        );
-      } else {
-        Alert.alert('Error', (result && result.message) || 'Failed to submit attendance');
+        let errorMessage = 'Failed to submit attendance';
+        try {
+          const result = JSON.parse(responseText);
+          errorMessage = result.message || errorMessage;
+        } catch (parseError) {
+          // Use default error message if JSON parsing fails
+          errorMessage = `Server error (${
+            response.status
+          }): ${responseText.substring(0, 100)}`;
+        }
+
+        Alert.alert('Error', errorMessage);
       }
     } catch (error) {
       console.error('Submit attendance error:', error);
-      Alert.alert('Error', `Network error: ${error.message || 'Unknown error'}`);
+      Alert.alert(
+        'Error',
+        `Network error: ${error.message || 'Unknown error'}`
+      );
     } finally {
       setSubmitting(false);
     }
@@ -377,8 +413,18 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
       <ScrollView style={styles.scrollView}>
         {/* Class Info */}
         <View style={styles.classInfo}>
-          <Text style={styles.subjectName}>{subjectName}</Text>
-          <Text style={styles.gradeName}>{gradeName}</Text>
+          <View
+            style={{
+              flex: 1,
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'baseline',
+            }}
+          >
+            <Text style={styles.subjectName}>{subjectName} </Text>
+            <Text style={styles.gradeName}>- {gradeName}</Text>
+          </View>
+
           <Text style={styles.dateText}>
             {new Date().toLocaleDateString('en-US', {
               weekday: 'long',
@@ -426,7 +472,7 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
         <View style={styles.studentsContainer}>
           <Text style={styles.studentsTitle}>Students ({students.length})</Text>
 
-          {students.map((student, index) => (
+          {students.map((student) => (
             <View key={student.student_id} style={styles.studentCard}>
               <View style={styles.studentInfo}>
                 {student.student_photo ? (
