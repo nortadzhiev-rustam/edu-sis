@@ -46,6 +46,11 @@ web-build/
 *.mobileprovision
 # Expo Go
 .expo-shared/
+# EAS
+eas.json
+.easignore
+# Expo development
+expo-env.d.ts
 
 # iOS
 ios/Pods/
@@ -53,10 +58,21 @@ ios/build/
 ios/*.xcworkspace
 ios/*.xcodeproj/project.xcworkspace/
 ios/*.xcodeproj/xcuserdata/
+ios/DerivedData/
+ios/*.hmap
+ios/*.ipa
 *.ipa
 *.app
 # Xcode - User specific
 *.xcuserdatad
+*.xcuserstate
+# CocoaPods
+ios/Podfile.lock
+# Xcode project files that can be auto-generated
+ios/*.xcodeproj/project.xcworkspace/xcshareddata/
+# iOS build artifacts
+ios/build/
+ios/Index/
 
 # Android
 android/app/build/
@@ -66,9 +82,12 @@ android/gradle/
 android/app/src/main/assets/app.manifest
 android/app/src/main/assets/index.android.bundle
 android/app/src/main/java/com/helloworld/MainApplication.java
+android/local.properties
+android/gradle.properties
 # Keystore files
 *.keystore
 *.jks
+android/app/debug.keystore
 # Android Studio
 .idea/
 *.iml
@@ -77,6 +96,23 @@ buck-out/
 \.buckd/
 android/app/debug/
 android/app/release/
+# Gradle
+.gradle/
+gradle-wrapper.properties
+# Android auto-generated files
+android/app/src/main/assets/index.android.js
+android/app/src/main/res/raw/
+android/app/src/main/res/drawable-*/
+# Proguard
+android/app/proguard-rules.pro
+
+# React Native
+# Metro
+.metro-health-check*
+metro.config.js.bak
+
+# React Native debugger
+.flipper/
 
 # Other
 *.log
@@ -88,3 +124,16 @@ android/app/release/
 *~
 # Crash reports
 *.crash
+
+# Development
+.watchmanconfig
+.flowconfig
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+*.tgz
+*.tar.gz
+.cache/
