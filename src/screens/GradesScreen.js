@@ -37,10 +37,13 @@ import {
   faBalanceScale,
   faHeartbeat,
   faLeaf,
+  faBell,
 } from '@fortawesome/free-solid-svg-icons';
 import { useScreenOrientation } from '../hooks/useScreenOrientation';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useNotifications } from '../contexts/NotificationContext';
+import NotificationBadge from '../components/NotificationBadge';
 
 // Simple separator component - only shows in portrait mode
 const GradeSeparator = () => null; // We'll use marginVertical on cards instead
@@ -48,6 +51,7 @@ const GradeSeparator = () => null; // We'll use marginVertical on cards instead
 export default function GradesScreen({ navigation, route }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
+  const { unreadCount } = useNotifications();
 
   const [activeTab, setActiveTab] = useState('summative');
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
@@ -1128,6 +1132,13 @@ export default function GradesScreen({ navigation, route }) {
               </Text>
             </TouchableOpacity>
           )}
+          <TouchableOpacity
+            style={styles.notificationButton}
+            onPress={() => navigation.navigate('NotificationScreen')}
+          >
+            <FontAwesomeIcon icon={faBell} size={18} color='#fff' />
+            <NotificationBadge />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -1213,9 +1224,18 @@ const createStyles = (theme) =>
       marginLeft: 8,
     },
     headerRight: {
-      width: 36,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    notificationButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
       justifyContent: 'center',
       alignItems: 'center',
+      position: 'relative',
     },
     switchButton: {
       width: 32,

@@ -23,6 +23,7 @@ import WebViewScreen from './src/screens/WebViewScreen';
 import WebViewWithAuth from './src/screens/WebViewWithAuth';
 import SettingsScreen from './src/screens/SettingsScreen';
 import NotificationScreen from './src/screens/NotificationScreen';
+import LibraryScreen from './src/screens/LibraryScreen';
 import { ThemeProvider } from './src/contexts/ThemeContext';
 import { LanguageProvider } from './src/contexts/LanguageContext';
 import { NotificationProvider } from './src/contexts/NotificationContext';
@@ -156,6 +157,7 @@ export default function App() {
                   name='NotificationScreen'
                   component={NotificationScreen}
                 />
+                <Stack.Screen name='LibraryScreen' component={LibraryScreen} />
               </Stack.Navigator>
               {/* <DevTokenDisplay /> */}
             </NavigationContainer>

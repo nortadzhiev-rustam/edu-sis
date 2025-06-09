@@ -1,0 +1,1037 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  RefreshControl,
+  Alert,
+  Image,
+  Dimensions,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import {
+  faArrowLeft,
+  faBook,
+  faBookOpen,
+  faCalendarAlt,
+  faClock,
+  faExclamationTriangle,
+  faCheckCircle,
+  faTimesCircle,
+  faRedo,
+  faUser,
+  faBarcode,
+  faBell,
+} from '@fortawesome/free-solid-svg-icons';
+import { Config, buildApiUrl } from '../config/env';
+import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useNotifications } from '../contexts/NotificationContext';
+import NotificationBadge from '../components/NotificationBadge';
+
+export default function LibraryScreen({ navigation, route }) {
+  const { theme } = useTheme();
+  const { t } = useLanguage();
+  const { unreadCount } = useNotifications();
+
+  const [libraryData, setLibraryData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedTab, setSelectedTab] = useState('overview'); // 'overview', 'borrowed', 'history', 'available'
+  const [screenData, setScreenData] = useState(Dimensions.get('window'));
+
+  const { studentName, authCode } = route.params || {};
+  const styles = createStyles(theme);
+
+  // Listen for orientation changes
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener('change', ({ window }) => {
+      setScreenData(window);
+    });
+    return () => subscription?.remove();
+  }, []);
+
+  const isLandscape = screenData.width > screenData.height;
+
+  // Fetch library data from API
+  const fetchLibraryData = async () => {
+    if (!authCode) {
+      Alert.alert('Error', 'Authentication required');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const url = buildApiUrl('/mobile-api/student/library-data', {
+        authCode,
+      });
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setLibraryData(data);
+        } else {
+          Alert.alert('Error', 'Failed to load library data');
+        }
+      } else {
+        Alert.alert('Error', 'Failed to connect to library system');
+      }
+    } catch (error) {
+      console.error('Library data fetch error:', error);
+      Alert.alert('Error', 'Network error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Refresh data
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchLibraryData();
+    setRefreshing(false);
+  };
+
+  // Load data on component mount
+  useEffect(() => {
+    fetchLibraryData();
+  }, [authCode]);
+
+  // Format date helper
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  // Calculate days overdue
+  const getDaysOverdue = (dueDate) => {
+    if (!dueDate) return 0;
+    const due = new Date(dueDate);
+    const today = new Date();
+    const diffTime = today - due;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  };
+
+  // Get status color
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'borrowed':
+        return '#007AFF';
+      case 'overdue':
+        return '#FF3B30';
+      case 'returned':
+        return '#34C759';
+      case 'renewed':
+        return '#FF9500';
+      default:
+        return '#8E8E93';
+    }
+  };
+
+  // Get status icon
+  const getStatusIcon = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'borrowed':
+        return faBookOpen;
+      case 'overdue':
+        return faExclamationTriangle;
+      case 'returned':
+        return faCheckCircle;
+      case 'renewed':
+        return faRedo;
+      default:
+        return faBook;
+    }
+  };
+
+  // Render tab buttons
+  const renderTabButton = (tabKey, label, icon) => {
+    const isActive = selectedTab === tabKey;
+    return (
+      <TouchableOpacity
+        key={tabKey}
+        style={[styles.tabButton, isActive && styles.activeTabButton]}
+        onPress={() => setSelectedTab(tabKey)}
+      >
+        <FontAwesomeIcon
+          icon={icon}
+          size={16}
+          color={isActive ? '#fff' : theme.colors.textSecondary}
+        />
+        <Text
+          style={[styles.tabButtonText, isActive && styles.activeTabButtonText]}
+        >
+          {label}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
+
+  // Render overview statistics
+  const renderOverview = () => {
+    if (!libraryData?.library_statistics) return null;
+
+    const stats = libraryData.library_statistics;
+
+    return (
+      <ScrollView
+        style={styles.tabContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Student Info Card */}
+        <View style={styles.studentCard}>
+          <View style={styles.studentInfo}>
+            {libraryData.student_info?.student_photo ? (
+              <Image
+                source={{ uri: libraryData.student_info.student_photo }}
+                style={styles.studentPhoto}
+              />
+            ) : (
+              <View style={styles.studentPhotoPlaceholder}>
+                <FontAwesomeIcon icon={faUser} size={24} color='#fff' />
+              </View>
+            )}
+            <View style={styles.studentDetails}>
+              <Text style={styles.studentName}>
+                {libraryData.student_info?.student_name ||
+                  studentName ||
+                  'Student'}
+              </Text>
+              <Text style={styles.studentId}>
+                ID: {libraryData.student_info?.student_id || 'N/A'}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Statistics Grid */}
+        <View style={styles.statsGrid}>
+          <View style={[styles.statCard, styles.borrowingLimitCard]}>
+            <FontAwesomeIcon icon={faBook} size={24} color='#007AFF' />
+            <Text style={styles.statNumber}>{stats.borrowing_limit}</Text>
+            <Text style={styles.statLabel}>Borrowing Limit</Text>
+          </View>
+
+          <View style={[styles.statCard, styles.currentlyBorrowedCard]}>
+            <FontAwesomeIcon icon={faBookOpen} size={24} color='#FF9500' />
+            <Text style={styles.statNumber}>{stats.currently_borrowed}</Text>
+            <Text style={styles.statLabel}>Currently Borrowed</Text>
+          </View>
+
+          <View style={[styles.statCard, styles.remainingLimitCard]}>
+            <FontAwesomeIcon icon={faCheckCircle} size={24} color='#34C759' />
+            <Text style={styles.statNumber}>{stats.remaining_limit}</Text>
+            <Text style={styles.statLabel}>Remaining Limit</Text>
+          </View>
+
+          <View style={[styles.statCard, styles.overdueCard]}>
+            <FontAwesomeIcon
+              icon={faExclamationTriangle}
+              size={24}
+              color='#FF3B30'
+            />
+            <Text style={styles.statNumber}>{stats.total_overdue}</Text>
+            <Text style={styles.statLabel}>Overdue Books</Text>
+          </View>
+        </View>
+
+        {/* Borrowing Rate */}
+        <View style={styles.borrowingRateCard}>
+          <Text style={styles.borrowingRateLabel}>Borrowing Rate</Text>
+          <Text style={styles.borrowingRateValue}>{stats.borrowing_rate}%</Text>
+          <View style={styles.progressBar}>
+            <View
+              style={[
+                styles.progressFill,
+                { width: `${stats.borrowing_rate}%` },
+              ]}
+            />
+          </View>
+          <Text style={styles.borrowingRateSubtext}>
+            {stats.total_borrowed_this_year} books borrowed this year
+          </Text>
+        </View>
+
+        {/* Quick Actions */}
+        <View style={styles.quickActionsCard}>
+          <Text style={styles.quickActionsTitle}>Quick Actions</Text>
+          <View style={styles.quickActionsGrid}>
+            <TouchableOpacity
+              style={styles.quickActionButton}
+              onPress={() => setSelectedTab('borrowed')}
+            >
+              <FontAwesomeIcon icon={faBookOpen} size={20} color='#007AFF' />
+              <Text style={styles.quickActionText}>View Borrowed</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickActionButton}
+              onPress={() => setSelectedTab('history')}
+            >
+              <FontAwesomeIcon icon={faClock} size={20} color='#8E8E93' />
+              <Text style={styles.quickActionText}>View History</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickActionButton}
+              onPress={() => setSelectedTab('available')}
+            >
+              <FontAwesomeIcon icon={faBook} size={20} color='#34C759' />
+              <Text style={styles.quickActionText}>Browse Books</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
+    );
+  };
+
+  // Render borrowed books
+  const renderBorrowedBooks = () => {
+    const borrowedBooks = [
+      ...(libraryData?.currently_borrowed || []),
+      ...(libraryData?.overdue_books || []),
+    ];
+
+    if (borrowedBooks.length === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <FontAwesomeIcon icon={faBookOpen} size={48} color='#ccc' />
+          <Text style={styles.emptyText}>No borrowed books</Text>
+          <Text style={styles.emptySubtext}>
+            You haven't borrowed any books yet
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <ScrollView
+        style={styles.tabContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {borrowedBooks.map((book, index) => (
+          <View key={index} style={styles.bookCard}>
+            <View style={styles.bookInfo}>
+              <Text style={styles.bookTitle}>
+                {book.title || 'Unknown Title'}
+              </Text>
+              <Text style={styles.bookAuthor}>
+                {book.author || 'Unknown Author'}
+              </Text>
+              <Text style={styles.bookISBN}>ISBN: {book.isbn || 'N/A'}</Text>
+
+              <View style={styles.bookDates}>
+                <View style={styles.dateItem}>
+                  <FontAwesomeIcon
+                    icon={faCalendarAlt}
+                    size={12}
+                    color='#8E8E93'
+                  />
+                  <Text style={styles.dateText}>
+                    Borrowed: {formatDate(book.borrowed_date)}
+                  </Text>
+                </View>
+                <View style={styles.dateItem}>
+                  <FontAwesomeIcon icon={faClock} size={12} color='#8E8E93' />
+                  <Text style={styles.dateText}>
+                    Due: {formatDate(book.due_date)}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.bookStatus}>
+              <View
+                style={[
+                  styles.statusBadge,
+                  { backgroundColor: getStatusColor(book.status) },
+                ]}
+              >
+                <FontAwesomeIcon
+                  icon={getStatusIcon(book.status)}
+                  size={12}
+                  color='#fff'
+                />
+                <Text style={styles.statusText}>
+                  {book.status || 'Borrowed'}
+                </Text>
+              </View>
+
+              {book.status === 'overdue' && (
+                <Text style={styles.overdueText}>
+                  {getDaysOverdue(book.due_date)} days overdue
+                </Text>
+              )}
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+    );
+  };
+
+  // Render library history
+  const renderHistory = () => {
+    const history = libraryData?.library_history || [];
+
+    if (history.length === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <FontAwesomeIcon icon={faClock} size={48} color='#ccc' />
+          <Text style={styles.emptyText}>No library history</Text>
+          <Text style={styles.emptySubtext}>
+            Your borrowing history will appear here
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <ScrollView
+        style={styles.tabContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {history.map((record, index) => (
+          <View key={index} style={styles.historyCard}>
+            <View style={styles.historyInfo}>
+              <Text style={styles.historyTitle}>
+                {record.title || 'Unknown Title'}
+              </Text>
+              <Text style={styles.historyAuthor}>
+                {record.author || 'Unknown Author'}
+              </Text>
+
+              <View style={styles.historyDates}>
+                <Text style={styles.historyDate}>
+                  Borrowed: {formatDate(record.borrowed_date)}
+                </Text>
+                <Text style={styles.historyDate}>
+                  Returned: {formatDate(record.returned_date)}
+                </Text>
+              </View>
+            </View>
+
+            <View
+              style={[
+                styles.historyStatus,
+                { backgroundColor: getStatusColor(record.status) },
+              ]}
+            >
+              <FontAwesomeIcon
+                icon={getStatusIcon(record.status)}
+                size={12}
+                color='#fff'
+              />
+              <Text style={styles.historyStatusText}>
+                {record.status || 'Returned'}
+              </Text>
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+    );
+  };
+
+  // Render available books
+  const renderAvailableBooks = () => {
+    const availableBooks = libraryData?.available_books || [];
+
+    if (availableBooks.length === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <FontAwesomeIcon icon={faBook} size={48} color='#ccc' />
+          <Text style={styles.emptyText}>No available books</Text>
+          <Text style={styles.emptySubtext}>
+            Check back later for new arrivals
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <ScrollView
+        style={styles.tabContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {availableBooks.map((book, index) => (
+          <View key={index} style={styles.availableBookCard}>
+            <View style={styles.availableBookInfo}>
+              <Text style={styles.availableBookTitle}>
+                {book.title || 'Unknown Title'}
+              </Text>
+              <Text style={styles.availableBookAuthor}>
+                {book.author || 'Unknown Author'}
+              </Text>
+              <Text style={styles.availableBookISBN}>
+                ISBN: {book.isbn || 'N/A'}
+              </Text>
+
+              {book.description && (
+                <Text style={styles.availableBookDescription} numberOfLines={2}>
+                  {book.description}
+                </Text>
+              )}
+            </View>
+
+            <View style={styles.availableBookActions}>
+              <View style={styles.availabilityBadge}>
+                <FontAwesomeIcon
+                  icon={faCheckCircle}
+                  size={12}
+                  color='#34C759'
+                />
+                <Text style={styles.availabilityText}>Available</Text>
+              </View>
+
+              <TouchableOpacity style={styles.borrowButton}>
+                <Text style={styles.borrowButtonText}>Request</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+    );
+  };
+
+  if (loading && !libraryData) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} size={20} color='#fff' />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Library</Text>
+          <TouchableOpacity
+            style={styles.notificationButton}
+            onPress={() => navigation.navigate('NotificationScreen')}
+          >
+            <FontAwesomeIcon icon={faBell} size={18} color='#fff' />
+            <NotificationBadge />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading library data...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <FontAwesomeIcon icon={faArrowLeft} size={20} color='#fff' />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Library</Text>
+        <TouchableOpacity
+          style={styles.notificationButton}
+          onPress={() => navigation.navigate('NotificationScreen')}
+        >
+          <FontAwesomeIcon icon={faBell} size={18} color='#fff' />
+          <NotificationBadge />
+        </TouchableOpacity>
+      </View>
+
+      {/* Tab Navigation */}
+      <View style={styles.tabContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabScrollContent}
+        >
+          {renderTabButton('overview', 'Overview', faBook)}
+          {renderTabButton('borrowed', 'Borrowed', faBookOpen)}
+          {renderTabButton('history', 'History', faClock)}
+          {renderTabButton('available', 'Available', faCheckCircle)}
+        </ScrollView>
+      </View>
+
+      {/* Content */}
+      <View style={styles.content}>
+        <ScrollView
+          style={styles.scrollContainer}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          }
+          showsVerticalScrollIndicator={false}
+        >
+          {selectedTab === 'overview' && renderOverview()}
+          {selectedTab === 'borrowed' && renderBorrowedBooks()}
+          {selectedTab === 'history' && renderHistory()}
+          {selectedTab === 'available' && renderAvailableBooks()}
+        </ScrollView>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const createStyles = (theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    header: {
+      backgroundColor: theme.colors.headerBackground,
+      padding: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      ...theme.shadows.small,
+    },
+    backButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    headerTitle: {
+      color: '#fff',
+      fontSize: 22,
+      fontWeight: 'bold',
+    },
+    notificationButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      position: 'relative',
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      fontSize: 16,
+      color: theme.colors.textSecondary,
+      marginTop: 10,
+    },
+
+    // Tab Navigation
+    tabContainer: {
+      backgroundColor: theme.colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    tabScrollContent: {
+      paddingHorizontal: 20,
+      paddingVertical: 15,
+    },
+    tabButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      marginRight: 12,
+      borderRadius: 20,
+      backgroundColor: theme.colors.background,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    activeTabButton: {
+      backgroundColor: '#007AFF',
+      borderColor: '#007AFF',
+    },
+    tabButtonText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.colors.textSecondary,
+      marginLeft: 6,
+    },
+    activeTabButtonText: {
+      color: '#fff',
+    },
+
+    // Content
+    content: {
+      flex: 1,
+    },
+    scrollContainer: {
+      flex: 1,
+    },
+    tabContent: {
+      flex: 1,
+      padding: 20,
+    },
+
+    // Empty States
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: 60,
+    },
+    emptyText: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: theme.colors.textSecondary,
+      marginTop: 20,
+      marginBottom: 8,
+    },
+    emptySubtext: {
+      fontSize: 16,
+      color: theme.colors.textSecondary,
+      textAlign: 'center',
+    },
+
+    // Student Card
+    studentCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 20,
+      ...theme.shadows.medium,
+    },
+    studentInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    studentPhoto: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      marginRight: 15,
+    },
+    studentPhotoPlaceholder: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      backgroundColor: '#007AFF',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 15,
+    },
+    studentDetails: {
+      flex: 1,
+    },
+    studentName: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 4,
+    },
+    studentId: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+    },
+
+    // Statistics Grid
+    statsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      marginBottom: 20,
+    },
+    statCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 12,
+      padding: 16,
+      width: '48%',
+      marginBottom: 12,
+      alignItems: 'center',
+      ...theme.shadows.small,
+    },
+    borrowingLimitCard: {
+      borderLeftWidth: 4,
+      borderLeftColor: '#007AFF',
+    },
+    currentlyBorrowedCard: {
+      borderLeftWidth: 4,
+      borderLeftColor: '#FF9500',
+    },
+    remainingLimitCard: {
+      borderLeftWidth: 4,
+      borderLeftColor: '#34C759',
+    },
+    overdueCard: {
+      borderLeftWidth: 4,
+      borderLeftColor: '#FF3B30',
+    },
+    statNumber: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginVertical: 8,
+    },
+    statLabel: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      textAlign: 'center',
+      fontWeight: '600',
+    },
+
+    // Borrowing Rate Card
+    borrowingRateCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 20,
+      alignItems: 'center',
+      ...theme.shadows.medium,
+    },
+    borrowingRateLabel: {
+      fontSize: 16,
+      color: theme.colors.textSecondary,
+      marginBottom: 10,
+    },
+    borrowingRateValue: {
+      fontSize: 36,
+      fontWeight: 'bold',
+      color: '#34C759',
+      marginBottom: 15,
+    },
+    progressBar: {
+      width: '100%',
+      height: 8,
+      backgroundColor: theme.colors.border,
+      borderRadius: 4,
+      overflow: 'hidden',
+      marginBottom: 10,
+    },
+    progressFill: {
+      height: '100%',
+      backgroundColor: '#34C759',
+      borderRadius: 4,
+    },
+    borrowingRateSubtext: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      textAlign: 'center',
+    },
+
+    // Quick Actions
+    quickActionsCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      padding: 20,
+      ...theme.shadows.medium,
+    },
+    quickActionsTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 15,
+    },
+    quickActionsGrid: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    quickActionButton: {
+      flex: 1,
+      alignItems: 'center',
+      paddingVertical: 12,
+      marginHorizontal: 4,
+      borderRadius: 12,
+      backgroundColor: theme.colors.background,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    quickActionText: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      marginTop: 6,
+      fontWeight: '600',
+    },
+
+    // Book Cards
+    bookCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      flexDirection: 'row',
+      ...theme.shadows.small,
+    },
+    bookInfo: {
+      flex: 1,
+      marginRight: 12,
+    },
+    bookTitle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 4,
+    },
+    bookAuthor: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      marginBottom: 4,
+    },
+    bookISBN: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      marginBottom: 8,
+    },
+    bookDates: {
+      marginTop: 8,
+    },
+    dateItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    dateText: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      marginLeft: 6,
+    },
+    bookStatus: {
+      alignItems: 'flex-end',
+    },
+    statusBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 12,
+      marginBottom: 4,
+    },
+    statusText: {
+      fontSize: 12,
+      color: '#fff',
+      fontWeight: '600',
+      marginLeft: 4,
+    },
+    overdueText: {
+      fontSize: 10,
+      color: '#FF3B30',
+      fontWeight: '600',
+    },
+
+    // History Cards
+    historyCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      flexDirection: 'row',
+      ...theme.shadows.small,
+    },
+    historyInfo: {
+      flex: 1,
+      marginRight: 12,
+    },
+    historyTitle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 4,
+    },
+    historyAuthor: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      marginBottom: 8,
+    },
+    historyDates: {
+      marginTop: 4,
+    },
+    historyDate: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      marginBottom: 2,
+    },
+    historyStatus: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 12,
+      height: 28,
+    },
+    historyStatusText: {
+      fontSize: 12,
+      color: '#fff',
+      fontWeight: '600',
+      marginLeft: 4,
+    },
+
+    // Available Books
+    availableBookCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      ...theme.shadows.small,
+    },
+    availableBookInfo: {
+      marginBottom: 12,
+    },
+    availableBookTitle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 4,
+    },
+    availableBookAuthor: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      marginBottom: 4,
+    },
+    availableBookISBN: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      marginBottom: 8,
+    },
+    availableBookDescription: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      lineHeight: 20,
+    },
+    availableBookActions: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    availabilityBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      backgroundColor: 'rgba(52, 199, 89, 0.1)',
+      borderRadius: 12,
+    },
+    availabilityText: {
+      fontSize: 12,
+      color: '#34C759',
+      fontWeight: '600',
+      marginLeft: 4,
+    },
+    borrowButton: {
+      backgroundColor: '#007AFF',
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 16,
+    },
+    borrowButtonText: {
+      fontSize: 14,
+      color: '#fff',
+      fontWeight: '600',
+    },
+  });

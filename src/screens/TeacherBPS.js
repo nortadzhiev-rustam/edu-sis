@@ -78,9 +78,10 @@ export default function TeacherBPS({ route, navigation }) {
           'Content-Type': 'application/json',
         },
       });
-
+console.log(response);
       if (response.ok) {
         const data = await response.json();
+        console.log('BPS data:', data);
         setBpsData(data);
       } else {
         Alert.alert('Error', 'Failed to fetch BPS data');

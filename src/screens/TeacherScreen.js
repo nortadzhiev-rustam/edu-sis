@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Dimensions,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -42,9 +43,96 @@ export default function TeacherScreen({ route, navigation }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
   const { unreadCount } = useNotifications();
+
+  // Helper function to format user roles
+  const formatUserRoles = (userData) => {
+    // If user has roles array, format it
+    if (
+      userData.roles &&
+      Array.isArray(userData.roles) &&
+      userData.roles.length > 0
+    ) {
+      if (userData.roles.length === 1) {
+        // Single role - show role name and department if available
+        const role = userData.roles[0];
+        return role.department && role.department !== userData.department
+          ? `${role.name} (${role.department})`
+          : role.name;
+      } else {
+        // Multiple roles - show count and primary role
+        const primaryRole = userData.roles[0];
+        const roleText =
+          primaryRole.department &&
+          primaryRole.department !== userData.department
+            ? `${primaryRole.name} (${primaryRole.department})`
+            : primaryRole.name;
+        return `${roleText} +${userData.roles.length - 1} more`;
+      }
+    }
+
+    // Fallback to position field
+    return userData.position || 'Teacher';
+  };
+
+  // Function to handle role tap - show all roles if multiple
+  const handleRoleTap = () => {
+    if (
+      userData.roles &&
+      Array.isArray(userData.roles) &&
+      userData.roles.length > 1
+    ) {
+      setShowAllRoles(true);
+    }
+  };
+
+  // Function to render all roles modal
+  const renderAllRolesModal = () => {
+    if (
+      !userData.roles ||
+      !Array.isArray(userData.roles) ||
+      userData.roles.length <= 1
+    ) {
+      return null;
+    }
+
+    return (
+      <Modal
+        visible={showAllRoles}
+        transparent={true}
+        animationType='fade'
+        onRequestClose={() => setShowAllRoles(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>All Roles</Text>
+            <ScrollView
+              style={styles.rolesContainer}
+              showsVerticalScrollIndicator={false}
+            >
+              {userData.roles.map((role, index) => (
+                <View key={index} style={styles.roleItem}>
+                  <Text style={styles.roleName}>{role.name}</Text>
+                  {role.department && (
+                    <Text style={styles.roleDepartment}>{role.department}</Text>
+                  )}
+                </View>
+              ))}
+            </ScrollView>
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setShowAllRoles(false)}
+            >
+              <Text style={styles.modalCloseText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
   // Get user data from navigation params or AsyncStorage
   const [userData, setUserData] = useState(route?.params?.userData || {});
   const [loading, setLoading] = useState(true);
+  const [showAllRoles, setShowAllRoles] = useState(false);
 
   // Teacher dashboard data
   const [timetableData, setTimetableData] = useState(null);
@@ -332,7 +420,7 @@ export default function TeacherScreen({ route, navigation }) {
   // Load all teacher data
   const loadTeacherData = async () => {
     setRefreshing(true);
-
+    console.log(userData);
     try {
       // Load timetable and BPS data - timetable will automatically fetch student counts
       await Promise.all([fetchTeacherTimetable(), fetchTeacherBPS()]);
@@ -514,23 +602,41 @@ export default function TeacherScreen({ route, navigation }) {
                 <Text style={styles.teacherName}>
                   {userData.name || 'Teacher'}
                 </Text>
-                <Text style={styles.teacherRole}>
-                  {userData.position || 'Teacher'} • ID: {userData.id || 'N/A'}
-                </Text>
+                <TouchableOpacity
+                  onPress={handleRoleTap}
+                  activeOpacity={
+                    userData.roles && userData.roles.length > 1 ? 0.7 : 1
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.teacherRole,
+                      userData.roles &&
+                        userData.roles.length > 1 &&
+                        styles.clickableRole,
+                    ]}
+                  >
+                    {formatUserRoles(userData)} • ID: {userData.id || 'N/A'}
+                  </Text>
+                </TouchableOpacity>
               </View>
             </View>
             <View style={{ flexDirection: 'row', gap: 10 }}>
-              <TouchableOpacity
-                style={styles.refreshButton}
-                onPress={() => {
-                  logCurrentState();
-                  loadTeacherData();
-                }}
-              >
-                <FontAwesomeIcon icon={faRefresh} size={18} color='#007AFF' />
-              </TouchableOpacity>
               {__DEV__ && (
                 <>
+                  <TouchableOpacity
+                    style={styles.refreshButton}
+                    onPress={() => {
+                      logCurrentState();
+                      loadTeacherData();
+                    }}
+                  >
+                    <FontAwesomeIcon
+                      icon={faRefresh}
+                      size={18}
+                      color='#007AFF'
+                    />
+                  </TouchableOpacity>
                   <TouchableOpacity
                     style={[
                       styles.refreshButton,
@@ -691,45 +797,6 @@ export default function TeacherScreen({ route, navigation }) {
                 )}
               </TouchableOpacity>
 
-              {/* Students Overview Tile */}
-              <TouchableOpacity
-                style={[styles.actionTile, { backgroundColor: '#34C759' }]}
-                onPress={() => {
-                  // Navigate to students overview or show alert for now
-                  Alert.alert('Students Overview', 'Feature coming soon!');
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={styles.tileIconContainer}>
-                  <FontAwesomeIcon icon={faUsers} size={28} color='#fff' />
-                </View>
-                <Text style={styles.tileTitle}>My Students</Text>
-                <Text style={styles.tileSubtitle}>Overview & Reports</Text>
-                {dashboardStats.totalStudents > 0 && (
-                  <View style={styles.tileBadge}>
-                    <Text style={styles.tileBadgeText}>
-                      {dashboardStats.totalStudents}
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-
-              {/* Quick Attendance Tile */}
-              <TouchableOpacity
-                style={[styles.actionTile, { backgroundColor: '#FF9500' }]}
-                onPress={() => {
-                  // Navigate to quick attendance or show alert for now
-                  Alert.alert('Quick Attendance', 'Feature coming soon!');
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={styles.tileIconContainer}>
-                  <FontAwesomeIcon icon={faUserCheck} size={28} color='#fff' />
-                </View>
-                <Text style={styles.tileTitle}>Quick Attendance</Text>
-                <Text style={styles.tileSubtitle}>Mark Present/Absent</Text>
-              </TouchableOpacity>
-
               {/* Reports Tile */}
               <TouchableOpacity
                 style={[styles.actionTile, { backgroundColor: '#007AFF' }]}
@@ -761,8 +828,6 @@ export default function TeacherScreen({ route, navigation }) {
                 <Text style={styles.tileTitle}>Materials</Text>
                 <Text style={styles.tileSubtitle}>Resources & Files</Text>
               </TouchableOpacity>
-
-              
             </View>
           </View>
 
@@ -813,6 +878,9 @@ export default function TeacherScreen({ route, navigation }) {
           </View>
         </ScrollView>
       )}
+
+      {/* All Roles Modal */}
+      {renderAllRolesModal()}
     </SafeAreaView>
   );
 }
@@ -932,6 +1000,10 @@ const createStyles = (theme) =>
       fontSize: 14,
       color: theme.colors.textSecondary,
       fontWeight: '500',
+    },
+    clickableRole: {
+      textDecorationLine: 'underline',
+      color: '#007AFF',
     },
     teacherStats: {
       fontSize: 12,
@@ -1222,5 +1294,63 @@ const createStyles = (theme) =>
       fontSize: 12,
       color: theme.colors.textSecondary, // Changed from '#666'
       fontWeight: '500',
+    },
+
+    // Modal styles
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+    },
+    modalContent: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      padding: 20,
+      width: '100%',
+      maxWidth: 400,
+      maxHeight: '80%',
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 20,
+      textAlign: 'center',
+    },
+    rolesContainer: {
+      maxHeight: 300,
+    },
+    roleItem: {
+      backgroundColor: theme.colors.background,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      borderLeftWidth: 4,
+      borderLeftColor: '#007AFF',
+    },
+    roleName: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.colors.text,
+      marginBottom: 4,
+    },
+    roleDepartment: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      fontStyle: 'italic',
+    },
+    modalCloseButton: {
+      backgroundColor: '#007AFF',
+      borderRadius: 12,
+      padding: 16,
+      marginTop: 20,
+      alignItems: 'center',
+    },
+    modalCloseText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '600',
     },
   });

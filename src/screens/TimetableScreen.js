@@ -36,14 +36,18 @@ import {
   faHeartbeat,
   faLeaf,
   faBook,
+  faBell,
 } from '@fortawesome/free-solid-svg-icons';
 import timetableData from '../data/dummyTimetable.json';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useNotifications } from '../contexts/NotificationContext';
+import NotificationBadge from '../components/NotificationBadge';
 
 export default function TimetableScreen({ navigation, route }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
+  const { unreadCount } = useNotifications();
 
   const [timetable, setTimetable] = useState(null);
   const [availableDays, setAvailableDays] = useState([
@@ -507,7 +511,13 @@ export default function TimetableScreen({ navigation, route }) {
           <FontAwesomeIcon icon={faCalendarAlt} size={20} color='#fff' />
           <Text style={styles.headerTitle}>{t('timetable')}</Text>
         </View>
-        <View style={styles.headerRight} />
+        <TouchableOpacity
+          style={styles.notificationButton}
+          onPress={() => navigation.navigate('NotificationScreen')}
+        >
+          <FontAwesomeIcon icon={faBell} size={20} color='#fff' />
+          <NotificationBadge />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.content}>
@@ -609,8 +619,14 @@ const createStyles = (theme) =>
       fontWeight: 'bold',
       marginLeft: 10,
     },
-    headerRight: {
+    notificationButton: {
       width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      position: 'relative',
     },
     content: {
       flex: 1,

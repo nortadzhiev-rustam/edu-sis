@@ -7,6 +7,7 @@ import {
   FlatList,
   Alert,
   Image,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -22,10 +23,15 @@ import {
   faClipboardCheck,
   faComments,
   faGavel,
+  faBell,
+  faBookOpen,
+  faFileAlt,
 } from '@fortawesome/free-solid-svg-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useNotifications } from '../contexts/NotificationContext';
+import NotificationBadge from '../components/NotificationBadge';
 
 export default function ParentScreen({ navigation }) {
   const { theme } = useTheme();
@@ -114,6 +120,12 @@ export default function ParentScreen({ navigation }) {
           baseUrl: baseUrl,
           endpoint: '/messages',
           title: 'Messages',
+          authCode: selectedStudent.authCode,
+        });
+        break;
+      case 'library':
+        navigation.navigate('LibraryScreen', {
+          studentName: selectedStudent.name,
           authCode: selectedStudent.authCode,
         });
         break;
@@ -262,9 +274,18 @@ export default function ParentScreen({ navigation }) {
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t('parentDashboard')}</Text>
         </View>
-        <TouchableOpacity style={styles.addButton} onPress={handleAddStudent}>
-          <FontAwesomeIcon icon={faPlus} size={18} color='#fff' />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.notificationButton}
+            onPress={() => navigation.navigate('NotificationScreen')}
+          >
+            <FontAwesomeIcon icon={faBell} size={18} color='#fff' />
+            <NotificationBadge />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.addButton} onPress={handleAddStudent}>
+            <FontAwesomeIcon icon={faPlus} size={18} color='#fff' />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.content}>
@@ -334,7 +355,11 @@ export default function ParentScreen({ navigation }) {
         <View style={styles.menuSection}>
           <Text style={styles.sectionTitle}>{t('menu')}</Text>
 
-          <View style={styles.menuGrid}>
+          <ScrollView
+            style={styles.menuScrollView}
+            contentContainerStyle={styles.menuGrid}
+            showsVerticalScrollIndicator={false}
+          >
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => handleMenuItemPress('grades')}
@@ -419,6 +444,41 @@ export default function ParentScreen({ navigation }) {
             </TouchableOpacity>
 
             <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => handleMenuItemPress('library')}
+            >
+              <View
+                style={[
+                  styles.menuIconContainer,
+                  { backgroundColor: 'rgba(255, 149, 0, 0.1)' },
+                ]}
+              >
+                <FontAwesomeIcon icon={faBookOpen} size={24} color='#FF9500' />
+              </View>
+              <Text style={styles.menuItemText}>Library</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.menuItem, styles.disabledMenuItem]}
+              disabled={true}
+            >
+              <View
+                style={[
+                  styles.menuIconContainer,
+                  { backgroundColor: 'rgba(52, 199, 89, 0.05)' },
+                ]}
+              >
+                <FontAwesomeIcon icon={faFileAlt} size={24} color='#B0B0B0' />
+              </View>
+              <Text style={[styles.menuItemText, styles.disabledMenuText]}>
+                Materials
+              </Text>
+              <View style={styles.comingSoonBadge}>
+                <Text style={styles.comingSoonText}>Coming Soon</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               style={[styles.menuItem, styles.disabledMenuItem]}
               disabled={true}
             >
@@ -437,7 +497,7 @@ export default function ParentScreen({ navigation }) {
                 <Text style={styles.comingSoonText}>Coming Soon</Text>
               </View>
             </TouchableOpacity>
-          </View>
+          </ScrollView>
         </View>
       </View>
     </SafeAreaView>
@@ -474,6 +534,20 @@ const createStyles = (theme) =>
       color: theme.colors.headerText,
       fontSize: 20,
       fontWeight: 'bold',
+    },
+    headerActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    notificationButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      position: 'relative',
     },
     addButton: {
       width: 36,
@@ -513,6 +587,9 @@ const createStyles = (theme) =>
       fontWeight: '600',
     },
     menuSection: {
+      flex: 1,
+    },
+    menuScrollView: {
       flex: 1,
     },
     sectionTitle: {
@@ -651,6 +728,7 @@ const createStyles = (theme) =>
       flexDirection: 'row',
       flexWrap: 'wrap',
       justifyContent: 'space-between',
+      paddingBottom: 20,
     },
     menuItem: {
       backgroundColor: theme.colors.surface,

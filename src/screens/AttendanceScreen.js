@@ -25,15 +25,19 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
   faArrowLeft,
   faClipboardCheck,
+  faBell,
 } from '@fortawesome/free-solid-svg-icons';
 import { useScreenOrientation } from '../hooks/useScreenOrientation';
 import { Config, buildApiUrl } from '../config/env';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useNotifications } from '../contexts/NotificationContext';
+import NotificationBadge from '../components/NotificationBadge';
 
 export default function AttendanceScreen({ navigation, route }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
+  const { unreadCount } = useNotifications();
 
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
   const { studentName, authCode } = route.params || {};
@@ -76,7 +80,7 @@ export default function AttendanceScreen({ navigation, route }) {
       });
 
       if (response.ok) {
-        const data = await response.json();        
+        const data = await response.json();
         setAttendance(data.data);
       } else {
         // Handle error silently
@@ -559,7 +563,13 @@ export default function AttendanceScreen({ navigation, route }) {
           <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('attendance')}</Text>
-        <View style={styles.headerRight} />
+        <TouchableOpacity
+          style={styles.notificationButton}
+          onPress={() => navigation.navigate('NotificationScreen')}
+        >
+          <FontAwesomeIcon icon={faBell} size={18} color='#fff' />
+          <NotificationBadge />
+        </TouchableOpacity>
       </View>
 
       {/* Student Name Section - Hidden in landscape mode */}
@@ -619,8 +629,14 @@ const createStyles = (theme) =>
       fontSize: 20,
       fontWeight: 'bold',
     },
-    headerRight: {
+    notificationButton: {
       width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      position: 'relative',
     },
     studentSection: {
       backgroundColor: theme.colors.surface,

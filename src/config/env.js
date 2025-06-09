@@ -24,6 +24,21 @@ export const Config = {
     UPDATE_ATTENDANCE: '/update-attendance/',
     STORE_BPS: '/discipline/store-bps',
     DELETE_BPS: '/discipline/delete-bps',
+
+    // Notification API Endpoints
+    GET_NOTIFICATIONS_LEGACY: '/get-notifications/',
+    GET_NOTIFICATIONS: '/notifications/list',
+    MARK_NOTIFICATION_READ: '/notifications/mark-read',
+    MARK_ALL_NOTIFICATIONS_READ: '/notifications/mark-all-read',
+    GET_NOTIFICATION_CATEGORIES: '/notifications/categories',
+    SEND_NOTIFICATION: '/notifications/send',
+    GET_NOTIFICATION_STATISTICS: '/notifications/statistics',
+
+    // Real-time Notification Endpoints
+    SEND_BPS_NOTIFICATION: '/notifications/realtime/bps',
+    SEND_ATTENDANCE_REMINDER: '/notifications/realtime/attendance-reminder',
+    SEND_RICH_NOTIFICATION: '/notifications/realtime/rich',
+    SEND_STAFF_NOTIFICATION: '/notifications/realtime/staff',
   },
 
   // Web Resources

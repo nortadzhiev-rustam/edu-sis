@@ -33,6 +33,11 @@ const NotificationScreen = ({ navigation }) => {
     refreshNotifications,
     clearAll,
     markAsRead,
+    // API functions
+    fetchNotificationsFromAPI,
+    markAPINotificationAsRead,
+    markAllAPINotificationsAsRead,
+    fetchNotificationCategories,
   } = useNotifications();
 
   const [filter, setFilter] = useState('all'); // 'all', 'unread', 'attendance', 'grade', 'announcement'
@@ -82,14 +87,25 @@ const NotificationScreen = ({ navigation }) => {
 
   const handleMarkAllAsRead = async () => {
     try {
-      const unreadNotifications = notifications.filter(n => !n.read);
-      
+      // Try API method first
+      const apiResponse = await markAllAPINotificationsAsRead();
+
+      if (apiResponse?.success) {
+        Alert.alert('Success', 'All notifications marked as read.');
+        await refreshNotifications(); // Refresh to get updated data
+        return;
+      }
+
+      // Fallback to local method
+      const unreadNotifications = notifications.filter((n) => !n.read);
+
       for (const notification of unreadNotifications) {
         await markAsRead(notification.id);
       }
-      
+
       Alert.alert('Success', 'All notifications marked as read.');
     } catch (error) {
+      console.error('Error marking all notifications as read:', error);
       Alert.alert('Error', 'Failed to mark notifications as read.');
     }
   };
@@ -97,13 +113,13 @@ const NotificationScreen = ({ navigation }) => {
   const getFilteredNotifications = () => {
     switch (filter) {
       case 'unread':
-        return notifications.filter(n => !n.read);
+        return notifications.filter((n) => !n.read);
       case 'attendance':
-        return notifications.filter(n => n.type === 'attendance');
+        return notifications.filter((n) => n.type === 'attendance');
       case 'grade':
-        return notifications.filter(n => n.type === 'grade');
+        return notifications.filter((n) => n.type === 'grade');
       case 'announcement':
-        return notifications.filter(n => n.type === 'announcement');
+        return notifications.filter((n) => n.type === 'announcement');
       default:
         return notifications;
     }
@@ -126,10 +142,9 @@ const NotificationScreen = ({ navigation }) => {
       <FontAwesomeIcon icon={faBell} size={64} color={theme.colors.textLight} />
       <Text style={styles.emptyStateTitle}>No Notifications</Text>
       <Text style={styles.emptyStateSubtitle}>
-        {filter === 'unread' 
+        {filter === 'unread'
           ? "You're all caught up! No unread notifications."
-          : "You'll see your notifications here when you receive them."
-        }
+          : "You'll see your notifications here when you receive them."}
       </Text>
     </View>
   );
@@ -162,7 +177,7 @@ const NotificationScreen = ({ navigation }) => {
             style={styles.headerButton}
             onPress={() => navigation.goBack()}
           >
-            <FontAwesomeIcon icon={faArrowLeft} size={20} color="#fff" />
+            <FontAwesomeIcon icon={faArrowLeft} size={20} color='#fff' />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Notifications</Text>
           {unreadCount > 0 && (
@@ -178,14 +193,14 @@ const NotificationScreen = ({ navigation }) => {
               style={styles.headerActionButton}
               onPress={handleMarkAllAsRead}
             >
-              <FontAwesomeIcon icon={faCheckDouble} size={18} color="#fff" />
+              <FontAwesomeIcon icon={faCheckDouble} size={18} color='#fff' />
             </TouchableOpacity>
           )}
           <TouchableOpacity
             style={styles.headerActionButton}
             onPress={handleClearAll}
           >
-            <FontAwesomeIcon icon={faTrash} size={18} color="#fff" />
+            <FontAwesomeIcon icon={faTrash} size={18} color='#fff' />
           </TouchableOpacity>
         </View>
       </View>
@@ -202,7 +217,7 @@ const NotificationScreen = ({ navigation }) => {
       {/* Notifications List */}
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <ActivityIndicator size='large' color={theme.colors.primary} />
           <Text style={styles.loadingText}>Loading notifications...</Text>
         </View>
       ) : (
