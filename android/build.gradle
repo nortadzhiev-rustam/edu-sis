@@ -40,4 +40,9 @@ allprojects {
         mavenCentral()
         maven { url 'https://www.jitpack.io' }
     }
+
+    // Fix for react-native-reanimated Java toolchain issue
+    tasks.withType(JavaCompile).configureEach {
+        options.compilerArgs.removeAll { it.startsWith("--release") }
+    }
 }

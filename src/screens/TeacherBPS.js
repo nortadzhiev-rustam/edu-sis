@@ -20,7 +20,6 @@ import {
   faArrowLeft,
   faGavel,
   faPlus,
-  faBuilding,
   faRefresh,
   faThumbsUp,
   faThumbsDown,
@@ -34,8 +33,6 @@ import {
   faUsers,
   faCheckSquare,
   faSquare,
-  faUserCheck,
-  faUserPlus,
 } from '@fortawesome/free-solid-svg-icons';
 
 export default function TeacherBPS({ route, navigation }) {
@@ -78,15 +75,14 @@ export default function TeacherBPS({ route, navigation }) {
           'Content-Type': 'application/json',
         },
       });
-console.log(response);
       if (response.ok) {
         const data = await response.json();
-        console.log('BPS data:', data);
         setBpsData(data);
       } else {
         Alert.alert('Error', 'Failed to fetch BPS data');
       }
     } catch (error) {
+      console.error('Error fetching BPS data:', error);
       Alert.alert('Error', 'Network error occurred');
     } finally {
       setRefreshing(false);
@@ -270,19 +266,77 @@ console.log(response);
     setSubmissionErrors([]);
     setSelectedBehaviorType(null);
 
+    // Ensure at least one class is expanded when modal opens
     const groupedStudents = getGroupedStudents();
-    const firstClassName = Object.keys(groupedStudents).sort((a, b) =>
+    const classNames = Object.keys(groupedStudents).sort((a, b) =>
       a.localeCompare(b)
-    )[0];
-    if (firstClassName) {
-      setExpandedClasses(new Set([firstClassName]));
+    );
+
+    if (classNames.length > 0) {
+      // Expand the first class by default
+      setExpandedClasses(new Set([classNames[0]]));
     } else {
       setExpandedClasses(new Set());
     }
   };
 
+  // Optimized function to use structured BPS data instead of multiple API calls
+  // Uses branches.classes array and total_students key when available
   const getGroupedStudents = () => {
     const branch = getCurrentBranch();
+
+    // First try to use the structured classes array if available
+    // This avoids the need to group students manually and reduces processing
+    if (branch?.classes && Array.isArray(branch.classes)) {
+      const grouped = {};
+
+      branch.classes.forEach((classData) => {
+        if (classData.students && Array.isArray(classData.students)) {
+          classData.students.forEach((student) => {
+            if (!student.student_name || student.student_name.trim() === '') {
+              return; // Skip students without names
+            }
+
+            // Determine the group name based on classroom_name
+            let groupName;
+            if (
+              !student.classroom_name ||
+              student.classroom_name.trim() === '' ||
+              student.classroom_name === 'No Classroom'
+            ) {
+              // Use grade_name from class object if no classroom or "No Classroom"
+              groupName = classData.grade_name;
+            } else {
+              // Use the actual classroom_name (for batches)
+              groupName = student.classroom_name;
+            }
+
+            // Initialize group if it doesn't exist
+            if (!grouped[groupName]) {
+              grouped[groupName] = [];
+            }
+
+            // Add student with proper classroom_name and name for compatibility
+            grouped[groupName].push({
+              ...student,
+              name: student.student_name, // Add name property for compatibility
+              classroom_name: groupName,
+            });
+          });
+        }
+      });
+
+      // Sort students within each group
+      Object.keys(grouped).forEach((groupName) => {
+        grouped[groupName].sort((a, b) =>
+          a.student_name.localeCompare(b.student_name)
+        );
+      });
+
+      return grouped;
+    }
+
+    // Fallback to the original method if classes array is not available
     if (!branch?.students) return {};
 
     const grouped = {};
@@ -559,12 +613,91 @@ console.log(response);
 
   const getValidStudentsCount = () => {
     const branch = getCurrentBranch();
+
+    // First try to use the total_students key if available
+    if (branch?.total_students && typeof branch.total_students === 'number') {
+      return branch.total_students;
+    }
+
+    // If classes array is available, sum up students from all classes
+    if (branch?.classes && Array.isArray(branch.classes)) {
+      return branch.classes.reduce((total, classData) => {
+        if (classData.students && Array.isArray(classData.students)) {
+          return (
+            total +
+            classData.students.filter(
+              (student) =>
+                student.student_name && student.student_name.trim() !== ''
+            ).length
+          );
+        }
+        return total;
+      }, 0);
+    }
+
+    // Fallback to the original method
     if (!branch?.students) return 0;
 
     return branch.students.filter(
       (student) =>
         student.classroom_name && student.classroom_name.trim() !== ''
     ).length;
+  };
+
+  const getClassStudentCount = (className) => {
+    const branch = getCurrentBranch();
+
+    // If classes array is available, count students properly considering batches
+    if (branch?.classes && Array.isArray(branch.classes)) {
+      let count = 0;
+
+      branch.classes.forEach((classData) => {
+        if (classData.students && Array.isArray(classData.students)) {
+          classData.students.forEach((student) => {
+            if (!student.student_name || student.student_name.trim() === '') {
+              return; // Skip students without names
+            }
+
+            // Determine the group name based on classroom_name
+            let groupName;
+            if (
+              !student.classroom_name ||
+              student.classroom_name.trim() === '' ||
+              student.classroom_name === 'No Classroom'
+            ) {
+              // Use grade_name from class object if no classroom or "No Classroom"
+              groupName = classData.grade_name;
+            } else {
+              // Use the actual classroom_name (for batches)
+              groupName = student.classroom_name;
+            }
+
+            if (groupName === className) {
+              count++;
+            }
+          });
+        }
+      });
+
+      return count;
+    }
+
+    // Fallback to counting from grouped students
+    const groupedStudents = getGroupedStudents();
+    return groupedStudents[className]?.length || 0;
+  };
+
+  const getTotalClassesCount = () => {
+    const branch = getCurrentBranch();
+
+    // If classes array is available, use its length
+    if (branch?.classes && Array.isArray(branch.classes)) {
+      return branch.classes.length;
+    }
+
+    // Fallback to counting unique classroom names
+    const groupedStudents = getGroupedStudents();
+    return Object.keys(groupedStudents).length;
   };
 
   const canProceedToNextStep = () => {
@@ -676,8 +809,110 @@ console.log(response);
         </View>
       </View>
 
+      {/* Compact Branch Info Header */}
+      {currentBranch && (
+        <View style={styles.compactBranchInfo}>
+          <View style={styles.compactBranchHeader}>
+            <View style={styles.compactBranchDetails}>
+              <Text style={styles.compactBranchName}>
+                {currentBranch.branch_name}
+              </Text>
+              <Text style={styles.compactBranchSubtitle}>
+                {getValidStudentsCount()} Students • {getTotalClassesCount()}{' '}
+                Classes
+              </Text>
+            </View>
+
+            {/* Branch Selector for Multiple Branches */}
+            {bpsData?.branches && bpsData.branches.length > 1 && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.compactBranchSelector}
+              >
+                {bpsData.branches.map((branch, index) => (
+                  <TouchableOpacity
+                    key={branch.branch_id}
+                    style={[
+                      styles.compactBranchTab,
+                      selectedBranch === index &&
+                        styles.compactBranchTabSelected,
+                    ]}
+                    onPress={() => setSelectedBranch(index)}
+                  >
+                    <Text
+                      style={[
+                        styles.compactBranchTabText,
+                        selectedBranch === index &&
+                          styles.compactBranchTabTextSelected,
+                      ]}
+                    >
+                      {branch.branch_name.split(' ')[0]}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+          </View>
+
+          {/* Filter Tabs */}
+          <View style={styles.compactFilterTabs}>
+            {[
+              {
+                key: 'all',
+                label: 'All',
+                count: currentBranch.total_bps_records,
+              },
+              {
+                key: 'prs',
+                label: 'Positive',
+                count: (currentBranch.bps_records || []).filter(
+                  (r) => r.item_type === 'prs'
+                ).length,
+              },
+              {
+                key: 'dps',
+                label: 'Negative',
+                count: (currentBranch.bps_records || []).filter(
+                  (r) => r.item_type === 'dps'
+                ).length,
+              },
+            ].map((filter) => (
+              <TouchableOpacity
+                key={filter.key}
+                style={[
+                  styles.compactFilterTab,
+                  filterType === filter.key && styles.compactFilterTabSelected,
+                ]}
+                onPress={() => setFilterType(filter.key)}
+              >
+                <Text
+                  style={[
+                    styles.compactFilterTabText,
+                    filterType === filter.key &&
+                      styles.compactFilterTabTextSelected,
+                  ]}
+                >
+                  {filter.label}
+                </Text>
+                <Text
+                  style={[
+                    styles.compactFilterTabCount,
+                    filterType === filter.key &&
+                      styles.compactFilterTabCountSelected,
+                  ]}
+                >
+                  {filter.count}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Scrollable BPS Records */}
       <ScrollView
-        style={styles.scrollView}
+        style={styles.recordsScrollView}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -686,148 +921,11 @@ console.log(response);
             tintColor={theme.colors.secondary}
           />
         }
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.teacherInfo}>
-          <Text style={styles.teacherName}>{teacherName}</Text>
-          <Text style={styles.teacherSubtitle}>BPS Management Dashboard</Text>
-        </View>
-
-        {bpsData?.branches && bpsData.branches.length > 1 && (
-          <View style={styles.branchSelector}>
-            <Text style={styles.sectionTitle}>Select Branch</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {bpsData.branches.map((branch, index) => (
-                <TouchableOpacity
-                  key={branch.branch_id}
-                  style={[
-                    styles.branchTab,
-                    selectedBranch === index && styles.selectedBranchTab,
-                  ]}
-                  onPress={() => setSelectedBranch(index)}
-                >
-                  <FontAwesomeIcon
-                    icon={faBuilding}
-                    size={16}
-                    color={
-                      selectedBranch === index
-                        ? theme.colors.headerText
-                        : theme.colors.textSecondary
-                    }
-                  />
-                  <Text
-                    style={[
-                      styles.branchTabText,
-                      selectedBranch === index && styles.selectedBranchTabText,
-                    ]}
-                  >
-                    {branch.branch_name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
-        {currentBranch && (
-          <View style={styles.branchInfo}>
-            <View style={styles.branchHeader}>
-              <View style={styles.branchIconContainer}>
-                <FontAwesomeIcon
-                  icon={faBuilding}
-                  size={20}
-                  color={theme.colors.secondary}
-                />
-              </View>
-              <View style={styles.branchDetails}>
-                <Text style={styles.branchName}>
-                  {currentBranch.branch_name}
-                </Text>
-                <Text style={styles.branchSubtitle}>
-                  Academic Year: {bpsData.global_academic_year.academic_year}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.branchStats}>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{getValidStudentsCount()}</Text>
-                <Text style={styles.statLabel}>Students</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>
-                  {currentBranch.total_bps_records}
-                </Text>
-                <Text style={styles.statLabel}>BPS Records</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>
-                  {
-                    (currentBranch.bps_records || []).filter(
-                      (r) => r.item_type === 'prs'
-                    ).length
-                  }
-                </Text>
-                <Text style={styles.statLabel}>Positive</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>
-                  {
-                    (currentBranch.bps_records || []).filter(
-                      (r) => r.item_type === 'dps'
-                    ).length
-                  }
-                </Text>
-                <Text style={styles.statLabel}>Negative</Text>
-              </View>
-            </View>
-          </View>
-        )}
-
-        <View style={styles.filterContainer}>
-          <Text style={styles.sectionTitle}>Filter Records</Text>
-          <View style={styles.filterTabs}>
-            {[
-              { key: 'all', label: 'All Records', icon: faGavel },
-              { key: 'prs', label: 'Positive', icon: faThumbsUp },
-              { key: 'dps', label: 'Negative', icon: faThumbsDown },
-            ].map((filter) => (
-              <TouchableOpacity
-                key={filter.key}
-                style={[
-                  styles.filterTab,
-                  filterType === filter.key && styles.selectedFilterTab,
-                ]}
-                onPress={() => setFilterType(filter.key)}
-              >
-                <FontAwesomeIcon
-                  icon={filter.icon}
-                  size={16}
-                  color={
-                    filterType === filter.key
-                      ? theme.colors.headerText
-                      : theme.colors.textSecondary
-                  }
-                />
-                <Text
-                  style={[
-                    styles.filterTabText,
-                    filterType === filter.key && styles.selectedFilterTabText,
-                  ]}
-                >
-                  {filter.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.recordsContainer}>
-          <Text style={styles.sectionTitle}>
-            BPS Records ({filteredRecords.length})
-          </Text>
-
-          {filteredRecords.length > 0 ? (
-            filteredRecords.map((record, index) => (
+        {filteredRecords.length > 0 ? (
+          <View style={styles.recordsList}>
+            {filteredRecords.map((record, index) => (
               <View
                 key={`${record.discipline_record_id}-${index}`}
                 style={styles.recordCard}
@@ -899,25 +997,25 @@ console.log(response);
                   )}
                 </View>
               </View>
-            ))
-          ) : (
-            <View style={styles.emptyState}>
-              <FontAwesomeIcon
-                icon={faGavel}
-                size={48}
-                color={theme.colors.textLight}
-              />
-              <Text style={styles.emptyStateText}>No BPS records found</Text>
-              <Text style={styles.emptyStateSubtext}>
-                {filterType === 'all'
-                  ? 'No behavior records have been created yet'
-                  : `No ${
-                      filterType === 'prs' ? 'positive' : 'negative'
-                    } records found`}
-              </Text>
-            </View>
-          )}
-        </View>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.emptyState}>
+            <FontAwesomeIcon
+              icon={faGavel}
+              size={48}
+              color={theme.colors.textLight}
+            />
+            <Text style={styles.emptyStateText}>No BPS records found</Text>
+            <Text style={styles.emptyStateSubtext}>
+              {filterType === 'all'
+                ? 'No behavior records have been created yet'
+                : `No ${
+                    filterType === 'prs' ? 'positive' : 'negative'
+                  } records found`}
+            </Text>
+          </View>
+        )}
       </ScrollView>
 
       <Modal
@@ -1173,7 +1271,7 @@ console.log(response);
                               <Text style={styles.className}>{className}</Text>
                               <View style={styles.studentCount}>
                                 <Text style={styles.studentCountText}>
-                                  {students.length}
+                                  {getClassStudentCount(className)}
                                 </Text>
                               </View>
                             </TouchableOpacity>
@@ -1761,32 +1859,6 @@ const getStyles = (theme) =>
       fontSize: 22,
       fontWeight: 'bold',
     },
-    scrollView: {
-      flex: 1,
-    },
-    teacherInfo: {
-      backgroundColor: theme.colors.surface,
-      margin: 20,
-      marginBottom: 15,
-      padding: 20,
-      borderRadius: 16,
-      shadowColor: theme.colors.shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 4,
-      alignItems: 'center',
-    },
-    teacherName: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      color: theme.colors.text,
-      marginBottom: 4,
-    },
-    teacherSubtitle: {
-      fontSize: 14,
-      color: theme.colors.textSecondary,
-    },
 
     sectionTitle: {
       fontSize: 18,
@@ -1795,135 +1867,102 @@ const getStyles = (theme) =>
       marginBottom: 15,
     },
 
-    branchSelector: {
-      marginHorizontal: 20,
-      marginBottom: 15,
-    },
-    branchTab: {
-      flexDirection: 'row',
-      alignItems: 'center',
+    // Compact Branch Info Styles
+    compactBranchInfo: {
       backgroundColor: theme.colors.surface,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      borderRadius: 20,
-      marginRight: 10,
-      shadowColor: theme.colors.shadow,
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
-      shadowRadius: 2,
-      elevation: 2,
-    },
-    selectedBranchTab: {
-      backgroundColor: theme.colors.secondary,
-    },
-    branchTabText: {
-      fontSize: 14,
-      color: theme.colors.textSecondary,
-      marginLeft: 6,
-      fontWeight: '500',
-    },
-    selectedBranchTabText: {
-      color: theme.colors.headerText,
-    },
-
-    branchInfo: {
-      backgroundColor: theme.colors.surface,
-      marginHorizontal: 20,
-      marginBottom: 15,
-      padding: 20,
-      borderRadius: 16,
+      marginHorizontal: 15,
+      marginVertical: 10,
+      borderRadius: 12,
       shadowColor: theme.colors.shadow,
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 4,
+      shadowRadius: 4,
+      elevation: 3,
     },
-    branchHeader: {
+    compactBranchHeader: {
       flexDirection: 'row',
+      justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 15,
+      padding: 15,
+      paddingBottom: 10,
     },
-    branchIconContainer: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: `${theme.colors.secondary}1A`,
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginRight: 15,
-    },
-    branchDetails: {
+    compactBranchDetails: {
       flex: 1,
     },
-    branchName: {
+    compactBranchName: {
       fontSize: 16,
       fontWeight: 'bold',
       color: theme.colors.text,
-      marginBottom: 4,
+      marginBottom: 2,
     },
-    branchSubtitle: {
-      fontSize: 14,
+    compactBranchSubtitle: {
+      fontSize: 12,
       color: theme.colors.textSecondary,
     },
-    branchStats: {
-      flexDirection: 'row',
-      justifyContent: 'space-around',
+    compactBranchSelector: {
+      maxWidth: 150,
     },
-    statItem: {
-      alignItems: 'center',
+    compactBranchTab: {
+      backgroundColor: theme.colors.background,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 15,
+      marginLeft: 8,
     },
-    statNumber: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: theme.colors.text,
-      marginBottom: 4,
+    compactBranchTabSelected: {
+      backgroundColor: theme.colors.secondary,
     },
-    statLabel: {
+    compactBranchTabText: {
       fontSize: 12,
       color: theme.colors.textSecondary,
       fontWeight: '500',
     },
-
-    filterContainer: {
-      marginHorizontal: 20,
-      marginBottom: 15,
+    compactBranchTabTextSelected: {
+      color: theme.colors.headerText,
     },
-    filterTabs: {
+    compactFilterTabs: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
+      paddingHorizontal: 15,
+      paddingBottom: 15,
     },
-    filterTab: {
+    compactFilterTab: {
       flex: 1,
-      flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: theme.colors.surface,
-      paddingVertical: 12,
-      borderRadius: 20,
+      paddingVertical: 8,
       marginHorizontal: 4,
-      shadowColor: theme.colors.shadow,
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
-      shadowRadius: 2,
-      elevation: 2,
+      borderRadius: 8,
+      backgroundColor: theme.colors.background,
     },
-    selectedFilterTab: {
+    compactFilterTabSelected: {
       backgroundColor: theme.colors.secondary,
     },
-    filterTabText: {
-      fontSize: 12,
+    compactFilterTabText: {
+      fontSize: 11,
       color: theme.colors.textSecondary,
-      marginLeft: 6,
       fontWeight: '600',
+      marginBottom: 2,
     },
-    selectedFilterTabText: {
+    compactFilterTabTextSelected: {
+      color: theme.colors.headerText,
+    },
+    compactFilterTabCount: {
+      fontSize: 14,
+      color: theme.colors.text,
+      fontWeight: 'bold',
+    },
+    compactFilterTabCountSelected: {
       color: theme.colors.headerText,
     },
 
-    recordsContainer: {
-      marginHorizontal: 20,
-      marginBottom: 25,
+    // Scrollable Records Styles
+    recordsScrollView: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
     },
+    recordsList: {
+      padding: 15,
+    },
+
     recordCard: {
       backgroundColor: theme.colors.surface,
       borderRadius: 16,
@@ -2637,12 +2676,6 @@ const getStyles = (theme) =>
     allStudentsScrollView: {
       maxHeight: 120, // Adjust as needed, e.g., for 4-5 items
       paddingVertical: 5, // Optional: for some spacing within the scroll view
-    },
-    selectedStudentItemText: {
-      fontSize: 18,
-      color: theme.colors.text,
-      marginBottom: 4, // Adjusted slightly for better spacing in a list
-      // Ensure this style provides enough distinction for each item
     },
 
     selectedBehaviorsContainer: {

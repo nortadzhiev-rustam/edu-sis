@@ -87,12 +87,24 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
 
     namespace 'com.edunovaasia.edusis'
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
     defaultConfig {
         applicationId 'com.edunovaasia.edusis'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0.0"
+
+        buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", (findProperty("newArchEnabled") ?: "false")
+        buildConfigField "boolean", "IS_HERMES_ENABLED", (findProperty("hermesEnabled") ?: "true")
     }
     signingConfigs {
         debug {
@@ -168,11 +180,8 @@ dependencies {
         }
     }
 
-    if (hermesEnabled.toBoolean()) {
-        implementation("com.facebook.react:hermes-android")
-    } else {
-        implementation jscFlavor
-    }
+    // Use Hermes by default
+    implementation("com.facebook.react:hermes-android")
 }
 
 apply plugin: 'com.google.gms.google-services'

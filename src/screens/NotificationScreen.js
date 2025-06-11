@@ -8,6 +8,7 @@ import {
   Alert,
   RefreshControl,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -206,13 +207,13 @@ const NotificationScreen = ({ navigation }) => {
       </View>
 
       {/* Filter Buttons */}
-      <View style={styles.filterContainer}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterContainer}>
         {renderFilterButton('all', 'All')}
         {renderFilterButton('unread', 'Unread')}
         {renderFilterButton('attendance', 'Attendance')}
         {renderFilterButton('grade', 'Grades')}
         {renderFilterButton('announcement', 'Announcements')}
-      </View>
+      </ScrollView>
 
       {/* Notifications List */}
       {loading ? (
@@ -303,12 +304,14 @@ const createStyles = (theme) =>
       alignItems: 'center',
     },
     filterContainer: {
+      flex:1,
       flexDirection: 'row',
       paddingHorizontal: 16,
       paddingVertical: 12,
       backgroundColor: theme.colors.surface,
       borderBottomWidth: 1,
       borderBottomColor: theme.colors.border,
+      maxHeight: 60,
     },
     filterButton: {
       paddingHorizontal: 16,
