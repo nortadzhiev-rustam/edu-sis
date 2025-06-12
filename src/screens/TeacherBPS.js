@@ -10,6 +10,8 @@ import {
   RefreshControl,
   Modal,
   TextInput,
+  PanResponder,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -33,7 +35,148 @@ import {
   faUsers,
   faCheckSquare,
   faSquare,
+  faTrash,
 } from '@fortawesome/free-solid-svg-icons';
+
+// Swipeable Record Component
+const SwipeableRecord = ({ record, onDelete, canDelete, theme, children }) => {
+  const [translateX] = useState(new Animated.Value(0));
+  const [isRevealed, setIsRevealed] = useState(false);
+  const deleteButtonWidth = 80;
+
+  const panResponder = PanResponder.create({
+    onMoveShouldSetPanResponder: (evt, gestureState) => {
+      // Only respond to horizontal swipes and only if delete is allowed
+      return (
+        canDelete &&
+        Math.abs(gestureState.dx) > Math.abs(gestureState.dy) &&
+        Math.abs(gestureState.dx) > 10
+      );
+    },
+    onPanResponderGrant: () => {
+      translateX.setOffset(translateX._value);
+    },
+    onPanResponderMove: (evt, gestureState) => {
+      // Only allow left swipe (negative dx) to reveal delete button
+      if (gestureState.dx < 0) {
+        const newValue = Math.max(gestureState.dx, -deleteButtonWidth);
+        translateX.setValue(newValue);
+      } else if (isRevealed) {
+        // Allow right swipe to hide delete button when it's revealed
+        const newValue = Math.min(gestureState.dx - deleteButtonWidth, 0);
+        translateX.setValue(newValue);
+      }
+    },
+    onPanResponderRelease: (evt, gestureState) => {
+      translateX.flattenOffset();
+
+      if (gestureState.dx < -deleteButtonWidth / 2) {
+        // Swipe left enough to reveal delete button
+        Animated.spring(translateX, {
+          toValue: -deleteButtonWidth,
+          useNativeDriver: false,
+        }).start();
+        setIsRevealed(true);
+      } else {
+        // Snap back to original position
+        Animated.spring(translateX, {
+          toValue: 0,
+          useNativeDriver: false,
+        }).start();
+        setIsRevealed(false);
+      }
+    },
+  });
+
+  const handleDelete = () => {
+    // Animate back to original position first
+    Animated.spring(translateX, {
+      toValue: 0,
+      useNativeDriver: false,
+    }).start(() => {
+      setIsRevealed(false);
+      onDelete(record);
+    });
+  };
+
+  const handleTapOutside = () => {
+    if (isRevealed) {
+      Animated.spring(translateX, {
+        toValue: 0,
+        useNativeDriver: false,
+      }).start();
+      setIsRevealed(false);
+    }
+  };
+
+  if (!canDelete) {
+    // If delete is not allowed, return the record without swipe functionality
+    return children;
+  }
+
+  return (
+    <View style={{ position: 'relative' }}>
+      {/* Delete Button (behind the record) */}
+      <View
+        style={[
+          {
+            position: 'absolute',
+            right: 0,
+            top: 0,
+            bottom: 0,
+            width: deleteButtonWidth,
+            backgroundColor: theme.colors.error,
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderRadius: 12,
+          },
+        ]}
+      >
+        <TouchableOpacity
+          style={{
+            width: '100%',
+            height: '100%',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+          onPress={handleDelete}
+        >
+          <FontAwesomeIcon
+            icon={faTrash}
+            size={20}
+            color={theme.colors.headerText}
+          />
+          <Text
+            style={{
+              color: theme.colors.headerText,
+              fontSize: 12,
+              fontWeight: 'bold',
+              marginTop: 4,
+            }}
+          >
+            Delete
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Swipeable Record */}
+      <Animated.View
+        style={[
+          {
+            transform: [{ translateX }],
+            backgroundColor: theme.colors.surface,
+            borderRadius: 12,
+          },
+        ]}
+        {...panResponder.panHandlers}
+      >
+        <TouchableOpacity onPress={handleTapOutside} activeOpacity={1}>
+          {children}
+        </TouchableOpacity>
+      </Animated.View>
+    </View>
+  );
+};
 
 export default function TeacherBPS({ route, navigation }) {
   const { authCode, teacherName, bpsData: initialData } = route.params || {};
@@ -252,6 +395,84 @@ export default function TeacherBPS({ route, navigation }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Check if the teacher has permission to delete BPS records
+  const canDeleteBPS = () => {
+    return bpsData?.permissions?.can_delete_bps === true;
+  };
+
+  // Delete a BPS record
+  const deleteBPSRecord = async (record) => {
+    if (!canDeleteBPS()) {
+      Alert.alert(
+        'Permission Denied',
+        'You do not have permission to delete BPS records.'
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Delete BPS Record',
+      `Are you sure you want to delete this ${
+        record.item_type === 'prs' ? 'positive' : 'negative'
+      } behavior record for ${record.student_name}?\n\n"${
+        record.item_title
+      }" (${record.item_point > 0 ? '+' : ''}${record.item_point} points)`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              const url = buildApiUrl(Config.API_ENDPOINTS.DELETE_BPS);
+
+              const response = await fetch(url, {
+                method: 'DELETE',
+                headers: {
+                  Accept: 'application/json',
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  auth_code: authCode,
+                  discipline_record_id: record.discipline_record_id,
+                }),
+              });
+
+              if (response.ok) {
+                const result = await response.json();
+                if (result.success) {
+                  Alert.alert('Success', 'BPS record deleted successfully');
+                  await fetchBPSData(); // Refresh the data
+                } else {
+                  Alert.alert(
+                    'Error',
+                    result.message || 'Failed to delete BPS record'
+                  );
+                }
+              } else {
+                const errorText = await response.text();
+                console.error('BPS deletion failed:', errorText);
+                Alert.alert('Error', 'Failed to delete BPS record');
+              }
+            } catch (error) {
+              console.error('Error deleting BPS record:', error);
+              Alert.alert(
+                'Error',
+                'Network error occurred while deleting record'
+              );
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const resetForm = () => {
@@ -926,77 +1147,84 @@ export default function TeacherBPS({ route, navigation }) {
         {filteredRecords.length > 0 ? (
           <View style={styles.recordsList}>
             {filteredRecords.map((record, index) => (
-              <View
+              <SwipeableRecord
                 key={`${record.discipline_record_id}-${index}`}
-                style={styles.recordCard}
+                record={record}
+                onDelete={deleteBPSRecord}
+                canDelete={canDeleteBPS()}
+                theme={theme}
               >
-                <View style={styles.recordHeader}>
-                  <View
-                    style={[
-                      styles.recordTypeIcon,
-                      {
-                        backgroundColor:
-                          record.item_type === 'prs'
-                            ? `${theme.colors.success}1A`
-                            : `${theme.colors.error}1A`,
-                      },
-                    ]}
-                  >
-                    <FontAwesomeIcon
-                      icon={
-                        record.item_type === 'prs' ? faThumbsUp : faThumbsDown
-                      }
-                      size={16}
-                      color={
-                        record.item_type === 'prs'
-                          ? theme.colors.success
-                          : theme.colors.error
-                      }
-                    />
-                  </View>
-                  <View style={styles.recordInfo}>
-                    <Text style={styles.recordTitle}>{record.item_title}</Text>
-                    <Text style={styles.studentName}>
-                      {record.student_name}
-                    </Text>
-                    <Text style={styles.classroomName}>
-                      {record.classroom_name}
-                    </Text>
-                  </View>
-                  <View style={styles.recordActions}>
+                <View style={styles.recordCard}>
+                  <View style={styles.recordHeader}>
                     <View
                       style={[
-                        styles.pointsBadge,
+                        styles.recordTypeIcon,
                         {
                           backgroundColor:
                             record.item_type === 'prs'
-                              ? theme.colors.success
-                              : theme.colors.error,
+                              ? `${theme.colors.success}1A`
+                              : `${theme.colors.error}1A`,
                         },
                       ]}
                     >
-                      <Text style={styles.pointsText}>
-                        {record.item_point > 0 ? '+' : ''}
-                        {record.item_point}
+                      <FontAwesomeIcon
+                        icon={
+                          record.item_type === 'prs' ? faThumbsUp : faThumbsDown
+                        }
+                        size={16}
+                        color={
+                          record.item_type === 'prs'
+                            ? theme.colors.success
+                            : theme.colors.error
+                        }
+                      />
+                    </View>
+                    <View style={styles.recordInfo}>
+                      <Text style={styles.recordTitle}>
+                        {record.item_title}
+                      </Text>
+                      <Text style={styles.studentName}>
+                        {record.student_name}
+                      </Text>
+                      <Text style={styles.classroomName}>
+                        {record.classroom_name}
                       </Text>
                     </View>
+                    <View style={styles.recordActions}>
+                      <View
+                        style={[
+                          styles.pointsBadge,
+                          {
+                            backgroundColor:
+                              record.item_type === 'prs'
+                                ? theme.colors.success
+                                : theme.colors.error,
+                          },
+                        ]}
+                      >
+                        <Text style={styles.pointsText}>
+                          {record.item_point > 0 ? '+' : ''}
+                          {record.item_point}
+                        </Text>
+                      </View>
+                    </View>
                   </View>
-                </View>
 
-                <View style={styles.recordDetails}>
-                  <View style={styles.recordMeta}>
-                    <FontAwesomeIcon
-                      icon={faCalendarAlt}
-                      size={12}
-                      color={theme.colors.textSecondary}
-                    />
-                    <Text style={styles.recordDate}>{record.date}</Text>
+                  <View style={styles.recordDetails}>
+                    <View style={styles.recordMeta}>
+                      <FontAwesomeIcon
+                        icon={faCalendarAlt}
+                        size={12}
+                        color={theme.colors.textSecondary}
+                      />
+                      <Text style={styles.recordDate}>{record.date}</Text>
+                    </View>
+                    {record.note && (
+                      <Text style={styles.recordNote}>{record.note}</Text>
+                    )}
                   </View>
-                  {record.note && (
-                    <Text style={styles.recordNote}>{record.note}</Text>
-                  )}
                 </View>
-              </View>
+              </SwipeableRecord>
             ))}
           </View>
         ) : (
