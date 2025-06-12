@@ -200,7 +200,7 @@ export default function LibraryScreen({ navigation, route }) {
           <View style={styles.studentInfo}>
             {libraryData.student_info?.student_photo ? (
               <Image
-                source={{ uri: libraryData.student_info.student_photo }}
+                source={{ uri: `https://${Config.API_DOMAIN}/${libraryData.student_info.student_photo}` }}
                 style={styles.studentPhoto}
               />
             ) : (
@@ -476,7 +476,7 @@ export default function LibraryScreen({ navigation, route }) {
                 {book.title || 'Unknown Title'}
               </Text>
               <Text style={styles.availableBookAuthor}>
-                {book.author || 'Unknown Author'}
+                {book.author_name || 'Unknown Author'}
               </Text>
               <Text style={styles.availableBookISBN}>
                 ISBN: {book.isbn || 'N/A'}

@@ -16,17 +16,14 @@ import {
   faArrowLeft,
   faBell,
   faTrash,
-  faFilter,
   faCheckDouble,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
-import { useLanguage } from '../contexts/LanguageContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import NotificationItem from '../components/NotificationItem';
 
 const NotificationScreen = ({ navigation }) => {
   const { theme } = useTheme();
-  const { t } = useLanguage();
   const {
     notifications,
     unreadCount,
@@ -34,11 +31,10 @@ const NotificationScreen = ({ navigation }) => {
     refreshNotifications,
     clearAll,
     markAsRead,
-    // API functions
-    fetchNotificationsFromAPI,
-    markAPINotificationAsRead,
     markAllAPINotificationsAsRead,
-    fetchNotificationCategories,
+    currentStudentAuthCode,
+    getCurrentStudentNotifications,
+    getCurrentStudentUnreadCount,
   } = useNotifications();
 
   const [filter, setFilter] = useState('all'); // 'all', 'unread', 'attendance', 'grade', 'announcement'
@@ -54,6 +50,11 @@ const NotificationScreen = ({ navigation }) => {
 
     return unsubscribe;
   }, [navigation, refreshNotifications]);
+
+  // Load notifications on component mount
+  useEffect(() => {
+    refreshNotifications();
+  }, []);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -111,18 +112,38 @@ const NotificationScreen = ({ navigation }) => {
     }
   };
 
+  // Determine which notifications to show (student context or regular)
+  const getActiveNotifications = () => {
+    if (currentStudentAuthCode) {
+      // In parent context, show student notifications
+      return getCurrentStudentNotifications();
+    }
+    // Regular context, show user's own notifications
+    return notifications;
+  };
+
+  // Get active unread count
+  const getActiveUnreadCount = () => {
+    if (currentStudentAuthCode) {
+      return getCurrentStudentUnreadCount();
+    }
+    return unreadCount;
+  };
+
   const getFilteredNotifications = () => {
+    const activeNotifications = getActiveNotifications();
+
     switch (filter) {
       case 'unread':
-        return notifications.filter((n) => !n.read);
+        return activeNotifications.filter((n) => !n.read);
       case 'attendance':
-        return notifications.filter((n) => n.type === 'attendance');
+        return activeNotifications.filter((n) => n.type === 'attendance');
       case 'grade':
-        return notifications.filter((n) => n.type === 'grade');
+        return activeNotifications.filter((n) => n.type === 'grade');
       case 'announcement':
-        return notifications.filter((n) => n.type === 'announcement');
+        return activeNotifications.filter((n) => n.type === 'announcement');
       default:
-        return notifications;
+        return activeNotifications;
     }
   };
 
@@ -147,6 +168,14 @@ const NotificationScreen = ({ navigation }) => {
           ? "You're all caught up! No unread notifications."
           : "You'll see your notifications here when you receive them."}
       </Text>
+      {!loading && (
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={() => refreshNotifications()}
+        >
+          <Text style={styles.retryButtonText}>Refresh</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 
@@ -181,15 +210,17 @@ const NotificationScreen = ({ navigation }) => {
             <FontAwesomeIcon icon={faArrowLeft} size={20} color='#fff' />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Notifications</Text>
-          {unreadCount > 0 && (
+          {getActiveUnreadCount() > 0 && (
             <View style={styles.unreadBadge}>
-              <Text style={styles.unreadBadgeText}>{unreadCount}</Text>
+              <Text style={styles.unreadBadgeText}>
+                {getActiveUnreadCount()}
+              </Text>
             </View>
           )}
         </View>
 
         <View style={styles.headerActions}>
-          {unreadCount > 0 && (
+          {getActiveUnreadCount() > 0 && (
             <TouchableOpacity
               style={styles.headerActionButton}
               onPress={handleMarkAllAsRead}
@@ -207,7 +238,11 @@ const NotificationScreen = ({ navigation }) => {
       </View>
 
       {/* Filter Buttons */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterContainer}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.filterContainer}
+      >
         {renderFilterButton('all', 'All')}
         {renderFilterButton('unread', 'Unread')}
         {renderFilterButton('attendance', 'Attendance')}
@@ -216,29 +251,31 @@ const NotificationScreen = ({ navigation }) => {
       </ScrollView>
 
       {/* Notifications List */}
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size='large' color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading notifications...</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={filteredNotifications}
-          renderItem={renderNotificationItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              colors={[theme.colors.primary]}
-              tintColor={theme.colors.primary}
-            />
-          }
-          ListEmptyComponent={renderEmptyState}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+      <View style={styles.contentContainer}>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size='large' color={theme.colors.primary} />
+            <Text style={styles.loadingText}>Loading notifications...</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={filteredNotifications}
+            renderItem={renderNotificationItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContainer}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                colors={[theme.colors.primary]}
+                tintColor={theme.colors.primary}
+              />
+            }
+            ListEmptyComponent={renderEmptyState}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
+      </View>
     </SafeAreaView>
   );
 };
@@ -304,8 +341,6 @@ const createStyles = (theme) =>
       alignItems: 'center',
     },
     filterContainer: {
-      flex:1,
-      flexDirection: 'row',
       paddingHorizontal: 16,
       paddingVertical: 12,
       backgroundColor: theme.colors.surface,
@@ -333,6 +368,9 @@ const createStyles = (theme) =>
     },
     activeFilterButtonText: {
       color: '#FFFFFF',
+    },
+    contentContainer: {
+      flex: 1,
     },
     listContainer: {
       paddingVertical: 8,
@@ -366,6 +404,18 @@ const createStyles = (theme) =>
       color: theme.colors.textSecondary,
       textAlign: 'center',
       lineHeight: 24,
+    },
+    retryButton: {
+      backgroundColor: theme.colors.primary,
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 8,
+      marginTop: 16,
+    },
+    retryButtonText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: '600',
     },
   });
 

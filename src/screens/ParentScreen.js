@@ -30,8 +30,8 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { useNotifications } from '../contexts/NotificationContext';
-import NotificationBadge from '../components/NotificationBadge';
+import { useParentNotifications } from '../hooks/useParentNotifications';
+import ParentNotificationBadge from '../components/ParentNotificationBadge';
 
 export default function ParentScreen({ navigation }) {
   const { theme } = useTheme();
@@ -40,6 +40,10 @@ export default function ParentScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const flatListRef = React.useRef(null);
+  const notificationsLoadedRef = React.useRef(new Set());
+
+  // Parent notifications hook
+  const { selectStudent, refreshAllStudents } = useParentNotifications();
 
   const styles = createStyles(theme);
 
@@ -55,6 +59,23 @@ export default function ParentScreen({ navigation }) {
     return unsubscribe;
   }, [navigation]);
 
+  // Load notifications when students are loaded (only once per student set)
+  useEffect(() => {
+    if (students.length > 0) {
+      // Create a unique key for this set of students
+      const studentIds = students
+        .map((s) => s.id)
+        .sort()
+        .join(',');
+
+      // Only load if we haven't loaded for this exact set of students
+      if (!notificationsLoadedRef.current.has(studentIds)) {
+        notificationsLoadedRef.current.add(studentIds);
+        refreshAllStudents(students);
+      }
+    }
+  }, [students]);
+
   const handleAddStudent = () => {
     // Navigate to login screen with student type
     navigation.navigate('Login', {
@@ -66,6 +87,9 @@ export default function ParentScreen({ navigation }) {
   const handleStudentPress = (student) => {
     // Set the selected student
     setSelectedStudent(student);
+
+    // Also select student for notifications
+    selectStudent(student);
   };
 
   const handleMenuItemPress = (action) => {
@@ -280,7 +304,7 @@ export default function ParentScreen({ navigation }) {
             onPress={() => navigation.navigate('NotificationScreen')}
           >
             <FontAwesomeIcon icon={faBell} size={18} color='#fff' />
-            <NotificationBadge />
+            <ParentNotificationBadge />
           </TouchableOpacity>
           <TouchableOpacity style={styles.addButton} onPress={handleAddStudent}>
             <FontAwesomeIcon icon={faPlus} size={18} color='#fff' />

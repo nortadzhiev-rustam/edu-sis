@@ -1,12 +1,12 @@
 /**
  * AttendanceScreen - Displays student attendance records
  *
- * Currently using dummy data for development.
- * To switch to real API:
- * 1. Uncomment the fetchAttendanceData function
- * 2. Replace loadDummyAttendanceData() call with fetchAttendanceData() in useEffect
- * 3. Add back authCode parameter usage
- * 4. Add back Alert import for error handling
+ * Features:
+ * - Summary view with overall statistics
+ * - Daily statistics view showing attendance by day
+ * - Detailed views for absent and late records
+ * - Responsive design for landscape/portrait modes
+ * - Pagination for large datasets
  */
 
 import React, { useEffect, useState } from 'react';
@@ -31,19 +31,17 @@ import { useScreenOrientation } from '../hooks/useScreenOrientation';
 import { Config, buildApiUrl } from '../config/env';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { useNotifications } from '../contexts/NotificationContext';
 import NotificationBadge from '../components/NotificationBadge';
 
 export default function AttendanceScreen({ navigation, route }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const { unreadCount } = useNotifications();
 
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
   const { studentName, authCode } = route.params || {};
-  const [attendance, setAttendance] = useState([]);
+  const [attendanceData, setAttendanceData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [selectedView, setSelectedView] = useState('summary'); // 'summary', 'absent', 'late'
+  const [selectedView, setSelectedView] = useState('summary'); // 'summary', 'daily', 'absent', 'late'
 
   // Pagination state for detail views
   const [currentPage, setCurrentPage] = useState(1);
@@ -81,8 +79,10 @@ export default function AttendanceScreen({ navigation, route }) {
 
       if (response.ok) {
         const data = await response.json();
-        console.log(data)
-        setAttendance(data.data);
+        console.log(data);
+        if (data.success) {
+          setAttendanceData(data);
+        }
       } else {
         // Handle error silently
       }
@@ -98,179 +98,45 @@ export default function AttendanceScreen({ navigation, route }) {
     fetchAttendanceData();
   }, []);
 
-  // Calculate attendance statistics
+  // Get attendance statistics from API data
   const getAttendanceStats = () => {
-    const totalDays = attendance.length;
-    const presentCount = attendance.filter(
-      (item) => item.status === 'PRESENT' || item.status === 'LATE'
-    ).length;
-    const absentCount = attendance.filter(
-      (item) => item.status === 'ABSENT'
-    ).length;
-    const lateCount = attendance.filter(
-      (item) => item.status === 'LATE'
-    ).length;
-    const excusedCount = attendance.filter(
-      (item) => item.status === 'EXCUSED'
-    ).length;
+    if (!attendanceData?.summary_statistics) {
+      return {
+        totalDays: 0,
+        presentCount: 0,
+        absentCount: 0,
+        lateCount: 0,
+        excusedCount: 0,
+        attendanceRate: 0,
+      };
+    }
 
+    const stats = attendanceData.summary_statistics;
     return {
-      totalDays,
-      presentCount,
-      absentCount,
-      lateCount,
-      excusedCount,
-      attendanceRate:
-        totalDays > 0
-          ? (((presentCount + lateCount) / totalDays) * 100).toFixed(1)
-          : 0,
+      totalDays: stats.total_school_days || 0,
+      presentCount: stats.total_present || 0,
+      absentCount: stats.total_absent || 0,
+      lateCount: stats.total_late || 0,
+      excusedCount: 0, // Not provided in new API
+      attendanceRate: stats.overall_attendance_percentage || 0,
     };
   };
 
   // Filter data based on selected view
   const getFilteredData = () => {
+    const attendanceRecords = attendanceData?.attendance_records || [];
+
     switch (selectedView) {
       case 'absent':
-        return attendance.filter((item) => item.status === 'ABSENT');
+        return attendanceRecords.filter((item) => item.status === 'ABSENT');
       case 'late':
-        return attendance.filter((item) => item.status === 'LATE');
+        return attendanceRecords.filter((item) => item.status === 'LATE');
+      case 'daily':
+        return attendanceData?.daily_statistics || [];
       default:
-        return attendance;
+        return attendanceRecords;
     }
   };
-
-  // const loadDummyAttendanceData = () => {
-  //   setLoading(true);
-
-  //   // Simulate API loading delay
-  //   setTimeout(() => {
-  //     const dummyData = [
-  //       {
-  //         date: '2024-01-15',
-  //         weekday: 'Monday',
-  //         subject: 'Mathematics',
-  //         period: '1',
-  //         status: 'PRESENT',
-  //         attendance_note: null,
-  //       },
-  //       {
-  //         date: '2024-01-15',
-  //         weekday: 'Monday',
-  //         subject: 'English Literature',
-  //         period: '2',
-  //         status: 'PRESENT',
-  //         attendance_note: null,
-  //       },
-  //       {
-  //         date: '2024-01-15',
-  //         weekday: 'Monday',
-  //         subject: 'Physics',
-  //         period: '3',
-  //         status: 'LATE',
-  //         attendance_note: 'Arrived 10 minutes late',
-  //       },
-  //       {
-  //         date: '2024-01-16',
-  //         weekday: 'Tuesday',
-  //         subject: 'Chemistry',
-  //         period: '1',
-  //         status: 'PRESENT',
-  //         attendance_note: null,
-  //       },
-  //       {
-  //         date: '2024-01-16',
-  //         weekday: 'Tuesday',
-  //         subject: 'History',
-  //         period: '2',
-  //         status: 'ABSENT',
-  //         attendance_note: 'Sick leave',
-  //       },
-  //       {
-  //         date: '2024-01-16',
-  //         weekday: 'Tuesday',
-  //         subject: 'Biology',
-  //         period: '3',
-  //         status: 'ABSENT',
-  //         attendance_note: 'Medical appointment',
-  //       },
-  //       {
-  //         date: '2024-01-17',
-  //         weekday: 'Wednesday',
-  //         subject: 'Mathematics',
-  //         period: '1',
-  //         status: 'PRESENT',
-  //         attendance_note: null,
-  //       },
-  //       {
-  //         date: '2024-01-17',
-  //         weekday: 'Wednesday',
-  //         subject: 'Art',
-  //         period: '2',
-  //         status: 'PRESENT',
-  //         attendance_note: null,
-  //       },
-  //       {
-  //         date: '2024-01-17',
-  //         weekday: 'Wednesday',
-  //         subject: 'Physical Education',
-  //         period: '3',
-  //         status: 'PRESENT',
-  //         attendance_note: null,
-  //       },
-  //       {
-  //         date: '2024-01-18',
-  //         weekday: 'Thursday',
-  //         subject: 'Computer Science',
-  //         period: '1',
-  //         status: 'LATE',
-  //         attendance_note: 'Traffic delay',
-  //       },
-  //       {
-  //         date: '2024-01-18',
-  //         weekday: 'Thursday',
-  //         subject: 'Geography',
-  //         period: '2',
-  //         status: 'PRESENT',
-  //         attendance_note: null,
-  //       },
-  //       {
-  //         date: '2024-01-18',
-  //         weekday: 'Thursday',
-  //         subject: 'Music',
-  //         period: '3',
-  //         status: 'PRESENT',
-  //         attendance_note: null,
-  //       },
-  //       {
-  //         date: '2024-01-19',
-  //         weekday: 'Friday',
-  //         subject: 'Economics',
-  //         period: '1',
-  //         status: 'PRESENT',
-  //         attendance_note: null,
-  //       },
-  //       {
-  //         date: '2024-01-19',
-  //         weekday: 'Friday',
-  //         subject: 'French',
-  //         period: '2',
-  //         status: 'ABSENT',
-  //         attendance_note: 'Family emergency',
-  //       },
-  //       {
-  //         date: '2024-01-19',
-  //         weekday: 'Friday',
-  //         subject: 'Drama',
-  //         period: '3',
-  //         status: 'PRESENT',
-  //         attendance_note: null,
-  //       },
-  //     ];
-
-  //     setAttendance(dummyData);
-  //     setLoading(false);
-  //   }, 1000); // 1 second delay to simulate loading
-  // };
 
   const getStatusColor = (status) => {
     switch (status?.toUpperCase()) {
@@ -396,7 +262,7 @@ export default function AttendanceScreen({ navigation, route }) {
         </Text>
       )}
       <Text style={[styles.cellText, styles.subjectColumn]} numberOfLines={2}>
-        {item.subject}
+        {item.subject} {item.grade && `(${item.grade})`}
       </Text>
       {isLandscape && (
         <Text style={[styles.cellText, styles.periodColumn]}>
@@ -471,6 +337,17 @@ export default function AttendanceScreen({ navigation, route }) {
         </TouchableOpacity>
       </View>
 
+      {/* Daily Statistics Button */}
+      <TouchableOpacity
+        style={styles.dailyStatsButton}
+        onPress={() => {
+          setSelectedView('daily');
+          setCurrentPage(1);
+        }}
+      >
+        <Text style={styles.dailyStatsButtonText}>View Daily Statistics</Text>
+      </TouchableOpacity>
+
       {/* Attendance Rate */}
       <View style={styles.attendanceRateCard}>
         <Text style={styles.attendanceRateLabel}>Attendance Rate</Text>
@@ -480,6 +357,96 @@ export default function AttendanceScreen({ navigation, route }) {
             style={[styles.progressFill, { width: `${stats.attendanceRate}%` }]}
           />
         </View>
+      </View>
+    </View>
+  );
+
+  const renderDailyTableHeader = () => (
+    <View
+      style={[styles.tableHeader, isLandscape && styles.landscapeTableHeader]}
+    >
+      <Text style={[styles.headerText, styles.dateColumn]}>Date</Text>
+      {isLandscape && (
+        <Text style={[styles.headerText, styles.weekdayColumn]}>Day</Text>
+      )}
+      <Text style={[styles.headerText, styles.subjectColumn]}>Present</Text>
+      <Text style={[styles.headerText, styles.periodColumn]}>Absent</Text>
+      <Text style={[styles.headerText, styles.statusColumn]}>Rate %</Text>
+    </View>
+  );
+
+  const renderDailyRow = ({ item }) => (
+    <View style={[styles.tableRow, isLandscape && styles.landscapeTableRow]}>
+      <Text style={[styles.cellText, styles.dateColumn]}>
+        {formatDate(item.date)}
+      </Text>
+      {isLandscape && (
+        <Text style={[styles.cellText, styles.weekdayColumn]}>
+          {item.weekday}
+        </Text>
+      )}
+      <Text style={[styles.cellText, styles.subjectColumn]}>
+        {item.present_count}
+      </Text>
+      <Text style={[styles.cellText, styles.periodColumn]}>
+        {item.absent_count}
+      </Text>
+      <View style={[styles.statusContainer, styles.statusColumn]}>
+        <Text
+          style={[
+            styles.statusText,
+            {
+              color:
+                item.attendance_percentage >= 80
+                  ? '#34C759'
+                  : item.attendance_percentage >= 60
+                  ? '#FF9500'
+                  : '#FF3B30',
+            },
+          ]}
+        >
+          {item.attendance_percentage}%
+        </Text>
+      </View>
+    </View>
+  );
+
+  const renderDailyView = () => (
+    <View style={styles.tableWithPagination}>
+      {/* Back to Summary Button */}
+      <TouchableOpacity
+        style={styles.backToSummaryButton}
+        onPress={() => setSelectedView('summary')}
+      >
+        <FontAwesomeIcon icon={faArrowLeft} size={16} color='#34C759' />
+        <Text style={styles.backToSummaryText}>Back to Summary</Text>
+      </TouchableOpacity>
+
+      <View style={styles.tableSection}>
+        <View
+          style={[
+            styles.tableContainer,
+            isLandscape && styles.landscapeTableContainer,
+          ]}
+        >
+          {renderDailyTableHeader()}
+          <FlatList
+            data={paginatedData}
+            renderItem={renderDailyRow}
+            keyExtractor={(item, index) => `daily-${index}`}
+            showsVerticalScrollIndicator={false}
+            style={styles.tableBody}
+            nestedScrollEnabled={true}
+          />
+        </View>
+      </View>
+      <View
+        style={[
+          styles.paginationSection,
+          isLandscape && styles.landscapePaginationSection,
+        ]}
+      >
+        {renderPaginationControls()}
       </View>
     </View>
   );
@@ -534,7 +501,11 @@ export default function AttendanceScreen({ navigation, route }) {
       );
     }
 
-    if (attendance.length === 0) {
+    if (
+      !attendanceData ||
+      !attendanceData.attendance_records ||
+      attendanceData.attendance_records.length === 0
+    ) {
       return (
         <View style={styles.emptyContainer}>
           <FontAwesomeIcon icon={faClipboardCheck} size={48} color='#8E8E93' />
@@ -549,6 +520,8 @@ export default function AttendanceScreen({ navigation, route }) {
     // Show summary view by default, detail views when specific status is selected
     if (selectedView === 'summary') {
       return renderSummaryView();
+    } else if (selectedView === 'daily') {
+      return renderDailyView();
     } else {
       return renderDetailView();
     }
@@ -580,6 +553,8 @@ export default function AttendanceScreen({ navigation, route }) {
           <Text style={styles.sectionSubtitle}>
             {selectedView === 'summary'
               ? 'Attendance Summary'
+              : selectedView === 'daily'
+              ? 'Daily Statistics'
               : selectedView === 'absent'
               ? 'Absent Records'
               : 'Late Records'}
@@ -909,6 +884,20 @@ const createStyles = (theme) =>
       marginLeft: 8,
       fontSize: 16,
       color: '#34C759',
+      fontWeight: '600',
+    },
+    dailyStatsButton: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 12,
+      padding: 15,
+      alignItems: 'center',
+      marginTop: 10,
+      ...theme.shadows.medium,
+      marginBottom: 15,
+    },
+    dailyStatsButtonText: {
+      fontSize: 16,
+      color: '#007AFF',
       fontWeight: '600',
     },
   });
