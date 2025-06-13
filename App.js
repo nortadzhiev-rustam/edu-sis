@@ -33,6 +33,7 @@ import {
   getToken,
   setupLocalNotifications,
 } from './src/utils/messaging';
+import { runFirebaseDiagnostic } from './src/utils/firebaseDebug';
 
 const Stack = createNativeStackNavigator();
 
@@ -61,6 +62,9 @@ export default function App() {
         if (token) {
           console.log('Firebase Messaging Token:', token);
         }
+
+        // Run Firebase diagnostic to check for senderId issues
+        await runFirebaseDiagnostic();
       } catch (error) {
         console.error('Error setting up Firebase:', error);
         // Continue with app initialization even if notifications fail

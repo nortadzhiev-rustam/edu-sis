@@ -66,7 +66,10 @@ export const getNotifications = async (params = {}) => {
       ...params,
     };
 
-    const url = buildApiUrl(Config.API_ENDPOINTS.GET_NOTIFICATIONS, queryParams);
+    const url = buildApiUrl(
+      Config.API_ENDPOINTS.GET_NOTIFICATIONS,
+      queryParams
+    );
     return await makeApiRequest(url);
   } catch (error) {
     console.error('Error fetching notifications:', error);
@@ -123,11 +126,12 @@ export const markNotificationAsRead = async (notificationId) => {
 
 /**
  * Mark all notifications as read
+ * @param {string} specificAuthCode - Optional specific authCode to use (for student context)
  * @returns {Promise<Object>} - Response data
  */
-export const markAllNotificationsAsRead = async () => {
+export const markAllNotificationsAsRead = async (specificAuthCode = null) => {
   try {
-    const authCode = await getAuthCode();
+    const authCode = specificAuthCode || (await getAuthCode());
     if (!authCode) {
       throw new Error('No authentication code found');
     }
@@ -216,7 +220,10 @@ export const getNotificationStatistics = async (params = {}) => {
       ...params,
     };
 
-    const url = buildApiUrl(Config.API_ENDPOINTS.GET_NOTIFICATION_STATISTICS, queryParams);
+    const url = buildApiUrl(
+      Config.API_ENDPOINTS.GET_NOTIFICATION_STATISTICS,
+      queryParams
+    );
     return await makeApiRequest(url);
   } catch (error) {
     console.error('Error fetching notification statistics:', error);

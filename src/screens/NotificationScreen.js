@@ -32,6 +32,7 @@ const NotificationScreen = ({ navigation }) => {
     clearAll,
     markAsRead,
     markAllAPINotificationsAsRead,
+    markAllStudentNotificationsAsRead,
     currentStudentAuthCode,
     getCurrentStudentNotifications,
     getCurrentStudentUnreadCount,
@@ -89,8 +90,18 @@ const NotificationScreen = ({ navigation }) => {
 
   const handleMarkAllAsRead = async () => {
     try {
-      // Try API method first
-      const apiResponse = await markAllAPINotificationsAsRead();
+      let apiResponse;
+
+      // Use appropriate API method based on context
+      if (currentStudentAuthCode) {
+        // In parent context, mark student notifications as read
+        apiResponse = await markAllStudentNotificationsAsRead(
+          currentStudentAuthCode
+        );
+      } else {
+        // Regular context, mark user's own notifications as read
+        apiResponse = await markAllAPINotificationsAsRead();
+      }
 
       if (apiResponse?.success) {
         Alert.alert('Success', 'All notifications marked as read.');
@@ -99,7 +110,8 @@ const NotificationScreen = ({ navigation }) => {
       }
 
       // Fallback to local method
-      const unreadNotifications = notifications.filter((n) => !n.read);
+      const activeNotifications = getActiveNotifications();
+      const unreadNotifications = activeNotifications.filter((n) => !n.read);
 
       for (const notification of unreadNotifications) {
         await markAsRead(notification.id);

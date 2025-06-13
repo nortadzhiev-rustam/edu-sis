@@ -271,6 +271,21 @@ export const NotificationProvider = ({ children }) => {
     }
   };
 
+  // Mark all student notifications as read (for parent context)
+  const markAllStudentNotificationsAsRead = async (studentAuthCode) => {
+    try {
+      const response = await markAllAPINotificationsRead(studentAuthCode);
+      if (response?.success) {
+        // Update local state for this student
+        await loadStudentNotifications(studentAuthCode);
+      }
+      return response;
+    } catch (error) {
+      console.error('Error marking all student notifications as read:', error);
+      return null;
+    }
+  };
+
   // Get notification categories
   const fetchNotificationCategories = async () => {
     try {
@@ -434,6 +449,7 @@ export const NotificationProvider = ({ children }) => {
     fetchNotificationsFromAPI,
     markAPINotificationAsRead,
     markAllAPINotificationsAsRead,
+    markAllStudentNotificationsAsRead,
     fetchNotificationCategories,
     sendNotificationToAPI,
     fetchNotificationStatistics,

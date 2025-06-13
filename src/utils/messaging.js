@@ -133,10 +133,28 @@ export async function getToken() {
 
     // Get the device token directly from Firebase messaging
     const token = await messaging().getToken();
+    console.log('=== FIREBASE SENDER DEBUG ===');
     console.log('FCM Token:', token);
+
+    // Debug: Check what senderId is being used
+    try {
+      const senderId = await messaging().getAPNSToken();
+      console.log('APNS Token (iOS):', senderId);
+    } catch (e) {
+      console.log('APNS Token not available (likely Android)');
+    }
+
+    // Check if we can get sender ID from the token
+    if (token) {
+      console.log('Token length:', token.length);
+      console.log('Token starts with:', token.substring(0, 20) + '...');
+    }
+    console.log('=== END FIREBASE SENDER DEBUG ===');
+
     return token;
   } catch (error) {
     console.error('Error getting Firebase messaging token:', error);
+    console.log('Firebase error details:', error.message);
     return null;
   }
 }
