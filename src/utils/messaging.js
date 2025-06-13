@@ -123,7 +123,8 @@ export async function getToken() {
   try {
     // Register device for remote messages first (required for iOS)
     if (Platform.OS === 'ios') {
-      const isRegistered = await messaging().isDeviceRegisteredForRemoteMessages;
+      const isRegistered = await messaging()
+        .isDeviceRegisteredForRemoteMessages;
       if (!isRegistered) {
         await messaging().registerDeviceForRemoteMessages();
         console.log('Device registered for remote messages');
@@ -238,6 +239,14 @@ export async function setupLocalNotifications() {
           lightColor: '#34C759',
           sound: 'default',
         });
+
+        await Notifications.setNotificationChannelAsync('bps-updates', {
+          name: 'BPS Updates',
+          importance: Notifications.AndroidImportance.HIGH,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#FF6B35',
+          sound: 'default',
+        });
       }
 
       return true;
@@ -271,6 +280,8 @@ export async function showLocalNotification(remoteMessage) {
       channelId = 'attendance-alerts';
     } else if (data?.type === 'grade') {
       channelId = 'grade-updates';
+    } else if (data?.type === 'bps' || data?.item_type) {
+      channelId = 'bps-updates';
     }
 
     if (Platform.OS === 'android') {
@@ -483,6 +494,42 @@ export async function sendAnnouncementNotification(announcement) {
     console.log('Announcement notification sent:', title);
   } catch (error) {
     console.error('Error sending announcement notification:', error);
+  }
+}
+
+// Send BPS notification
+export async function sendBPSLocalNotification(bpsData) {
+  try {
+    const { item_type, item_title, item_point, note } = bpsData;
+
+    const isPositive = item_type === 'prs';
+    const title = isPositive
+      ? 'Positive Behavior Recognition'
+      : 'Behavior Notice';
+    const pointText = item_point > 0 ? `+${item_point}` : `${item_point}`;
+
+    let body = `${item_title} (${pointText} points)`;
+    if (note?.trim()) {
+      body += `\n${note}`;
+    }
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        data: {
+          type: 'bps',
+          ...bpsData,
+        },
+        sound: 'default',
+        channelId: Platform.OS === 'android' ? 'bps-updates' : undefined,
+      },
+      trigger: null, // Show immediately
+    });
+
+    console.log('BPS notification sent:', title);
+  } catch (error) {
+    console.error('Error sending BPS notification:', error);
   }
 }
 

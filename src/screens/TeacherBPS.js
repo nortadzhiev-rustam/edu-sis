@@ -140,6 +140,11 @@ const SwipeableRecord = ({ record, onDelete, canDelete, theme, children }) => {
         borderRadius: 16,
         marginBottom: 15,
         marginHorizontal: 16,
+        shadowColor: theme.colors.shadow,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 4,
       }}
     >
       {/* Delete Background (covers full width) */}
@@ -194,7 +199,7 @@ const SwipeableRecord = ({ record, onDelete, canDelete, theme, children }) => {
             zIndex: 1,
             elevation: 8,
             shadowColor: theme.colors.shadow,
-            shadowOffset: { width: 0, height: 4 },
+            shadowOffset: { width: 0, height: 10 },
             shadowOpacity: 0.15,
             shadowRadius: 12,
           },
@@ -1182,7 +1187,12 @@ export default function TeacherBPS({ route, navigation }) {
                 canDelete={canDeleteBPS()}
                 theme={theme}
               >
-                <View style={styles.recordCard}>
+                <View
+                  style={[
+                    styles.recordCard,
+                    { marginBottom: canDeleteBPS() ? 0 : 15 },
+                  ]}
+                >
                   <View style={styles.recordHeader}>
                     <View
                       style={[
@@ -2223,7 +2233,6 @@ const getStyles = (theme) =>
       backgroundColor: theme.colors.surface,
       borderRadius: 16,
       padding: 20,
-      marginBottom: 15,
       shadowColor: theme.colors.shadow,
       shadowOffset: { width: 0, height: 10 },
       shadowOpacity: 0.1,
