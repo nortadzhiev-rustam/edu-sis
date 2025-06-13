@@ -42,48 +42,66 @@ import {
 const SwipeableRecord = ({ record, onDelete, canDelete, theme, children }) => {
   const [translateX] = useState(new Animated.Value(0));
   const [isRevealed, setIsRevealed] = useState(false);
-  const deleteButtonWidth = 80;
+  const deleteButtonWidth = 70;
 
   const panResponder = PanResponder.create({
-    onMoveShouldSetPanResponder: (evt, gestureState) => {
+    onStartShouldSetPanResponder: () => canDelete,
+    onMoveShouldSetPanResponder: (_evt, gestureState) => {
       // Only respond to horizontal swipes and only if delete is allowed
       return (
         canDelete &&
         Math.abs(gestureState.dx) > Math.abs(gestureState.dy) &&
-        Math.abs(gestureState.dx) > 10
+        Math.abs(gestureState.dx) > 5
       );
     },
     onPanResponderGrant: () => {
+      // Stop any ongoing animations
+      translateX.stopAnimation();
       translateX.setOffset(translateX._value);
+      translateX.setValue(0);
     },
-    onPanResponderMove: (evt, gestureState) => {
+    onPanResponderMove: (_evt, gestureState) => {
       // Only allow left swipe (negative dx) to reveal delete button
       if (gestureState.dx < 0) {
         const newValue = Math.max(gestureState.dx, -deleteButtonWidth);
         translateX.setValue(newValue);
-      } else if (isRevealed) {
+      } else if (isRevealed && gestureState.dx > 0) {
         // Allow right swipe to hide delete button when it's revealed
-        const newValue = Math.min(gestureState.dx - deleteButtonWidth, 0);
+        const currentOffset = isRevealed ? -deleteButtonWidth : 0;
+        const newValue = Math.min(currentOffset + gestureState.dx, 0);
         translateX.setValue(newValue);
       }
     },
-    onPanResponderRelease: (evt, gestureState) => {
+    onPanResponderRelease: (_evt, gestureState) => {
       translateX.flattenOffset();
 
-      if (gestureState.dx < -deleteButtonWidth / 2) {
+      if (gestureState.dx < -deleteButtonWidth / 2 && !isRevealed) {
         // Swipe left enough to reveal delete button
         Animated.spring(translateX, {
           toValue: -deleteButtonWidth,
           useNativeDriver: false,
+          tension: 100,
+          friction: 8,
         }).start();
         setIsRevealed(true);
-      } else {
-        // Snap back to original position
+      } else if (gestureState.dx > deleteButtonWidth / 2 && isRevealed) {
+        // Swipe right enough to hide delete button
         Animated.spring(translateX, {
           toValue: 0,
           useNativeDriver: false,
+          tension: 100,
+          friction: 8,
         }).start();
         setIsRevealed(false);
+      } else {
+        // Snap to appropriate position based on current state
+        const targetValue = isRevealed ? -deleteButtonWidth : 0;
+        Animated.spring(translateX, {
+          toValue: targetValue,
+          useNativeDriver: false,
+          tension: 100,
+          friction: 8,
+        }).start();
       }
     },
   });
@@ -115,26 +133,33 @@ const SwipeableRecord = ({ record, onDelete, canDelete, theme, children }) => {
   }
 
   return (
-    <View style={{ position: 'relative' }}>
-      {/* Delete Button (behind the record) */}
+    <View
+      style={{
+        position: 'relative',
+        overflow: 'hidden',
+        borderRadius: 16,
+        marginBottom: 15,
+        marginHorizontal: 16,
+      }}
+    >
+      {/* Delete Background (covers full width) */}
       <View
-        style={[
-          {
-            position: 'absolute',
-            right: 0,
-            top: 0,
-            bottom: 0,
-            width: deleteButtonWidth,
-            backgroundColor: theme.colors.error,
-            justifyContent: 'center',
-            alignItems: 'center',
-            borderRadius: 12,
-          },
-        ]}
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          top: 0,
+          bottom: 0,
+          backgroundColor: theme.colors.error,
+          justifyContent: 'center',
+          alignItems: 'flex-end',
+          paddingRight: 5,
+          borderRadius: 16,
+        }}
       >
         <TouchableOpacity
           style={{
-            width: '100%',
+            width: deleteButtonWidth,
             height: '100%',
             justifyContent: 'center',
             alignItems: 'center',
@@ -143,15 +168,15 @@ const SwipeableRecord = ({ record, onDelete, canDelete, theme, children }) => {
         >
           <FontAwesomeIcon
             icon={faTrash}
-            size={20}
+            size={18}
             color={theme.colors.headerText}
           />
           <Text
             style={{
               color: theme.colors.headerText,
-              fontSize: 12,
+              fontSize: 10,
               fontWeight: 'bold',
-              marginTop: 4,
+              marginTop: 2,
             }}
           >
             Delete
@@ -165,21 +190,25 @@ const SwipeableRecord = ({ record, onDelete, canDelete, theme, children }) => {
           {
             transform: [{ translateX }],
             backgroundColor: theme.colors.surface,
-            borderRadius: 12,
+            borderRadius: 16,
+            zIndex: 1,
+            elevation: 8,
+            shadowColor: theme.colors.shadow,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.15,
+            shadowRadius: 12,
           },
         ]}
         {...panResponder.panHandlers}
       >
-        <TouchableOpacity onPress={handleTapOutside} activeOpacity={1}>
-          {children}
-        </TouchableOpacity>
+        <View onTouchStart={handleTapOutside}>{children}</View>
       </Animated.View>
     </View>
   );
 };
 
 export default function TeacherBPS({ route, navigation }) {
-  const { authCode, teacherName, bpsData: initialData } = route.params || {};
+  const { authCode, bpsData: initialData } = route.params || {};
   const { theme } = useTheme();
   const styles = getStyles(theme);
 
@@ -200,7 +229,6 @@ export default function TeacherBPS({ route, navigation }) {
   const [isMultipleSelection, setIsMultipleSelection] = useState(false);
   const [submissionErrors, setSubmissionErrors] = useState([]);
   const [selectedBehaviorType, setSelectedBehaviorType] = useState(null);
-  const [isMultipleBehaviorMode, setIsMultipleBehaviorMode] = useState(true);
 
   const fetchBPSData = async () => {
     if (!authCode) return;
@@ -433,7 +461,7 @@ export default function TeacherBPS({ route, navigation }) {
               const url = buildApiUrl(Config.API_ENDPOINTS.DELETE_BPS);
 
               const response = await fetch(url, {
-                method: 'DELETE',
+                method: 'POST',
                 headers: {
                   Accept: 'application/json',
                   'Content-Type': 'application/json',
@@ -2195,11 +2223,10 @@ const getStyles = (theme) =>
       backgroundColor: theme.colors.surface,
       borderRadius: 16,
       padding: 20,
-      marginBottom: 15,
       shadowColor: theme.colors.shadow,
-      shadowOffset: { width: 0, height: 2 },
+      shadowOffset: { width: 0, height: 10 },
       shadowOpacity: 0.1,
-      shadowRadius: 8,
+      shadowRadius: 10,
       elevation: 4,
     },
     recordHeader: {
