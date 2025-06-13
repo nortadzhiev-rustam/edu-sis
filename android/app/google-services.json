@@ -1,79 +1,45 @@
 {
   "project_info": {
-    "project_number": "427748902918",
-    "project_id": "myanmar-mobile-app-867e7",
-    "storage_bucket": "myanmar-mobile-app-867e7.firebasestorage.app"
+    "project_number": "1031201187766",
+    "project_id": "edunova-bfi",
+    "storage_bucket": "edunova-bfi.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:427748902918:android:349f79fda79f3bdd74db87",
+        "mobilesdk_app_id": "1:1031201187766:android:7b8f0345855d65bdf90317",
         "android_client_info": {
-          "package_name": "com.bfi.bfisisedu"
+          "package_name": "com.edunovaasia.app.edunova"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "427748902918-ennind6mfo35hcsjmmmcvs3du1ii850r.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyACUcdDN0erz9u_zBfc0Iw-wrK79g3lCJE"
+          "current_key": "AIzaSyAknK73yo28qH3hnRRbjzo8Uui4Tbb_F2g"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "427748902918-ennind6mfo35hcsjmmmcvs3du1ii850r.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "427748902918-cmql14sm7immodfb5h8d90ovrgpapsdr.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.bfiedumyanmar.sis"
-              }
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:427748902918:android:48fb67e22f30844b74db87",
+        "mobilesdk_app_id": "1:1031201187766:android:ef006e2ea9dfe3b2f90317",
         "android_client_info": {
           "package_name": "com.edunovaasia.edusis"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "427748902918-ennind6mfo35hcsjmmmcvs3du1ii850r.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyACUcdDN0erz9u_zBfc0Iw-wrK79g3lCJE"
+          "current_key": "AIzaSyAknK73yo28qH3hnRRbjzo8Uui4Tbb_F2g"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "427748902918-ennind6mfo35hcsjmmmcvs3du1ii850r.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "427748902918-cmql14sm7immodfb5h8d90ovrgpapsdr.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.bfiedumyanmar.sis"
-              }
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }
