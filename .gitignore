@@ -133,6 +133,13 @@ metro.config.js.bak
 coverage/
 .nyc_output/
 
+# Firebase / Google Services
+# Keep these files secure and out of version control
+google-services.json
+GoogleService-Info.plist
+android/app/google-services.json
+ios/*/GoogleService-Info.plist
+
 # Misc
 *.tgz
 *.tar.gz
