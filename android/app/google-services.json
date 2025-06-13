@@ -1,26 +1,79 @@
 {
   "project_info": {
-    "project_number": "578746855412",
-    "project_id": "edusis-da3b1",
-    "storage_bucket": "edusis-da3b1.firebasestorage.app"
+    "project_number": "427748902918",
+    "project_id": "myanmar-mobile-app-867e7",
+    "storage_bucket": "myanmar-mobile-app-867e7.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:578746855412:android:c40405e0ef5cc54da093a1",
+        "mobilesdk_app_id": "1:427748902918:android:349f79fda79f3bdd74db87",
         "android_client_info": {
-          "package_name": "com.edunovaasia.edusis"
+          "package_name": "com.bfi.bfisisedu"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "427748902918-ennind6mfo35hcsjmmmcvs3du1ii850r.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyAis1EiBVSGt9dAqH-JMAOa3b22ecu2gM8"
+          "current_key": "AIzaSyACUcdDN0erz9u_zBfc0Iw-wrK79g3lCJE"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "427748902918-ennind6mfo35hcsjmmmcvs3du1ii850r.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "427748902918-cmql14sm7immodfb5h8d90ovrgpapsdr.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.bfiedumyanmar.sis"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:427748902918:android:48fb67e22f30844b74db87",
+        "android_client_info": {
+          "package_name": "com.edunovaasia.edusis"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "427748902918-ennind6mfo35hcsjmmmcvs3du1ii850r.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyACUcdDN0erz9u_zBfc0Iw-wrK79g3lCJE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "427748902918-ennind6mfo35hcsjmmmcvs3du1ii850r.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "427748902918-cmql14sm7immodfb5h8d90ovrgpapsdr.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.bfiedumyanmar.sis"
+              }
+            }
+          ]
         }
       }
     }
