@@ -461,7 +461,7 @@ export default function TeacherBPS({ route, navigation }) {
               const url = buildApiUrl(Config.API_ENDPOINTS.DELETE_BPS);
 
               const response = await fetch(url, {
-                method: 'POST',
+                method: 'DELETE',
                 headers: {
                   Accept: 'application/json',
                   'Content-Type': 'application/json',
@@ -2223,6 +2223,7 @@ const getStyles = (theme) =>
       backgroundColor: theme.colors.surface,
       borderRadius: 16,
       padding: 20,
+      marginBottom: 15,
       shadowColor: theme.colors.shadow,
       shadowOffset: { width: 0, height: 10 },
       shadowOpacity: 0.1,
