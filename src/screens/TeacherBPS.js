@@ -139,7 +139,7 @@ const SwipeableRecord = ({ record, onDelete, canDelete, theme, children }) => {
         overflow: 'hidden',
         borderRadius: 16,
         marginBottom: 15,
-        marginHorizontal: 16,
+        marginHorizontal: 5,
         shadowColor: theme.colors.shadow,
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.1,

@@ -33,8 +33,23 @@ export default function TeacherTimetable({ route, navigation }) {
   const [selectedBranch, setSelectedBranch] = useState(0);
   // Removed unused state variables since we now navigate to separate screen
 
-  // Animation for today tab
+  // Get current day of week (1 = Monday, 5=Friday) if Saturday or Sunday, set it to Monday
+  const getCurrentDay = () => {
+    const today = new Date().getDay();
+    return today === 0 || today === 6 ? 1 : today;
+  };
+
+  const [selectedDay, setSelectedDay] = useState(getCurrentDay());
+
+  // Animation values
   const todayTabAnimation = useRef(new Animated.Value(1)).current;
+  const contentOpacity = useRef(new Animated.Value(1)).current;
+  const tabIndicatorPosition = useRef(
+    new Animated.Value(getCurrentDay() - 1)
+  ).current;
+  const tabScaleAnimations = useRef(
+    [1, 2, 3, 4, 5].map(() => new Animated.Value(1))
+  ).current;
 
   // Start pulsing animation for today tab
   useEffect(() => {
@@ -58,13 +73,53 @@ export default function TeacherTimetable({ route, navigation }) {
     return () => pulseAnimation.stop();
   }, [todayTabAnimation]);
 
-  // Get current day of week (1 = Monday, 5=Friday) if Saturday or Sunday, set it to Monday
-  const getCurrentDay = () => {
-    const today = new Date().getDay();
-    return today === 0 || today === 6 ? 1 : today;
-  };
+  // Animate tab indicator position when selected day changes
+  useEffect(() => {
+    const targetPosition = selectedDay - 1; // 0, 1, 2, 3, 4 for days 1-5
+    Animated.spring(tabIndicatorPosition, {
+      toValue: targetPosition,
+      useNativeDriver: false,
+      tension: 100,
+      friction: 8,
+    }).start();
+  }, [selectedDay, tabIndicatorPosition]);
 
-  const [selectedDay, setSelectedDay] = useState(getCurrentDay());
+  // Animated day change function
+  const animateToDay = (newDay) => {
+    if (newDay === selectedDay) return;
+
+    // Animate tab scale
+    const tabIndex = newDay - 1;
+    Animated.sequence([
+      Animated.timing(tabScaleAnimations[tabIndex], {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(tabScaleAnimations[tabIndex], {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Animate content transition
+    Animated.sequence([
+      Animated.timing(contentOpacity, {
+        toValue: 0.3,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Change the selected day
+    setSelectedDay(newDay);
+  };
 
   // Fetch fresh timetable data
   const fetchTimetableData = async () => {
@@ -234,7 +289,9 @@ export default function TeacherTimetable({ route, navigation }) {
         }
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.classesListContainer}>
+        <Animated.View
+          style={[styles.classesListContainer, { opacity: contentOpacity }]}
+        >
           <View style={styles.classesHeader}>
             <Text style={styles.classesTitle}>
               {getDayName(selectedDay)} Classes
@@ -357,7 +414,7 @@ export default function TeacherTimetable({ route, navigation }) {
               </Text>
             </View>
           )}
-        </View>
+        </Animated.View>
       </ScrollView>
 
       {/* Redesigned Day Selector */}
@@ -371,30 +428,47 @@ export default function TeacherTimetable({ route, navigation }) {
 
               return (
                 <View key={day} style={styles.dayTabContainer}>
-                  <TouchableOpacity
+                  <Animated.View
                     style={[
-                      styles.dayTab,
-                      isSelected && styles.selectedDayTab,
-                      isToday && !isSelected && styles.todayDayTab,
+                      { transform: [{ scale: tabScaleAnimations[day - 1] }] },
                     ]}
-                    onPress={() => setSelectedDay(day)}
-                    activeOpacity={0.8}
                   >
-                    <Text
+                    <TouchableOpacity
                       style={[
-                        styles.dayTabText,
-                        isSelected && styles.selectedDayTabText,
-                        isToday && !isSelected && styles.todayDayTabText,
+                        styles.dayTab,
+                        isSelected && styles.selectedDayTab,
+                        isToday && !isSelected && styles.todayDayTab,
                       ]}
+                      onPress={() => animateToDay(day)}
+                      activeOpacity={0.8}
                     >
-                      {dayAbbr}
-                    </Text>
-                  </TouchableOpacity>
-                  {isSelected && <View style={styles.selectedIndicator} />}
+                      <Text
+                        style={[
+                          styles.dayTabText,
+                          isSelected && styles.selectedDayTabText,
+                          isToday && !isSelected && styles.todayDayTabText,
+                        ]}
+                      >
+                        {dayAbbr}
+                      </Text>
+                    </TouchableOpacity>
+                  </Animated.View>
                 </View>
               );
             })}
           </View>
+          {/* Animated sliding indicator */}
+          <Animated.View
+            style={[
+              styles.slidingIndicator,
+              {
+                left: tabIndicatorPosition.interpolate({
+                  inputRange: [0, 1, 2, 3, 4],
+                  outputRange: ['10%', '30%', '50%', '70%', '90%'],
+                }),
+              },
+            ]}
+          />
         </View>
       </View>
     </SafeAreaView>
@@ -558,6 +632,20 @@ const createStyles = (theme) =>
       height: 3,
       borderRadius: 2,
       backgroundColor: theme.colors.primary,
+    },
+    slidingIndicator: {
+      position: 'absolute',
+      bottom: -12,
+      width: 20,
+      height: 3,
+      borderRadius: 2,
+      backgroundColor: theme.colors.primary,
+      shadowColor: theme.colors.primary,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.4,
+      shadowRadius: 4,
+      elevation: 3,
+      marginLeft: -1, // Center the indicator by offsetting half its width
     },
 
     // Scrollable Classes
