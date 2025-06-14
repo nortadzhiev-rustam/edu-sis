@@ -23,6 +23,7 @@
     "update": "eas update",
     "update:preview": "eas update --branch preview",
     "update:production": "eas update --branch production",
+    "postinstall": "chmod +x scripts/setup-firebase-config.sh && scripts/setup-firebase-config.sh",
     "prebuild": "expo prebuild",
     "prebuild:clean": "expo prebuild --clean",
     "clean": "expo install --fix && npm run prebuild:clean",
