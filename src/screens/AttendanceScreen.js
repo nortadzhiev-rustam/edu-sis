@@ -79,7 +79,6 @@ export default function AttendanceScreen({ navigation, route }) {
 
       if (response.ok) {
         const data = await response.json();
-        console.log(data);
         if (data.success) {
           setAttendanceData(data);
         }

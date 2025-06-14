@@ -57,12 +57,12 @@ const NotificationManager = ({ visible, onClose, userRole = 'staff' }) => {
         setCategories(response.data || []);
       }
     } catch (err) {
-      console.error('Error loading categories:', err);
+      // Error loading categories
     }
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
@@ -72,10 +72,10 @@ const NotificationManager = ({ visible, onClose, userRole = 'staff' }) => {
     if (recipientInput.trim()) {
       const newRecipients = recipientInput
         .split(',')
-        .map(id => id.trim())
-        .filter(id => id && !formData.recipients.includes(id));
-      
-      setFormData(prev => ({
+        .map((id) => id.trim())
+        .filter((id) => id && !formData.recipients.includes(id));
+
+      setFormData((prev) => ({
         ...prev,
         recipients: [...prev.recipients, ...newRecipients],
       }));
@@ -84,9 +84,9 @@ const NotificationManager = ({ visible, onClose, userRole = 'staff' }) => {
   };
 
   const removeRecipient = (recipientToRemove) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      recipients: prev.recipients.filter(id => id !== recipientToRemove),
+      recipients: prev.recipients.filter((id) => id !== recipientToRemove),
     }));
   };
 
@@ -99,7 +99,10 @@ const NotificationManager = ({ visible, onClose, userRole = 'staff' }) => {
       Alert.alert('Error', 'Please enter a message');
       return false;
     }
-    if ((formData.type === 'single' || formData.type === 'classroom') && formData.recipients.length === 0) {
+    if (
+      (formData.type === 'single' || formData.type === 'classroom') &&
+      formData.recipients.length === 0
+    ) {
       Alert.alert('Error', 'Please add recipients for this notification type');
       return false;
     }
@@ -135,10 +138,12 @@ const NotificationManager = ({ visible, onClose, userRole = 'staff' }) => {
         resetForm();
         onClose();
       } else {
-        Alert.alert('Error', response?.message || 'Failed to send notification');
+        Alert.alert(
+          'Error',
+          response?.message || 'Failed to send notification'
+        );
       }
     } catch (err) {
-      console.error('Error sending notification:', err);
       Alert.alert('Error', 'Failed to send notification');
     }
   };
@@ -164,7 +169,7 @@ const NotificationManager = ({ visible, onClose, userRole = 'staff' }) => {
             onPress={() => removeRecipient(recipient)}
             style={styles.removeChipButton}
           >
-            <Icon name="close" size={16} color={Colors.surface} />
+            <Icon name='close' size={16} color={Colors.surface} />
           </TouchableOpacity>
         </View>
       ))}
@@ -178,15 +183,15 @@ const NotificationManager = ({ visible, onClose, userRole = 'staff' }) => {
   return (
     <Modal
       visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
+      animationType='slide'
+      presentationStyle='pageSheet'
       onRequestClose={onClose}
     >
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Send Notification</Text>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Icon name="close" size={24} color={Colors.text} />
+            <Icon name='close' size={24} color={Colors.text} />
           </TouchableOpacity>
         </View>
 
@@ -206,10 +211,10 @@ const NotificationManager = ({ visible, onClose, userRole = 'staff' }) => {
                 onValueChange={(value) => handleInputChange('type', value)}
                 style={styles.picker}
               >
-                <Picker.Item label="All Users" value="all" />
-                <Picker.Item label="Single User" value="single" />
-                <Picker.Item label="Classroom" value="classroom" />
-                <Picker.Item label="Staff Only" value="staff" />
+                <Picker.Item label='All Users' value='all' />
+                <Picker.Item label='Single User' value='single' />
+                <Picker.Item label='Classroom' value='classroom' />
+                <Picker.Item label='Staff Only' value='staff' />
               </Picker>
             </View>
           </View>
@@ -223,11 +228,14 @@ const NotificationManager = ({ visible, onClose, userRole = 'staff' }) => {
                   style={styles.recipientInput}
                   value={recipientInput}
                   onChangeText={setRecipientInput}
-                  placeholder="Enter user IDs separated by commas"
+                  placeholder='Enter user IDs separated by commas'
                   placeholderTextColor={Colors.textSecondary}
                 />
-                <TouchableOpacity onPress={addRecipient} style={styles.addButton}>
-                  <Icon name="add" size={20} color={Colors.surface} />
+                <TouchableOpacity
+                  onPress={addRecipient}
+                  style={styles.addButton}
+                >
+                  <Icon name='add' size={20} color={Colors.surface} />
                 </TouchableOpacity>
               </View>
               {formData.recipients.length > 0 && renderRecipientChips()}
@@ -241,7 +249,7 @@ const NotificationManager = ({ visible, onClose, userRole = 'staff' }) => {
               style={styles.input}
               value={formData.title}
               onChangeText={(value) => handleInputChange('title', value)}
-              placeholder="Enter notification title"
+              placeholder='Enter notification title'
               placeholderTextColor={Colors.textSecondary}
               maxLength={100}
             />
@@ -254,7 +262,7 @@ const NotificationManager = ({ visible, onClose, userRole = 'staff' }) => {
               style={[styles.input, styles.messageInput]}
               value={formData.message}
               onChangeText={(value) => handleInputChange('message', value)}
-              placeholder="Enter notification message"
+              placeholder='Enter notification message'
               placeholderTextColor={Colors.textSecondary}
               multiline
               numberOfLines={4}
@@ -271,9 +279,9 @@ const NotificationManager = ({ visible, onClose, userRole = 'staff' }) => {
                 onValueChange={(value) => handleInputChange('priority', value)}
                 style={styles.picker}
               >
-                <Picker.Item label="Low" value="low" />
-                <Picker.Item label="Normal" value="normal" />
-                <Picker.Item label="High" value="high" />
+                <Picker.Item label='Low' value='low' />
+                <Picker.Item label='Normal' value='normal' />
+                <Picker.Item label='High' value='high' />
               </Picker>
             </View>
           </View>
@@ -287,11 +295,11 @@ const NotificationManager = ({ visible, onClose, userRole = 'staff' }) => {
                 onValueChange={(value) => handleInputChange('category', value)}
                 style={styles.picker}
               >
-                <Picker.Item label="Announcement" value="announcement" />
-                <Picker.Item label="Grade" value="grade" />
-                <Picker.Item label="Attendance" value="attendance" />
-                <Picker.Item label="Homework" value="homework" />
-                <Picker.Item label="Emergency" value="emergency" />
+                <Picker.Item label='Announcement' value='announcement' />
+                <Picker.Item label='Grade' value='grade' />
+                <Picker.Item label='Attendance' value='attendance' />
+                <Picker.Item label='Homework' value='homework' />
+                <Picker.Item label='Emergency' value='emergency' />
                 {categories.map((category) => (
                   <Picker.Item
                     key={category.id}
@@ -312,10 +320,10 @@ const NotificationManager = ({ visible, onClose, userRole = 'staff' }) => {
             disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator size="small" color={Colors.surface} />
+              <ActivityIndicator size='small' color={Colors.surface} />
             ) : (
               <>
-                <Icon name="send" size={20} color={Colors.surface} />
+                <Icon name='send' size={20} color={Colors.surface} />
                 <Text style={styles.sendButtonText}>Send Notification</Text>
               </>
             )}

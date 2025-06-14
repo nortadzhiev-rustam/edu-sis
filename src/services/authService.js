@@ -3,7 +3,6 @@
  * Uses dummy data for development and testing
  */
 
-import { findTeacher, findStudent } from '../data/dummyUsers';
 import { Config, buildApiUrl } from '../config/env';
 
 // Flag to toggle between dummy data and real API
@@ -53,7 +52,7 @@ export const teacherLogin = async (username, password, deviceToken) => {
 
       if (response.status === 200 || response.status === 201) {
         const data = await response.json();
-        
+
         return {
           ...data,
           userType: 'teacher',

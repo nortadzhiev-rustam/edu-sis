@@ -53,9 +53,7 @@ export const NotificationProvider = ({ children }) => {
 
       // Try to fetch from API first
       try {
-        console.log('Fetching notifications from API...');
         const apiResponse = await getAPINotifications({ page: 1, limit: 50 });
-        console.log('API Response:', apiResponse);
 
         if (
           apiResponse?.success &&
@@ -66,7 +64,6 @@ export const NotificationProvider = ({ children }) => {
             apiResponse.notifications || apiResponse.data;
 
           // Transform API data to match local notification format
-          console.log('Raw API notifications:', notificationArray);
           const apiNotifications = notificationArray.map((notification) => ({
             id:
               notification.notification_id?.toString() ||
@@ -84,13 +81,8 @@ export const NotificationProvider = ({ children }) => {
             _apiData: notification,
           }));
 
-          console.log('Transformed notifications:', apiNotifications);
           setNotifications(apiNotifications);
           setUnreadCount(apiNotifications.filter((n) => !n.read).length);
-          console.log(
-            'Unread count:',
-            apiNotifications.filter((n) => !n.read).length
-          );
 
           // Also store in local storage as backup
           await AsyncStorage.setItem(
@@ -100,10 +92,7 @@ export const NotificationProvider = ({ children }) => {
           return;
         }
       } catch (apiError) {
-        console.log(
-          'API notifications not available, falling back to local storage:',
-          apiError.message
-        );
+        // API notifications not available, falling back to local storage
       }
 
       // Fallback to local storage if API fails
@@ -147,10 +136,7 @@ export const NotificationProvider = ({ children }) => {
             return true;
           }
         } catch (apiError) {
-          console.log(
-            'API mark as read failed, using local method:',
-            apiError.message
-          );
+          // API mark as read failed, using local method
         }
       }
 
@@ -327,8 +313,6 @@ export const NotificationProvider = ({ children }) => {
     }
 
     try {
-      console.log('Loading notifications for student:', studentAuthCode);
-
       // Create a temporary API call with the student's authCode
       const tempApiCall = async (params) => {
         const url = buildApiUrl(Config.API_ENDPOINTS.GET_NOTIFICATIONS, {
@@ -353,7 +337,6 @@ export const NotificationProvider = ({ children }) => {
       };
 
       const apiResponse = await tempApiCall({ page: 1, limit: 50 });
-      console.log('Student API Response:', apiResponse);
 
       if (apiResponse?.success && apiResponse?.notifications) {
         // Transform API data to match local notification format
@@ -376,8 +359,6 @@ export const NotificationProvider = ({ children }) => {
           })
         );
 
-        console.log('Student notifications loaded:', apiNotifications.length);
-
         // Store notifications for this student
         setStudentNotifications((prev) => ({
           ...prev,
@@ -391,21 +372,8 @@ export const NotificationProvider = ({ children }) => {
           [studentAuthCode]: unreadCount,
         }));
 
-        console.log('Student unread count:', unreadCount);
         return { notifications: apiNotifications, unreadCount };
       } else {
-        console.log(
-          'API response unsuccessful or no notifications:',
-          apiResponse
-        );
-        console.log(
-          'Expected: apiResponse.success && apiResponse.notifications'
-        );
-        console.log('Actual success:', apiResponse?.success);
-        console.log(
-          'Actual notifications:',
-          apiResponse?.notifications ? 'exists' : 'missing'
-        );
         return { notifications: [], unreadCount: 0 };
       }
     } catch (error) {
