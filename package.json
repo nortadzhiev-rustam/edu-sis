@@ -36,7 +36,9 @@
     "workflow:build-android": "eas workflow:run build-android-production.yml",
     "workflow:build-all": "eas workflow:run build-all-platforms.yml",
     "workflow:preview": "eas workflow:run preview-deployment.yml",
-    "workflow:production": "eas workflow:run production-deployment.yml"
+    "workflow:production": "eas workflow:run production-deployment.yml",
+    "firebase:verify": "node scripts/verify-firebase-config.js",
+    "firebase:update-config": "./scripts/update-firebase-config.sh"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
@@ -59,7 +61,7 @@
     "expo-notifications": "~0.29.14",
     "expo-screen-orientation": "~8.0.4",
     "expo-status-bar": "~2.0.1",
-    "expo-system-ui": "^5.0.8",
+    "expo-system-ui": "~4.0.9",
     "expo-updates": "~0.27.4",
     "react": "18.3.1",
     "react-native": "0.76.9",
