@@ -16,17 +16,14 @@ import {
   faArrowLeft,
   faCog,
   faLanguage,
-  faPalette,
   faCheck,
   faChevronRight,
   faMoon,
   faSun,
-  faGlobe,
   faInfo,
-  faBell,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
-import { useLanguage, LANGUAGES } from '../contexts/LanguageContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Config } from '../config/env';
 
 export default function SettingsScreen({ navigation }) {
@@ -43,7 +40,6 @@ export default function SettingsScreen({ navigation }) {
     }
 
     try {
-      console.log('Language selected:', languageCode);
       setIsChangingLanguage(true);
 
       // Close modal first

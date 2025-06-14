@@ -38,7 +38,8 @@
     "workflow:preview": "eas workflow:run preview-deployment.yml",
     "workflow:production": "eas workflow:run production-deployment.yml",
     "firebase:verify": "node scripts/verify-firebase-config.js",
-    "firebase:update-config": "./scripts/update-firebase-config.sh"
+    "firebase:update-config": "./scripts/update-firebase-config.sh",
+    "cleanup": "./scripts/cleanup-project.sh"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.7.2",

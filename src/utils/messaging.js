@@ -3,7 +3,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert, Platform, Linking } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
-import Constants from 'expo-constants';
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
@@ -127,29 +126,11 @@ export async function getToken() {
         .isDeviceRegisteredForRemoteMessages;
       if (!isRegistered) {
         await messaging().registerDeviceForRemoteMessages();
-        console.log('Device registered for remote messages');
       }
     }
 
     // Get the device token directly from Firebase messaging
     const token = await messaging().getToken();
-    console.log('=== FIREBASE SENDER DEBUG ===');
-    console.log('FCM Token:', token);
-
-    // Debug: Check what senderId is being used
-    try {
-      const senderId = await messaging().getAPNSToken();
-      console.log('APNS Token (iOS):', senderId);
-    } catch (e) {
-      console.log('APNS Token not available (likely Android)');
-    }
-
-    // Check if we can get sender ID from the token
-    if (token) {
-      console.log('Token length:', token.length);
-      console.log('Token starts with:', token.substring(0, 20) + '...');
-    }
-    console.log('=== END FIREBASE SENDER DEBUG ===');
 
     return token;
   } catch (error) {
@@ -310,8 +291,6 @@ export async function showLocalNotification(remoteMessage) {
       content: notificationContent,
       trigger: null, // Show immediately
     });
-
-    console.log('Local notification shown:', notificationContent.title);
   } catch (error) {
     console.error('Error showing local notification:', error);
   }
@@ -508,8 +487,6 @@ export async function sendAnnouncementNotification(announcement) {
       },
       trigger: null, // Show immediately
     });
-
-    console.log('Announcement notification sent:', title);
   } catch (error) {
     console.error('Error sending announcement notification:', error);
   }

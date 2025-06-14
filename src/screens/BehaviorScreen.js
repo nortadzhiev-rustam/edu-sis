@@ -56,49 +56,6 @@ export default function BehaviorScreen({ navigation, route }) {
     }
   }, [authCode]);
 
-  // Helper function to get behavior type icon and color
-  const getBehaviorTypeInfo = (type, points) => {
-    const typeCode = type?.toUpperCase() || '';
-    const pointValue = parseInt(points) || 0;
-
-    // Handle API type codes: PRS = Positive, DPS = Negative
-    if (
-      typeCode === 'PRS' ||
-      (typeCode.includes('POSITIVE') && pointValue > 0)
-    ) {
-      return {
-        icon: faThumbsUp,
-        color: '#34C759',
-        bgColor: '#34C75915',
-        label: 'PRS',
-      };
-    } else if (
-      typeCode === 'DPS' ||
-      (typeCode.includes('NEGATIVE') && pointValue < 0)
-    ) {
-      return {
-        icon: faThumbsDown,
-        color: '#FF3B30',
-        bgColor: '#FF3B3015',
-        label: 'DPS',
-      };
-    } else if (typeCode.includes('ACHIEVEMENT') || typeCode.includes('AWARD')) {
-      return {
-        icon: faAward,
-        color: '#FF9500',
-        bgColor: '#FF950015',
-        label: 'Achievement',
-      };
-    } else {
-      return {
-        icon: faClipboardList,
-        color: '#007AFF',
-        bgColor: '#007AFF15',
-        label: 'Neutral',
-      };
-    }
-  };
-
   const fetchBehaviorData = async () => {
     if (!authCode) {
       Alert.alert('Error', 'Authentication code is missing');
@@ -107,11 +64,9 @@ export default function BehaviorScreen({ navigation, route }) {
 
     setLoading(true);
     try {
-      console.log('Fetching behavior data with authCode:', authCode);
       const url = buildApiUrl(Config.API_ENDPOINTS.GET_STUDENT_BPS, {
         authCode,
       });
-      console.log('Request URL:', url);
 
       const response = await fetch(url, {
         method: 'GET',
@@ -121,73 +76,46 @@ export default function BehaviorScreen({ navigation, route }) {
         },
       });
 
-      console.log('Response status:', response.status);
-
       if (response.ok) {
         const data = await response.json();
-        console.log('Raw behavior data:', JSON.stringify(data, null, 2));
 
         // Handle API response with both behavior and detention data
         let behaviorArray = [];
         let detentionArray = [];
 
-        console.log('API response data structure:', data);
-        console.log('Data type:', typeof data);
-        console.log('Is array:', Array.isArray(data));
-
         if (data && typeof data === 'object') {
           // If data is directly an array, treat as behavior data
           if (Array.isArray(data)) {
             behaviorArray = data;
-            console.log('Data is array, treating as behavior data');
           } else {
             // Look through all properties to find arrays
             const dataKeys = Object.keys(data);
-            console.log('Data keys:', dataKeys);
 
             for (const key of dataKeys) {
               if (Array.isArray(data[key])) {
-                console.log(`Found array at key "${key}":`, data[key]);
-
                 // Check if this array contains behavior data (has item_type field)
                 if (data[key].length > 0 && data[key][0].item_type) {
                   behaviorArray = data[key];
-                  console.log('Assigned as behavior data');
                 }
                 // Check if this array contains detention data (has detention_type field)
                 else if (data[key].length > 0 && data[key][0].detention_type) {
                   detentionArray = data[key];
-                  console.log('Assigned as detention data');
                 }
                 // If we don't have behavior data yet and this is the first array, use it
                 else if (behaviorArray.length === 0) {
                   behaviorArray = data[key];
-                  console.log('Assigned as default behavior data');
                 }
               }
             }
           }
         }
 
-        console.log('Setting behavior data:', behaviorArray);
-        console.log('Setting detention data:', detentionArray);
         setBehaviorData(behaviorArray);
         setDetentionData(detentionArray);
       } else {
-        console.error(
-          'Failed to fetch behavior data:',
-          response.status,
-          response.statusText
-        );
-        const errorText = await response.text();
-        console.error('Error response body:', errorText);
-
         // For development, use dummy data if API fails
-        console.log('API failed, using dummy data');
         const dummyBehavior = getDummyBehaviorData();
         const dummyDetention = getDummyDetentionData();
-        console.log('Dummy behavior data:', dummyBehavior);
-        console.log('Dummy detention data:', dummyDetention);
         setBehaviorData(dummyBehavior);
         setDetentionData(dummyDetention);
       }
