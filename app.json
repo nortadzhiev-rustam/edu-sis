@@ -8,7 +8,17 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "plugins": [
-      "@react-native-firebase/app",
+      [
+        "@react-native-firebase/app",
+        {
+          "ios": {
+            "googleServicesFile": "./GoogleService-Info.plist"
+          },
+          "android": {
+            "googleServicesFile": "./google-services.json"
+          }
+        }
+      ],
       "@react-native-firebase/messaging",
       [
         "expo-notifications",

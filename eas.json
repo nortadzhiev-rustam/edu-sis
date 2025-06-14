@@ -7,11 +7,19 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "channel": "development"
+      "channel": "development",
+      "hooks": {
+        "preInstall": "scripts/eas-build-pre-install.sh",
+        "postInstall": "scripts/ios-firebase-setup.sh"
+      }
     },
     "preview": {
       "distribution": "internal",
-      "channel": "preview"
+      "channel": "preview",
+      "hooks": {
+        "preInstall": "scripts/eas-build-pre-install.sh",
+        "postInstall": "scripts/ios-firebase-setup.sh"
+      }
     },
     "production": {
       "autoIncrement": true,
@@ -26,7 +34,16 @@
       "ios": {
         "buildConfiguration": "Release"
       },
-      "channel": "production"
+      "channel": "production",
+      "env": {
+        "EXPO_NO_CAPABILITY_SYNC": "1",
+        "GOOGLE_SERVICES_INFOPLIST_PATH": "./GoogleService-Info.plist",
+        "GOOGLE_SERVICES_JSON_PATH": "./google-services.json"
+      },
+      "hooks": {
+        "preInstall": "scripts/eas-build-pre-install.sh",
+        "postInstall": "scripts/ios-firebase-setup.sh"
+      }
     }
   },
   "submit": {
