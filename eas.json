@@ -23,6 +23,11 @@
           "GRADLE_OPTS": "-Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx4g"
         }
       },
+      "ios": {
+        "cache": {
+          "disabled": true
+        }
+      },
       "channel": "production"
     }
   },

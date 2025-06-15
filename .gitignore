@@ -134,11 +134,10 @@ coverage/
 .nyc_output/
 
 # Firebase / Google Services
-# Keep these files secure and out of version control
-google-services.json
-GoogleService-Info.plist
-android/app/google-services.json
-ios/*/GoogleService-Info.plist
+# Note: Firebase config files are included in version control for EAS builds
+# These files contain project identifiers but not sensitive secrets
+# android/app/google-services.json
+# ios/*/GoogleService-Info.plist
 
 # Misc
 *.tgz
