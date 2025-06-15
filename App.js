@@ -30,7 +30,7 @@ import { NotificationProvider } from './src/contexts/NotificationContext';
 import {
   requestUserPermission,
   notificationListener,
-  getToken,
+  getDeviceToken,
   setupLocalNotifications,
 } from './src/utils/messaging';
 
@@ -71,7 +71,7 @@ export default function App() {
 
         // Get the token if permission was granted
         console.log('🎫 TOKEN: Getting Firebase messaging token...');
-        const token = await getToken();
+        const token = await getDeviceToken();
         if (token) {
           console.log('✅ APNS TOKEN RECEIVED:', token);
           console.log('🔗 Token length:', token.length);

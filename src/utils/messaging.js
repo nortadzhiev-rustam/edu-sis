@@ -1,4 +1,13 @@
-import messaging from '@react-native-firebase/messaging';
+import {
+  getMessaging,
+  getToken,
+  requestPermission,
+  onMessage,
+  onNotificationOpenedApp,
+  getInitialNotification,
+  registerDeviceForRemoteMessages,
+  isDeviceRegisteredForRemoteMessages,
+} from '@react-native-firebase/messaging';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert, Platform, Linking } from 'react-native';
 import * as Notifications from 'expo-notifications';
@@ -58,20 +67,30 @@ export async function requestUserPermission() {
               console.log(
                 '🔐 PERMISSION: Requesting Firebase messaging permission...'
               );
-              const authStatus = await messaging().requestPermission();
-              console.log('📋 PERMISSION: Auth status received:', authStatus);
+              try {
+                const messaging = getMessaging();
+                const authStatus = await requestPermission(messaging);
+                console.log('📋 PERMISSION: Auth status received:', authStatus);
 
-              const enabled =
-                authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-                authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-              console.log('✅ PERMISSION: Permission enabled:', enabled);
+                const enabled =
+                  authStatus === 1 || // AuthorizationStatus.AUTHORIZED
+                  authStatus === 2; // AuthorizationStatus.PROVISIONAL
+                console.log('✅ PERMISSION: Permission enabled:', enabled);
 
-              if (enabled) {
-                console.log('🎉 PERMISSION: Notification permission granted!');
-                getFCMToken();
-              } else {
+                if (enabled) {
+                  console.log(
+                    '🎉 PERMISSION: Notification permission granted!'
+                  );
+                  getFCMToken();
+                } else {
+                  console.log(
+                    '❌ PERMISSION: Notification permission denied by system'
+                  );
+                }
+              } catch (permissionError) {
+                console.error('❌ PERMISSION ERROR:', permissionError);
                 console.log(
-                  '❌ PERMISSION: Notification permission denied by system'
+                  '🔄 PERMISSION: Continuing without notifications...'
                 );
               }
             },
@@ -80,35 +99,46 @@ export async function requestUserPermission() {
         { cancelable: false }
       );
     } else {
-      // We've asked before, just check the current status
-      const authStatus = await messaging().hasPermission();
-      const enabled =
-        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+      // We've asked before, check the current status by requesting permission
+      // requestPermission() will return the current status without showing a dialog if already determined
+      console.log('🔍 PERMISSION: Checking current permission status...');
+      try {
+        const messaging = getMessaging();
+        const authStatus = await requestPermission(messaging);
+        const enabled =
+          authStatus === 1 || // AuthorizationStatus.AUTHORIZED
+          authStatus === 2; // AuthorizationStatus.PROVISIONAL
 
-      if (enabled) {
-        console.log('Notification permission already granted');
-        getFCMToken();
-      } else {
-        console.log('Notification permission not granted');
+        console.log('📋 PERMISSION: Current auth status:', authStatus);
+        console.log('✅ PERMISSION: Permission enabled:', enabled);
 
-        // Ask if they want to enable notifications in settings
-        setTimeout(() => {
-          Alert.alert(
-            'Enable Notifications',
-            "Would you like to enable notifications in settings? You'll receive important updates about your child's education.",
-            [
-              {
-                text: 'Not Now',
-                style: 'cancel',
-              },
-              {
-                text: 'Open Settings',
-                onPress: openNotificationSettings,
-              },
-            ]
-          );
-        }, 1000); // Slight delay to not overwhelm the user
+        if (enabled) {
+          console.log('🎉 PERMISSION: Notification permission already granted');
+          getFCMToken();
+        } else {
+          console.log('❌ PERMISSION: Notification permission not granted');
+
+          // Ask if they want to enable notifications in settings
+          setTimeout(() => {
+            Alert.alert(
+              'Enable Notifications',
+              "Would you like to enable notifications in settings? You'll receive important updates about your child's education.",
+              [
+                {
+                  text: 'Not Now',
+                  style: 'cancel',
+                },
+                {
+                  text: 'Open Settings',
+                  onPress: openNotificationSettings,
+                },
+              ]
+            );
+          }, 1000); // Slight delay to not overwhelm the user
+        }
+      } catch (permissionError) {
+        console.error('❌ PERMISSION CHECK ERROR:', permissionError);
+        console.log('🔄 PERMISSION: Continuing without notifications...');
       }
     }
   } catch (error) {
@@ -120,7 +150,8 @@ export async function getFCMToken() {
   try {
     const fcmToken = await AsyncStorage.getItem('fcmToken');
     if (!fcmToken) {
-      const newToken = await messaging().getToken();
+      const messaging = getMessaging();
+      const newToken = await getToken(messaging);
       if (newToken) {
         await AsyncStorage.setItem('fcmToken', newToken);
         return newToken;
@@ -133,7 +164,7 @@ export async function getFCMToken() {
   }
 }
 
-export async function getToken() {
+export async function getDeviceToken() {
   try {
     console.log('🎫 APNS TOKEN: Starting token retrieval process...');
     console.log('📱 Platform:', Platform.OS);
@@ -143,8 +174,8 @@ export async function getToken() {
       console.log(
         '🍎 iOS: Checking device registration for remote messages...'
       );
-      const isRegistered = await messaging()
-        .isDeviceRegisteredForRemoteMessages;
+      const messaging = getMessaging();
+      const isRegistered = isDeviceRegisteredForRemoteMessages(messaging);
       console.log(
         '📋 iOS: Device registered for remote messages:',
         isRegistered
@@ -152,14 +183,15 @@ export async function getToken() {
 
       if (!isRegistered) {
         console.log('📝 iOS: Registering device for remote messages...');
-        await messaging().registerDeviceForRemoteMessages();
+        await registerDeviceForRemoteMessages(messaging);
         console.log('✅ iOS: Device registration complete');
       }
     }
 
     // Get the device token directly from Firebase messaging
     console.log('🔑 FIREBASE: Requesting messaging token...');
-    const token = await messaging().getToken();
+    const messaging = getMessaging();
+    const token = await getToken(messaging);
 
     if (token) {
       console.log('✅ APNS TOKEN: Successfully retrieved');
@@ -201,8 +233,10 @@ export const openNotificationSettings = async () => {
 export const notificationListener = () => {
   console.log('👂 LISTENERS: Setting up notification listeners...');
 
+  const messaging = getMessaging();
+
   // When the application is running in the background
-  messaging().onNotificationOpenedApp((remoteMessage) => {
+  onNotificationOpenedApp(messaging, (remoteMessage) => {
     console.log('🔔 BACKGROUND NOTIFICATION: App opened from background');
     console.log('📋 Notification data:', remoteMessage.notification);
     console.log('📦 Message data:', remoteMessage.data);
@@ -213,24 +247,22 @@ export const notificationListener = () => {
   });
 
   // When the application is opened from a quit state
-  messaging()
-    .getInitialNotification()
-    .then((remoteMessage) => {
-      if (remoteMessage) {
-        console.log('🔔 QUIT STATE NOTIFICATION: App opened from quit state');
-        console.log('📋 Notification data:', remoteMessage.notification);
-        console.log('📦 Message data:', remoteMessage.data);
-        console.log('🏷️ Message ID:', remoteMessage.messageId);
+  getInitialNotification(messaging).then((remoteMessage) => {
+    if (remoteMessage) {
+      console.log('🔔 QUIT STATE NOTIFICATION: App opened from quit state');
+      console.log('📋 Notification data:', remoteMessage.notification);
+      console.log('📦 Message data:', remoteMessage.data);
+      console.log('🏷️ Message ID:', remoteMessage.messageId);
 
-        // Navigate to appropriate screen if needed
-        handleNotificationNavigation(remoteMessage);
-      } else {
-        console.log('📱 NORMAL LAUNCH: App opened normally (no notification)');
-      }
-    });
+      // Navigate to appropriate screen if needed
+      handleNotificationNavigation(remoteMessage);
+    } else {
+      console.log('📱 NORMAL LAUNCH: App opened normally (no notification)');
+    }
+  });
 
   // Handle foreground messages
-  messaging().onMessage(async (remoteMessage) => {
+  onMessage(messaging, async (remoteMessage) => {
     console.log('Received foreground message:', remoteMessage);
     // Show local notification for foreground messages
     await showLocalNotification(remoteMessage);
