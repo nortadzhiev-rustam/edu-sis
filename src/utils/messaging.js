@@ -15,12 +15,19 @@ Notifications.setNotificationHandler({
 
 export async function requestUserPermission() {
   try {
+    console.log('🔔 PERMISSION: Starting permission request process...');
+
     // Check if we've already asked for permission before
     const hasAskedForPermission = await AsyncStorage.getItem(
       'hasAskedForNotificationPermission'
     );
+    console.log(
+      '📋 PERMISSION: Previously asked for permission:',
+      hasAskedForPermission
+    );
 
     if (hasAskedForPermission !== 'true') {
+      console.log('🆕 PERMISSION: First time asking for permission');
       // First time asking - show a custom alert explaining why we need notifications
       Alert.alert(
         'Enable Notifications',
@@ -48,16 +55,24 @@ export async function requestUserPermission() {
               );
 
               // Request the actual permission
+              console.log(
+                '🔐 PERMISSION: Requesting Firebase messaging permission...'
+              );
               const authStatus = await messaging().requestPermission();
+              console.log('📋 PERMISSION: Auth status received:', authStatus);
+
               const enabled =
                 authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
                 authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+              console.log('✅ PERMISSION: Permission enabled:', enabled);
 
               if (enabled) {
-                console.log('Notification permission granted');
+                console.log('🎉 PERMISSION: Notification permission granted!');
                 getFCMToken();
               } else {
-                console.log('Notification permission denied by system');
+                console.log(
+                  '❌ PERMISSION: Notification permission denied by system'
+                );
               }
             },
           },
@@ -120,22 +135,47 @@ export async function getFCMToken() {
 
 export async function getToken() {
   try {
+    console.log('🎫 APNS TOKEN: Starting token retrieval process...');
+    console.log('📱 Platform:', Platform.OS);
+
     // Register device for remote messages first (required for iOS)
     if (Platform.OS === 'ios') {
+      console.log(
+        '🍎 iOS: Checking device registration for remote messages...'
+      );
       const isRegistered = await messaging()
         .isDeviceRegisteredForRemoteMessages;
+      console.log(
+        '📋 iOS: Device registered for remote messages:',
+        isRegistered
+      );
+
       if (!isRegistered) {
+        console.log('📝 iOS: Registering device for remote messages...');
         await messaging().registerDeviceForRemoteMessages();
+        console.log('✅ iOS: Device registration complete');
       }
     }
 
     // Get the device token directly from Firebase messaging
+    console.log('🔑 FIREBASE: Requesting messaging token...');
     const token = await messaging().getToken();
+
+    if (token) {
+      console.log('✅ APNS TOKEN: Successfully retrieved');
+      console.log('📏 Token length:', token.length);
+      console.log('🔤 Token type:', typeof token);
+      console.log('🏁 Token first 30 chars:', token.substring(0, 30) + '...');
+    } else {
+      console.log('❌ APNS TOKEN: No token returned from Firebase');
+    }
 
     return token;
   } catch (error) {
-    console.error('Error getting Firebase messaging token:', error);
-    console.log('Firebase error details:', error.message);
+    console.error('❌ APNS TOKEN ERROR:', error);
+    console.error('🔍 Error message:', error.message);
+    console.error('📊 Error code:', error.code);
+    console.error('🏷️ Error domain:', error.domain);
     return null;
   }
 }
@@ -159,12 +199,15 @@ export const openNotificationSettings = async () => {
 };
 
 export const notificationListener = () => {
+  console.log('👂 LISTENERS: Setting up notification listeners...');
+
   // When the application is running in the background
   messaging().onNotificationOpenedApp((remoteMessage) => {
-    console.log(
-      'Notification caused app to open from background state:',
-      remoteMessage.notification
-    );
+    console.log('🔔 BACKGROUND NOTIFICATION: App opened from background');
+    console.log('📋 Notification data:', remoteMessage.notification);
+    console.log('📦 Message data:', remoteMessage.data);
+    console.log('🏷️ Message ID:', remoteMessage.messageId);
+
     // Navigate to appropriate screen if needed
     handleNotificationNavigation(remoteMessage);
   });
@@ -174,12 +217,15 @@ export const notificationListener = () => {
     .getInitialNotification()
     .then((remoteMessage) => {
       if (remoteMessage) {
-        console.log(
-          'Notification caused app to open from quit state:',
-          remoteMessage.notification
-        );
+        console.log('🔔 QUIT STATE NOTIFICATION: App opened from quit state');
+        console.log('📋 Notification data:', remoteMessage.notification);
+        console.log('📦 Message data:', remoteMessage.data);
+        console.log('🏷️ Message ID:', remoteMessage.messageId);
+
         // Navigate to appropriate screen if needed
         handleNotificationNavigation(remoteMessage);
+      } else {
+        console.log('📱 NORMAL LAUNCH: App opened normally (no notification)');
       }
     });
 

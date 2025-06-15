@@ -1,7 +1,7 @@
 import 'react-native-get-random-values';
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -34,13 +34,20 @@ import {
   setupLocalNotifications,
 } from './src/utils/messaging';
 
-
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    console.log('🚀 APP LAUNCH: Starting app initialization...');
+    console.log('📱 Platform:', Platform.OS);
+    console.log('⏰ Launch time:', new Date().toISOString());
+    console.log(
+      '🔧 React Native version:',
+      Platform.constants?.reactNativeVersion || 'Unknown'
+    );
+
     // We don't need to check login status here anymore
     // as we'll check it when the user taps on the Teacher button
     // in the HomeScreen
@@ -48,32 +55,51 @@ export default function App() {
     // Request notification permissions and setup Firebase messaging
     const setupFirebase = async () => {
       try {
+        console.log('🔥 FIREBASE SETUP: Starting Firebase initialization...');
+
         // Request permission with our custom UI flow
+        console.log('🔔 APNS: Requesting user permission...');
         await requestUserPermission();
 
         // Setup local notifications
+        console.log('📲 NOTIFICATIONS: Setting up local notifications...');
         await setupLocalNotifications();
 
         // Setup notification listeners
+        console.log('👂 LISTENERS: Setting up notification listeners...');
         notificationListener();
 
         // Get the token if permission was granted
+        console.log('🎫 TOKEN: Getting Firebase messaging token...');
         const token = await getToken();
         if (token) {
-          console.log('Firebase Messaging Token:', token);
+          console.log('✅ APNS TOKEN RECEIVED:', token);
+          console.log('🔗 Token length:', token.length);
+          console.log('🏷️ Token prefix:', token.substring(0, 20) + '...');
+        } else {
+          console.log('❌ APNS TOKEN: No token received');
         }
 
-        // Run Firebase diagnostic to check for senderId issues
-        
+        console.log('✅ FIREBASE SETUP: Complete');
       } catch (error) {
-        console.error('Error setting up Firebase:', error);
+        console.error('❌ FIREBASE SETUP ERROR:', error);
+        console.error('🔍 Error details:', error.message);
+        console.error('📊 Error stack:', error.stack);
         // Continue with app initialization even if notifications fail
       }
     };
 
     // Run initialization tasks
     const initialize = async () => {
+      console.log('🏁 INITIALIZATION: Starting app initialization sequence...');
+      const startTime = Date.now();
+
       await setupFirebase();
+
+      const endTime = Date.now();
+      console.log(`⚡ INITIALIZATION: Complete in ${endTime - startTime}ms`);
+      console.log('🎬 SPLASH: Waiting for splash screen animation...');
+
       // We'll let the splash screen animation control when to transition
       // The splash screen will call handleAnimationComplete when done
     };
@@ -82,7 +108,9 @@ export default function App() {
   }, []);
 
   const handleAnimationComplete = () => {
-    console.log('Splash screen animation completed');
+    console.log('🎬 SPLASH COMPLETE: Animation finished');
+    console.log('🏠 NAVIGATION: Transitioning to main app...');
+    console.log('⏰ App ready time:', new Date().toISOString());
     setIsLoading(false);
   };
 
