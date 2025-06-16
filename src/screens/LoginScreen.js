@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getDeviceToken } from '../utils/messaging';
+import { logDeviceInfo } from '../utils/deviceInfo';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
@@ -48,8 +49,12 @@ export default function LoginScreen({ route, navigation }) {
   const styles = createStyles(theme, fontSizes);
 
   useEffect(() => {
-    // Get device token when component mounts
+    // Get device token and log device info when component mounts
     const fetchDeviceToken = async () => {
+      // Log device information for debugging
+      await logDeviceInfo();
+
+      // Get device token
       const token = await getDeviceToken();
       setDeviceToken(token || '');
     };

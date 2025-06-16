@@ -4,6 +4,7 @@
  */
 
 import { Config, buildApiUrl } from '../config/env';
+import { getLoginDeviceInfo } from '../utils/deviceInfo';
 
 // Flag to toggle between dummy data and real API
 const USE_DUMMY_DATA = Config.DEV.USE_DUMMY_DATA;
@@ -39,6 +40,10 @@ export const teacherLogin = async (username, password, deviceToken) => {
     }
   } else {
     try {
+      // Get device information
+      const deviceInfo = await getLoginDeviceInfo();
+      console.log('🔍 AUTH DEBUG: Device info collected:', deviceInfo);
+
       // Use the API for real authentication
       console.log('🔍 AUTH DEBUG: Raw device token:', deviceToken);
       console.log('🔍 AUTH DEBUG: Device token type:', typeof deviceToken);
@@ -54,8 +59,15 @@ export const teacherLogin = async (username, password, deviceToken) => {
       const apiUrl = buildApiUrl(Config.API_ENDPOINTS.CHECK_STAFF_CREDENTIALS, {
         username,
         password,
-        deviceType: Config.DEVICE.DEFAULT_TYPE,
+        deviceType: deviceInfo.deviceType,
         deviceToken: encodedToken,
+        deviceName: deviceInfo.deviceName,
+        deviceModel: deviceInfo.deviceModel,
+        deviceBrand: deviceInfo.deviceBrand,
+        platform: deviceInfo.platform,
+        osVersion: deviceInfo.osVersion,
+        appVersion: deviceInfo.appVersion,
+        isEmulator: deviceInfo.isEmulator,
       });
 
       console.log('🔍 AUTH DEBUG: API URL:', apiUrl);
@@ -99,6 +111,10 @@ export const studentLogin = async (username, password, deviceToken) => {
     }
   } else {
     try {
+      // Get device information
+      const deviceInfo = await getLoginDeviceInfo();
+      console.log('🔍 STUDENT AUTH DEBUG: Device info collected:', deviceInfo);
+
       // Use the API for real authentication
       console.log('🔍 STUDENT AUTH DEBUG: Raw device token:', deviceToken);
       console.log(
@@ -122,8 +138,15 @@ export const studentLogin = async (username, password, deviceToken) => {
         {
           username,
           password,
-          deviceType: Config.DEVICE.DEFAULT_TYPE,
+          deviceType: deviceInfo.deviceType,
           deviceToken: encodedToken,
+          deviceName: deviceInfo.deviceName,
+          deviceModel: deviceInfo.deviceModel,
+          deviceBrand: deviceInfo.deviceBrand,
+          platform: deviceInfo.platform,
+          osVersion: deviceInfo.osVersion,
+          appVersion: deviceInfo.appVersion,
+          isEmulator: deviceInfo.isEmulator,
         }
       );
 
