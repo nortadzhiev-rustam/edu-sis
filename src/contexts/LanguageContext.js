@@ -165,6 +165,41 @@ const translations = {
     completed: 'Completed',
     submitted: 'Submitted',
     overdue: 'Overdue',
+
+    // New Features
+    myProfile: 'My Profile',
+    personalInformation: 'Personal Information',
+    workInformation: 'Work Information',
+    rolesResponsibilities: 'Roles & Responsibilities',
+    fullName: 'Full Name',
+    employeeId: 'Employee ID',
+    email: 'Email',
+    phone: 'Phone',
+    position: 'Position',
+    department: 'Department',
+    branch: 'Branch',
+    joinDate: 'Join Date',
+    notProvided: 'Not provided',
+    loadingProfile: 'Loading profile...',
+    viewEditProfile: 'View and edit profile information',
+    areYouSureLogout: 'Are you sure you want to logout?',
+
+    // Coming Soon
+    comingSoon: 'Coming Soon',
+    reports: 'Reports',
+    materials: 'Materials',
+    analytics: 'Analytics',
+    library: 'Library',
+    analyticsStats: 'Analytics & Stats',
+    resourcesFiles: 'Resources & Files',
+    teachingPerformance: 'View teaching performance metrics',
+    featureComingSoon: 'Feature coming soon!',
+
+    // Library specific
+    libraryData: 'Library Data',
+    borrowedBooks: 'Borrowed Books',
+    overdueItems: 'Overdue Items',
+    borrowingLimits: 'Borrowing Limits',
   },
   my: {
     // Common
@@ -290,6 +325,41 @@ const translations = {
     completed: 'ပြီးစီး',
     submitted: 'တင်သွင်း',
     overdue: 'သတ်မှတ်ချိန်လွန်',
+
+    // New Features
+    myProfile: 'ကျွန်ုပ်၏ကိုယ်ရေးအချက်အလက်',
+    personalInformation: 'ကိုယ်ရေးကိုယ်တာအချက်အလက်များ',
+    workInformation: 'အလုပ်အချက်အလက်များ',
+    rolesResponsibilities: 'တာဝန်များနှင့် တာဝန်ဝတ်တရားများ',
+    fullName: 'အမည်အပြည့်အစုံ',
+    employeeId: 'ဝန်ထမ်းအမှတ်',
+    email: 'အီးမေးလ်',
+    phone: 'ဖုန်းနံပါတ်',
+    position: 'ရာထူး',
+    department: 'ဌာန',
+    branch: 'ဌာနခွဲ',
+    joinDate: 'ဝင်ရောက်သည့်ရက်စွဲ',
+    notProvided: 'မပေးထားပါ',
+    loadingProfile: 'ကိုယ်ရေးအချက်အလက်ဖွင့်နေသည်...',
+    viewEditProfile: 'ကိုယ်ရေးအချက်အလက်ကြည့်ရှုပြင်ဆင်ရန်',
+    areYouSureLogout: 'သင်သေချာပါသလား ထွက်မည်လား?',
+
+    // Coming Soon
+    comingSoon: 'မကြာမီရောက်မည်',
+    reports: 'အစီရင်ခံစာများ',
+    materials: 'စာရွက်စာတမ်းများ',
+    analytics: 'ခွဲခြမ်းစိတ်ဖြာမှုများ',
+    library: 'စာကြည့်တိုက်',
+    analyticsStats: 'ခွဲခြမ်းစိတ်ဖြာမှုနှင့် စာရင်းအင်းများ',
+    resourcesFiles: 'အရင်းအမြစ်များနှင့် ဖိုင်များ',
+    teachingPerformance: 'သင်ကြားမှုစွမ်းဆောင်ရည်ကြည့်ရှုရန်',
+    featureComingSoon: 'လုပ်ဆောင်ချက်မကြာမီရောက်မည်!',
+
+    // Library specific
+    libraryData: 'စာကြည့်တိုက်ဒေတာ',
+    borrowedBooks: 'ငှားယူထားသောစာအုပ်များ',
+    overdueItems: 'သတ်မှတ်ချိန်လွန်သောပစ္စည်းများ',
+    borrowingLimits: 'ငှားယူမှုကန့်သတ်ချက်များ',
   },
   zh: {
     // Common
@@ -413,6 +483,41 @@ const translations = {
     completed: '已完成',
     submitted: '已提交',
     overdue: '逾期',
+
+    // New Features
+    myProfile: '我的个人资料',
+    personalInformation: '个人信息',
+    workInformation: '工作信息',
+    rolesResponsibilities: '角色与职责',
+    fullName: '全名',
+    employeeId: '员工编号',
+    email: '邮箱',
+    phone: '电话',
+    position: '职位',
+    department: '部门',
+    branch: '分支',
+    joinDate: '入职日期',
+    notProvided: '未提供',
+    loadingProfile: '正在加载个人资料...',
+    viewEditProfile: '查看和编辑个人资料信息',
+    areYouSureLogout: '您确定要退出登录吗？',
+
+    // Coming Soon
+    comingSoon: '即将推出',
+    reports: '报告',
+    materials: '材料',
+    analytics: '分析',
+    library: '图书馆',
+    analyticsStats: '分析与统计',
+    resourcesFiles: '资源与文件',
+    teachingPerformance: '查看教学表现指标',
+    featureComingSoon: '功能即将推出！',
+
+    // Library specific
+    libraryData: '图书馆数据',
+    borrowedBooks: '借阅图书',
+    overdueItems: '逾期项目',
+    borrowingLimits: '借阅限制',
   },
   th: {
     // Common
@@ -537,6 +642,41 @@ const translations = {
     completed: 'เสร็จสิ้น',
     submitted: 'ส่งแล้ว',
     overdue: 'เกินกำหนด',
+
+    // New Features
+    myProfile: 'โปรไฟล์ของฉัน',
+    personalInformation: 'ข้อมูลส่วนตัว',
+    workInformation: 'ข้อมูลการทำงาน',
+    rolesResponsibilities: 'บทบาทและความรับผิดชอบ',
+    fullName: 'ชื่อเต็ม',
+    employeeId: 'รหัสพนักงาน',
+    email: 'อีเมล',
+    phone: 'โทรศัพท์',
+    position: 'ตำแหน่ง',
+    department: 'แผนก',
+    branch: 'สาขา',
+    joinDate: 'วันที่เข้าทำงาน',
+    notProvided: 'ไม่ได้ระบุ',
+    loadingProfile: 'กำลังโหลดโปรไฟล์...',
+    viewEditProfile: 'ดูและแก้ไขข้อมูลโปรไฟล์',
+    areYouSureLogout: 'คุณแน่ใจหรือไม่ที่จะออกจากระบบ?',
+
+    // Coming Soon
+    comingSoon: 'เร็วๆ นี้',
+    reports: 'รายงาน',
+    materials: 'เอกสาร',
+    analytics: 'การวิเคราะห์',
+    library: 'ห้องสมุด',
+    analyticsStats: 'การวิเคราะห์และสถิติ',
+    resourcesFiles: 'ทรัพยากรและไฟล์',
+    teachingPerformance: 'ดูตัวชี้วัดประสิทธิภาพการสอน',
+    featureComingSoon: 'คุณสมบัตินี้เร็วๆ นี้!',
+
+    // Library specific
+    libraryData: 'ข้อมูลห้องสมุด',
+    borrowedBooks: 'หนังสือที่ยืม',
+    overdueItems: 'รายการที่เกินกำหนด',
+    borrowingLimits: 'ขีดจำกัดการยืม',
   },
 };
 

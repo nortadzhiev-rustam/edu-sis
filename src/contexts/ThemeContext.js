@@ -1,6 +1,57 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// Language-specific font size adjustments
+const getFontSize = (baseSize, language) => {
+  const adjustments = {
+    my: 0.85, // Myanmar - reduce by 15%
+    zh: 0.95, // Chinese - reduce by 5%
+    th: 0.95, // Thai - reduce by 5%
+    en: 1.0, // English - no change
+  };
+
+  const multiplier = adjustments[language] || 1.0;
+  return Math.round(baseSize * multiplier);
+};
+
+// Helper function to get language-aware font sizes
+export const getLanguageFontSizes = (language) => ({
+  // Header sizes
+  headerTitle: getFontSize(20, language),
+  headerSubtitle: getFontSize(16, language),
+
+  // Body text sizes
+  title: getFontSize(24, language),
+  subtitle: getFontSize(18, language),
+  body: getFontSize(16, language),
+  bodySmall: getFontSize(14, language),
+  caption: getFontSize(12, language),
+
+  // Button sizes
+  buttonText: getFontSize(16, language),
+  buttonTextSmall: getFontSize(14, language),
+
+  // Profile specific sizes
+  profileName: getFontSize(24, language),
+  profileRole: getFontSize(16, language),
+  profileId: getFontSize(14, language),
+  sectionTitle: getFontSize(18, language),
+  profileItemLabel: getFontSize(14, language),
+  profileItemValue: getFontSize(16, language),
+
+  // Feature sizes
+  featureTitle: getFontSize(16, language),
+  featureSubtitle: getFontSize(14, language),
+
+  // Tile sizes
+  tileTitle: getFontSize(16, language),
+  tileSubtitle: getFontSize(12, language),
+
+  // Badge sizes
+  badgeText: getFontSize(10, language),
+  comingSoonText: getFontSize(10, language),
+});
+
 const ThemeContext = createContext();
 
 export const useTheme = () => {
@@ -16,7 +67,7 @@ const lightTheme = {
   mode: 'light',
   colors: {
     primary: '#007AFF',
-    secondary: '#5856D6',
+    secondary: '#007AFF', // Changed from purple to blue for better consistency
     background: '#f5f5f5',
     surface: '#ffffff',
     text: '#333333',
@@ -31,9 +82,14 @@ const lightTheme = {
     headerBackground: '#007AFF',
     headerText: '#ffffff',
     tabBackground: '#ffffff',
-    tabActive: '#5856D6',
+    tabActive: '#007AFF', // Changed from purple to blue
     tabInactive: '#999999',
     shadow: '#000000',
+    // BPS-specific colors for better UX
+    bpsPositive: '#34C759', // Green for positive behavior
+    bpsNegative: '#FF3B30', // Red for negative behavior
+    bpsSelected: '#007AFF', // Blue for selected items
+    bpsBackground: '#F8F9FA', // Light background for BPS cards
   },
   shadows: {
     small: {
@@ -83,6 +139,11 @@ const darkTheme = {
     tabActive: '#6B69FF',
     tabInactive: '#8E8E93',
     shadow: '#000000',
+    // BPS-specific colors for better UX
+    bpsPositive: '#30D158', // Green for positive behavior
+    bpsNegative: '#FF453A', // Red for negative behavior
+    bpsSelected: '#0A84FF', // Blue for selected items
+    bpsBackground: '#2C2C2E', // Dark background for BPS cards
   },
   shadows: {
     small: {

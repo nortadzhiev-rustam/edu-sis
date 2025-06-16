@@ -8,6 +8,7 @@ import {
   Alert,
   Image,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -28,14 +29,15 @@ import {
   faFileAlt,
 } from '@fortawesome/free-solid-svg-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useParentNotifications } from '../hooks/useParentNotifications';
 import ParentNotificationBadge from '../components/ParentNotificationBadge';
 
 export default function ParentScreen({ navigation }) {
   const { theme } = useTheme();
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
+  const fontSizes = getLanguageFontSizes(currentLanguage);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -45,7 +47,7 @@ export default function ParentScreen({ navigation }) {
   // Parent notifications hook
   const { selectStudent, refreshAllStudents } = useParentNotifications();
 
-  const styles = createStyles(theme);
+  const styles = createStyles(theme, fontSizes);
 
   useEffect(() => {
     // Load saved student accounts
@@ -58,6 +60,13 @@ export default function ParentScreen({ navigation }) {
 
     return unsubscribe;
   }, [navigation]);
+
+  // Restore selected student when students are loaded
+  useEffect(() => {
+    if (students.length > 0 && !selectedStudent) {
+      restoreSelectedStudent();
+    }
+  }, [students]);
 
   // Load notifications when students are loaded (only once per student set)
   useEffect(() => {
@@ -84,9 +93,16 @@ export default function ParentScreen({ navigation }) {
     });
   };
 
-  const handleStudentPress = (student) => {
+  const handleStudentPress = async (student) => {
     // Set the selected student
     setSelectedStudent(student);
+
+    // Save selected student to AsyncStorage for persistence
+    try {
+      await AsyncStorage.setItem('selectedStudentId', student.id.toString());
+    } catch (error) {
+      console.error('Error saving selected student:', error);
+    }
 
     // Also select student for notifications
     selectStudent(student);
@@ -172,6 +188,26 @@ export default function ParentScreen({ navigation }) {
     }
   };
 
+  // Restore the previously selected student
+  const restoreSelectedStudent = async () => {
+    try {
+      const savedSelectedStudentId = await AsyncStorage.getItem(
+        'selectedStudentId'
+      );
+      if (savedSelectedStudentId && students.length > 0) {
+        const student = students.find(
+          (s) => s.id.toString() === savedSelectedStudentId
+        );
+        if (student) {
+          setSelectedStudent(student);
+          selectStudent(student);
+        }
+      }
+    } catch (error) {
+      console.error('Error restoring selected student:', error);
+    }
+  };
+
   const handleDeleteStudent = (studentToDelete) => {
     Alert.alert(
       t('deleteStudent'),
@@ -198,6 +234,8 @@ export default function ParentScreen({ navigation }) {
                 selectedStudent.id === studentToDelete.id
               ) {
                 setSelectedStudent(null);
+                // Also clear from AsyncStorage
+                await AsyncStorage.removeItem('selectedStudentId');
               }
 
               // Update AsyncStorage
@@ -530,7 +568,7 @@ export default function ParentScreen({ navigation }) {
   );
 }
 
-const createStyles = (theme) =>
+const createStyles = (theme, fontSizes) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -558,7 +596,7 @@ const createStyles = (theme) =>
     },
     headerTitle: {
       color: theme.colors.headerText,
-      fontSize: 20,
+      fontSize: fontSizes.headerTitle,
       fontWeight: 'bold',
     },
     headerActions: {
@@ -609,7 +647,7 @@ const createStyles = (theme) =>
     },
     scrollIndicatorText: {
       color: theme.colors.primary,
-      fontSize: 12,
+      fontSize: fontSizes.caption,
       fontWeight: '600',
     },
     menuSection: {
@@ -619,7 +657,7 @@ const createStyles = (theme) =>
       flex: 1,
     },
     sectionTitle: {
-      fontSize: 22,
+      fontSize: fontSizes.subtitle,
       fontWeight: '600',
       marginBottom: 20,
       color: theme.colors.text,
@@ -673,13 +711,19 @@ const createStyles = (theme) =>
     },
     selectedStudentTile: {
       borderColor: theme.colors.primary,
-      backgroundColor: theme.colors.surface,
-      // Add a subtle inner glow effect instead of background tint
-      shadowColor: theme.colors.primary,
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.15,
-      shadowRadius: 8,
-      elevation: 3,
+      // Platform-specific background: semi-transparent on iOS, clean on Android
+      backgroundColor:
+        Platform.OS === 'ios'
+          ? theme.colors.primary + '0D'
+          : theme.colors.surface,
+      // Add a subtle inner glow effect for Android
+      ...(Platform.OS === 'android' && {
+        shadowColor: theme.colors.primary,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 3,
+      }),
     },
     selectedStudentIcon: {
       backgroundColor: theme.colors.primary,
@@ -698,7 +742,7 @@ const createStyles = (theme) =>
     },
     selectedBadgeText: {
       color: '#fff',
-      fontSize: 8,
+      fontSize: fontSizes.badgeText,
       fontWeight: 'bold',
     },
     studentIconContainer: {

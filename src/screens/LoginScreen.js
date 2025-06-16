@@ -22,14 +22,15 @@ import {
   studentLogin,
   saveUserData,
 } from '../services/authService';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen({ route, navigation }) {
   const { theme } = useTheme();
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
+  const fontSizes = getLanguageFontSizes(currentLanguage);
 
   // Get login type from route params or default to teacher
   const routeLoginType = route.params?.loginType;
@@ -44,7 +45,7 @@ export default function LoginScreen({ route, navigation }) {
   // Login type state (teacher or student)
   const [loginType, setLoginType] = useState(routeLoginType || 'teacher');
 
-  const styles = createStyles(theme);
+  const styles = createStyles(theme, fontSizes);
 
   useEffect(() => {
     // Get device token when component mounts
@@ -244,7 +245,7 @@ export default function LoginScreen({ route, navigation }) {
   );
 }
 
-const createStyles = (theme) =>
+const createStyles = (theme, fontSizes) =>
   StyleSheet.create({
     scrollContainer: {
       flexGrow: 1,
@@ -282,7 +283,7 @@ const createStyles = (theme) =>
       marginTop: height * 0.05,
     },
     title: {
-      fontSize: 24,
+      fontSize: fontSizes.title,
       fontWeight: '600',
       color: theme.colors.text,
       marginBottom: 30,
@@ -296,7 +297,7 @@ const createStyles = (theme) =>
       borderRadius: 10,
       marginBottom: 15,
       paddingHorizontal: 15,
-      fontSize: 16,
+      fontSize: fontSizes.body,
       color: theme.colors.text,
       borderWidth: 1,
       borderColor: theme.colors.border,
@@ -313,7 +314,7 @@ const createStyles = (theme) =>
     },
     loginButtonText: {
       color: '#fff',
-      fontSize: 16,
+      fontSize: fontSizes.buttonText,
       fontWeight: '600',
     },
     forgotPassword: {
@@ -322,7 +323,7 @@ const createStyles = (theme) =>
     },
     forgotPasswordText: {
       color: theme.colors.primary,
-      fontSize: 14,
+      fontSize: fontSizes.bodySmall,
     },
     loginTypeContainer: {
       flexDirection: 'row',
@@ -342,7 +343,7 @@ const createStyles = (theme) =>
       backgroundColor: theme.colors.primary,
     },
     loginTypeText: {
-      fontSize: 16,
+      fontSize: fontSizes.body,
       fontWeight: '500',
       color: theme.colors.textSecondary,
     },

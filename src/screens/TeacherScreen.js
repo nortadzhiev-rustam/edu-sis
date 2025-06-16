@@ -28,7 +28,7 @@ import {
   faBell,
 } from '@fortawesome/free-solid-svg-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import NotificationBadge from '../components/NotificationBadge';
 
@@ -36,7 +36,8 @@ const { width: screenWidth } = Dimensions.get('window');
 
 export default function TeacherScreen({ route, navigation }) {
   const { theme } = useTheme();
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
+  const fontSizes = getLanguageFontSizes(currentLanguage);
 
   // Helper function to format user roles
   const formatUserRoles = (userData) => {
@@ -143,7 +144,7 @@ export default function TeacherScreen({ route, navigation }) {
     branches: 0,
   });
 
-  const styles = createStyles(theme);
+  const styles = createStyles(theme, fontSizes);
 
   // Fetch teacher timetable data
   const fetchTeacherTimetable = async () => {
@@ -637,36 +638,44 @@ export default function TeacherScreen({ route, navigation }) {
                 <Text style={styles.tileSubtitle}>Behavior Points</Text>
               </TouchableOpacity>
 
-              {/* Reports Tile */}
+              {/* Reports Tile - Disabled */}
               <TouchableOpacity
-                style={[styles.actionTile, { backgroundColor: '#007AFF' }]}
-                onPress={() => {
-                  // Navigate to reports or show alert for now
-                  Alert.alert('Reports', 'Feature coming soon!');
-                }}
-                activeOpacity={0.8}
+                style={[
+                  styles.actionTile,
+                  styles.disabledTile,
+                  { backgroundColor: '#B0B0B0' },
+                ]}
+                disabled={true}
+                activeOpacity={1}
               >
                 <View style={styles.tileIconContainer}>
                   <FontAwesomeIcon icon={faChartLine} size={28} color='#fff' />
                 </View>
-                <Text style={styles.tileTitle}>Reports</Text>
-                <Text style={styles.tileSubtitle}>Analytics & Stats</Text>
+                <Text style={styles.tileTitle}>{t('reports')}</Text>
+                <Text style={styles.tileSubtitle}>{t('analyticsStats')}</Text>
+                <View style={styles.comingSoonBadge}>
+                  <Text style={styles.comingSoonText}>{t('comingSoon')}</Text>
+                </View>
               </TouchableOpacity>
 
-              {/* Class Materials Tile */}
+              {/* Class Materials Tile - Disabled */}
               <TouchableOpacity
-                style={[styles.actionTile, { backgroundColor: '#FF3B30' }]}
-                onPress={() => {
-                  // Navigate to class materials or show alert for now
-                  Alert.alert('Class Materials', 'Feature coming soon!');
-                }}
-                activeOpacity={0.8}
+                style={[
+                  styles.actionTile,
+                  styles.disabledTile,
+                  { backgroundColor: '#B0B0B0' },
+                ]}
+                disabled={true}
+                activeOpacity={1}
               >
                 <View style={styles.tileIconContainer}>
                   <FontAwesomeIcon icon={faBookOpen} size={28} color='#fff' />
                 </View>
-                <Text style={styles.tileTitle}>Materials</Text>
-                <Text style={styles.tileSubtitle}>Resources & Files</Text>
+                <Text style={styles.tileTitle}>{t('materials')}</Text>
+                <Text style={styles.tileSubtitle}>{t('resourcesFiles')}</Text>
+                <View style={styles.comingSoonBadge}>
+                  <Text style={styles.comingSoonText}>{t('comingSoon')}</Text>
+                </View>
               </TouchableOpacity>
             </View>
           </View>
@@ -675,7 +684,10 @@ export default function TeacherScreen({ route, navigation }) {
           <View style={styles.featuresContainer}>
             <Text style={styles.sectionTitle}>{t('features')}</Text>
             <View style={styles.featuresList}>
-              <TouchableOpacity style={styles.featureItem}>
+              <TouchableOpacity
+                style={styles.featureItem}
+                onPress={() => navigation.navigate('TeacherProfile')}
+              >
                 <View
                   style={[
                     styles.featureIconContainer,
@@ -685,34 +697,48 @@ export default function TeacherScreen({ route, navigation }) {
                   <FontAwesomeIcon icon={faUser} size={20} color='#007AFF' />
                 </View>
                 <View style={styles.featureContent}>
-                  <Text style={styles.featureTitle}>My Profile</Text>
+                  <Text style={styles.featureTitle}>{t('myProfile')}</Text>
                   <Text style={styles.featureSubtitle}>
-                    View and edit profile information
+                    {t('viewEditProfile')}
                   </Text>
                 </View>
                 <FontAwesomeIcon icon={faChevronRight} size={16} color='#ccc' />
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.featureItem}>
+              <TouchableOpacity
+                style={[styles.featureItem, styles.disabledFeatureItem]}
+                disabled={true}
+                activeOpacity={1}
+              >
                 <View
                   style={[
                     styles.featureIconContainer,
-                    { backgroundColor: '#FF950015' },
+                    { backgroundColor: '#B0B0B015' },
                   ]}
                 >
                   <FontAwesomeIcon
                     icon={faChartLine}
                     size={20}
-                    color='#FF9500'
+                    color='#B0B0B0'
                   />
                 </View>
                 <View style={styles.featureContent}>
-                  <Text style={styles.featureTitle}>Analytics</Text>
-                  <Text style={styles.featureSubtitle}>
-                    View teaching performance metrics
+                  <Text
+                    style={[styles.featureTitle, styles.disabledFeatureText]}
+                  >
+                    {t('analytics')}
+                  </Text>
+                  <Text
+                    style={[styles.featureSubtitle, styles.disabledFeatureText]}
+                  >
+                    {t('teachingPerformance')}
                   </Text>
                 </View>
-                <FontAwesomeIcon icon={faChevronRight} size={16} color='#ccc' />
+                <View style={styles.featureComingSoonBadge}>
+                  <Text style={styles.featureComingSoonText}>
+                    {t('comingSoon')}
+                  </Text>
+                </View>
               </TouchableOpacity>
             </View>
           </View>
@@ -725,7 +751,7 @@ export default function TeacherScreen({ route, navigation }) {
   );
 }
 
-const createStyles = (theme) =>
+const createStyles = (theme, fontSizes) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -754,7 +780,7 @@ const createStyles = (theme) =>
     },
     headerTitle: {
       color: theme.colors.headerText,
-      fontSize: 22,
+      fontSize: fontSizes.headerTitle,
       fontWeight: 'bold',
     },
     headerActions: {
@@ -988,14 +1014,14 @@ const createStyles = (theme) =>
       borderColor: 'rgba(255, 255, 255, 0.3)',
     },
     tileTitle: {
-      fontSize: 16,
+      fontSize: fontSizes.tileTitle,
       fontWeight: '700',
       color: '#fff',
       marginBottom: 4,
       letterSpacing: 0.3,
     },
     tileSubtitle: {
-      fontSize: 12,
+      fontSize: fontSizes.tileSubtitle,
       color: 'rgba(255, 255, 255, 0.8)',
       fontWeight: '500',
       marginBottom: 8,
@@ -1022,6 +1048,31 @@ const createStyles = (theme) =>
       fontWeight: '800',
       color: '#333',
       letterSpacing: 0.2,
+    },
+
+    // Disabled tile styles
+    disabledTile: {
+      opacity: 0.7,
+    },
+    comingSoonBadge: {
+      position: 'absolute',
+      top: 5,
+      right: 5,
+      backgroundColor: '#FF9500',
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 12,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    comingSoonText: {
+      color: '#fff',
+      fontSize: fontSizes.comingSoonText,
+      fontWeight: 'bold',
+      letterSpacing: 0.3,
     },
 
     // Legacy Quick Actions (keeping for backward compatibility)
@@ -1105,14 +1156,34 @@ const createStyles = (theme) =>
       flex: 1,
     },
     featureTitle: {
-      fontSize: 16,
+      fontSize: fontSizes.featureTitle,
       fontWeight: '600',
       color: theme.colors.text, // Changed from '#1a1a1a'
       marginBottom: 4,
     },
     featureSubtitle: {
-      fontSize: 14,
+      fontSize: fontSizes.featureSubtitle,
       color: theme.colors.textSecondary, // Changed from '#666'
+    },
+
+    // Disabled feature styles
+    disabledFeatureItem: {
+      opacity: 0.6,
+    },
+    disabledFeatureText: {
+      color: '#B0B0B0',
+    },
+    featureComingSoonBadge: {
+      backgroundColor: '#FF9500',
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 10,
+      marginLeft: 8,
+    },
+    featureComingSoonText: {
+      color: '#fff',
+      fontSize: fontSizes.comingSoonText,
+      fontWeight: 'bold',
     },
 
     // Modal styles

@@ -39,14 +39,15 @@ import {
   faBell,
 } from '@fortawesome/free-solid-svg-icons';
 import timetableData from '../data/dummyTimetable.json';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import NotificationBadge from '../components/NotificationBadge';
 
 export default function TimetableScreen({ navigation, route }) {
   const { theme } = useTheme();
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
+  const fontSizes = getLanguageFontSizes(currentLanguage);
   const { unreadCount } = useNotifications();
 
   const [timetable, setTimetable] = useState(null);
@@ -59,7 +60,7 @@ export default function TimetableScreen({ navigation, route }) {
   ]);
   const { authCode } = route.params || {};
 
-  const styles = createStyles(theme);
+  const styles = createStyles(theme, fontSizes);
 
   // Enable rotation for this screen (optional - you can remove this if you want timetable to stay portrait)
   // useScreenOrientation(true);
@@ -590,7 +591,7 @@ export default function TimetableScreen({ navigation, route }) {
   );
 }
 
-const createStyles = (theme) =>
+const createStyles = (theme, fontSizes) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -620,7 +621,7 @@ const createStyles = (theme) =>
     },
     headerTitle: {
       color: '#fff',
-      fontSize: 22,
+      fontSize: fontSizes.headerTitle,
       fontWeight: 'bold',
       marginLeft: 10,
     },

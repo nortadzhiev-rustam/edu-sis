@@ -29,16 +29,16 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Platform } from 'expo-modules-core';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const { width, height } = Dimensions.get('window');
 
 export default function HomeScreen({ navigation }) {
   const { theme } = useTheme();
-  const { t } = useLanguage();
-
-  const styles = createStyles(theme);
+  const { t, currentLanguage } = useLanguage();
+  const fontSizes = getLanguageFontSizes(currentLanguage);
+  const styles = createStyles(theme, fontSizes);
   const handleTeacherPress = async () => {
     try {
       // Check if teacher is already logged in
@@ -268,7 +268,7 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-const createStyles = (theme) =>
+const createStyles = (theme, fontSizes) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -300,14 +300,14 @@ const createStyles = (theme) =>
       marginBottom: 20,
     },
     title: {
-      fontSize: 28,
+      fontSize: fontSizes.title,
       fontWeight: 'bold',
       color: theme.colors.text,
       marginBottom: 10,
       textAlign: 'center',
     },
     subtitle: {
-      fontSize: 16,
+      fontSize: fontSizes.body,
       color: theme.colors.textSecondary,
       marginBottom: 20,
       textAlign: 'center',
@@ -347,18 +347,17 @@ const createStyles = (theme) =>
       backgroundColor: 'rgba(255, 149, 0, 0.1)',
     },
     roleText: {
-      fontSize: 15,
+      fontSize: fontSizes.body,
       fontWeight: '600',
       color: theme.colors.text,
-      
     },
     roleDescription: {
-      fontSize: 13,
+      fontSize: fontSizes.bodySmall,
       color: theme.colors.textSecondary,
-      lineHeight: 15,
+      lineHeight: fontSizes.bodySmall + 2,
     },
     sectionTitle: {
-      fontSize: 20,
+      fontSize: fontSizes.subtitle,
       fontWeight: '600',
       color: theme.colors.text,
       marginTop: 5,
@@ -390,7 +389,7 @@ const createStyles = (theme) =>
       marginRight: 10,
     },
     resourceText: {
-      fontSize: 15,
+      fontSize: fontSizes.body,
       fontWeight: '500',
       color: theme.colors.text,
     },
@@ -420,7 +419,7 @@ const createStyles = (theme) =>
     },
     socialMediaText: {
       color: '#fff',
-      fontSize: 16,
+      fontSize: fontSizes.body,
       fontWeight: '600',
     },
     socialIconsRow: {
