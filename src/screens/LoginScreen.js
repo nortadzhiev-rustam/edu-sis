@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getToken } from '../utils/messaging';
+import { getDeviceToken } from '../utils/messaging';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
@@ -50,7 +50,7 @@ export default function LoginScreen({ route, navigation }) {
   useEffect(() => {
     // Get device token when component mounts
     const fetchDeviceToken = async () => {
-      const token = await getToken();
+      const token = await getDeviceToken();
       setDeviceToken(token || '');
     };
 

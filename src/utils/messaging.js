@@ -1,6 +1,6 @@
 import {
   getMessaging,
-  getToken,
+  getToken as getFirebaseToken,
   requestPermission,
   onMessage,
   onNotificationOpenedApp,
@@ -151,7 +151,7 @@ export async function getFCMToken() {
     const fcmToken = await AsyncStorage.getItem('fcmToken');
     if (!fcmToken) {
       const messaging = getMessaging();
-      const newToken = await getToken(messaging);
+      const newToken = await getFirebaseToken(messaging);
       if (newToken) {
         await AsyncStorage.setItem('fcmToken', newToken);
         return newToken;
@@ -164,12 +164,15 @@ export async function getFCMToken() {
   }
 }
 
+// Backward compatibility - alias for getDeviceToken
+export { getDeviceToken as getToken };
+
 export async function getDeviceToken() {
   try {
-    console.log('🎫 APNS TOKEN: Starting token retrieval process...');
+    console.log('🎫 DEVICE TOKEN: Starting token retrieval process...');
     console.log('📱 Platform:', Platform.OS);
 
-    // Register device for remote messages first (required for iOS)
+    // Platform-specific setup
     if (Platform.OS === 'ios') {
       console.log(
         '🍎 iOS: Checking device registration for remote messages...'
@@ -186,28 +189,55 @@ export async function getDeviceToken() {
         await registerDeviceForRemoteMessages(messaging);
         console.log('✅ iOS: Device registration complete');
       }
+    } else if (Platform.OS === 'android') {
+      console.log('🤖 Android: Preparing Firebase messaging...');
+      // Android doesn't require explicit registration like iOS
+      // but we can add any Android-specific setup here if needed
     }
 
     // Get the device token directly from Firebase messaging
     console.log('🔑 FIREBASE: Requesting messaging token...');
     const messaging = getMessaging();
-    const token = await getToken(messaging);
+    const token = await getFirebaseToken(messaging);
 
     if (token) {
-      console.log('✅ APNS TOKEN: Successfully retrieved');
+      console.log('✅ DEVICE TOKEN: Successfully retrieved');
       console.log('📏 Token length:', token.length);
       console.log('🔤 Token type:', typeof token);
       console.log('🏁 Token first 30 chars:', token.substring(0, 30) + '...');
+
+      // Store token in AsyncStorage for future use
+      await AsyncStorage.setItem('deviceToken', token);
+      console.log('💾 DEVICE TOKEN: Stored in AsyncStorage');
     } else {
-      console.log('❌ APNS TOKEN: No token returned from Firebase');
+      console.log('❌ DEVICE TOKEN: No token returned from Firebase');
+
+      // Try to get cached token from AsyncStorage
+      const cachedToken = await AsyncStorage.getItem('deviceToken');
+      if (cachedToken) {
+        console.log('📦 DEVICE TOKEN: Using cached token');
+        return cachedToken;
+      }
     }
 
     return token;
   } catch (error) {
-    console.error('❌ APNS TOKEN ERROR:', error);
+    console.error('❌ DEVICE TOKEN ERROR:', error);
     console.error('🔍 Error message:', error.message);
     console.error('📊 Error code:', error.code);
     console.error('🏷️ Error domain:', error.domain);
+
+    // Try to get cached token as fallback
+    try {
+      const cachedToken = await AsyncStorage.getItem('deviceToken');
+      if (cachedToken) {
+        console.log('📦 DEVICE TOKEN: Using cached token as fallback');
+        return cachedToken;
+      }
+    } catch (cacheError) {
+      console.error('❌ CACHE ERROR:', cacheError);
+    }
+
     return null;
   }
 }
