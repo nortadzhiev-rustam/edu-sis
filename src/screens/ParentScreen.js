@@ -642,7 +642,12 @@ const createStyles = (theme) =>
       width: '100%',
       height: '100%',
       alignItems: 'center',
-      ...theme.shadows.small,
+      // Custom shadow for better Android compatibility
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.08,
+      shadowRadius: 3,
+      elevation: 1,
       borderWidth: 2,
       borderColor: 'transparent',
       position: 'relative',
@@ -659,11 +664,22 @@ const createStyles = (theme) =>
       justifyContent: 'center',
       alignItems: 'center',
       zIndex: 10,
-      ...theme.shadows.small,
+      // Custom shadow for better Android compatibility
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.08,
+      shadowRadius: 3,
+      elevation: 1,
     },
     selectedStudentTile: {
       borderColor: theme.colors.primary,
-      backgroundColor: theme.colors.primary + '0D',
+      backgroundColor: theme.colors.surface,
+      // Add a subtle inner glow effect instead of background tint
+      shadowColor: theme.colors.primary,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 3,
     },
     selectedStudentIcon: {
       backgroundColor: theme.colors.primary,
@@ -730,7 +746,12 @@ const createStyles = (theme) =>
       borderRadius: 12,
       padding: 20,
       alignItems: 'center',
-      ...theme.shadows.small,
+      // Custom shadow for better Android compatibility
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.08,
+      shadowRadius: 3,
+      elevation: 1,
     },
     emptyText: {
       fontSize: 18,
@@ -763,7 +784,12 @@ const createStyles = (theme) =>
       marginBottom: 15,
       width: '48%',
       alignItems: 'center',
-      ...theme.shadows.small,
+      // Custom shadow for better Android compatibility
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.08,
+      shadowRadius: 3,
+      elevation: 1,
     },
     menuIconContainer: {
       width: 50,
