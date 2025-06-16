@@ -78,7 +78,8 @@ ios/Index/
 android/app/build/
 android/build/
 android/.gradle/
-android/gradle/
+# Note: Keep gradle wrapper files for builds
+# android/gradle/ - DO NOT IGNORE: needed for gradle wrapper
 android/app/src/main/assets/app.manifest
 android/app/src/main/assets/index.android.bundle
 android/app/src/main/java/com/helloworld/MainApplication.java
@@ -98,7 +99,8 @@ android/app/debug/
 android/app/release/
 # Gradle
 .gradle/
-gradle-wrapper.properties
+# Note: Keep gradle-wrapper.properties for builds
+# gradle-wrapper.properties - DO NOT IGNORE: needed for gradle wrapper
 # Android auto-generated files
 android/app/src/main/assets/index.android.js
 android/app/src/main/res/raw/
