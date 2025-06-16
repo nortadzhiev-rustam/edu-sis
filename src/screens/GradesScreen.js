@@ -1608,7 +1608,7 @@ const createStyles = (theme) =>
       borderTopWidth: 1,
       borderTopColor: '#e0e0e0',
       marginTop: 20,
-      borderRadius: 10,
+      borderRadius: 30,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1,
