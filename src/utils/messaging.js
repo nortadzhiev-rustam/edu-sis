@@ -172,6 +172,18 @@ export async function getDeviceToken() {
     console.log('🎫 DEVICE TOKEN: Starting token retrieval process...');
     console.log('📱 Platform:', Platform.OS);
 
+    // Check if running on emulator/simulator
+    const isRealDevice = Device.isDevice;
+    console.log('🔍 DEVICE CHECK: Is real device:', isRealDevice);
+    if (!isRealDevice) {
+      console.warn(
+        '⚠️ EMULATOR DETECTED: FCM tokens may not work properly on emulators'
+      );
+      console.warn(
+        '💡 RECOMMENDATION: Test on a real Android device for accurate results'
+      );
+    }
+
     // Platform-specific setup
     if (Platform.OS === 'ios') {
       console.log(
@@ -205,10 +217,19 @@ export async function getDeviceToken() {
       console.log('📏 Token length:', token.length);
       console.log('🔤 Token type:', typeof token);
       console.log('🏁 Token first 30 chars:', token.substring(0, 30) + '...');
+      console.log('🔍 FULL TOKEN FOR DEBUG:', token); // Full token for debugging
 
       // Store token in AsyncStorage for future use
       await AsyncStorage.setItem('deviceToken', token);
       console.log('💾 DEVICE TOKEN: Stored in AsyncStorage');
+
+      // Validate token format
+      if (token.length < 50) {
+        console.warn('⚠️ TOKEN WARNING: Token seems unusually short for FCM');
+      }
+      if (token.includes('undefined') || token.includes('null')) {
+        console.error('❌ TOKEN ERROR: Token contains invalid values');
+      }
     } else {
       console.log('❌ DEVICE TOKEN: No token returned from Firebase');
 

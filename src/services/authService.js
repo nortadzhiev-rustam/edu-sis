@@ -40,13 +40,25 @@ export const teacherLogin = async (username, password, deviceToken) => {
   } else {
     try {
       // Use the API for real authentication
+      console.log('🔍 AUTH DEBUG: Raw device token:', deviceToken);
+      console.log('🔍 AUTH DEBUG: Device token type:', typeof deviceToken);
+      console.log(
+        '🔍 AUTH DEBUG: Device token length:',
+        deviceToken?.length || 0
+      );
+
       const encodedToken = deviceToken ? encodeToBase64(deviceToken) : '';
+      console.log('🔍 AUTH DEBUG: Encoded token:', encodedToken);
+      console.log('🔍 AUTH DEBUG: Encoded token length:', encodedToken.length);
+
       const apiUrl = buildApiUrl(Config.API_ENDPOINTS.CHECK_STAFF_CREDENTIALS, {
         username,
         password,
         deviceType: Config.DEVICE.DEFAULT_TYPE,
         deviceToken: encodedToken,
       });
+
+      console.log('🔍 AUTH DEBUG: API URL:', apiUrl);
 
       const response = await fetch(apiUrl);
 
@@ -88,7 +100,23 @@ export const studentLogin = async (username, password, deviceToken) => {
   } else {
     try {
       // Use the API for real authentication
+      console.log('🔍 STUDENT AUTH DEBUG: Raw device token:', deviceToken);
+      console.log(
+        '🔍 STUDENT AUTH DEBUG: Device token type:',
+        typeof deviceToken
+      );
+      console.log(
+        '🔍 STUDENT AUTH DEBUG: Device token length:',
+        deviceToken?.length || 0
+      );
+
       const encodedToken = deviceToken ? encodeToBase64(deviceToken) : '';
+      console.log('🔍 STUDENT AUTH DEBUG: Encoded token:', encodedToken);
+      console.log(
+        '🔍 STUDENT AUTH DEBUG: Encoded token length:',
+        encodedToken.length
+      );
+
       const apiUrl = buildApiUrl(
         Config.API_ENDPOINTS.CHECK_STUDENT_CREDENTIALS,
         {
@@ -98,6 +126,8 @@ export const studentLogin = async (username, password, deviceToken) => {
           deviceToken: encodedToken,
         }
       );
+
+      console.log('🔍 STUDENT AUTH DEBUG: API URL:', apiUrl);
 
       const response = await fetch(apiUrl);
       if (response.status === 200 || response.status === 201) {
