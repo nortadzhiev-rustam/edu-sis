@@ -200,7 +200,9 @@ export default function LibraryScreen({ navigation, route }) {
           <View style={styles.studentInfo}>
             {libraryData.student_info?.student_photo ? (
               <Image
-                source={{ uri: `https://${Config.API_DOMAIN}/${libraryData.student_info.student_photo}` }}
+                source={{
+                  uri: `https://${Config.API_DOMAIN}/${libraryData.student_info.student_photo}`,
+                }}
                 style={styles.studentPhoto}
               />
             ) : (
@@ -522,7 +524,12 @@ export default function LibraryScreen({ navigation, route }) {
           <Text style={styles.headerTitle}>Library</Text>
           <TouchableOpacity
             style={styles.notificationButton}
-            onPress={() => navigation.navigate('NotificationScreen')}
+            onPress={() =>
+              navigation.navigate('NotificationScreen', {
+                userType: 'student',
+                authCode: authCode,
+              })
+            }
           >
             <FontAwesomeIcon icon={faBell} size={18} color='#fff' />
             <NotificationBadge />
@@ -547,7 +554,12 @@ export default function LibraryScreen({ navigation, route }) {
         <Text style={styles.headerTitle}>Library</Text>
         <TouchableOpacity
           style={styles.notificationButton}
-          onPress={() => navigation.navigate('NotificationScreen')}
+          onPress={() =>
+            navigation.navigate('NotificationScreen', {
+              userType: 'student',
+              authCode: authCode,
+            })
+          }
         >
           <FontAwesomeIcon icon={faBell} size={18} color='#fff' />
           <NotificationBadge />

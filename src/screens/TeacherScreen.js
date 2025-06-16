@@ -449,7 +449,9 @@ export default function TeacherScreen({ route, navigation }) {
         <View style={styles.headerActions}>
           <TouchableOpacity
             style={styles.notificationButton}
-            onPress={() => navigation.navigate('NotificationScreen')}
+            onPress={() =>
+              navigation.navigate('NotificationScreen', { userType: 'teacher' })
+            }
           >
             <FontAwesomeIcon icon={faBell} size={20} color='#fff' />
             <NotificationBadge />

@@ -118,21 +118,85 @@ export const NotificationProvider = ({ children }) => {
   // Mark notification as read
   const markAsRead = async (notificationId) => {
     try {
+      // First, check if this is a student notification (has studentAuthCode)
+      let targetNotification = null;
+      let isStudentNotification = false;
+      let studentAuthCode = null;
+
+      // Check main notifications first
+      targetNotification = notifications.find((n) => n.id === notificationId);
+
+      // If not found in main notifications, check student notifications
+      if (!targetNotification) {
+        for (const [authCode, studentNotifs] of Object.entries(
+          studentNotifications
+        )) {
+          const found = studentNotifs.find((n) => n.id === notificationId);
+          if (found) {
+            targetNotification = found;
+            isStudentNotification = true;
+            studentAuthCode = authCode;
+            break;
+          }
+        }
+      }
+
+      if (!targetNotification) {
+        console.error('Notification not found:', notificationId);
+        return false;
+      }
+
       // Try API method first if notification has API data
-      const notification = notifications.find((n) => n.id === notificationId);
-      if (notification?._apiData?.id) {
+      if (
+        targetNotification?._apiData?.id ||
+        targetNotification?._apiData?.notification_id
+      ) {
         try {
-          const apiResponse = await markAPINotificationRead(
-            notification._apiData.id
-          );
-          if (apiResponse?.success) {
-            // Update local state
-            setNotifications((prev) =>
-              prev.map((n) =>
-                n.id === notificationId ? { ...n, read: true } : n
-              )
+          // Use the original notification_id from the API data
+          const originalNotificationId =
+            targetNotification._apiData.notification_id ||
+            targetNotification._apiData.id;
+
+          let apiResponse;
+
+          // For student notifications, pass the student's authCode
+          if (isStudentNotification && studentAuthCode) {
+            apiResponse = await markAPINotificationRead(
+              originalNotificationId,
+              studentAuthCode
             );
-            setUnreadCount((prev) => Math.max(0, prev - 1));
+          } else {
+            // For regular notifications, use the standard API call
+            apiResponse = await markAPINotificationRead(originalNotificationId);
+          }
+
+          if (apiResponse?.success) {
+            // Update local state based on notification type
+            if (isStudentNotification && studentAuthCode) {
+              // Update student notifications
+              setStudentNotifications((prev) => ({
+                ...prev,
+                [studentAuthCode]: prev[studentAuthCode].map((n) =>
+                  n.id === notificationId ? { ...n, read: true } : n
+                ),
+              }));
+              // Update student unread count
+              setStudentUnreadCounts((prev) => ({
+                ...prev,
+                [studentAuthCode]: Math.max(
+                  0,
+                  (prev[studentAuthCode] || 0) - 1
+                ),
+              }));
+            } else {
+              // Update main notifications
+              setNotifications((prev) =>
+                prev.map((n) =>
+                  n.id === notificationId ? { ...n, read: true } : n
+                )
+              );
+              setUnreadCount((prev) => Math.max(0, prev - 1));
+            }
             return true;
           }
         } catch (apiError) {
@@ -143,17 +207,32 @@ export const NotificationProvider = ({ children }) => {
       // Fallback to local method
       const success = await markLocalNotificationAsRead(notificationId);
       if (success) {
-        // Update local state
-        setNotifications((prev) =>
-          prev.map((notification) =>
-            notification.id === notificationId
-              ? { ...notification, read: true }
-              : notification
-          )
-        );
-
-        // Update unread count
-        setUnreadCount((prev) => Math.max(0, prev - 1));
+        // Update local state based on notification type
+        if (isStudentNotification && studentAuthCode) {
+          // Update student notifications
+          setStudentNotifications((prev) => ({
+            ...prev,
+            [studentAuthCode]: prev[studentAuthCode].map((n) =>
+              n.id === notificationId ? { ...n, read: true } : n
+            ),
+          }));
+          // Update student unread count
+          setStudentUnreadCounts((prev) => ({
+            ...prev,
+            [studentAuthCode]: Math.max(0, (prev[studentAuthCode] || 0) - 1),
+          }));
+        } else {
+          // Update main notifications
+          setNotifications((prev) =>
+            prev.map((notification) =>
+              notification.id === notificationId
+                ? { ...notification, read: true }
+                : notification
+            )
+          );
+          // Update unread count
+          setUnreadCount((prev) => Math.max(0, prev - 1));
+        }
       }
       return success;
     } catch (error) {

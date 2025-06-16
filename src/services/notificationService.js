@@ -101,11 +101,15 @@ export const getLegacyNotifications = async () => {
 /**
  * Mark a notification as read
  * @param {number} notificationId - ID of the notification to mark as read
+ * @param {string} specificAuthCode - Optional specific authCode to use (for student context)
  * @returns {Promise<Object>} - Response data
  */
-export const markNotificationAsRead = async (notificationId) => {
+export const markNotificationAsRead = async (
+  notificationId,
+  specificAuthCode = null
+) => {
   try {
-    const authCode = await getAuthCode();
+    const authCode = specificAuthCode || (await getAuthCode());
     if (!authCode) {
       throw new Error('No authentication code found');
     }

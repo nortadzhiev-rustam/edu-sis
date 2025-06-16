@@ -513,7 +513,12 @@ export default function TimetableScreen({ navigation, route }) {
         </View>
         <TouchableOpacity
           style={styles.notificationButton}
-          onPress={() => navigation.navigate('NotificationScreen')}
+          onPress={() =>
+            navigation.navigate('NotificationScreen', {
+              userType: 'student',
+              authCode: authCode,
+            })
+          }
         >
           <FontAwesomeIcon icon={faBell} size={20} color='#fff' />
           <NotificationBadge />

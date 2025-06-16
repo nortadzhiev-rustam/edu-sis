@@ -301,7 +301,9 @@ export default function ParentScreen({ navigation }) {
         <View style={styles.headerActions}>
           <TouchableOpacity
             style={styles.notificationButton}
-            onPress={() => navigation.navigate('NotificationScreen')}
+            onPress={() =>
+              navigation.navigate('NotificationScreen', { userType: 'parent' })
+            }
           >
             <FontAwesomeIcon icon={faBell} size={18} color='#fff' />
             <ParentNotificationBadge />

@@ -538,7 +538,12 @@ export default function AttendanceScreen({ navigation, route }) {
         <Text style={styles.headerTitle}>{t('attendance')}</Text>
         <TouchableOpacity
           style={styles.notificationButton}
-          onPress={() => navigation.navigate('NotificationScreen')}
+          onPress={() =>
+            navigation.navigate('NotificationScreen', {
+              userType: 'student',
+              authCode: authCode,
+            })
+          }
         >
           <FontAwesomeIcon icon={faBell} size={18} color='#fff' />
           <NotificationBadge />

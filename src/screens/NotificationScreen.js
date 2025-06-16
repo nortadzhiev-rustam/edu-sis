@@ -21,8 +21,9 @@ import {
 import { useTheme } from '../contexts/ThemeContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import NotificationItem from '../components/NotificationItem';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const NotificationScreen = ({ navigation }) => {
+const NotificationScreen = ({ navigation, route }) => {
   const { theme } = useTheme();
   const {
     notifications,
@@ -36,10 +37,50 @@ const NotificationScreen = ({ navigation }) => {
     currentStudentAuthCode,
     getCurrentStudentNotifications,
     getCurrentStudentUnreadCount,
+    studentNotifications,
+    studentUnreadCounts,
+    loadStudentNotifications,
   } = useNotifications();
 
   const [filter, setFilter] = useState('all'); // 'all', 'unread', 'attendance', 'grade', 'announcement'
   const [refreshing, setRefreshing] = useState(false);
+  const [userType, setUserType] = useState(null);
+
+  // Get user type from route params or AsyncStorage
+  useEffect(() => {
+    const getUserType = async () => {
+      try {
+        // First check route params (if passed from parent screen)
+        if (route?.params?.userType) {
+          setUserType(route.params.userType);
+
+          // If this is a student accessing directly (not through parent),
+          // we need to ensure their notifications are loaded
+          if (route.params.userType === 'student') {
+            // Check if we have student authCode from route params
+            const studentAuthCode = route?.params?.authCode;
+            if (studentAuthCode && !studentNotifications[studentAuthCode]) {
+              // Load notifications for this specific student
+              await loadStudentNotifications(studentAuthCode);
+            }
+          }
+          return;
+        }
+
+        // Otherwise get from AsyncStorage
+        const userData = await AsyncStorage.getItem('userData');
+        if (userData) {
+          const user = JSON.parse(userData);
+          setUserType(user.userType || 'teacher'); // Default to teacher if not specified
+        }
+      } catch (error) {
+        // Default to teacher if we can't determine user type
+        setUserType('teacher');
+      }
+    };
+
+    getUserType();
+  }, [route?.params?.userType, route?.params?.authCode]);
 
   const styles = createStyles(theme);
 
@@ -92,14 +133,14 @@ const NotificationScreen = ({ navigation }) => {
     try {
       let apiResponse;
 
-      // Use appropriate API method based on context
-      if (currentStudentAuthCode) {
+      // Use appropriate API method based on user type and context
+      if (userType === 'parent' && currentStudentAuthCode) {
         // In parent context, mark student notifications as read
         apiResponse = await markAllStudentNotificationsAsRead(
           currentStudentAuthCode
         );
       } else {
-        // Regular context, mark user's own notifications as read
+        // For teachers and students, mark their own notifications as read
         apiResponse = await markAllAPINotificationsAsRead();
       }
 
@@ -119,26 +160,40 @@ const NotificationScreen = ({ navigation }) => {
 
       Alert.alert('Success', 'All notifications marked as read.');
     } catch (error) {
-      console.error('Error marking all notifications as read:', error);
       Alert.alert('Error', 'Failed to mark notifications as read.');
     }
   };
 
-  // Determine which notifications to show (student context or regular)
+  // Determine which notifications to show based on user type and context
   const getActiveNotifications = () => {
-    if (currentStudentAuthCode) {
-      // In parent context, show student notifications
+    // If we're in parent context (viewing student notifications), show student notifications
+    if (userType === 'parent' && currentStudentAuthCode) {
       return getCurrentStudentNotifications();
     }
-    // Regular context, show user's own notifications
+    // If we're a student with authCode passed from route params, check if we have student-specific notifications
+    if (userType === 'student' && route?.params?.authCode) {
+      const studentAuthCode = route.params.authCode;
+      const studentNotifs = studentNotifications[studentAuthCode];
+      if (studentNotifs && studentNotifs.length > 0) {
+        return studentNotifs;
+      }
+    }
+    // For teachers and students (fallback), show their own notifications
     return notifications;
   };
 
   // Get active unread count
   const getActiveUnreadCount = () => {
-    if (currentStudentAuthCode) {
+    // If we're in parent context (viewing student notifications), show student unread count
+    if (userType === 'parent' && currentStudentAuthCode) {
       return getCurrentStudentUnreadCount();
     }
+    // If we're a student with authCode passed from route params, check student-specific unread count
+    if (userType === 'student' && route?.params?.authCode) {
+      const studentAuthCode = route.params.authCode;
+      return studentUnreadCounts[studentAuthCode] || 0;
+    }
+    // For teachers and students (fallback), show their own unread count
     return unreadCount;
   };
 
@@ -165,8 +220,28 @@ const NotificationScreen = ({ navigation }) => {
     <NotificationItem
       notification={item}
       onPress={(notification) => {
-        // Handle notification press - could navigate to relevant screen
-        console.log('Notification pressed:', notification);
+        // Handle notification navigation based on type
+        // Note: NotificationItem already handles markAsRead internally
+        switch (notification.type) {
+          case 'attendance':
+            // Navigate to attendance screen if available
+            break;
+          case 'grade':
+            // Navigate to grades screen if available
+            break;
+          case 'announcement':
+            // Navigate to announcements screen if available
+            break;
+          case 'timetable':
+            // Navigate to timetable screen if available
+            break;
+          default:
+            // Show notification details in alert
+            Alert.alert(notification.title, notification.body, [
+              { text: 'OK', style: 'default' },
+            ]);
+            break;
+        }
       }}
     />
   );
