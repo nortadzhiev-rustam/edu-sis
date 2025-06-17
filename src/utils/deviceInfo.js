@@ -8,47 +8,46 @@ import * as Device from 'expo-device';
 export async function getDeviceInfo() {
   try {
     console.log('📱 DEVICE INFO: Collecting device information...');
-    
+
     const deviceInfo = {
       // Basic platform info
       platform: Platform.OS,
       platformVersion: Platform.Version,
-      
+
       // Device identification
       deviceType: getDeviceType(),
       deviceName: Device.deviceName || 'Unknown Device',
       deviceModel: Device.modelName || 'Unknown Model',
       deviceBrand: Device.brand || 'Unknown Brand',
-      
+
       // Device characteristics
       isDevice: Device.isDevice,
       isEmulator: !Device.isDevice,
-      
+
       // System info
       osName: Device.osName || Platform.OS,
       osVersion: Device.osVersion || Platform.Version.toString(),
-      
+
       // App info
       appVersion: '1.0.0', // You can get this from app.json or package.json
-      
+
       // Additional Android/iOS specific info
       ...(Platform.OS === 'android' && {
         androidId: Device.osBuildId || 'Unknown',
         manufacturer: Device.manufacturer || 'Unknown',
       }),
-      
+
       ...(Platform.OS === 'ios' && {
         deviceYearClass: Device.deviceYearClass || 'Unknown',
         totalMemory: Device.totalMemory || 'Unknown',
       }),
     };
-    
+
     console.log('📱 DEVICE INFO: Collected device information:', deviceInfo);
     return deviceInfo;
-    
   } catch (error) {
     console.error('❌ DEVICE INFO ERROR:', error);
-    
+
     // Return fallback device info
     return {
       platform: Platform.OS,
@@ -62,7 +61,7 @@ export async function getDeviceInfo() {
       osName: Platform.OS,
       osVersion: Platform.Version.toString(),
       appVersion: '1.0.0',
-      error: 'Failed to collect complete device info'
+      error: 'Failed to collect complete device info',
     };
   }
 }
@@ -74,9 +73,6 @@ export async function getDeviceInfo() {
 export function getDeviceType() {
   if (Platform.OS === 'ios') {
     // Check if it's an iPad
-    if (Device.deviceType === Device.DeviceType.TABLET) {
-      return 'ipad';
-    }
     return 'ios';
   } else if (Platform.OS === 'android') {
     // Check if it's a tablet
@@ -85,7 +81,7 @@ export function getDeviceType() {
     }
     return 'android';
   }
-  
+
   return Platform.OS; // fallback
 }
 
@@ -96,11 +92,11 @@ export function getDeviceType() {
 export function getFormattedDeviceName() {
   const brand = Device.brand || '';
   const model = Device.modelName || Device.deviceName || 'Unknown Device';
-  
+
   if (brand && model && !model.toLowerCase().includes(brand.toLowerCase())) {
     return `${brand} ${model}`;
   }
-  
+
   return model;
 }
 
@@ -110,7 +106,7 @@ export function getFormattedDeviceName() {
  */
 export async function getLoginDeviceInfo() {
   const deviceInfo = await getDeviceInfo();
-  
+
   return {
     deviceType: deviceInfo.deviceType,
     deviceName: deviceInfo.deviceName,
@@ -128,9 +124,9 @@ export async function getLoginDeviceInfo() {
  */
 export async function logDeviceInfo() {
   console.log('🔍 DEVICE DEBUG: Starting device info collection...');
-  
+
   const deviceInfo = await getDeviceInfo();
-  
+
   console.log('📱 Platform:', deviceInfo.platform);
   console.log('📱 Device Type:', deviceInfo.deviceType);
   console.log('📱 Device Name:', deviceInfo.deviceName);
@@ -139,10 +135,10 @@ export async function logDeviceInfo() {
   console.log('📱 OS Version:', deviceInfo.osVersion);
   console.log('📱 Is Real Device:', deviceInfo.isDevice);
   console.log('📱 Is Emulator:', deviceInfo.isEmulator);
-  
+
   if (deviceInfo.error) {
     console.warn('⚠️ DEVICE INFO WARNING:', deviceInfo.error);
   }
-  
+
   return deviceInfo;
 }

@@ -19,6 +19,7 @@ import {
   ActivityIndicator,
   Dimensions,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -32,6 +33,14 @@ import { Config, buildApiUrl } from '../config/env';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import NotificationBadge from '../components/NotificationBadge';
+import {
+  isIPad,
+  isTablet,
+  getIPadLayoutConfig,
+  getResponsiveFontSizes,
+  getResponsiveSpacing,
+} from '../utils/deviceDetection';
+import { lockOrientationForDevice } from '../utils/orientationLock';
 
 export default function AttendanceScreen({ navigation, route }) {
   const { theme } = useTheme();
@@ -45,23 +54,85 @@ export default function AttendanceScreen({ navigation, route }) {
 
   // Pagination state for detail views
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
 
   const styles = createStyles(theme);
 
   // Enable rotation for this screen
   useScreenOrientation(true);
 
-  // Listen for orientation changes
+  // Listen for orientation changes and lock orientation
   useEffect(() => {
+    // Lock orientation based on device type
+    lockOrientationForDevice();
+
     const subscription = Dimensions.addEventListener('change', ({ window }) => {
       setScreenData(window);
+      // Reset to first page when screen size changes to avoid pagination issues
+      setCurrentPage(1);
     });
 
     return () => subscription?.remove();
   }, []);
 
   const isLandscape = screenData.width > screenData.height;
+  const isIPadDevice = isIPad();
+  const isTabletDevice = isTablet();
+  const iPadConfig = getIPadLayoutConfig();
+  const responsiveFonts = getResponsiveFontSizes();
+  const responsiveSpacing = getResponsiveSpacing();
+
+  // Calculate optimal items per page based on screen size and device type
+  const getItemsPerPage = () => {
+    const screenHeight = screenData.height;
+    const screenWidth = screenData.width;
+
+    // Use iPad configuration if available
+    if (isIPadDevice && iPadConfig) {
+      const availableHeight = screenHeight - (iPadConfig.headerHeight + 200); // Reserve space for UI
+      const calculatedRows = Math.floor(
+        availableHeight / iPadConfig.tableRowHeight
+      );
+      const itemsPerPage = Math.max(
+        iPadConfig.minItemsPerPage,
+        Math.min(iPadConfig.maxItemsPerPage, calculatedRows)
+      );
+
+      console.log(
+        `📱 iPad: ${screenWidth}x${screenHeight}, Items per page: ${itemsPerPage}`
+      );
+      return itemsPerPage;
+    }
+
+    // Fallback calculation for non-iPad devices
+    const reservedHeight = isLandscape ? 230 : 310;
+    const availableHeight = screenHeight - reservedHeight;
+    const estimatedRowHeight = isLandscape ? 45 : 50;
+    const calculatedRows = Math.floor(availableHeight / estimatedRowHeight);
+
+    // Set bounds based on device type
+    let minRows, maxRows;
+    if (isTabletDevice) {
+      minRows = 12;
+      maxRows = 25;
+    } else if (screenWidth >= 414) {
+      minRows = 8;
+      maxRows = 15;
+    } else if (screenWidth >= 375) {
+      minRows = 6;
+      maxRows = 12;
+    } else {
+      minRows = 5;
+      maxRows = 10;
+    }
+
+    const itemsPerPage = Math.max(minRows, Math.min(maxRows, calculatedRows));
+    console.log(
+      `📱 Device: ${screenWidth}x${screenHeight}, Items per page: ${itemsPerPage}`
+    );
+    return itemsPerPage;
+  };
+
+  const itemsPerPage = getItemsPerPage();
 
   const fetchAttendanceData = async () => {
     try {
@@ -211,6 +282,9 @@ export default function AttendanceScreen({ navigation, route }) {
 
         <Text style={styles.paginationInfo}>
           Page {currentPage} of {totalPages}
+          {__DEV__ && (
+            <Text style={styles.debugInfo}> ({itemsPerPage}/page)</Text>
+          )}
         </Text>
 
         <TouchableOpacity
@@ -426,6 +500,8 @@ export default function AttendanceScreen({ navigation, route }) {
           style={[
             styles.tableContainer,
             isLandscape && styles.landscapeTableContainer,
+            isIPadDevice && styles.iPadTableContainer,
+            isTabletDevice && styles.tabletTableContainer,
           ]}
         >
           {renderDailyTableHeader()}
@@ -443,6 +519,8 @@ export default function AttendanceScreen({ navigation, route }) {
         style={[
           styles.paginationSection,
           isLandscape && styles.landscapePaginationSection,
+          isIPadDevice && styles.iPadPaginationSection,
+          isTabletDevice && styles.tabletPaginationSection,
         ]}
       >
         {renderPaginationControls()}
@@ -466,6 +544,8 @@ export default function AttendanceScreen({ navigation, route }) {
           style={[
             styles.tableContainer,
             isLandscape && styles.landscapeTableContainer,
+            isIPadDevice && styles.iPadTableContainer,
+            isTabletDevice && styles.tabletTableContainer,
           ]}
         >
           {renderTableHeader()}
@@ -483,6 +563,8 @@ export default function AttendanceScreen({ navigation, route }) {
         style={[
           styles.paginationSection,
           isLandscape && styles.landscapePaginationSection,
+          isIPadDevice && styles.iPadPaginationSection,
+          isTabletDevice && styles.tabletPaginationSection,
         ]}
       >
         {renderPaginationControls()}
@@ -606,7 +688,7 @@ const createStyles = (theme) =>
     },
     headerTitle: {
       color: '#fff',
-      fontSize: 20,
+      fontSize: isIPad ? getResponsiveFontSizes().title : 20,
       fontWeight: 'bold',
     },
     notificationButton: {
@@ -673,9 +755,11 @@ const createStyles = (theme) =>
     },
     tableWithPagination: {
       flex: 1,
+      justifyContent: 'space-between',
     },
     tableSection: {
       flex: 1,
+      minHeight: 0, // Important for flex children
     },
     tableContainer: {
       backgroundColor: '#fff',
@@ -686,9 +770,21 @@ const createStyles = (theme) =>
       shadowOpacity: 0.1,
       shadowRadius: 3,
       elevation: 3,
+      flex: 1,
     },
     landscapeTableContainer: {
       minWidth: 700,
+    },
+    tabletTableContainer: {
+      minHeight: 500, // Ensure minimum height on tablets
+    },
+    iPadTableContainer: {
+      minHeight: 600, // iPad gets even more height
+      borderRadius: 16, // Larger border radius for iPad
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 6,
+      elevation: 6,
     },
     tableHeader: {
       flexDirection: 'row',
@@ -706,7 +802,7 @@ const createStyles = (theme) =>
       textAlign: 'center',
     },
     tableBody: {
-      maxHeight: 400,
+      flex: 1,
     },
     tableRow: {
       flexDirection: 'row',
@@ -758,13 +854,22 @@ const createStyles = (theme) =>
     landscapePaginationSection: {
       marginTop: 20,
     },
+    tabletPaginationSection: {
+      marginTop: 25,
+      paddingHorizontal: 20,
+    },
+    iPadPaginationSection: {
+      marginTop: 30,
+      paddingHorizontal: 30,
+      paddingVertical: 20,
+    },
     paginationContainer: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
       backgroundColor: '#fff',
       padding: 15,
-      borderRadius: 8,
+      borderRadius: 40,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.1,
@@ -792,6 +897,11 @@ const createStyles = (theme) =>
       fontSize: 14,
       color: '#666',
       fontWeight: '500',
+    },
+    debugInfo: {
+      fontSize: 12,
+      color: '#999',
+      fontWeight: '400',
     },
     // Summary View Styles
     summaryContainer: {
@@ -880,9 +990,12 @@ const createStyles = (theme) =>
       alignItems: 'center',
       backgroundColor: theme.colors.surface,
       padding: 12,
-      borderRadius: 8,
+      borderRadius: 20,
       marginBottom: 15,
       ...theme.shadows.small,
+      width: Platform.isPad
+        ? Dimensions.get('window').width * 0.22
+        : Dimensions.get('window').width * 0.45,
     },
     backToSummaryText: {
       marginLeft: 8,

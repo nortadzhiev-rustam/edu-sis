@@ -77,7 +77,6 @@ export default function LibraryScreen({ navigation, route }) {
           'Content-Type': 'application/json',
         },
       });
-      console.log(response);
       if (response.ok) {
         const data = await response.json();
         if (data.success) {

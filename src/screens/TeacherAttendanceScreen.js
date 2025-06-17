@@ -70,7 +70,6 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Attendance details:', data);
 
         if (data.success) {
           // Set students data
@@ -89,12 +88,6 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
           // Set attendance summary
           if (data.attendance_summary) {
             setAttendanceSummary(data.attendance_summary);
-          }
-
-          // Set timetable info if needed
-          if (data.timetable_info) {
-            // You can use this data if needed
-            console.log('Timetable info:', data.timetable_info);
           }
         } else {
           Alert.alert('Error', 'Failed to load attendance details');
@@ -131,7 +124,6 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
 
       if (response.ok) {
         const bpsData = await response.json();
-        console.log('BPS data:', bpsData);
 
         // Find students for this grade/classroom
         let studentsData = [];
@@ -250,7 +242,6 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
       if (response.status === 200) {
         // Get the raw response text first
         const responseText = await response.text();
-        console.log('Raw response:', responseText);
 
         let result = null;
 
@@ -273,7 +264,7 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
 
         if (isSuccessful) {
           // Fetch updated attendance details to refresh the state
-          console.log('Fetching updated attendance details...');
+
           await fetchAttendanceDetails();
 
           Alert.alert(
@@ -291,7 +282,7 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
         } else {
           Alert.alert(
             'Error',
-            (result && result.message) || 'Failed to submit attendance'
+            result?.message || 'Failed to submit attendance'
           );
         }
       } else {
@@ -305,6 +296,7 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
           errorMessage = result.message || errorMessage;
         } catch (parseError) {
           // Use default error message if JSON parsing fails
+          console.error('Error message:', errorMessage);
           errorMessage = `Server error (${
             response.status
           }): ${responseText.substring(0, 100)}`;
@@ -422,7 +414,6 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
             }}
           >
             <Text style={styles.subjectName}>{gradeName} </Text>
-            
           </View>
 
           <Text style={styles.dateText}>

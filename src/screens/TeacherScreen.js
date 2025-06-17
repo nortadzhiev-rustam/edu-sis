@@ -31,13 +31,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import NotificationBadge from '../components/NotificationBadge';
+import { isIPad, isTablet } from '../utils/deviceDetection';
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 export default function TeacherScreen({ route, navigation }) {
   const { theme } = useTheme();
   const { t, currentLanguage } = useLanguage();
   const fontSizes = getLanguageFontSizes(currentLanguage);
+
+  // Device and orientation detection
+  const isIPadDevice = isIPad();
+  const isTabletDevice = isTablet();
+  const isLandscape = screenWidth > screenHeight;
 
   // Helper function to format user roles
   const formatUserRoles = (userData) => {
@@ -593,12 +599,30 @@ export default function TeacherScreen({ route, navigation }) {
           {/* Quick Actions */}
           <View style={styles.quickActionsContainer}>
             <Text style={styles.sectionTitle}>{t('quickActions')}</Text>
-            <View style={styles.actionTilesGrid}>
+            <View
+              style={[
+                styles.actionTilesGrid,
+                isIPadDevice && styles.iPadActionTilesGrid,
+                isIPadDevice &&
+                  isLandscape &&
+                  styles.iPadLandscapeActionTilesGrid,
+                isTabletDevice && styles.tabletActionTilesGrid,
+                isTabletDevice &&
+                  isLandscape &&
+                  styles.tabletLandscapeActionTilesGrid,
+              ]}
+            >
               {/* Timetable Tile */}
               <TouchableOpacity
                 style={[
                   styles.actionTile,
                   { backgroundColor: theme.colors.primary },
+                  isIPadDevice && styles.iPadActionTile,
+                  isIPadDevice && isLandscape && styles.iPadLandscapeActionTile,
+                  isTabletDevice && styles.tabletActionTile,
+                  isTabletDevice &&
+                    isLandscape &&
+                    styles.tabletLandscapeActionTile,
                 ]}
                 onPress={() =>
                   navigation.navigate('TeacherTimetable', {
@@ -609,20 +633,79 @@ export default function TeacherScreen({ route, navigation }) {
                 }
                 activeOpacity={0.8}
               >
-                <View style={styles.tileIconContainer}>
+                <View
+                  style={[
+                    styles.tileIconContainer,
+                    isIPadDevice && styles.iPadTileIconContainer,
+                    isIPadDevice &&
+                      isLandscape &&
+                      styles.iPadLandscapeTileIconContainer,
+                    isTabletDevice && styles.tabletTileIconContainer,
+                    isTabletDevice &&
+                      isLandscape &&
+                      styles.tabletLandscapeTileIconContainer,
+                  ]}
+                >
                   <FontAwesomeIcon
                     icon={faCalendarAlt}
-                    size={28}
+                    size={
+                      isIPadDevice && isLandscape
+                        ? 16
+                        : isTabletDevice && isLandscape
+                        ? 18
+                        : isIPadDevice
+                        ? 20
+                        : isTabletDevice
+                        ? 24
+                        : 28
+                    }
                     color={theme.colors.headerText}
                   />
                 </View>
-                <Text style={styles.tileTitle}>{t('viewTimetable')}</Text>
-                <Text style={styles.tileSubtitle}>Schedule & Attendance</Text>
+                <Text
+                  style={[
+                    styles.tileTitle,
+                    isIPadDevice && styles.iPadTileTitle,
+                    isIPadDevice &&
+                      isLandscape &&
+                      styles.iPadLandscapeTileTitle,
+                    isTabletDevice && styles.tabletTileTitle,
+                    isTabletDevice &&
+                      isLandscape &&
+                      styles.tabletLandscapeTileTitle,
+                  ]}
+                >
+                  {t('viewTimetable')}
+                </Text>
+                <Text
+                  style={[
+                    styles.tileSubtitle,
+                    isIPadDevice && styles.iPadTileSubtitle,
+                    isIPadDevice &&
+                      isLandscape &&
+                      styles.iPadLandscapeTileSubtitle,
+                    isTabletDevice && styles.tabletTileSubtitle,
+                    isTabletDevice &&
+                      isLandscape &&
+                      styles.tabletLandscapeTileSubtitle,
+                  ]}
+                >
+                  Schedule & Attendance
+                </Text>
               </TouchableOpacity>
 
               {/* BPS Management Tile */}
               <TouchableOpacity
-                style={[styles.actionTile, { backgroundColor: '#AF52DE' }]}
+                style={[
+                  styles.actionTile,
+                  { backgroundColor: '#AF52DE' },
+                  isIPadDevice && styles.iPadActionTile,
+                  isIPadDevice && isLandscape && styles.iPadLandscapeActionTile,
+                  isTabletDevice && styles.tabletActionTile,
+                  isTabletDevice &&
+                    isLandscape &&
+                    styles.tabletLandscapeActionTile,
+                ]}
                 onPress={() =>
                   navigation.navigate('TeacherBPS', {
                     authCode: userData.authCode,
@@ -631,11 +714,65 @@ export default function TeacherScreen({ route, navigation }) {
                 }
                 activeOpacity={0.8}
               >
-                <View style={styles.tileIconContainer}>
-                  <FontAwesomeIcon icon={faGavel} size={28} color='#fff' />
+                <View
+                  style={[
+                    styles.tileIconContainer,
+                    isIPadDevice && styles.iPadTileIconContainer,
+                    isIPadDevice &&
+                      isLandscape &&
+                      styles.iPadLandscapeTileIconContainer,
+                    isTabletDevice && styles.tabletTileIconContainer,
+                    isTabletDevice &&
+                      isLandscape &&
+                      styles.tabletLandscapeTileIconContainer,
+                  ]}
+                >
+                  <FontAwesomeIcon
+                    icon={faGavel}
+                    size={
+                      isIPadDevice && isLandscape
+                        ? 16
+                        : isTabletDevice && isLandscape
+                        ? 18
+                        : isIPadDevice
+                        ? 20
+                        : isTabletDevice
+                        ? 24
+                        : 28
+                    }
+                    color='#fff'
+                  />
                 </View>
-                <Text style={styles.tileTitle}>{t('manageBPS')}</Text>
-                <Text style={styles.tileSubtitle}>Behavior Points</Text>
+                <Text
+                  style={[
+                    styles.tileTitle,
+                    isIPadDevice && styles.iPadTileTitle,
+                    isIPadDevice &&
+                      isLandscape &&
+                      styles.iPadLandscapeTileTitle,
+                    isTabletDevice && styles.tabletTileTitle,
+                    isTabletDevice &&
+                      isLandscape &&
+                      styles.tabletLandscapeTileTitle,
+                  ]}
+                >
+                  {t('manageBPS')}
+                </Text>
+                <Text
+                  style={[
+                    styles.tileSubtitle,
+                    isIPadDevice && styles.iPadTileSubtitle,
+                    isIPadDevice &&
+                      isLandscape &&
+                      styles.iPadLandscapeTileSubtitle,
+                    isTabletDevice && styles.tabletTileSubtitle,
+                    isTabletDevice &&
+                      isLandscape &&
+                      styles.tabletLandscapeTileSubtitle,
+                  ]}
+                >
+                  Behavior Points
+                </Text>
               </TouchableOpacity>
 
               {/* Reports Tile - Disabled */}
@@ -644,15 +781,75 @@ export default function TeacherScreen({ route, navigation }) {
                   styles.actionTile,
                   styles.disabledTile,
                   { backgroundColor: '#B0B0B0' },
+                  isIPadDevice && styles.iPadActionTile,
+                  isIPadDevice && isLandscape && styles.iPadLandscapeActionTile,
+                  isTabletDevice && styles.tabletActionTile,
+                  isTabletDevice &&
+                    isLandscape &&
+                    styles.tabletLandscapeActionTile,
                 ]}
                 disabled={true}
                 activeOpacity={1}
               >
-                <View style={styles.tileIconContainer}>
-                  <FontAwesomeIcon icon={faChartLine} size={28} color='#fff' />
+                <View
+                  style={[
+                    styles.tileIconContainer,
+                    isIPadDevice && styles.iPadTileIconContainer,
+                    isIPadDevice &&
+                      isLandscape &&
+                      styles.iPadLandscapeTileIconContainer,
+                    isTabletDevice && styles.tabletTileIconContainer,
+                    isTabletDevice &&
+                      isLandscape &&
+                      styles.tabletLandscapeTileIconContainer,
+                  ]}
+                >
+                  <FontAwesomeIcon
+                    icon={faChartLine}
+                    size={
+                      isIPadDevice && isLandscape
+                        ? 16
+                        : isTabletDevice && isLandscape
+                        ? 18
+                        : isIPadDevice
+                        ? 20
+                        : isTabletDevice
+                        ? 24
+                        : 28
+                    }
+                    color='#fff'
+                  />
                 </View>
-                <Text style={styles.tileTitle}>{t('reports')}</Text>
-                <Text style={styles.tileSubtitle}>{t('analyticsStats')}</Text>
+                <Text
+                  style={[
+                    styles.tileTitle,
+                    isIPadDevice && styles.iPadTileTitle,
+                    isIPadDevice &&
+                      isLandscape &&
+                      styles.iPadLandscapeTileTitle,
+                    isTabletDevice && styles.tabletTileTitle,
+                    isTabletDevice &&
+                      isLandscape &&
+                      styles.tabletLandscapeTileTitle,
+                  ]}
+                >
+                  {t('reports')}
+                </Text>
+                <Text
+                  style={[
+                    styles.tileSubtitle,
+                    isIPadDevice && styles.iPadTileSubtitle,
+                    isIPadDevice &&
+                      isLandscape &&
+                      styles.iPadLandscapeTileSubtitle,
+                    isTabletDevice && styles.tabletTileSubtitle,
+                    isTabletDevice &&
+                      isLandscape &&
+                      styles.tabletLandscapeTileSubtitle,
+                  ]}
+                >
+                  {t('analyticsStats')}
+                </Text>
                 <View style={styles.comingSoonBadge}>
                   <Text style={styles.comingSoonText}>{t('comingSoon')}</Text>
                 </View>
@@ -664,15 +861,75 @@ export default function TeacherScreen({ route, navigation }) {
                   styles.actionTile,
                   styles.disabledTile,
                   { backgroundColor: '#B0B0B0' },
+                  isIPadDevice && styles.iPadActionTile,
+                  isIPadDevice && isLandscape && styles.iPadLandscapeActionTile,
+                  isTabletDevice && styles.tabletActionTile,
+                  isTabletDevice &&
+                    isLandscape &&
+                    styles.tabletLandscapeActionTile,
                 ]}
                 disabled={true}
                 activeOpacity={1}
               >
-                <View style={styles.tileIconContainer}>
-                  <FontAwesomeIcon icon={faBookOpen} size={28} color='#fff' />
+                <View
+                  style={[
+                    styles.tileIconContainer,
+                    isIPadDevice && styles.iPadTileIconContainer,
+                    isIPadDevice &&
+                      isLandscape &&
+                      styles.iPadLandscapeTileIconContainer,
+                    isTabletDevice && styles.tabletTileIconContainer,
+                    isTabletDevice &&
+                      isLandscape &&
+                      styles.tabletLandscapeTileIconContainer,
+                  ]}
+                >
+                  <FontAwesomeIcon
+                    icon={faBookOpen}
+                    size={
+                      isIPadDevice && isLandscape
+                        ? 16
+                        : isTabletDevice && isLandscape
+                        ? 18
+                        : isIPadDevice
+                        ? 20
+                        : isTabletDevice
+                        ? 24
+                        : 28
+                    }
+                    color='#fff'
+                  />
                 </View>
-                <Text style={styles.tileTitle}>{t('materials')}</Text>
-                <Text style={styles.tileSubtitle}>{t('resourcesFiles')}</Text>
+                <Text
+                  style={[
+                    styles.tileTitle,
+                    isIPadDevice && styles.iPadTileTitle,
+                    isIPadDevice &&
+                      isLandscape &&
+                      styles.iPadLandscapeTileTitle,
+                    isTabletDevice && styles.tabletTileTitle,
+                    isTabletDevice &&
+                      isLandscape &&
+                      styles.tabletLandscapeTileTitle,
+                  ]}
+                >
+                  {t('materials')}
+                </Text>
+                <Text
+                  style={[
+                    styles.tileSubtitle,
+                    isIPadDevice && styles.iPadTileSubtitle,
+                    isIPadDevice &&
+                      isLandscape &&
+                      styles.iPadLandscapeTileSubtitle,
+                    isTabletDevice && styles.tabletTileSubtitle,
+                    isTabletDevice &&
+                      isLandscape &&
+                      styles.tabletLandscapeTileSubtitle,
+                  ]}
+                >
+                  {t('resourcesFiles')}
+                </Text>
                 <View style={styles.comingSoonBadge}>
                   <Text style={styles.comingSoonText}>{t('comingSoon')}</Text>
                 </View>
@@ -985,6 +1242,30 @@ const createStyles = (theme, fontSizes) =>
       justifyContent: 'space-between',
       gap: 12,
     },
+    // iPad-specific grid layout - 4 tiles per row, wraps to next row for additional tiles
+    iPadActionTilesGrid: {
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      gap: 8,
+    },
+    // Tablet-specific grid layout - 4 tiles per row, wraps to next row for additional tiles
+    tabletActionTilesGrid: {
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      gap: 10,
+    },
+    // iPad landscape-specific grid layout - 6 tiles per row, wraps for additional tiles
+    iPadLandscapeActionTilesGrid: {
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      gap: 6,
+    },
+    // Tablet landscape-specific grid layout - 6 tiles per row, wraps for additional tiles
+    tabletLandscapeActionTilesGrid: {
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      gap: 8,
+    },
     actionTile: {
       width: (screenWidth - 56) / 2, // 2 tiles per row with margins and gap
       aspectRatio: 1, // Square tiles
@@ -1002,6 +1283,54 @@ const createStyles = (theme, fontSizes) =>
       borderWidth: 1,
       borderColor: 'rgba(255, 255, 255, 0.1)',
     },
+    // iPad-specific action tile - optimized for 4 per row, wraps for additional tiles
+    iPadActionTile: {
+      width: (screenWidth - 80) / 4 - 2, // Optimized for 4 tiles per row with wrapping support
+      minWidth: 160, // Minimum width to ensure tiles don't get too small
+      aspectRatio: 1, // Square tiles
+      borderRadius: 16,
+      padding: 12,
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    // Tablet-specific action tile - optimized for 4 per row, wraps for additional tiles
+    tabletActionTile: {
+      width: (screenWidth - 70) / 4 - 2, // Optimized for 4 tiles per row with wrapping support
+      minWidth: 150, // Minimum width to ensure tiles don't get too small
+      aspectRatio: 1, // Square tiles
+      borderRadius: 18,
+      padding: 14,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.18,
+      shadowRadius: 10,
+      elevation: 6,
+    },
+    // iPad landscape-specific action tile - optimized for 6 per row
+    iPadLandscapeActionTile: {
+      width: (screenWidth - 100) / 6 - 2, // 6 tiles per row in landscape with wrapping support
+      minWidth: 120, // Minimum width for landscape tiles
+      aspectRatio: 1, // Square tiles
+      borderRadius: 14,
+      padding: 10,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.12,
+      shadowRadius: 6,
+      elevation: 3,
+    },
+    // Tablet landscape-specific action tile - optimized for 6 per row
+    tabletLandscapeActionTile: {
+      width: (screenWidth - 90) / 6 - 2, // 6 tiles per row in landscape with wrapping support
+      minWidth: 110, // Minimum width for landscape tiles
+      aspectRatio: 1, // Square tiles
+      borderRadius: 16,
+      padding: 12,
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 4,
+    },
     tileIconContainer: {
       width: 52,
       height: 52,
@@ -1012,6 +1341,34 @@ const createStyles = (theme, fontSizes) =>
       marginBottom: 12,
       borderWidth: 1,
       borderColor: 'rgba(255, 255, 255, 0.3)',
+    },
+    // iPad-specific tile icon container - smaller
+    iPadTileIconContainer: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      marginBottom: 8,
+    },
+    // Tablet-specific tile icon container
+    tabletTileIconContainer: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      marginBottom: 10,
+    },
+    // iPad landscape-specific tile icon container - even smaller for 6 per row
+    iPadLandscapeTileIconContainer: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      marginBottom: 6,
+    },
+    // Tablet landscape-specific tile icon container
+    tabletLandscapeTileIconContainer: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      marginBottom: 8,
     },
     tileTitle: {
       fontSize: fontSizes.tileTitle,
@@ -1025,6 +1382,42 @@ const createStyles = (theme, fontSizes) =>
       color: 'rgba(255, 255, 255, 0.8)',
       fontWeight: '500',
       marginBottom: 8,
+    },
+    // iPad-specific tile text styles - smaller
+    iPadTileTitle: {
+      fontSize: Math.max(fontSizes.tileTitle - 2, 12),
+      marginBottom: 2,
+    },
+    iPadTileSubtitle: {
+      fontSize: Math.max(fontSizes.tileSubtitle - 1, 10),
+      marginBottom: 4,
+    },
+    // Tablet-specific tile text styles
+    tabletTileTitle: {
+      fontSize: Math.max(fontSizes.tileTitle - 1, 13),
+      marginBottom: 3,
+    },
+    tabletTileSubtitle: {
+      fontSize: Math.max(fontSizes.tileSubtitle - 0.5, 11),
+      marginBottom: 6,
+    },
+    // iPad landscape-specific tile text styles - even smaller for 6 per row
+    iPadLandscapeTileTitle: {
+      fontSize: Math.max(fontSizes.tileTitle - 3, 10),
+      marginBottom: 1,
+    },
+    iPadLandscapeTileSubtitle: {
+      fontSize: Math.max(fontSizes.tileSubtitle - 2, 8),
+      marginBottom: 2,
+    },
+    // Tablet landscape-specific tile text styles
+    tabletLandscapeTileTitle: {
+      fontSize: Math.max(fontSizes.tileTitle - 2, 11),
+      marginBottom: 2,
+    },
+    tabletLandscapeTileSubtitle: {
+      fontSize: Math.max(fontSizes.tileSubtitle - 1.5, 9),
+      marginBottom: 3,
     },
     tileBadge: {
       position: 'absolute',

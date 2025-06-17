@@ -45,7 +45,14 @@
       "bundleIdentifier": "com.edunovaasia.edusis",
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": ["remote-notification"],
+        "UISupportedInterfaceOrientations": ["UIInterfaceOrientationPortrait"],
+        "UISupportedInterfaceOrientations~ipad": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationPortraitUpsideDown",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
+        ]
       }
     },
     "android": {
@@ -54,7 +61,8 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.edunovaasia.edusis",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "screenOrientation": "portrait"
     },
     "web": {
       "favicon": "./assets/app_logo.png"

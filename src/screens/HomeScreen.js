@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -31,6 +32,15 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Platform } from 'expo-modules-core';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import {
+  isIPad,
+  isTablet,
+  getIPadLayoutConfig,
+  getResponsiveFontSizes,
+  getResponsiveSpacing,
+  getOptimalColumns,
+} from '../utils/deviceDetection';
+import { lockOrientationForDevice } from '../utils/orientationLock';
 
 const { width, height } = Dimensions.get('window');
 
@@ -38,7 +48,32 @@ export default function HomeScreen({ navigation }) {
   const { theme } = useTheme();
   const { t, currentLanguage } = useLanguage();
   const fontSizes = getLanguageFontSizes(currentLanguage);
-  const styles = createStyles(theme, fontSizes);
+
+  // Lock orientation based on device type
+  React.useEffect(() => {
+    lockOrientationForDevice();
+  }, []);
+
+  // iPad-specific configurations
+  const isIPadDevice = isIPad();
+  const responsiveFonts = getResponsiveFontSizes();
+  const responsiveSpacing = getResponsiveSpacing();
+
+  const styles = createStyles(
+    theme,
+    fontSizes,
+    isIPadDevice,
+    responsiveFonts,
+    responsiveSpacing
+  );
+
+  // Debug logging for layout
+  if (__DEV__ && isIPadDevice) {
+    console.log('🏠 HomeScreen iPad Layout Debug:');
+    console.log('📱 Screen dimensions:', { width, height });
+    console.log('🎯 Role button width:', isIPadDevice ? 280 : '48%');
+    console.log('📏 Responsive spacing:', responsiveSpacing);
+  }
   const handleTeacherPress = async () => {
     try {
       // Check if teacher is already logged in
@@ -73,7 +108,10 @@ export default function HomeScreen({ navigation }) {
         <FontAwesomeIcon icon={faCog} size={20} color={theme.colors.text} />
       </TouchableOpacity>
 
-      <View style={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         <Image
           source={require('../../assets/app_logo.png')}
           style={styles.logo}
@@ -263,12 +301,18 @@ export default function HomeScreen({ navigation }) {
             </View>
           </View>
         </Animated.View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
-const createStyles = (theme, fontSizes) =>
+const createStyles = (
+  theme,
+  fontSizes,
+  isIPadDevice,
+  responsiveFonts,
+  responsiveSpacing
+) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -288,32 +332,42 @@ const createStyles = (theme, fontSizes) =>
       zIndex: 1000,
       ...theme.shadows.small,
     },
-    content: {
+    scrollContainer: {
       flex: 1,
+    },
+    content: {
+      flexGrow: 1,
       alignItems: 'center',
-      paddingHorizontal: 20,
+      justifyContent: 'center',
+      paddingHorizontal: isIPadDevice ? responsiveSpacing.xl : 20,
+      maxWidth: isIPadDevice ? 800 : '100%', // Limit content width on iPad
+      alignSelf: 'center',
+      width: '100%',
+      paddingBottom: 50, // Extra padding for landscape scrolling
+      minHeight: '100%', // Ensure content takes full height
     },
     logo: {
-      width: width * 0.4,
-      height: height * 0.15,
-      marginTop: height * 0.05,
-      marginBottom: 20,
+      width: isIPadDevice ? Math.min(width * 0.3, 300) : width * 0.4,
+      height: isIPadDevice ? Math.min(height * 0.12, 150) : height * 0.15,
+      marginTop: isIPadDevice ? height * 0.03 : height * 0.05,
+      marginBottom: isIPadDevice ? responsiveSpacing.lg : 20,
     },
     title: {
-      fontSize: fontSizes.title,
+      fontSize: isIPadDevice ? responsiveFonts.largeTitle : fontSizes.title,
       fontWeight: 'bold',
       color: theme.colors.text,
-      marginBottom: 10,
+      marginBottom: isIPadDevice ? responsiveSpacing.md : 10,
       textAlign: 'center',
     },
     subtitle: {
-      fontSize: fontSizes.body,
+      fontSize: isIPadDevice ? responsiveFonts.subtitle : fontSizes.body,
       color: theme.colors.textSecondary,
-      marginBottom: 20,
+      marginBottom: isIPadDevice ? responsiveSpacing.lg : 20,
       textAlign: 'center',
     },
     buttonsContainer: {
       width: '100%',
+      alignItems: 'center',
     },
     roleRow: {
       flexDirection: 'row',
@@ -327,6 +381,7 @@ const createStyles = (theme, fontSizes) =>
       padding: 15,
       marginBottom: 20,
       ...theme.shadows.small,
+      marginLeft: 0,
     },
     roleButtonHorizontal: {
       width: '48%',
@@ -398,6 +453,7 @@ const createStyles = (theme, fontSizes) =>
       marginTop: 20,
       marginBottom: 30,
       alignItems: 'center',
+      justifyContent: 'center',
     },
     socialMediaButton: {
       backgroundColor: '#007AFF',
@@ -408,6 +464,7 @@ const createStyles = (theme, fontSizes) =>
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: 15,
+      alignSelf: 'center', // This should center it within the ScrollView
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.2,

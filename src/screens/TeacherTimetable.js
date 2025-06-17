@@ -141,12 +141,12 @@ export default function TeacherTimetable({ route, navigation }) {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Teacher timetable data:', data);
         setTimetableData(data);
       } else {
         Alert.alert('Error', 'Failed to fetch timetable data');
       }
     } catch (error) {
+      console.error('Error fetching timetable data:', error);
       Alert.alert('Error', 'Network error occurred');
     } finally {
       setRefreshing(false);
@@ -323,37 +323,29 @@ export default function TeacherTimetable({ route, navigation }) {
                         {classItem.grade_name}
                       </Text>
                     </View>
-                    <View style={styles.attendanceStatus}>
-                      {classItem.attendance_taken ? (
-                        <View style={styles.attendanceTaken}>
-                          <FontAwesomeIcon
-                            icon={faCheckCircle}
-                            size={20}
-                            color={theme.colors.success}
-                          />
-                          <Text style={styles.attendanceText}>Taken</Text>
-                        </View>
-                      ) : (
-                        <TouchableOpacity
-                          style={styles.takeAttendanceButton}
-                          onPress={() =>
-                            takeAttendance(
-                              classItem.timetable_id,
-                              classItem.subject_name,
-                              classItem.grade_name
-                            )
-                          }
-                        >
-                          <FontAwesomeIcon
-                            icon={faUserCheck}
-                            size={16}
-                            color={theme.colors.headerText}
-                          />
-                          <Text style={styles.buttonText}>Take</Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
                   </View>
+
+                  {!classItem.attendance_taken && (
+                    <View style={styles.classCardBody}>
+                      <TouchableOpacity
+                        style={styles.takeAttendanceButton}
+                        onPress={() =>
+                          takeAttendance(
+                            classItem.timetable_id,
+                            classItem.subject_name,
+                            classItem.grade_name
+                          )
+                        }
+                      >
+                        <FontAwesomeIcon
+                          icon={faUserCheck}
+                          size={18}
+                          color={theme.colors.headerText}
+                        />
+                        <Text style={styles.buttonText}>Take Attendance</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
 
                   {classItem.attendance_taken && (
                     <View style={styles.attendanceDetailsContainer}>
@@ -361,8 +353,8 @@ export default function TeacherTimetable({ route, navigation }) {
                         <View style={styles.statusIconContainer}>
                           <FontAwesomeIcon
                             icon={faCheckCircle}
-                            size={16}
-                            color={theme.colors.success}
+                            size={18}
+                            color='#fff'
                           />
                         </View>
                         <View style={styles.statusTextContainer}>
@@ -680,45 +672,63 @@ const createStyles = (theme) =>
     },
 
     classCard: {
-      backgroundColor: theme.colors.surface, // Changed from '#fff'
-      borderRadius: 16,
-      padding: 20,
-      marginBottom: 15,
-      shadowColor: theme.colors.shadow, // Changed from '#000'
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 4,
+      backgroundColor: theme.colors.surface,
+      borderRadius: 20,
+      padding: 0,
+      marginBottom: 16,
+      overflow: 'hidden',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.12,
+      shadowRadius: 16,
+      elevation: 8,
+      borderWidth: 1,
+      borderColor: theme.colors.border + '40',
     },
     classHeader: {
+      backgroundColor: theme.colors.primary + '08',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border + '20',
     },
     periodBadge: {
-      backgroundColor: theme.colors.primary, // Changed from '#007AFF'
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 12,
-      marginRight: 15,
+      width: 48,
+      height: 48,
+      backgroundColor: theme.colors.primary,
+      borderRadius: 24,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 16,
+      shadowColor: theme.colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 6,
     },
     periodText: {
-      color: theme.colors.headerText, // Changed from '#fff'
-      fontSize: 12,
-      fontWeight: 'bold',
+      color: theme.colors.headerText,
+      fontSize: 16,
+      fontWeight: '800',
+      letterSpacing: 0.5,
     },
     classInfo: {
       flex: 1,
     },
     subjectName: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: theme.colors.text, // Changed from '#1a1a1a'
-      marginBottom: 4,
+      fontSize: 18,
+      fontWeight: '700',
+      color: theme.colors.text,
+      marginBottom: 6,
+      letterSpacing: 0.3,
     },
     gradeName: {
-      fontSize: 14,
-      color: theme.colors.textSecondary, // Changed from '#666'
+      fontSize: 15,
+      color: theme.colors.textSecondary,
+      fontWeight: '500',
+      opacity: 0.8,
     },
     attendanceStatus: {
       alignItems: 'center',
@@ -736,51 +746,82 @@ const createStyles = (theme) =>
     takeAttendanceButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: theme.colors.success, // Changed from '#34C759'
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 20,
+      justifyContent: 'center',
+      backgroundColor: theme.colors.success,
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      borderRadius: 25,
+      minWidth: 140,
+      shadowColor: theme.colors.success,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 6,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.2)',
     },
     buttonText: {
-      color: theme.colors.headerText, // Changed from '#fff'
-      fontSize: 12,
-      fontWeight: '600',
-      marginLeft: 6,
+      color: theme.colors.headerText,
+      fontSize: 14,
+      fontWeight: '700',
+      marginLeft: 8,
+      letterSpacing: 0.5,
     },
+    // Card Body Section
+    classCardBody: {
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+    },
+
     // Redesigned Attendance Details Section
     attendanceDetailsContainer: {
-      paddingTop: 15,
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 20,
+      backgroundColor: theme.colors.background + '40',
       borderTopWidth: 1,
-      borderTopColor: theme.colors.border,
+      borderTopColor: theme.colors.border + '30',
     },
     attendanceStatusInfo: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 12,
+      marginBottom: 16,
+      backgroundColor: theme.colors.success + '10',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.colors.success + '20',
     },
     statusIconContainer: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: theme.colors.success + '15',
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: theme.colors.success,
       justifyContent: 'center',
       alignItems: 'center',
-      marginRight: 12,
+      marginRight: 14,
+      shadowColor: theme.colors.success,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      elevation: 3,
     },
     statusTextContainer: {
       flex: 1,
     },
     attendanceCompletedText: {
-      fontSize: 15,
+      fontSize: 16,
       fontWeight: '700',
       color: theme.colors.success,
-      marginBottom: 3,
-      letterSpacing: 0.2,
+      marginBottom: 4,
+      letterSpacing: 0.3,
     },
     attendanceTimestamp: {
-      fontSize: 13,
+      fontSize: 14,
       color: theme.colors.textSecondary,
       fontWeight: '500',
+      opacity: 0.8,
     },
 
     // Modern View Button

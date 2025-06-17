@@ -184,8 +184,6 @@ export default function TimetableScreen({ navigation, route }) {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Timetable data:', data);
-
         // Convert object to array format if needed
         const convertedData = convertObjectToArrayFormat(data);
         return convertedData;

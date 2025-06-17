@@ -49,6 +49,7 @@ export default function TeacherProfile({ route, navigation }) {
       const storedUserData = await AsyncStorage.getItem('userData');
       if (storedUserData) {
         const parsedData = JSON.parse(storedUserData);
+        console.log('User data:', parsedData);
         setUserData(parsedData);
       }
     } catch (error) {
@@ -98,7 +99,7 @@ export default function TeacherProfile({ route, navigation }) {
         })
         .join(', ');
     }
-    return userData.position || 'Teacher';
+    return userData.roles[0].role_name || 'Teacher';
   };
 
   const ProfileItem = ({ icon, label, value, onPress }) => (
@@ -244,7 +245,7 @@ export default function TeacherProfile({ route, navigation }) {
           <ProfileItem
             icon={faUserTie}
             label={t('position')}
-            value={userData.position}
+            value={userData.roles[0].role_name}
           />
 
           <ProfileItem
@@ -256,7 +257,7 @@ export default function TeacherProfile({ route, navigation }) {
           <ProfileItem
             icon={faMapMarkerAlt}
             label={t('branch')}
-            value={userData.branch_name}
+            value={userData.roles[0].branch_name}
           />
 
           <ProfileItem

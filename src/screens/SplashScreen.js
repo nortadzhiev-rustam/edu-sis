@@ -9,6 +9,8 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { useTheme } from '../contexts/ThemeContext'; // Import useTheme
+import { isIPad } from '../utils/deviceDetection';
+import { lockOrientationForDevice } from '../utils/orientationLock';
 
 const { width, height } = Dimensions.get('window');
 const TYPING_SPEED = 50; // Increased for better visibility
@@ -23,12 +25,20 @@ export default function SplashScreen({ onAnimationComplete }) {
   const [startTyping, setStartTyping] = useState(false);
   const animation = useSharedValue(0);
 
+  // iPad-specific configurations
+  const isIPadDevice = isIPad();
+
   const logoStyle = useAnimatedStyle(() => {
-    const scale = interpolate(animation.value, [0, 1, 2], [0, 1, 0.6]);
+    // Responsive scaling for different devices
+    const finalScale = isIPadDevice ? 0.5 : 0.6;
+    const scale = interpolate(animation.value, [0, 1, 2], [0, 1, finalScale]);
+
+    // Responsive translation for different screen sizes
+    const translateYAmount = isIPadDevice ? -height * 0.44 : -height * 0.42;
     const translateY = interpolate(
       animation.value,
       [0, 1, 2],
-      [0, 0, -height * 0.42]
+      [0, 0, translateYAmount]
     );
 
     return {
@@ -44,6 +54,20 @@ export default function SplashScreen({ onAnimationComplete }) {
   });
 
   useEffect(() => {
+    // Debug logging for iPad
+    if (__DEV__) {
+      console.log('🎬 SPLASH: Starting splash screen');
+      console.log('📱 Device info:', {
+        width,
+        height,
+        isIPad: isIPadDevice,
+        aspectRatio: (width / height).toFixed(2),
+      });
+    }
+
+    // Lock orientation based on device type
+    lockOrientationForDevice();
+
     // Initial logo animation
     // Just animate to the middle state (1) initially
     // The transition to state 2 will happen after typing is complete
@@ -91,39 +115,50 @@ export default function SplashScreen({ onAnimationComplete }) {
   }, [startTyping]);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={[]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      edges={[]}
+    >
       <Animated.Image
         source={require('../../assets/app_logo.png')}
         style={[styles.logo, logoStyle]}
         resizeMode='contain'
       />
-      <Animated.Text style={[styles.text, { color: theme.colors.primary }, textStyle]}>
+      <Animated.Text
+        style={[styles.text, { color: theme.colors.primary }, textStyle]}
+      >
         {displayText}
       </Animated.Text>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    // backgroundColor: '#ffffff', // Will be set by theme
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logo: {
-    width: width * 0.5,
-    height: height * 0.5,
-  },
-  text: {
-    marginTop: 20,
-    fontSize: 22,
-    fontWeight: '600',
-    // color: '#007AFF', // Will be set by theme
-    textAlign: 'center',
-    paddingHorizontal: 20,
-    fontFamily: Platform.OS === 'ios' ? 'Helvetica Neue' : 'sans-serif',
-    lineHeight: 32,
-    letterSpacing: 0.5,
-  },
-});
+const createStyles = () => {
+  const isIPadDevice = isIPad();
+
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      // backgroundColor: '#ffffff', // Will be set by theme
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    logo: {
+      width: isIPadDevice ? Math.min(width * 0.4, 400) : width * 0.5,
+      height: isIPadDevice ? Math.min(height * 0.4, 400) : height * 0.5,
+    },
+    text: {
+      marginTop: isIPadDevice ? 30 : 20,
+      fontSize: isIPadDevice ? 28 : 22,
+      fontWeight: '600',
+      // color: '#007AFF', // Will be set by theme
+      textAlign: 'center',
+      paddingHorizontal: isIPadDevice ? 40 : 20,
+      fontFamily: Platform.OS === 'ios' ? 'Helvetica Neue' : 'sans-serif',
+      lineHeight: isIPadDevice ? 40 : 32,
+      letterSpacing: isIPadDevice ? 0.8 : 0.5,
+    },
+  });
+};
+
+const styles = createStyles();
