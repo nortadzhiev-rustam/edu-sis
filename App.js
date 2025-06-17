@@ -14,11 +14,16 @@ import TeacherProfile from './src/screens/TeacherProfile';
 import TeacherTimetable from './src/screens/TeacherTimetable';
 import TeacherAttendanceScreen from './src/screens/TeacherAttendanceScreen';
 import TeacherBPS from './src/screens/TeacherBPS';
+import TeacherHomeworkScreen from './src/screens/TeacherHomeworkScreen';
+import TeacherHomeworkDetailScreen from './src/screens/TeacherHomeworkDetailScreen';
+import TeacherHomeworkCreateScreen from './src/screens/TeacherHomeworkCreateScreen';
+import HomeroomScreen from './src/screens/HomeroomScreen';
 import ParentScreen from './src/screens/ParentScreen';
 import TimetableScreen from './src/screens/TimetableScreen';
 import GradesScreen from './src/screens/GradesScreen';
 import AttendanceScreen from './src/screens/AttendanceScreen';
 import AssignmentsScreen from './src/screens/AssignmentsScreen';
+import AssignmentDetailScreen from './src/screens/AssignmentDetailScreen';
 import BehaviorScreen from './src/screens/BehaviorScreen';
 import WebViewScreen from './src/screens/WebViewScreen';
 import WebViewWithAuth from './src/screens/WebViewWithAuth';
@@ -163,6 +168,22 @@ export default function App() {
                   component={TeacherAttendanceScreen}
                 />
                 <Stack.Screen name='TeacherBPS' component={TeacherBPS} />
+                <Stack.Screen
+                  name='TeacherHomework'
+                  component={TeacherHomeworkScreen}
+                />
+                <Stack.Screen
+                  name='TeacherHomeworkDetail'
+                  component={TeacherHomeworkDetailScreen}
+                />
+                <Stack.Screen
+                  name='TeacherHomeworkCreate'
+                  component={TeacherHomeworkCreateScreen}
+                />
+                <Stack.Screen
+                  name='HomeroomScreen'
+                  component={HomeroomScreen}
+                />
                 <Stack.Screen name='ParentScreen' component={ParentScreen} />
                 <Stack.Screen
                   name='TimetableScreen'
@@ -176,6 +197,10 @@ export default function App() {
                 <Stack.Screen
                   name='AssignmentsScreen'
                   component={AssignmentsScreen}
+                />
+                <Stack.Screen
+                  name='AssignmentDetail'
+                  component={AssignmentDetailScreen}
                 />
                 <Stack.Screen
                   name='BehaviorScreen'

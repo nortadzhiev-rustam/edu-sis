@@ -26,6 +26,8 @@ import {
   faChevronRight,
   faBookOpen,
   faBell,
+  faClipboardList,
+  faHome,
 } from '@fortawesome/free-solid-svg-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
@@ -774,6 +776,171 @@ export default function TeacherScreen({ route, navigation }) {
                   Behavior Points
                 </Text>
               </TouchableOpacity>
+
+              {/* Homework Management Tile */}
+              <TouchableOpacity
+                style={[
+                  styles.actionTile,
+                  { backgroundColor: '#34C759' },
+                  isIPadDevice && styles.iPadActionTile,
+                  isIPadDevice && isLandscape && styles.iPadLandscapeActionTile,
+                  isTabletDevice && styles.tabletActionTile,
+                  isTabletDevice &&
+                    isLandscape &&
+                    styles.tabletLandscapeActionTile,
+                ]}
+                onPress={() =>
+                  navigation.navigate('TeacherHomework', {
+                    authCode: userData.authCode,
+                    teacherName: userData.name,
+                  })
+                }
+                activeOpacity={0.8}
+              >
+                <View
+                  style={[
+                    styles.tileIconContainer,
+                    isIPadDevice && styles.iPadTileIconContainer,
+                    isIPadDevice &&
+                      isLandscape &&
+                      styles.iPadLandscapeTileIconContainer,
+                    isTabletDevice && styles.tabletTileIconContainer,
+                    isTabletDevice &&
+                      isLandscape &&
+                      styles.tabletLandscapeTileIconContainer,
+                  ]}
+                >
+                  <FontAwesomeIcon
+                    icon={faClipboardList}
+                    size={
+                      isIPadDevice && isLandscape
+                        ? 16
+                        : isTabletDevice && isLandscape
+                        ? 18
+                        : isIPadDevice
+                        ? 20
+                        : isTabletDevice
+                        ? 24
+                        : 28
+                    }
+                    color='#fff'
+                  />
+                </View>
+                <Text
+                  style={[
+                    styles.tileTitle,
+                    isIPadDevice && styles.iPadTileTitle,
+                    isIPadDevice &&
+                      isLandscape &&
+                      styles.iPadLandscapeTileTitle,
+                    isTabletDevice && styles.tabletTileTitle,
+                    isTabletDevice &&
+                      isLandscape &&
+                      styles.tabletLandscapeTileTitle,
+                  ]}
+                >
+                  Homework
+                </Text>
+                <Text
+                  style={[
+                    styles.tileSubtitle,
+                    isIPadDevice && styles.iPadTileSubtitle,
+                    isIPadDevice &&
+                      isLandscape &&
+                      styles.iPadLandscapeTileSubtitle,
+                    isTabletDevice && styles.tabletTileSubtitle,
+                    isTabletDevice &&
+                      isLandscape &&
+                      styles.tabletLandscapeTileSubtitle,
+                  ]}
+                >
+                  Assignments & Review
+                </Text>
+              </TouchableOpacity>
+
+              {/* Homeroom Tile - Conditional */}
+              {userData.is_homeroom && (
+                <TouchableOpacity
+                  style={[
+                    styles.actionTile,
+                    { backgroundColor: '#FF6B35' },
+                    isIPadDevice && styles.iPadActionTile,
+                    isIPadDevice &&
+                      isLandscape &&
+                      styles.iPadLandscapeActionTile,
+                    isTabletDevice && styles.tabletActionTile,
+                    isTabletDevice &&
+                      isLandscape &&
+                      styles.tabletLandscapeActionTile,
+                  ]}
+                  onPress={() =>
+                    navigation.navigate('HomeroomScreen', {
+                      authCode: userData.authCode,
+                      teacherName: userData.name,
+                    })
+                  }
+                >
+                  <View
+                    style={[
+                      styles.tileIconContainer,
+                      isIPadDevice && styles.iPadTileIconContainer,
+                      isIPadDevice &&
+                        isLandscape &&
+                        styles.iPadLandscapeTileIconContainer,
+                      isTabletDevice && styles.tabletTileIconContainer,
+                      isTabletDevice &&
+                        isLandscape &&
+                        styles.tabletLandscapeTileIconContainer,
+                    ]}
+                  >
+                    <FontAwesomeIcon
+                      icon={faHome}
+                      size={
+                        isIPadDevice && isLandscape
+                          ? 16
+                          : isTabletDevice && isLandscape
+                          ? 18
+                          : isIPadDevice
+                          ? 20
+                          : isTabletDevice
+                          ? 24
+                          : 28
+                      }
+                      color='#fff'
+                    />
+                  </View>
+                  <Text
+                    style={[
+                      styles.tileTitle,
+                      isIPadDevice && styles.iPadTileTitle,
+                      isIPadDevice &&
+                        isLandscape &&
+                        styles.iPadLandscapeTileTitle,
+                      isTabletDevice && styles.tabletTileTitle,
+                      isTabletDevice &&
+                        isLandscape &&
+                        styles.tabletLandscapeTileTitle,
+                    ]}
+                  >
+                    Homeroom
+                  </Text>
+                  <Text
+                    style={[
+                      styles.tileSubtitle,
+                      isIPadDevice && styles.iPadTileSubtitle,
+                      isIPadDevice &&
+                        isLandscape &&
+                        styles.iPadLandscapeTileSubtitle,
+                      isTabletDevice && styles.tabletTileSubtitle,
+                      isTabletDevice &&
+                        isLandscape &&
+                        styles.tabletLandscapeTileSubtitle,
+                    ]}
+                  >
+                    Class Management
+                  </Text>
+                </TouchableOpacity>
+              )}
 
               {/* Reports Tile - Disabled */}
               <TouchableOpacity

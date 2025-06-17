@@ -41,14 +41,13 @@ import {
   faCalendarAlt,
   faCheckCircle,
   faExclamationTriangle,
+  faCheck,
 } from '@fortawesome/free-solid-svg-icons';
 import { useScreenOrientation } from '../hooks/useScreenOrientation';
 import { useTheme } from '../contexts/ThemeContext';
-import { useLanguage } from '../contexts/LanguageContext';
 
 export default function AssignmentsScreen({ navigation, route }) {
   const { theme } = useTheme();
-  const { t } = useLanguage();
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
   const { studentName, authCode } = route.params || {};
   const [assignments, setAssignments] = useState([]);
@@ -432,6 +431,96 @@ export default function AssignmentsScreen({ navigation, route }) {
     }
   };
 
+  // Mark assignment as done
+  const markAssignmentAsDone = (assignment) => {
+    const handleMarkDone = async () => {
+      try {
+        const response = await fetch(buildApiUrl('/homework/mark-done'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({
+            auth_code: authCode,
+            detail_id: assignment.detail_id,
+          }),
+        });
+
+        if (response.ok) {
+          // Update the assignment in the local state
+          setAssignments((prevAssignments) => {
+            const updateAssignmentInArray = (arr) => {
+              return arr.map((item) =>
+                item.detail_id === assignment.detail_id
+                  ? {
+                      ...item,
+                      is_completed: 1,
+                      submitted_date: new Date().toISOString(),
+                    }
+                  : item
+              );
+            };
+
+            if (Array.isArray(prevAssignments)) {
+              return updateAssignmentInArray(prevAssignments);
+            } else if (
+              prevAssignments?.data &&
+              Array.isArray(prevAssignments.data)
+            ) {
+              return {
+                ...prevAssignments,
+                data: updateAssignmentInArray(prevAssignments.data),
+              };
+            }
+            return prevAssignments;
+          });
+
+          Alert.alert('Success', 'Assignment marked as completed!');
+        } else {
+          const errorResponse = await response.text();
+          console.log('Mark done error response:', errorResponse);
+
+          try {
+            const errorData = JSON.parse(errorResponse);
+
+            if (errorData.error === 'Homework has already been submitted') {
+              Alert.alert(
+                'Already Completed',
+                'This assignment has already been marked as completed.',
+                [{ text: 'OK', style: 'default' }]
+              );
+            } else {
+              Alert.alert(
+                'Error',
+                errorData.error || 'Failed to mark assignment as done'
+              );
+            }
+          } catch (parseError) {
+            Alert.alert('Error', 'Failed to mark assignment as done');
+          }
+        }
+      } catch (error) {
+        Alert.alert('Error', 'Failed to connect to server');
+      }
+    };
+
+    Alert.alert(
+      'Mark as Done',
+      `Are you sure you want to mark "${assignment.title}" as completed?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Mark Done',
+          style: 'default',
+          onPress: () => {
+            handleMarkDone();
+          },
+        },
+      ]
+    );
+  };
+
   // Render subject cards view
   const renderSubjectsView = () => {
     const subjectGroups = getSubjectGroups();
@@ -584,9 +673,16 @@ export default function AssignmentsScreen({ navigation, route }) {
             {filteredAssignments.map((assignment, index) => {
               const status = getAssignmentStatus(assignment);
               return (
-                <View
+                <TouchableOpacity
                   key={assignment.uuid || assignment.id || index}
                   style={styles.modernAssignmentCard}
+                  onPress={() =>
+                    navigation.navigate('AssignmentDetail', {
+                      assignment,
+                      authCode,
+                    })
+                  }
+                  activeOpacity={0.7}
                 >
                   <View style={styles.assignmentCardHeader}>
                     <View style={styles.assignmentCardLeft}>
@@ -638,7 +734,24 @@ export default function AssignmentsScreen({ navigation, route }) {
                       )}
                     </View>
 
-                    <View style={styles.assignmentStatusContainer}>
+                    <View style={styles.assignmentActions}>
+                      {!assignment.is_completed && (
+                        <TouchableOpacity
+                          style={styles.markDoneButton}
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            markAssignmentAsDone(assignment);
+                          }}
+                        >
+                          <FontAwesomeIcon
+                            icon={faCheck}
+                            size={14}
+                            color='#fff'
+                          />
+                          <Text style={styles.markDoneButtonText}>Done</Text>
+                        </TouchableOpacity>
+                      )}
+
                       <View
                         style={[
                           styles.assignmentStatusBadge,
@@ -651,7 +764,7 @@ export default function AssignmentsScreen({ navigation, route }) {
                       </View>
                     </View>
                   </View>
-                </View>
+                </TouchableOpacity>
               );
             })}
           </ScrollView>
@@ -998,6 +1111,30 @@ const createStyles = (theme) =>
       fontSize: 14,
       color: theme.colors.textSecondary,
       marginLeft: 8,
+    },
+    assignmentActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    markDoneButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#34C759',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 16,
+      shadowColor: '#34C759',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    markDoneButtonText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: '#fff',
+      marginLeft: 4,
     },
     assignmentStatusContainer: {
       alignItems: 'flex-end',

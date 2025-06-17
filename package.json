@@ -58,6 +58,7 @@
     "expo-constants": "~17.0.8",
     "expo-dev-client": "~5.0.20",
     "expo-device": "~7.0.3",
+    "expo-document-picker": "^13.1.5",
     "expo-modules-core": "~2.2.3",
     "expo-notifications": "~0.29.14",
     "expo-screen-orientation": "~8.0.4",

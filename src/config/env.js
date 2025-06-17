@@ -39,6 +39,13 @@ export const Config = {
     SEND_ATTENDANCE_REMINDER: '/notifications/realtime/attendance-reminder',
     SEND_RICH_NOTIFICATION: '/notifications/realtime/rich',
     SEND_STAFF_NOTIFICATION: '/notifications/realtime/staff',
+
+    // Homeroom API Endpoints
+    GET_HOMEROOM_CLASSROOMS: '/homeroom/classrooms',
+    GET_HOMEROOM_ATTENDANCE: '/homeroom/attendance',
+    GET_HOMEROOM_STUDENT_PROFILE: '/homeroom/student-profile',
+    GET_HOMEROOM_STUDENTS: '/homeroom/students',
+    GET_HOMEROOM_DISCIPLINE: '/homeroom/discipline',
   },
 
   // Web Resources
