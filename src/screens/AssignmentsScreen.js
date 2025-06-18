@@ -45,6 +45,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useScreenOrientation } from '../hooks/useScreenOrientation';
 import { useTheme } from '../contexts/ThemeContext';
+import { getHtmlPreview } from '../utils/htmlUtils';
 
 export default function AssignmentsScreen({ navigation, route }) {
   const { theme } = useTheme();
@@ -734,7 +735,7 @@ export default function AssignmentsScreen({ navigation, route }) {
                       style={styles.assignmentDescription}
                       numberOfLines={3}
                     >
-                      {assignment.homework_data.replace(/<[^>]*>/g, '')}
+                      {getHtmlPreview(assignment.homework_data, 3)}
                     </Text>
                   )}
 
@@ -1023,7 +1024,7 @@ const createStyles = (theme) =>
       shadowOffset: { width: 0, height: 3 },
       shadowOpacity: 0.2,
       shadowRadius: 8,
-      
+
       width: '100%',
     },
     cardTopSection: {

@@ -27,6 +27,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { buildApiUrl } from '../config/env';
+import { processHtmlContent, containsHtml } from '../utils/htmlUtils';
 
 export default function TeacherHomeworkDetailScreen({ navigation, route }) {
   const { theme } = useTheme();
@@ -186,7 +187,14 @@ export default function TeacherHomeworkDetailScreen({ navigation, route }) {
             {submission.reply_data && (
               <View style={styles.responseSection}>
                 <Text style={styles.sectionLabel}>Student Response:</Text>
-                <Text style={styles.responseText}>{submission.reply_data}</Text>
+                <Text style={styles.responseText}>
+                  {processHtmlContent(submission.reply_data)}
+                </Text>
+                {containsHtml(submission.reply_data) && (
+                  <Text style={styles.htmlIndicatorSmall}>
+                    📄 Formatted response
+                  </Text>
+                )}
               </View>
             )}
 
@@ -348,8 +356,13 @@ export default function TeacherHomeworkDetailScreen({ navigation, route }) {
         <View style={styles.homeworkInfoCard}>
           <Text style={styles.homeworkTitle}>{homework.title}</Text>
           <Text style={styles.homeworkDescription}>
-            {homework.homework_data || 'No description provided'}
+            {homework.homework_data
+              ? processHtmlContent(homework.homework_data)
+              : 'No description provided'}
           </Text>
+          {containsHtml(homework.homework_data) && (
+            <Text style={styles.htmlIndicator}>📄 Formatted content</Text>
+          )}
 
           <View style={styles.homeworkMeta}>
             <View style={styles.metaItem}>
@@ -488,7 +501,19 @@ const createStyles = (theme) =>
       fontSize: 16,
       color: theme.colors.textSecondary,
       lineHeight: 22,
+      marginBottom: 8,
+    },
+    htmlIndicator: {
+      fontSize: 12,
+      color: theme.colors.primary,
+      fontStyle: 'italic',
       marginBottom: 16,
+    },
+    htmlIndicatorSmall: {
+      fontSize: 11,
+      color: theme.colors.primary,
+      fontStyle: 'italic',
+      marginTop: 4,
     },
     homeworkMeta: {
       gap: 8,

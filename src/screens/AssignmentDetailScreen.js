@@ -28,6 +28,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { buildApiUrl } from '../config/env';
+import { processHtmlContent, containsHtml } from '../utils/htmlUtils';
 import * as DocumentPicker from 'expo-document-picker';
 
 export default function AssignmentDetailScreen({ navigation, route }) {
@@ -373,9 +374,13 @@ export default function AssignmentDetailScreen({ navigation, route }) {
           <Text style={styles.sectionTitle}>Assignment Description</Text>
           <View style={styles.descriptionContainer}>
             <Text style={styles.assignmentDescription}>
-              {assignmentData.homework_data?.replace(/<[^>]*>/g, '') ||
-                'No description provided'}
+              {assignmentData.homework_data
+                ? processHtmlContent(assignmentData.homework_data)
+                : 'No description provided'}
             </Text>
+            {containsHtml(assignmentData.homework_data) && (
+              <Text style={styles.htmlIndicator}>📄 Formatted content</Text>
+            )}
           </View>
 
           {/* Teacher Files */}
@@ -785,6 +790,13 @@ const createStyles = (theme) =>
       fontSize: 16,
       color: theme.colors.text,
       lineHeight: 24,
+      marginBottom: 8,
+    },
+    htmlIndicator: {
+      fontSize: 12,
+      color: theme.colors.primary,
+      fontStyle: 'italic',
+      marginBottom: 8,
     },
     filesSection: {
       marginTop: 15,
