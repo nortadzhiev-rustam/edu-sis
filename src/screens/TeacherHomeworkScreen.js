@@ -21,6 +21,7 @@ import {
   faChevronRight,
   faCalendarAlt,
   faExclamationTriangle,
+  faTimes,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { buildApiUrl } from '../config/env';
@@ -32,6 +33,7 @@ export default function TeacherHomeworkScreen({ navigation, route }) {
   const [homeworkList, setHomeworkList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const styles = createStyles(theme);
 
@@ -56,6 +58,7 @@ export default function TeacherHomeworkScreen({ navigation, route }) {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Homework list response data:', data);
         if (data.success) {
           setHomeworkList(data.data || []);
         } else {
@@ -76,6 +79,63 @@ export default function TeacherHomeworkScreen({ navigation, route }) {
   const onRefresh = () => {
     setRefreshing(true);
     fetchHomeworkList();
+  };
+
+  // Close homework function
+  const closeHomework = async (homeworkId) => {
+    try {
+      setDeleting(true);
+
+      const requestBody = {
+        auth_code: authCode,
+        homework_id: homeworkId,
+      };
+
+      const response = await fetch(buildApiUrl('/teacher/homework/close'), {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          // Remove closed homework from the list
+          setHomeworkList((prev) =>
+            prev.filter((item) => item.homework_id !== homeworkId)
+          );
+
+          Alert.alert('Success', 'Homework assignment closed successfully');
+        } else {
+          Alert.alert('Error', data.message || 'Failed to close homework');
+        }
+      } else {
+        Alert.alert('Error', `Failed to close homework: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Error closing homework:', error);
+      Alert.alert('Error', 'Failed to connect to server');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const confirmSingleClose = (homework) => {
+    Alert.alert(
+      'Close Homework',
+      `Are you sure you want to close "${homework.title}"? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Close',
+          style: 'destructive',
+          onPress: () => closeHomework(homework.homework_id),
+        },
+      ]
+    );
   };
 
   const getStatusColor = (status) => {
@@ -121,17 +181,19 @@ export default function TeacherHomeworkScreen({ navigation, route }) {
     const statusIcon = getStatusIcon(homework.status);
     const submissionRate = homework.statistics?.submission_rate || 0;
 
+    const handleCardPress = () => {
+      navigation.navigate('TeacherHomeworkDetail', {
+        homeworkId: homework.homework_id,
+        authCode,
+        teacherName,
+      });
+    };
+
     return (
       <TouchableOpacity
         key={homework.homework_id}
         style={styles.homeworkCard}
-        onPress={() =>
-          navigation.navigate('TeacherHomeworkDetail', {
-            homeworkId: homework.homework_id,
-            authCode,
-            teacherName,
-          })
-        }
+        onPress={handleCardPress}
         activeOpacity={0.7}
       >
         <View style={styles.cardHeader}>
@@ -141,8 +203,20 @@ export default function TeacherHomeworkScreen({ navigation, route }) {
               {homework.subject_name} • {homework.grade_name}
             </Text>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
-            <FontAwesomeIcon icon={statusIcon} size={16} color='#fff' />
+
+          <View style={styles.cardActions}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => confirmSingleClose(homework)}
+            >
+              <FontAwesomeIcon icon={faTimes} size={14} color='#fff' />
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+            <View
+              style={[styles.statusBadge, { backgroundColor: statusColor }]}
+            >
+              <FontAwesomeIcon icon={statusIcon} size={16} color='#fff' />
+            </View>
           </View>
         </View>
 
@@ -249,7 +323,9 @@ export default function TeacherHomeworkScreen({ navigation, route }) {
         >
           <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
         </TouchableOpacity>
+
         <Text style={styles.headerTitle}>Homework Management</Text>
+
         <TouchableOpacity
           style={styles.addButton}
           onPress={() =>
@@ -365,6 +441,27 @@ const createStyles = (theme) =>
       padding: 20,
       marginBottom: 15,
       ...theme.shadows.medium,
+    },
+
+    cardActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    closeButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 16,
+      backgroundColor: '#FF3B30',
+      marginRight: 8,
+      gap: 4,
+    },
+    closeButtonText: {
+      color: '#fff',
+      fontSize: 12,
+      fontWeight: '600',
     },
     cardHeader: {
       flexDirection: 'row',

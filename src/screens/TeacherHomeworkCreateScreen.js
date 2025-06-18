@@ -28,7 +28,8 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
   const [description, setDescription] = useState('');
   const [selectedClass, setSelectedClass] = useState(null);
   const [selectedStudents, setSelectedStudents] = useState([]);
-  const [deadline, setDeadline] = useState('');
+  const [deadlineDate, setDeadlineDate] = useState('');
+  const [deadlineTime, setDeadlineTime] = useState('');
 
   const styles = createStyles(theme);
 
@@ -90,10 +91,18 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
       return;
     }
 
-    if (!deadline.trim()) {
-      Alert.alert('Error', 'Please enter deadline');
+    if (!deadlineDate.trim()) {
+      Alert.alert('Error', 'Please enter deadline date');
       return;
     }
+
+    if (!deadlineTime.trim()) {
+      Alert.alert('Error', 'Please enter deadline time');
+      return;
+    }
+
+    // Combine date and time
+    const combinedDeadline = `${deadlineDate.trim()} ${deadlineTime.trim()}`;
 
     setCreating(true);
     try {
@@ -108,7 +117,7 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
           title: title.trim(),
           grade_id: selectedClass.grade_id,
           students: selectedStudents,
-          deadline: deadline.trim(),
+          deadline: combinedDeadline,
           homework_data: description.trim(),
         }),
       });
@@ -198,7 +207,11 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Title Input */}
         <View style={styles.inputSection}>
           <Text style={styles.inputLabel}>Homework Title *</Text>
@@ -281,43 +294,63 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
               students selected
             </Text>
 
-            <View style={styles.studentsList}>
-              {selectedClass.students.map((student) => (
-                <TouchableOpacity
-                  key={student.student_id}
+            {selectedClass.students.map((student) => (
+              <TouchableOpacity
+                key={student.student_id}
+                style={[
+                  styles.studentOption,
+                  selectedStudents.includes(student.student_id) &&
+                    styles.selectedStudentOption,
+                ]}
+                onPress={() => toggleStudentSelection(student.student_id)}
+              >
+                <Text
                   style={[
-                    styles.studentOption,
+                    styles.studentOptionText,
                     selectedStudents.includes(student.student_id) &&
-                      styles.selectedStudentOption,
+                      styles.selectedStudentOptionText,
                   ]}
-                  onPress={() => toggleStudentSelection(student.student_id)}
                 >
-                  <Text
-                    style={[
-                      styles.studentOptionText,
-                      selectedStudents.includes(student.student_id) &&
-                        styles.selectedStudentOptionText,
-                    ]}
-                  >
-                    {student.student_name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+                  {student.student_name}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
         )}
 
         {/* Deadline Input */}
         <View style={styles.inputSection}>
           <Text style={styles.inputLabel}>Deadline *</Text>
-          <TextInput
-            style={styles.textInput}
-            placeholder='YYYY-MM-DD HH:MM:SS (e.g., 2024-01-20 23:59:59)'
-            placeholderTextColor={theme.colors.textSecondary}
-            value={deadline}
-            onChangeText={setDeadline}
-          />
-          <Text style={styles.inputHint}>Format: YYYY-MM-DD HH:MM:SS</Text>
+
+          {/* Date Input */}
+          <View style={styles.dateTimeContainer}>
+            <View style={styles.dateTimeInput}>
+              <Text style={styles.dateTimeLabel}>Date</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder='YYYY-MM-DD (e.g., 2024-01-20)'
+                placeholderTextColor={theme.colors.textSecondary}
+                value={deadlineDate}
+                onChangeText={setDeadlineDate}
+              />
+            </View>
+
+            {/* Time Input */}
+            <View style={styles.dateTimeInput}>
+              <Text style={styles.dateTimeLabel}>Time</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder='HH:MM:SS (e.g., 23:59:59)'
+                placeholderTextColor={theme.colors.textSecondary}
+                value={deadlineTime}
+                onChangeText={setDeadlineTime}
+              />
+            </View>
+          </View>
+
+          <Text style={styles.inputHint}>
+            Date format: YYYY-MM-DD, Time format: HH:MM:SS
+          </Text>
         </View>
 
         {/* Create Button */}
@@ -389,7 +422,10 @@ const createStyles = (theme) =>
     },
     content: {
       flex: 1,
+    },
+    scrollContent: {
       padding: 20,
+      paddingBottom: 40,
     },
 
     // Form Styles
@@ -419,6 +455,19 @@ const createStyles = (theme) =>
       color: theme.colors.textSecondary,
       marginTop: 4,
       fontStyle: 'italic',
+    },
+    dateTimeContainer: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    dateTimeInput: {
+      flex: 1,
+    },
+    dateTimeLabel: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: theme.colors.text,
+      marginBottom: 6,
     },
 
     // Class Selection
@@ -470,9 +519,6 @@ const createStyles = (theme) =>
       color: theme.colors.textSecondary,
       marginBottom: 12,
     },
-    studentsList: {
-      maxHeight: 200,
-    },
     studentOption: {
       backgroundColor: theme.colors.surface,
       borderWidth: 1,
@@ -503,7 +549,6 @@ const createStyles = (theme) =>
       padding: 16,
       borderRadius: 12,
       marginTop: 20,
-      marginBottom: 40,
       ...theme.shadows.medium,
     },
     disabledButton: {

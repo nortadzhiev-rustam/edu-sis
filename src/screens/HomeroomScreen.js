@@ -154,6 +154,7 @@ export default function HomeroomScreen({ route, navigation }) {
     try {
       const url = buildApiUrl(Config.API_ENDPOINTS.GET_HOMEROOM_STUDENTS, {
         classroom_id: classroom.classroom_id,
+        auth_code: authCode,
       });
 
       const response = await fetch(url, {
@@ -166,6 +167,7 @@ export default function HomeroomScreen({ route, navigation }) {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Students response data:', data);
         if (data.success) {
           setStudentsData(data.data || []);
         }
@@ -189,6 +191,7 @@ export default function HomeroomScreen({ route, navigation }) {
         classroom_id: classroom.classroom_id,
         start_date: startDate,
         end_date: endDate,
+        auth_code: authCode,
       });
 
       const response = await fetch(url, {
@@ -201,6 +204,7 @@ export default function HomeroomScreen({ route, navigation }) {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Discipline response data:', data);
         if (data.success) {
           setDisciplineData(data.data);
         }
@@ -388,12 +392,15 @@ export default function HomeroomScreen({ route, navigation }) {
 
           {renderActionButton(
             'View Students',
-            `${studentsData.length} students in class`,
+            `${studentsData.students.length} students in class`,
             faUsers,
             '#007AFF',
             () =>
-              Alert.alert('Students', `Found ${studentsData.length} students`),
-            studentsData.length
+              navigation.navigate('HomeroomStudentsScreen', {
+                authCode,
+                classroomData,
+              }),
+            studentsData.students.length
           )}
 
           {renderActionButton(
@@ -421,12 +428,10 @@ export default function HomeroomScreen({ route, navigation }) {
             faClipboardList,
             '#FF9500',
             () =>
-              Alert.alert(
-                'Discipline',
-                disciplineData
-                  ? `Total records: ${disciplineData.summary.total_records}`
-                  : 'No discipline data'
-              ),
+              navigation.navigate('HomeroomDisciplineScreen', {
+                authCode,
+                classroomData,
+              }),
             disciplineData?.summary.total_records || 0
           )}
         </View>
@@ -465,7 +470,7 @@ const createStyles = (theme) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      backgroundColor: theme.colors.primary,
+      backgroundColor: theme.colors.headerBackground,
       paddingHorizontal: 16,
       paddingVertical: 12,
       elevation: 4,
@@ -475,7 +480,12 @@ const createStyles = (theme) =>
       shadowRadius: 4,
     },
     backButton: {
-      padding: 8,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     headerTitle: {
       fontSize: 18,

@@ -18,6 +18,9 @@ import TeacherHomeworkScreen from './src/screens/TeacherHomeworkScreen';
 import TeacherHomeworkDetailScreen from './src/screens/TeacherHomeworkDetailScreen';
 import TeacherHomeworkCreateScreen from './src/screens/TeacherHomeworkCreateScreen';
 import HomeroomScreen from './src/screens/HomeroomScreen';
+import HomeroomStudentsScreen from './src/screens/HomeroomStudentsScreen';
+import HomeroomStudentProfile from './src/screens/HomeroomStudentProfile';
+import HomeroomDisciplineScreen from './src/screens/HomeroomDisciplineScreen';
 import ParentScreen from './src/screens/ParentScreen';
 import TimetableScreen from './src/screens/TimetableScreen';
 import GradesScreen from './src/screens/GradesScreen';
@@ -183,6 +186,18 @@ export default function App() {
                 <Stack.Screen
                   name='HomeroomScreen'
                   component={HomeroomScreen}
+                />
+                <Stack.Screen
+                  name='HomeroomStudentsScreen'
+                  component={HomeroomStudentsScreen}
+                />
+                <Stack.Screen
+                  name='HomeroomStudentProfile'
+                  component={HomeroomStudentProfile}
+                />
+                <Stack.Screen
+                  name='HomeroomDisciplineScreen'
+                  component={HomeroomDisciplineScreen}
                 />
                 <Stack.Screen name='ParentScreen' component={ParentScreen} />
                 <Stack.Screen
