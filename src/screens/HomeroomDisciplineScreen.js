@@ -125,7 +125,9 @@ export default function HomeroomDisciplineScreen({ route, navigation }) {
         </View>
         <View style={styles.recordInfo}>
           <Text style={styles.recordTitle}>{record.item_title}</Text>
-          <Text style={styles.recordDate}>{record.date}</Text>
+          <Text style={styles.recordDate}>
+            Teacher: {record.teacher_name} • Date: {record.date}
+          </Text>
         </View>
         <View style={styles.recordPoints}>
           <Text
@@ -145,8 +147,7 @@ export default function HomeroomDisciplineScreen({ route, navigation }) {
 
   const renderStudentCard = (student) => {
     const isExpanded = expandedStudents.has(student.student_id);
-    const hasRecords =
-      student.all_records && student.all_records.length > 0;
+    const hasRecords = student.all_records && student.all_records.length > 0;
 
     return (
       <View key={student.student_id} style={styles.studentCard}>

@@ -16,6 +16,9 @@ import {
   faUsers,
   faClipboardList,
   faCalendarCheck,
+  faUserGraduate,
+  faMars,
+  faVenus,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { Config, buildApiUrl } from '../config/env';
@@ -324,27 +327,70 @@ export default function HomeroomScreen({ route, navigation }) {
         {/* Classroom Overview */}
         {classroomData && (
           <View style={styles.overviewCard}>
-            <Text style={styles.classroomTitle}>
-              {classroomData.classroom_name}
-            </Text>
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>
-                  {classroomData.total_students}
-                </Text>
-                <Text style={styles.statLabel}>Total Students</Text>
+            <View style={styles.classroomHeader}>
+              <View style={styles.classroomIconContainer}>
+                <FontAwesomeIcon icon={faUserGraduate} size={24} color='#fff' />
               </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>
-                  {classroomData.male_students}
+              <View style={styles.classroomTitleContainer}>
+                <Text style={styles.classroomTitle}>
+                  {classroomData.classroom_name}
                 </Text>
-                <Text style={styles.statLabel}>Male</Text>
+                <Text style={styles.classroomSubtitle}>Homeroom Class</Text>
               </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>
-                  {classroomData.female_students}
-                </Text>
-                <Text style={styles.statLabel}>Female</Text>
+            </View>
+
+            <View style={styles.statsContainer}>
+              <View style={styles.statCard}>
+                <View
+                  style={[
+                    styles.statIconContainer,
+                    { backgroundColor: '#007AFF15' },
+                  ]}
+                >
+                  <FontAwesomeIcon icon={faUsers} size={20} color='#007AFF' />
+                </View>
+                <View style={styles.statContent}>
+                  <Text style={styles.statNumber}>
+                    {classroomData.total_students}
+                  </Text>
+                  <Text style={styles.statLabel}>Total Students</Text>
+                </View>
+              </View>
+
+              <View style={styles.genderStatsRow}>
+                <View style={[styles.statCard, styles.genderStatCard]}>
+                  <View
+                    style={[
+                      styles.statIconContainer,
+                      { backgroundColor: '#34C75915' },
+                    ]}
+                  >
+                    <FontAwesomeIcon icon={faMars} size={20} color='#34C759' />
+                  </View>
+                  <View style={styles.statContent}>
+                    <Text style={styles.statNumber}>
+                      {classroomData.male_students}
+                    </Text>
+                    <Text style={styles.statLabel}>Male</Text>
+                  </View>
+                </View>
+
+                <View style={[styles.statCard, styles.genderStatCard]}>
+                  <View
+                    style={[
+                      styles.statIconContainer,
+                      { backgroundColor: '#FF9F0A15' },
+                    ]}
+                  >
+                    <FontAwesomeIcon icon={faVenus} size={20} color='#FF9F0A' />
+                  </View>
+                  <View style={styles.statContent}>
+                    <Text style={styles.statNumber}>
+                      {classroomData.female_students}
+                    </Text>
+                    <Text style={styles.statLabel}>Female</Text>
+                  </View>
+                </View>
               </View>
             </View>
           </View>
@@ -435,26 +481,6 @@ export default function HomeroomScreen({ route, navigation }) {
             disciplineData?.summary.total_records || 0
           )}
         </View>
-
-        {/* Debug Information */}
-        <View style={styles.debugContainer}>
-          <Text style={styles.debugTitle}>Debug Information</Text>
-          <Text style={styles.debugText}>
-            AuthCode: {authCode ? 'Present' : 'Missing'}
-          </Text>
-          <Text style={styles.debugText}>
-            Classroom Data: {classroomData ? 'Loaded' : 'Not loaded'}
-          </Text>
-          <Text style={styles.debugText}>
-            Students: {studentsData.length} found
-          </Text>
-          <Text style={styles.debugText}>
-            Attendance: {attendanceData ? 'Loaded' : 'Not loaded'}
-          </Text>
-          <Text style={styles.debugText}>
-            Discipline: {disciplineData ? 'Loaded' : 'Not loaded'}
-          </Text>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -533,15 +559,76 @@ const createStyles = (theme) =>
     },
     overviewCard: {
       backgroundColor: theme.colors.surface,
-      borderRadius: 12,
-      padding: 20,
+      borderRadius: 16,
       margin: 16,
       marginBottom: 12,
-      elevation: 2,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      overflow: 'hidden',
+    },
+    classroomHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.colors.primary,
+      padding: 20,
+      paddingBottom: 16,
+    },
+    classroomIconContainer: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 16,
+    },
+    classroomTitleContainer: {
+      flex: 1,
+    },
+    classroomSubtitle: {
+      fontSize: 14,
+      color: 'rgba(255, 255, 255, 0.8)',
+      marginTop: 2,
+    },
+    statsContainer: {
+      padding: 20,
+      paddingTop: 16,
+    },
+    statCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.colors.background,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      elevation: 1,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
-      shadowRadius: 2,
+      shadowOpacity: 0.05,
+      shadowRadius: 1,
+    },
+    statIconContainer: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 16,
+    },
+    statContent: {
+      flex: 1,
+    },
+    genderStatsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      gap: 12,
+    },
+    genderStatCard: {
+      flex: 1,
+      marginBottom: 0,
     },
     summaryCard: {
       backgroundColor: theme.colors.surface,
@@ -638,26 +725,18 @@ const createStyles = (theme) =>
     classroomTitle: {
       fontSize: 20,
       fontWeight: 'bold',
-      color: theme.colors.text,
-      marginBottom: 12,
-      textAlign: 'center',
-    },
-    statsRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-    },
-    statItem: {
-      alignItems: 'center',
+      color: '#fff',
+      marginBottom: 2,
     },
     statNumber: {
-      fontSize: 24,
+      fontSize: 20,
       fontWeight: 'bold',
-      color: theme.colors.primary,
+      color: theme.colors.text,
+      marginBottom: 2,
     },
     statLabel: {
-      fontSize: 12,
+      fontSize: 14,
       color: theme.colors.textSecondary,
-      marginTop: 4,
     },
     cardTitle: {
       fontSize: 16,
