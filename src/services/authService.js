@@ -9,6 +9,42 @@ import { getLoginDeviceInfo } from '../utils/deviceInfo';
 // Flag to toggle between dummy data and real API
 const USE_DUMMY_DATA = Config.DEV.USE_DUMMY_DATA;
 
+// Dummy data for development (when USE_DUMMY_DATA is true)
+const dummyTeachers = [
+  {
+    id: 'T001',
+    username: 'teacher1',
+    password: 'password123',
+    name: 'John Teacher',
+    authCode: 'AUTH_T001',
+    userType: 'teacher',
+  },
+];
+
+const dummyStudents = [
+  {
+    id: 'S001',
+    username: 'student1',
+    password: 'password123',
+    name: 'Jane Student',
+    authCode: 'AUTH_S001',
+    userType: 'student',
+  },
+];
+
+// Helper functions for dummy data
+const findTeacher = (username, password) => {
+  return dummyTeachers.find(
+    (teacher) => teacher.username === username && teacher.password === password
+  );
+};
+
+const findStudent = (username, password) => {
+  return dummyStudents.find(
+    (student) => student.username === username && student.password === password
+  );
+};
+
 // Helper function to encode string to base64
 const encodeToBase64 = (str) => {
   if (typeof btoa === 'function') {

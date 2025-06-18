@@ -111,6 +111,22 @@ export default function LoginScreen({ route, navigation }) {
             ? JSON.parse(existingStudentsJSON)
             : [];
 
+          // Check if student already exists (prevent duplicates)
+          const studentExists = existingStudents.some(
+            (student) =>
+              student.id === userData.id ||
+              student.username === userData.username ||
+              (student.authCode && student.authCode === userData.authCode)
+          );
+
+          if (studentExists) {
+            Alert.alert(
+              t('duplicateStudent'),
+              'This student account has already been added.'
+            );
+            return;
+          }
+
           // Add the new student account
           existingStudents.push(userData);
 

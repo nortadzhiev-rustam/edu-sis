@@ -550,61 +550,81 @@ export default function AssignmentsScreen({ navigation, route }) {
             return (
               <TouchableOpacity
                 key={group.subject}
-                style={[
-                  styles.modernSubjectCard,
-                  { borderLeftColor: subjectColor },
-                ]}
+                style={styles.redesignedCard}
                 onPress={() => setSelectedSubject(group)}
               >
-                <View style={styles.subjectCardHeader}>
-                  <View
-                    style={[
-                      styles.subjectIconContainer,
-                      { backgroundColor: `${subjectColor}15` },
-                    ]}
-                  >
-                    <FontAwesomeIcon
-                      icon={subjectIcon}
-                      size={24}
-                      color={subjectColor}
-                    />
+                {/* Top Section */}
+                <View style={styles.cardTopSection}>
+                  <View style={styles.subjectHeader}>
+                    <View
+                      style={[
+                        styles.modernIcon,
+                        { backgroundColor: subjectColor },
+                      ]}
+                    >
+                      <FontAwesomeIcon
+                        icon={subjectIcon}
+                        size={20}
+                        color='#fff'
+                      />
+                    </View>
+                    <View style={styles.titleSection}>
+                      <Text style={styles.subjectName}>{group.subject}</Text>
+                      <Text style={styles.totalAssignments}>
+                        {group.totalCount} assignments
+                      </Text>
+                    </View>
+                    <View style={styles.arrowContainer}>
+                      <FontAwesomeIcon
+                        icon={faChevronRight}
+                        size={14}
+                        color={subjectColor}
+                      />
+                    </View>
                   </View>
-                  <View style={styles.subjectInfo}>
-                    <Text style={styles.modernSubjectTitle}>
-                      {group.subject}
-                    </Text>
-                    <Text style={styles.subjectAssignmentCount}>
-                      {group.totalCount} assignments
-                    </Text>
-                  </View>
-                  <FontAwesomeIcon
-                    icon={faChevronRight}
-                    size={16}
-                    color='#999'
-                  />
                 </View>
 
-                <View style={styles.modernSubjectStats}>
-                  <View style={styles.modernStatItem}>
-                    <View
-                      style={[styles.statBadge, { backgroundColor: '#FF3B30' }]}
-                    >
-                      <Text style={styles.statBadgeText}>
+                {/* Bottom Section */}
+                <View style={styles.cardBottomSection}>
+                  <View style={styles.statsContainer}>
+                    <View style={styles.statBox}>
+                      <Text style={[styles.statValue, { color: '#FF6B6B' }]}>
                         {group.incompleteCount}
                       </Text>
+                      <Text style={styles.statText}>Pending</Text>
                     </View>
-                    <Text style={styles.modernStatLabel}>Pending</Text>
-                  </View>
 
-                  <View style={styles.modernStatItem}>
-                    <View
-                      style={[styles.statBadge, { backgroundColor: '#34C759' }]}
-                    >
-                      <Text style={styles.statBadgeText}>
+                    <View style={styles.verticalDivider} />
+
+                    <View style={styles.statBox}>
+                      <Text style={[styles.statValue, { color: '#51CF66' }]}>
                         {group.completedCount}
                       </Text>
+                      <Text style={styles.statText}>Completed</Text>
                     </View>
-                    <Text style={styles.modernStatLabel}>Completed</Text>
+                  </View>
+
+                  {/* Progress Indicator */}
+                  <View style={styles.progressIndicator}>
+                    <View style={styles.progressTrack}>
+                      <View
+                        style={[
+                          styles.progressFill,
+                          {
+                            width: `${
+                              (group.completedCount / group.totalCount) * 100
+                            }%`,
+                            backgroundColor: subjectColor,
+                          },
+                        ]}
+                      />
+                    </View>
+                    <Text style={styles.progressText}>
+                      {Math.round(
+                        (group.completedCount / group.totalCount) * 100
+                      )}
+                      % done
+                    </Text>
                   </View>
                 </View>
               </TouchableOpacity>
@@ -915,22 +935,26 @@ const createStyles = (theme) =>
     // Subjects view styles
     subjectsContainer: {
       flex: 1,
+      width: '100%',
     },
     subjectsGrid: {
-      alignItems: 'center',
-      width: '100%',
-      paddingHorizontal: 10,
+      width: '95%',
+      paddingRight: 10,
     },
 
     // Modern Subject Card Styles (similar to GradesScreen)
     modernSubjectCard: {
       backgroundColor: theme.colors.surface,
       width: '100%',
-      marginVertical: 8,
+      marginVertical: 10,
       borderRadius: 16,
       padding: 20,
       borderLeftWidth: 4,
-      ...theme.shadows.medium,
+      elevation: 4,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 6,
     },
     subjectCardHeader: {
       flexDirection: 'row',
@@ -984,6 +1008,113 @@ const createStyles = (theme) =>
     },
     modernStatLabel: {
       fontSize: 12,
+      color: theme.colors.textSecondary,
+      fontWeight: '600',
+    },
+
+    // Redesigned Card Styles
+    redesignedCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      marginBottom: 16,
+      marginHorizontal: 16,
+      elevation: 6,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      
+      width: '100%',
+    },
+    cardTopSection: {
+      padding: 16,
+      paddingBottom: 12,
+      overflow: 'hidden',
+    },
+    subjectHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    modernIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    titleSection: {
+      flex: 1,
+    },
+    subjectName: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: theme.colors.text,
+      marginBottom: 4,
+      flexShrink: 1,
+    },
+    totalAssignments: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      fontWeight: '500',
+    },
+    arrowContainer: {
+      padding: 4,
+    },
+    cardBottomSection: {
+      backgroundColor: theme.colors.background,
+      padding: 16,
+      paddingTop: 12,
+      borderBottomLeftRadius: 16,
+      borderBottomRightRadius: 16,
+      overflow: 'hidden',
+    },
+    statsContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+      paddingHorizontal: 8,
+    },
+    statBox: {
+      flex: 1,
+      alignItems: 'center',
+      minWidth: 80,
+    },
+    statValue: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      marginBottom: 4,
+    },
+    statText: {
+      fontSize: 13,
+      color: theme.colors.textSecondary,
+      fontWeight: '600',
+      textAlign: 'center',
+      minWidth: 60,
+    },
+    verticalDivider: {
+      width: 1,
+      height: 40,
+      backgroundColor: theme.colors.border,
+      marginHorizontal: 20,
+    },
+    progressIndicator: {
+      alignItems: 'center',
+    },
+    progressTrack: {
+      width: '100%',
+      height: 4,
+      backgroundColor: theme.colors.border,
+      borderRadius: 2,
+      overflow: 'hidden',
+      marginBottom: 6,
+    },
+    progressFill: {
+      height: '100%',
+      borderRadius: 2,
+    },
+    progressText: {
+      fontSize: 11,
       color: theme.colors.textSecondary,
       fontWeight: '600',
     },

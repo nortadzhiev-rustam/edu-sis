@@ -583,8 +583,7 @@ export default function AttendanceScreen({ navigation, route }) {
     }
 
     if (
-      !attendanceData ||
-      !attendanceData.attendance_records ||
+      !attendanceData?.attendance_records ||
       attendanceData.attendance_records.length === 0
     ) {
       return (
@@ -880,7 +879,7 @@ const createStyles = (theme) =>
       backgroundColor: '#34C759',
       paddingHorizontal: 20,
       paddingVertical: 10,
-      borderRadius: 8,
+      borderRadius: 20,
     },
     disabledButton: {
       backgroundColor: '#ccc',
@@ -995,7 +994,7 @@ const createStyles = (theme) =>
       ...theme.shadows.small,
       width: Platform.isPad
         ? Dimensions.get('window').width * 0.22
-        : Dimensions.get('window').width * 0.45,
+        : Dimensions.get('window').width * 0.50,
     },
     backToSummaryText: {
       marginLeft: 8,

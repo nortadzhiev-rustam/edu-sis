@@ -1412,13 +1412,13 @@ const createStyles = (theme, fontSizes) =>
     // iPad-specific grid layout - 4 tiles per row, wraps to next row for additional tiles
     iPadActionTilesGrid: {
       flexWrap: 'wrap',
-      justifyContent: 'space-between',
+      justifyContent: 'flex-start',
       gap: 8,
     },
     // Tablet-specific grid layout - 4 tiles per row, wraps to next row for additional tiles
     tabletActionTilesGrid: {
       flexWrap: 'wrap',
-      justifyContent: 'space-between',
+      justifyContent: 'flex-start',
       gap: 10,
     },
     // iPad landscape-specific grid layout - 6 tiles per row, wraps for additional tiles

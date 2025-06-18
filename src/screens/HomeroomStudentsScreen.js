@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   ScrollView,
   RefreshControl,
@@ -11,6 +10,7 @@ import {
   Alert,
   Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
   faArrowLeft,
@@ -203,7 +203,7 @@ export default function HomeroomStudentsScreen({ route, navigation }) {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
@@ -224,7 +224,7 @@ export default function HomeroomStudentsScreen({ route, navigation }) {
 
   if (error) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
@@ -246,7 +246,7 @@ export default function HomeroomStudentsScreen({ route, navigation }) {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -254,7 +254,9 @@ export default function HomeroomStudentsScreen({ route, navigation }) {
         >
           <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Students ({students.students.length})</Text>
+        <Text style={styles.headerTitle}>
+          Students ({students.students.length})
+        </Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -303,17 +305,12 @@ const createStyles = (theme) =>
       backgroundColor: theme.colors.background,
     },
     header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
       backgroundColor: theme.colors.headerBackground,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      elevation: 4,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
+      padding: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      ...theme.shadows.medium,
     },
     backButton: {
       width: 36,

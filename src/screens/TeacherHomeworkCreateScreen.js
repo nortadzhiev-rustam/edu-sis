@@ -8,12 +8,19 @@ import {
   ScrollView,
   Alert,
   TextInput,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faArrowLeft, faPlus, faSave } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { buildApiUrl } from '../config/env';
+
+// Conditional import for iOS DateTimePicker
+let DateTimePicker = null;
+if (Platform.OS === 'ios') {
+  DateTimePicker = require('@react-native-community/datetimepicker').default;
+}
 
 export default function TeacherHomeworkCreateScreen({ navigation, route }) {
   const { theme } = useTheme();
@@ -28,8 +35,10 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
   const [description, setDescription] = useState('');
   const [selectedClass, setSelectedClass] = useState(null);
   const [selectedStudents, setSelectedStudents] = useState([]);
-  const [deadlineDate, setDeadlineDate] = useState('');
-  const [deadlineTime, setDeadlineTime] = useState('');
+  const [deadlineDate, setDeadlineDate] = useState(new Date());
+  const [deadlineTime, setDeadlineTime] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
 
   const styles = createStyles(theme);
 
@@ -91,18 +100,20 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
       return;
     }
 
-    if (!deadlineDate.trim()) {
-      Alert.alert('Error', 'Please enter deadline date');
+    if (!deadlineDate) {
+      Alert.alert('Error', 'Please select deadline date');
       return;
     }
 
-    if (!deadlineTime.trim()) {
-      Alert.alert('Error', 'Please enter deadline time');
+    if (!deadlineTime) {
+      Alert.alert('Error', 'Please select deadline time');
       return;
     }
 
     // Combine date and time
-    const combinedDeadline = `${deadlineDate.trim()} ${deadlineTime.trim()}`;
+    const combinedDeadline = `${formatDate(deadlineDate)} ${formatTime(
+      deadlineTime
+    )}`;
 
     setCreating(true);
     try {
@@ -160,6 +171,149 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
 
   const clearStudentSelection = () => {
     setSelectedStudents([]);
+  };
+
+  // Date picker handlers - Android compatible approach
+  const showDatePickerModal = () => {
+    if (Platform.OS === 'android') {
+      // For Android, use Alert.prompt as a reliable fallback
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const exampleDate = formatDate(tomorrow);
+
+      Alert.prompt(
+        'Select Deadline Date',
+        `Enter date in YYYY-MM-DD format\nExample: ${exampleDate}`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Set Date',
+            onPress: (text) => {
+              if (text && text.trim()) {
+                // Try to parse the date
+                const inputDate = text.trim();
+                const date = new Date(inputDate);
+                const todayStart = new Date();
+                todayStart.setHours(0, 0, 0, 0);
+
+                // Validate date format and value
+                if (!isNaN(date.getTime()) && date >= todayStart) {
+                  setDeadlineDate(date);
+                  Alert.alert(
+                    'Success',
+                    `Deadline date set to ${formatDate(date)}`
+                  );
+                } else {
+                  Alert.alert(
+                    'Invalid Date',
+                    'Please enter a valid future date in YYYY-MM-DD format.\n\nExample: 2024-12-25'
+                  );
+                }
+              }
+            },
+          },
+        ],
+        'plain-text',
+        formatDate(deadlineDate)
+      );
+    } else {
+      // iOS - use the existing DateTimePicker
+      setShowDatePicker(true);
+    }
+  };
+
+  const showTimePickerModal = () => {
+    if (Platform.OS === 'android') {
+      // For Android, use Alert.prompt as a reliable fallback
+      Alert.prompt(
+        'Select Deadline Time',
+        'Enter time in 24-hour format (HH:MM)\nExamples: 09:30, 14:45, 23:59',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Set Time',
+            onPress: (text) => {
+              if (text && text.trim()) {
+                const inputTime = text.trim();
+                const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/;
+
+                if (timeRegex.test(inputTime)) {
+                  const [hours, minutes] = inputTime.split(':').map(Number);
+                  const newTime = new Date(deadlineTime);
+                  newTime.setHours(hours, minutes, 0, 0);
+                  setDeadlineTime(newTime);
+                  Alert.alert(
+                    'Success',
+                    `Deadline time set to ${formatTime(newTime)}`
+                  );
+                } else {
+                  Alert.alert(
+                    'Invalid Time',
+                    'Please enter a valid time in HH:MM format.\n\nExamples:\n• 09:30 (9:30 AM)\n• 14:45 (2:45 PM)\n• 23:59 (11:59 PM)'
+                  );
+                }
+              }
+            },
+          },
+        ],
+        'plain-text',
+        formatTime(deadlineTime)
+      );
+    } else {
+      // iOS - use the existing DateTimePicker
+      setShowTimePicker(true);
+    }
+  };
+
+  // iOS DateTimePicker handlers
+  const onDateChange = (event, selectedDate) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+
+    if (event.type === 'dismissed') {
+      setShowDatePicker(false);
+      return;
+    }
+
+    if (selectedDate) {
+      setDeadlineDate(selectedDate);
+      if (Platform.OS === 'ios') {
+        setShowDatePicker(false);
+      }
+    }
+  };
+
+  const onTimeChange = (event, selectedTime) => {
+    if (Platform.OS === 'android') {
+      setShowTimePicker(false);
+    }
+
+    if (event.type === 'dismissed') {
+      setShowTimePicker(false);
+      return;
+    }
+
+    if (selectedTime) {
+      setDeadlineTime(selectedTime);
+      if (Platform.OS === 'ios') {
+        setShowTimePicker(false);
+      }
+    }
+  };
+
+  const formatDate = (date) => {
+    return date.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+  };
+
+  const formatTime = (date) => {
+    return date.toLocaleTimeString('en-GB', {
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }); // HH:MM:SS format
   };
 
   if (loading) {
@@ -322,34 +476,67 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
         <View style={styles.inputSection}>
           <Text style={styles.inputLabel}>Deadline *</Text>
 
-          {/* Date Input */}
+          {/* Date and Time Pickers */}
           <View style={styles.dateTimeContainer}>
             <View style={styles.dateTimeInput}>
               <Text style={styles.dateTimeLabel}>Date</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder='YYYY-MM-DD (e.g., 2024-01-20)'
-                placeholderTextColor={theme.colors.textSecondary}
-                value={deadlineDate}
-                onChangeText={setDeadlineDate}
-              />
+              <TouchableOpacity onPress={showDatePickerModal}>
+                <TextInput
+                  style={styles.textInput}
+                  value={formatDate(deadlineDate)}
+                  placeholder='Select date'
+                  placeholderTextColor={theme.colors.textSecondary}
+                  editable={false}
+                  showSoftInputOnFocus={false}
+                  pointerEvents='none'
+                />
+              </TouchableOpacity>
             </View>
 
-            {/* Time Input */}
             <View style={styles.dateTimeInput}>
               <Text style={styles.dateTimeLabel}>Time</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder='HH:MM:SS (e.g., 23:59:59)'
-                placeholderTextColor={theme.colors.textSecondary}
-                value={deadlineTime}
-                onChangeText={setDeadlineTime}
-              />
+              <TouchableOpacity onPress={showTimePickerModal}>
+                <TextInput
+                  style={styles.textInput}
+                  value={formatTime(deadlineTime)}
+                  placeholder='Select time'
+                  placeholderTextColor={theme.colors.textSecondary}
+                  editable={false}
+                  showSoftInputOnFocus={false}
+                  pointerEvents='none'
+                />
+              </TouchableOpacity>
             </View>
           </View>
 
+          {/* Date Picker Modal - iOS Only */}
+          {Platform.OS === 'ios' && showDatePicker && DateTimePicker && (
+            <DateTimePicker
+              value={deadlineDate}
+              mode='date'
+              display='default'
+              onChange={onDateChange}
+              minimumDate={new Date()}
+              themeVariant='light'
+            />
+          )}
+
+          {/* Time Picker Modal - iOS Only */}
+          {Platform.OS === 'ios' && showTimePicker && DateTimePicker && (
+            <DateTimePicker
+              value={deadlineTime}
+              mode='time'
+              display='default'
+              onChange={onTimeChange}
+              themeVariant='light'
+              is24Hour={true}
+            />
+          )}
+
           <Text style={styles.inputHint}>
-            Date format: YYYY-MM-DD, Time format: HH:MM:SS
+            {Platform.OS === 'android'
+              ? 'Tap date/time fields above to set homework deadline'
+              : 'Tap to select date and time for homework deadline'}
           </Text>
         </View>
 
@@ -468,6 +655,10 @@ const createStyles = (theme) =>
       fontWeight: '500',
       color: theme.colors.text,
       marginBottom: 6,
+    },
+    inputText: {
+      fontSize: 16,
+      color: theme.colors.text,
     },
 
     // Class Selection
