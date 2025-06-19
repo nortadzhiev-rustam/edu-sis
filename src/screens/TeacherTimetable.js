@@ -26,11 +26,17 @@ import { useTheme } from '../contexts/ThemeContext';
 export default function TeacherTimetable({ route, navigation }) {
   const { theme } = useTheme(); // Get theme object
   const styles = createStyles(theme); // Pass theme to styles
-  const { authCode, timetableData: initialData } = route.params || {};
+  const {
+    authCode,
+    timetableData: initialData,
+    selectedBranch: initialSelectedBranch,
+  } = route.params || {};
 
   const [timetableData, setTimetableData] = useState(initialData);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedBranch, setSelectedBranch] = useState(0);
+  const [selectedBranch, setSelectedBranch] = useState(
+    initialSelectedBranch || 0
+  );
   // Removed unused state variables since we now navigate to separate screen
 
   // Get current day of week (1 = Monday, 5=Friday) if Saturday or Sunday, set it to Monday

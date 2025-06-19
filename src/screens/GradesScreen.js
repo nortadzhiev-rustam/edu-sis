@@ -38,7 +38,9 @@ import {
   faHeartbeat,
   faLeaf,
   faBell,
+  faGraduationCap,
 } from '@fortawesome/free-solid-svg-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { useScreenOrientation } from '../hooks/useScreenOrientation';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -51,7 +53,7 @@ const GradeSeparator = () => null; // We'll use marginVertical on cards instead
 export default function GradesScreen({ navigation, route }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const { unreadCount } = useNotifications();
+  const { unreadCount, refreshNotifications } = useNotifications();
 
   const [activeTab, setActiveTab] = useState('summative');
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
@@ -67,6 +69,13 @@ export default function GradesScreen({ navigation, route }) {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10); // Number of items per page
+
+  // Refresh notifications when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshNotifications();
+    }, [refreshNotifications])
+  );
 
   // Enable rotation for this screen
   useScreenOrientation(true);
@@ -446,55 +455,148 @@ export default function GradesScreen({ navigation, route }) {
     const subjectIcon = getSubjectIcon(subject);
     const average = getSubjectAverage(subject);
 
+    // Calculate grade counts
+    const summativeCount =
+      grades?.summative?.filter((g) => g.subject_name === subject)?.length || 0;
+    const formativeCount =
+      grades?.formative?.filter((g) => g.subject_name === subject)?.length || 0;
+    const totalGrades = summativeCount + formativeCount;
+
+    // Get grade letter based on average
+    const getGradeLetter = (avg) => {
+      if (!avg) return 'N/A';
+      if (avg >= 90) return 'A*';
+      if (avg >= 80) return 'A';
+      if (avg >= 70) return 'B';
+      if (avg >= 60) return 'C';
+      if (avg >= 50) return 'D';
+      return 'F';
+    };
+
+    const gradeLetter = getGradeLetter(average);
+
     return (
       <TouchableOpacity
         key={subject}
-        style={[styles.modernSubjectCard, { borderLeftColor: subjectColor }]}
+        style={[
+          styles.modernSubjectCard,
+          { backgroundColor: `${subjectColor}08` },
+        ]}
         onPress={() => handleSubjectSelect(subject)}
+        activeOpacity={0.9}
       >
-        <View style={styles.subjectCardHeader}>
-          <View
-            style={[
-              styles.subjectIconContainer,
-              { backgroundColor: `${subjectColor}15` },
-            ]}
+        {/* Header with Icon and Title */}
+        <View style={styles.cardHeader}>
+          <View style={styles.headerLeft}>
+            <View
+              style={[
+                styles.subjectIconContainer,
+                { backgroundColor: subjectColor },
+              ]}
+            >
+              <FontAwesomeIcon icon={subjectIcon} size={22} color='#fff' />
+            </View>
+            <View style={styles.titleContainer}>
+              <Text style={styles.modernSubjectTitle} numberOfLines={2}>
+                {subject}
+              </Text>
+              <View style={styles.assessmentInfo}>
+                <FontAwesomeIcon icon={faBook} size={10} color='#666' />
+                <Text style={styles.assessmentCount}>
+                  {totalGrades} assessments
+                </Text>
+              </View>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.expandButton}
+            onPress={() => handleSubjectSelect(subject)}
           >
             <FontAwesomeIcon
-              icon={subjectIcon}
-              size={24}
+              icon={faChevronRight}
+              size={14}
               color={subjectColor}
             />
+          </TouchableOpacity>
+        </View>
+
+        {/* Main Stats Row */}
+        <View style={styles.statsRow}>
+          <View style={styles.gradeSection}>
+            <View style={[styles.gradeCircle, { borderColor: subjectColor }]}>
+              <Text style={[styles.gradeLetterText, { color: subjectColor }]}>
+                {gradeLetter}
+              </Text>
+            </View>
+            <Text style={styles.gradeLabel}>Grade</Text>
           </View>
-          <View style={styles.subjectInfo}>
-            <Text style={styles.modernSubjectTitle}>{subject}</Text>
-            <Text style={styles.subjectGradeCount}>
-              {grades
-                ? `${
-                    (
-                      grades.summative?.filter(
-                        (g) => g.subject_name === subject
-                      ) || []
-                    ).length +
-                    (
-                      grades.formative?.filter(
-                        (g) => g.subject_name === subject
-                      ) || []
-                    ).length
-                  } grades`
-                : 'View grades'}
-            </Text>
+
+          <View style={styles.percentageSection}>
+            <View style={styles.percentageDisplay}>
+              <Text style={[styles.percentageNumber, { color: subjectColor }]}>
+                {average || '--'}
+              </Text>
+              <Text style={[styles.percentageSymbol, { color: subjectColor }]}>
+                %
+              </Text>
+            </View>
+            <Text style={styles.percentageLabel}>Average</Text>
           </View>
-          <View style={styles.subjectCardRight}>
-            {!!average && (
-              <View style={styles.averageContainer}>
-                <Text style={[styles.averageText, { color: subjectColor }]}>
-                  {average}%
-                </Text>
-                <Text style={styles.averageLabel}>Average</Text>
+        </View>
+
+        {/* Progress Bar */}
+        {average && (
+          <View style={styles.progressSection}>
+            <View style={styles.progressInfo}>
+              <Text style={styles.progressLabel}>Progress</Text>
+              <Text style={[styles.progressValue, { color: subjectColor }]}>
+                {average}%
+              </Text>
+            </View>
+            <View style={styles.progressBarWrapper}>
+              <View style={styles.progressTrack}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: `${Math.min(average, 100)}%`,
+                      backgroundColor: subjectColor,
+                    },
+                  ]}
+                />
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Bottom Info */}
+        <View style={styles.bottomInfo}>
+          <View style={styles.typeBreakdown}>
+            {summativeCount > 0 && (
+              <View style={styles.typeItem}>
+                <View
+                  style={[styles.typeDot, { backgroundColor: subjectColor }]}
+                />
+                <Text style={styles.typeText}>{summativeCount} Summative</Text>
+              </View>
+            )}
+            {formativeCount > 0 && (
+              <View style={styles.typeItem}>
+                <View
+                  style={[
+                    styles.typeDot,
+                    { backgroundColor: `${subjectColor}60` },
+                  ]}
+                />
+                <Text style={styles.typeText}>{formativeCount} Formative</Text>
               </View>
             )}
           </View>
-          <FontAwesomeIcon icon={faChevronRight} size={16} color='#999' />
+        </View>
+
+        {/* Floating Badge */}
+        <View style={[styles.floatingBadge, { backgroundColor: subjectColor }]}>
+          <FontAwesomeIcon icon={faTrophy} size={10} color='#fff' />
         </View>
       </TouchableOpacity>
     );
@@ -1151,7 +1253,19 @@ export default function GradesScreen({ navigation, route }) {
         {showSubjectList ? (
           // Show subject selection screen
           <View style={styles.subjectListContainer}>
-            <Text style={styles.subjectListTitle}>Select a Subject</Text>
+            <View style={styles.headerSection}>
+              <View style={styles.headerIconContainer}>
+                <FontAwesomeIcon
+                  icon={faGraduationCap}
+                  size={32}
+                  color='#FF9500'
+                />
+              </View>
+              <Text style={styles.subjectListTitle}>Select a Subject</Text>
+              <Text style={styles.subjectListSubtitle}>
+                Choose a subject to view your grades and performance
+              </Text>
+            </View>
             <ScrollView
               style={{ width: '100%' }}
               contentContainerStyle={styles.subjectGrid}
@@ -1280,32 +1394,63 @@ const createStyles = (theme) =>
       alignItems: 'center',
       paddingTop: 20,
     },
+    // Enhanced Header Section
+    headerSection: {
+      alignItems: 'center',
+      marginBottom: 40,
+      paddingHorizontal: 20,
+    },
+    headerIconContainer: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: 'rgba(255, 149, 0, 0.1)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 20,
+      shadowColor: theme.colors.warning,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 6,
+      borderWidth: 2,
+      borderColor: 'rgba(255, 149, 0, 0.2)',
+    },
     subjectListTitle: {
-      fontSize: 28,
-      fontWeight: 'bold',
-      color: '#333',
-      marginBottom: 30,
+      fontSize: 32,
+      fontWeight: '800',
+      color: theme.colors.textSecondary,
+      marginBottom: 12,
       textAlign: 'center',
+      letterSpacing: 0.5,
+    },
+    subjectListSubtitle: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: theme.colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 22,
+      maxWidth: 280,
     },
     subjectGrid: {
       alignItems: 'center',
       width: '100%',
-      paddingHorizontal: 20,
+      padding: 10,
     },
 
-    // Modern Subject Card Styles
+    // Modern Subject Card Styles - Dashboard Design
     modernSubjectCard: {
-      backgroundColor: '#fff',
+      backgroundColor: theme.colors.card,
       width: '100%',
-      marginVertical: 8,
-      borderRadius: 16,
+      marginVertical: 10,
+      borderRadius: 24,
       padding: 20,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 4,
-      borderLeftWidth: 4,
+      // Enhanced shadow properties using theme
+      ...theme.shadows.small,
+      position: 'relative',
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: theme.colors.border,
     },
     subjectCardHeader: {
       flexDirection: 'row',
@@ -1313,21 +1458,24 @@ const createStyles = (theme) =>
       justifyContent: 'space-between',
     },
     subjectIconContainer: {
-      width: 50,
-      height: 50,
-      borderRadius: 25,
+      width: 48,
+      height: 48,
+      borderRadius: 24,
       justifyContent: 'center',
       alignItems: 'center',
-      marginRight: 15,
+      marginRight: 12,
+      // Enhanced shadow using theme
+      ...theme.shadows.medium,
     },
     subjectInfo: {
       flex: 1,
     },
     modernSubjectTitle: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      color: '#333',
+      fontSize: 18,
+      fontWeight: '700',
+      color: theme.colors.text,
       marginBottom: 4,
+      letterSpacing: 0.2,
     },
     subjectGradeCount: {
       fontSize: 14,
@@ -1349,6 +1497,200 @@ const createStyles = (theme) =>
       color: '#666',
       marginTop: 2,
     },
+
+    // Dashboard-style Subject Card Styles
+    cardHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 16,
+    },
+    headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
+    titleContainer: {
+      flex: 1,
+    },
+    assessmentInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    assessmentCount: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      fontWeight: '500',
+      marginLeft: 4,
+    },
+    expandButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: theme.colors.border,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+
+    // Stats Row Section
+    statsRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-around',
+      marginBottom: 16,
+      paddingVertical: 8,
+    },
+    gradeSection: {
+      alignItems: 'center',
+      flex: 1,
+    },
+    gradeCircle: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      borderWidth: 2,
+      backgroundColor: theme.colors.card,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 6,
+      // Enhanced shadow using theme
+      ...theme.shadows.small,
+    },
+    gradeLetterText: {
+      fontSize: 16,
+      fontWeight: '800',
+      letterSpacing: 0.5,
+    },
+    gradeLabel: {
+      fontSize: 11,
+      color: theme.colors.textSecondary,
+      fontWeight: '500',
+      textAlign: 'center',
+    },
+    percentageSection: {
+      alignItems: 'center',
+      flex: 1,
+    },
+    percentageDisplay: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      marginBottom: 6,
+    },
+    percentageNumber: {
+      fontSize: 24,
+      fontWeight: '800',
+      letterSpacing: -0.5,
+    },
+    percentageSymbol: {
+      fontSize: 16,
+      fontWeight: '600',
+      marginLeft: 2,
+    },
+    percentageLabel: {
+      fontSize: 11,
+      color: theme.colors.textSecondary,
+      fontWeight: '500',
+      textAlign: 'center',
+    },
+    assessmentsSection: {
+      alignItems: 'center',
+      flex: 1,
+    },
+    assessmentsIndicator: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 6,
+    },
+    assessmentsNumber: {
+      fontSize: 14,
+      fontWeight: '800',
+      letterSpacing: 0.5,
+    },
+    assessmentsLabel: {
+      fontSize: 11,
+      color: theme.colors.textSecondary,
+      fontWeight: '500',
+      textAlign: 'center',
+    },
+
+    // Progress Section
+    progressSection: {
+      marginBottom: 16,
+    },
+    progressInfo: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    progressLabel: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      fontWeight: '500',
+    },
+    progressValue: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: theme.colors.text,
+    },
+    progressBarWrapper: {
+      width: '100%',
+    },
+    progressTrack: {
+      width: '100%',
+      height: 4,
+      backgroundColor: theme.colors.border,
+      borderRadius: 2,
+      overflow: 'hidden',
+    },
+    progressFill: {
+      height: '100%',
+      borderRadius: 2,
+    },
+
+    // Bottom Info Section
+    bottomInfo: {
+      marginTop: 4,
+    },
+    typeBreakdown: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+      gap: 12,
+    },
+    typeItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    typeDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      marginRight: 6,
+    },
+    typeText: {
+      fontSize: 11,
+      color: theme.colors.textSecondary,
+      fontWeight: '500',
+    },
+
+    // Floating Badge
+    floatingBadge: {
+      position: 'absolute',
+      top: 32,
+      right: 56, // Move left to avoid overlapping with chevron button (32px width + 24px margin)
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      justifyContent: 'center',
+      alignItems: 'center',
+      // Enhanced shadow using theme
+      ...theme.shadows.small,
+    },
+
     // Grades Screen Styles
     gradesContainer: {
       flex: 1,
@@ -1360,13 +1702,9 @@ const createStyles = (theme) =>
       alignSelf: 'flex-start',
       paddingVertical: 8,
       paddingHorizontal: 12,
-      backgroundColor: '#fff',
+      backgroundColor: theme.colors.card,
       borderRadius: 20,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
-      shadowRadius: 2,
-      elevation: 2,
+      ...theme.shadows.small,
     },
     backToSubjectsText: {
       fontSize: 14,
@@ -1376,20 +1714,16 @@ const createStyles = (theme) =>
     selectedSubjectTitle: {
       fontSize: 20,
       fontWeight: 'bold',
-      color: '#333',
+      color: theme.colors.text,
       textAlign: 'center',
     },
     tabContainer: {
       flexDirection: 'row',
-      backgroundColor: '#fff',
+      backgroundColor: theme.colors.card,
       borderRadius: 25,
       padding: 4,
       marginBottom: 15,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
+      ...theme.shadows.small,
     },
     tabButton: {
       flex: 1,
@@ -1404,7 +1738,7 @@ const createStyles = (theme) =>
     tabButtonText: {
       fontSize: 14,
       fontWeight: '600',
-      color: '#666',
+      color: theme.colors.textSecondary,
     },
     activeTabButtonText: {
       color: '#fff',
@@ -1427,20 +1761,16 @@ const createStyles = (theme) =>
 
     // Modern Grade Card Styles
     gradeCard: {
-      backgroundColor: '#fff',
+      backgroundColor: theme.colors.card,
       borderRadius: 16,
       padding: 20,
       marginHorizontal: 2, // Minimal horizontal margin for better width usage
       marginVertical: 6, // Add vertical margin for better spacing in two-column layout
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 4,
+      ...theme.shadows.small,
       flex: 1, // Allow cards to expand in landscape mode
     },
     evenGradeCard: {
-      backgroundColor: '#fafafa',
+      backgroundColor: theme.colors.card,
     },
     gradeCardHeader: {
       flexDirection: 'row',
@@ -1455,12 +1785,12 @@ const createStyles = (theme) =>
     gradeTitle: {
       fontSize: 18,
       fontWeight: 'bold',
-      color: '#333',
+      color: theme.colors.text,
       marginBottom: 6,
     },
     gradeDate: {
       fontSize: 14,
-      color: '#666',
+      color: theme.colors.textSecondary,
       marginBottom: 2,
     },
     gradeCardRight: {
@@ -1497,7 +1827,7 @@ const createStyles = (theme) =>
     },
     gradeDetailText: {
       fontSize: 14,
-      color: '#666',
+      color: theme.colors.textSecondary,
       marginLeft: 8,
     },
     gradePerformanceContainer: {
@@ -1577,7 +1907,7 @@ const createStyles = (theme) =>
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      backgroundColor: '#fff',
+      backgroundColor: theme.colors.background,
       borderRadius: 10,
       padding: 40,
       shadowColor: '#000',
@@ -1604,16 +1934,12 @@ const createStyles = (theme) =>
       alignItems: 'center',
       paddingHorizontal: 15,
       paddingVertical: 12,
-      backgroundColor: '#fff',
+      backgroundColor: theme.colors.card,
       borderTopWidth: 1,
-      borderTopColor: '#e0e0e0',
+      borderTopColor: theme.colors.border,
       marginTop: 20,
       borderRadius: 30,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
+      ...theme.shadows.small,
       minHeight: 60, // Ensure minimum height for pagination
     },
     paginationButton: {
@@ -1641,11 +1967,11 @@ const createStyles = (theme) =>
     pageInfoText: {
       fontSize: 14,
       fontWeight: '600',
-      color: '#333',
+      color: theme.colors.text,
     },
     itemsInfoText: {
       fontSize: 12,
-      color: '#666',
+      color: theme.colors.textSecondary,
       marginTop: 2,
     },
   });

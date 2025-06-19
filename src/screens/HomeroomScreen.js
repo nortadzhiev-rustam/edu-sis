@@ -172,7 +172,24 @@ export default function HomeroomScreen({ route, navigation }) {
         const data = await response.json();
         console.log('Students response data:', data);
         if (data.success) {
-          setStudentsData(data.data || []);
+          // Handle different possible data structures
+          let studentsData = {};
+          if (Array.isArray(data.data)) {
+            studentsData = { students: data.data };
+          } else if (data.data && Array.isArray(data.data.students)) {
+            studentsData = data.data;
+          } else if (
+            data.data &&
+            data.data.data &&
+            Array.isArray(data.data.data)
+          ) {
+            studentsData = { students: data.data.data };
+          } else {
+            console.log('Unexpected students data structure:', data.data);
+            studentsData = { students: [] };
+          }
+          console.log('Setting studentsData:', studentsData);
+          setStudentsData(studentsData);
         }
       }
     } catch (error) {
@@ -438,7 +455,7 @@ export default function HomeroomScreen({ route, navigation }) {
 
           {renderActionButton(
             'View Students',
-            `${studentsData.students.length} students in class`,
+            `${studentsData?.students?.length || 0} students in class`,
             faUsers,
             '#007AFF',
             () =>
@@ -446,7 +463,7 @@ export default function HomeroomScreen({ route, navigation }) {
                 authCode,
                 classroomData,
               }),
-            studentsData.students.length
+            studentsData?.students?.length || 0
           )}
 
           {renderActionButton(

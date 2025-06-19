@@ -63,8 +63,26 @@ export default function HomeroomStudentsScreen({ route, navigation }) {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Students API response:', JSON.stringify(data, null, 2));
         if (data.success) {
-          setStudents(data.data || []);
+          // Handle different possible data structures
+          let studentsArray = [];
+          if (Array.isArray(data.data)) {
+            studentsArray = data.data;
+          } else if (data.data && Array.isArray(data.data.students)) {
+            studentsArray = data.data.students;
+          } else if (
+            data.data &&
+            data.data.data &&
+            Array.isArray(data.data.data)
+          ) {
+            studentsArray = data.data.data;
+          } else {
+            console.log('Unexpected data structure:', data.data);
+            studentsArray = [];
+          }
+          console.log('Setting students array:', studentsArray);
+          setStudents(studentsArray);
         } else {
           setError('Failed to load students');
         }
@@ -105,16 +123,29 @@ export default function HomeroomStudentsScreen({ route, navigation }) {
 
       if (response.ok) {
         const data = await response.json();
+        console.log(
+          'Student profile API response:',
+          JSON.stringify(data, null, 2)
+        );
         if (data.success) {
+          console.log('Navigating to profile with data:', data.data);
           navigation.navigate('HomeroomStudentProfile', {
             studentData: data.data,
             authCode,
           });
         } else {
-          Alert.alert('Error', 'Failed to load student profile');
+          console.log('API returned success: false', data.message);
+          Alert.alert(
+            'Error',
+            data.message || 'Failed to load student profile'
+          );
         }
       } else {
-        Alert.alert('Error', 'Failed to load student profile');
+        console.log('HTTP error:', response.status, response.statusText);
+        Alert.alert(
+          'Error',
+          `Failed to load student profile: ${response.status}`
+        );
       }
     } catch (error) {
       console.error('Error fetching student profile:', error);
@@ -255,7 +286,7 @@ export default function HomeroomStudentsScreen({ route, navigation }) {
           <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
-          Students ({students.students.length})
+          Students ({Array.isArray(students) ? students.length : 0})
         </Text>
         <View style={styles.headerRight} />
       </View>
@@ -285,10 +316,22 @@ export default function HomeroomStudentsScreen({ route, navigation }) {
         )}
 
         <View style={styles.studentsContainer}>
-          {students.students.map(renderStudentCard)}
+          {Array.isArray(students) ? (
+            students.map(renderStudentCard)
+          ) : (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>
+                Invalid students data format. Expected array, got:{' '}
+                {typeof students}
+              </Text>
+              <Text style={styles.errorText}>
+                Data: {JSON.stringify(students, null, 2)}
+              </Text>
+            </View>
+          )}
         </View>
 
-        {students.length === 0 && (
+        {Array.isArray(students) && students.length === 0 && (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>No students found</Text>
           </View>

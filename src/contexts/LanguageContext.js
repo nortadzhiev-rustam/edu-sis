@@ -82,7 +82,7 @@ const translations = {
     attendance: 'Attendance',
     timetable: 'Timetable',
     assignments: 'Assignments',
-    behavior: 'Behavior Points',
+    behavior: 'Behavior',
     discipline: 'Discipline',
 
     // Settings

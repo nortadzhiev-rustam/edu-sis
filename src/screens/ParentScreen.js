@@ -34,9 +34,83 @@ import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useParentNotifications } from '../hooks/useParentNotifications';
 import ParentNotificationBadge from '../components/ParentNotificationBadge';
+import { QuickActionTile, ComingSoonBadge } from '../components';
 import { isIPad, isTablet } from '../utils/deviceDetection';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
+// Menu items configuration
+const getMenuItems = (t) => [
+  {
+    id: 'grades',
+    title: t('grades'),
+    icon: faChartLine,
+    backgroundColor: '#FF9500',
+    iconColor: '#fff',
+    action: 'grades',
+  },
+  {
+    id: 'attendance',
+    title: t('attendance'),
+    icon: faClipboardCheck,
+    backgroundColor: '#34C759',
+    iconColor: '#fff',
+    action: 'attendance',
+  },
+  {
+    id: 'assignments',
+    title: t('assignments'),
+    icon: faBook,
+    backgroundColor: '#007AFF',
+    iconColor: '#fff',
+    action: 'assignments',
+  },
+  {
+    id: 'schedule',
+    title: t('timetable'),
+    icon: faCalendarAlt,
+    backgroundColor: '#AF52DE',
+    iconColor: '#fff',
+    action: 'schedule',
+  },
+  {
+    id: 'discipline',
+    title: t('behavior'),
+    icon: faGavel,
+    backgroundColor: '#5856D6',
+    iconColor: '#fff',
+    action: 'discipline',
+  },
+  {
+    id: 'library',
+    title: 'Library',
+    icon: faBookOpen,
+    backgroundColor: '#FF6B35',
+    iconColor: '#fff',
+    action: 'library',
+  },
+  {
+    id: 'materials',
+    title: 'Materials',
+    icon: faFileAlt,
+    backgroundColor: '#B0B0B0',
+    iconColor: '#fff',
+    action: 'materials',
+    disabled: true,
+    comingSoon: true,
+  },
+  {
+    id: 'messages',
+    title: 'Messages',
+    icon: faComments,
+    backgroundColor: '#B0B0B0',
+    iconColor: '#fff',
+    action: 'messages',
+    disabled: true,
+    comingSoon: true,
+  },
+];
 
 export default function ParentScreen({ navigation }) {
   const { theme } = useTheme();
@@ -59,6 +133,27 @@ export default function ParentScreen({ navigation }) {
 
   const styles = createStyles(theme, fontSizes);
 
+  // Refresh notifications when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      // Only refresh if we have students and they haven't been loaded recently
+      if (students.length > 0) {
+        const studentIds = students
+          .map((s) => s.id)
+          .sort()
+          .join(',');
+        if (!notificationsLoadedRef.current.has(studentIds)) {
+          // Add a small delay to prevent immediate execution
+          const timeoutId = setTimeout(() => {
+            refreshAllStudents(students);
+          }, 500);
+
+          return () => clearTimeout(timeoutId);
+        }
+      }
+    }, [students, refreshAllStudents])
+  );
+
   useEffect(() => {
     // Load saved student accounts
     loadStudents();
@@ -76,7 +171,7 @@ export default function ParentScreen({ navigation }) {
     if (students.length > 0 && !selectedStudent) {
       restoreSelectedStudent();
     }
-  }, [students]);
+  }, [students, selectedStudent, restoreSelectedStudent]);
 
   // Load notifications when students are loaded (only once per student set)
   useEffect(() => {
@@ -90,10 +185,15 @@ export default function ParentScreen({ navigation }) {
       // Only load if we haven't loaded for this exact set of students
       if (!notificationsLoadedRef.current.has(studentIds)) {
         notificationsLoadedRef.current.add(studentIds);
-        refreshAllStudents(students);
+        // Use a timeout to prevent immediate execution during render
+        const timeoutId = setTimeout(() => {
+          refreshAllStudents(students);
+        }, 100);
+
+        return () => clearTimeout(timeoutId);
       }
     }
-  }, [students]);
+  }, [students, refreshAllStudents]);
 
   const handleAddStudent = () => {
     // Navigate to login screen with student type
@@ -185,7 +285,7 @@ export default function ParentScreen({ navigation }) {
   };
 
   // Extract loadStudents function to make it reusable
-  const loadStudents = async () => {
+  const loadStudents = React.useCallback(async () => {
     try {
       const savedStudents = await AsyncStorage.getItem('studentAccounts');
       if (savedStudents) {
@@ -197,10 +297,10 @@ export default function ParentScreen({ navigation }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Restore the previously selected student
-  const restoreSelectedStudent = async () => {
+  const restoreSelectedStudent = React.useCallback(async () => {
     try {
       const savedSelectedStudentId = await AsyncStorage.getItem(
         'selectedStudentId'
@@ -211,13 +311,14 @@ export default function ParentScreen({ navigation }) {
         );
         if (student) {
           setSelectedStudent(student);
-          selectStudent(student);
+          // Don't call selectStudent here to avoid triggering notifications loading
+          // selectStudent(student);
         }
       }
     } catch (error) {
       console.error('Error restoring selected student:', error);
     }
-  };
+  }, [students]);
 
   const handleDeleteStudent = (studentToDelete) => {
     Alert.alert(
@@ -434,479 +535,45 @@ export default function ParentScreen({ navigation }) {
           <ScrollView
             style={styles.menuScrollView}
             contentContainerStyle={[
-              styles.menuGrid,
-              isIPadDevice && styles.iPadMenuGrid,
-              isIPadDevice && isLandscape && styles.iPadLandscapeMenuGrid,
-              isTabletDevice && styles.tabletMenuGrid,
-              isTabletDevice && isLandscape && styles.tabletLandscapeMenuGrid,
+              styles.actionTilesGrid,
+              isIPadDevice && styles.iPadActionTilesGrid,
+              isIPadDevice &&
+                isLandscape &&
+                styles.iPadLandscapeActionTilesGrid,
+              isTabletDevice && styles.tabletActionTilesGrid,
+              isTabletDevice &&
+                isLandscape &&
+                styles.tabletLandscapeActionTilesGrid,
             ]}
             showsVerticalScrollIndicator={false}
           >
-            <TouchableOpacity
-              style={[
-                styles.menuItem,
-                isIPadDevice && styles.iPadMenuItem,
-                isIPadDevice && isLandscape && styles.iPadLandscapeMenuItem,
-                isTabletDevice && styles.tabletMenuItem,
-                isTabletDevice && isLandscape && styles.tabletLandscapeMenuItem,
-              ]}
-              onPress={() => handleMenuItemPress('grades')}
-            >
-              <View
-                style={[
-                  styles.menuIconContainer,
-                  { backgroundColor: 'rgba(255, 149, 0, 0.1)' },
-                  isIPadDevice && styles.iPadMenuIconContainer,
-                  isIPadDevice &&
-                    isLandscape &&
-                    styles.iPadLandscapeMenuIconContainer,
-                  isTabletDevice && styles.tabletMenuIconContainer,
-                  isTabletDevice &&
-                    isLandscape &&
-                    styles.tabletLandscapeMenuIconContainer,
-                ]}
-              >
-                <FontAwesomeIcon
-                  icon={faChartLine}
-                  size={
-                    isIPadDevice && isLandscape
-                      ? 18
-                      : isTabletDevice && isLandscape
-                      ? 20
-                      : isIPadDevice
-                      ? 22
-                      : isTabletDevice
-                      ? 23
-                      : 22
-                  }
-                  color='#FF9500'
-                />
-              </View>
-              <Text
-                style={[
-                  styles.menuItemText,
-                  isIPadDevice && styles.iPadMenuItemText,
-                  isIPadDevice &&
-                    isLandscape &&
-                    styles.iPadLandscapeMenuItemText,
-                  isTabletDevice && styles.tabletMenuItemText,
-                  isTabletDevice &&
-                    isLandscape &&
-                    styles.tabletLandscapeMenuItemText,
-                ]}
-              >
-                {t('grades')}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.menuItem,
-                isIPadDevice && styles.iPadMenuItem,
-                isIPadDevice && isLandscape && styles.iPadLandscapeMenuItem,
-                isTabletDevice && styles.tabletMenuItem,
-                isTabletDevice && isLandscape && styles.tabletLandscapeMenuItem,
-              ]}
-              onPress={() => handleMenuItemPress('attendance')}
-            >
-              <View
-                style={[
-                  styles.menuIconContainer,
-                  { backgroundColor: 'rgba(52, 199, 89, 0.1)' },
-                  isIPadDevice && styles.iPadMenuIconContainer,
-                  isIPadDevice &&
-                    isLandscape &&
-                    styles.iPadLandscapeMenuIconContainer,
-                  isTabletDevice && styles.tabletMenuIconContainer,
-                  isTabletDevice &&
-                    isLandscape &&
-                    styles.tabletLandscapeMenuIconContainer,
-                ]}
-              >
-                <FontAwesomeIcon
-                  icon={faClipboardCheck}
-                  size={
-                    isIPadDevice && isLandscape
-                      ? 18
-                      : isTabletDevice && isLandscape
-                      ? 20
-                      : isIPadDevice
-                      ? 22
-                      : isTabletDevice
-                      ? 23
-                      : 22
-                  }
-                  color='#34C759'
-                />
-              </View>
-              <Text
-                style={[
-                  styles.menuItemText,
-                  isIPadDevice && styles.iPadMenuItemText,
-                  isIPadDevice &&
-                    isLandscape &&
-                    styles.iPadLandscapeMenuItemText,
-                  isTabletDevice && styles.tabletMenuItemText,
-                  isTabletDevice &&
-                    isLandscape &&
-                    styles.tabletLandscapeMenuItemText,
-                ]}
-              >
-                {t('attendance')}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.menuItem,
-                isIPadDevice && styles.iPadMenuItem,
-                isIPadDevice && isLandscape && styles.iPadLandscapeMenuItem,
-                isTabletDevice && styles.tabletMenuItem,
-                isTabletDevice && isLandscape && styles.tabletLandscapeMenuItem,
-              ]}
-              onPress={() => handleMenuItemPress('assignments')}
-            >
-              <View
-                style={[
-                  styles.menuIconContainer,
-                  { backgroundColor: 'rgba(0, 122, 255, 0.1)' },
-                  isIPadDevice && styles.iPadMenuIconContainer,
-                  isIPadDevice &&
-                    isLandscape &&
-                    styles.iPadLandscapeMenuIconContainer,
-                  isTabletDevice && styles.tabletMenuIconContainer,
-                  isTabletDevice &&
-                    isLandscape &&
-                    styles.tabletLandscapeMenuIconContainer,
-                ]}
-              >
-                <FontAwesomeIcon
-                  icon={faBook}
-                  size={
-                    isIPadDevice && isLandscape
-                      ? 18
-                      : isTabletDevice && isLandscape
-                      ? 20
-                      : isIPadDevice
-                      ? 22
-                      : isTabletDevice
-                      ? 23
-                      : 22
-                  }
-                  color='#007AFF'
-                />
-              </View>
-              <Text
-                style={[
-                  styles.menuItemText,
-                  isIPadDevice && styles.iPadMenuItemText,
-                  isIPadDevice &&
-                    isLandscape &&
-                    styles.iPadLandscapeMenuItemText,
-                  isTabletDevice && styles.tabletMenuItemText,
-                  isTabletDevice &&
-                    isLandscape &&
-                    styles.tabletLandscapeMenuItemText,
-                ]}
-              >
-                {t('assignments')}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.menuItem,
-                isIPadDevice && styles.iPadMenuItem,
-                isIPadDevice && isLandscape && styles.iPadLandscapeMenuItem,
-                isTabletDevice && styles.tabletMenuItem,
-                isTabletDevice && isLandscape && styles.tabletLandscapeMenuItem,
-              ]}
-              onPress={() => handleMenuItemPress('schedule')}
-            >
-              <View
-                style={[
-                  styles.menuIconContainer,
-                  { backgroundColor: 'rgba(175, 82, 222, 0.1)' },
-                  isIPadDevice && styles.iPadMenuIconContainer,
-                  isIPadDevice &&
-                    isLandscape &&
-                    styles.iPadLandscapeMenuIconContainer,
-                  isTabletDevice && styles.tabletMenuIconContainer,
-                  isTabletDevice &&
-                    isLandscape &&
-                    styles.tabletLandscapeMenuIconContainer,
-                ]}
-              >
-                <FontAwesomeIcon
-                  icon={faCalendarAlt}
-                  size={
-                    isIPadDevice && isLandscape
-                      ? 18
-                      : isTabletDevice && isLandscape
-                      ? 20
-                      : isIPadDevice
-                      ? 22
-                      : isTabletDevice
-                      ? 23
-                      : 22
-                  }
-                  color='#AF52DE'
-                />
-              </View>
-              <Text
-                style={[
-                  styles.menuItemText,
-                  isIPadDevice && styles.iPadMenuItemText,
-                  isIPadDevice &&
-                    isLandscape &&
-                    styles.iPadLandscapeMenuItemText,
-                  isTabletDevice && styles.tabletMenuItemText,
-                  isTabletDevice &&
-                    isLandscape &&
-                    styles.tabletLandscapeMenuItemText,
-                ]}
-              >
-                {t('timetable')}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.menuItem,
-                isIPadDevice && styles.iPadMenuItem,
-                isIPadDevice && isLandscape && styles.iPadLandscapeMenuItem,
-                isTabletDevice && styles.tabletMenuItem,
-                isTabletDevice && isLandscape && styles.tabletLandscapeMenuItem,
-              ]}
-              onPress={() => handleMenuItemPress('discipline')}
-            >
-              <View
-                style={[
-                  styles.menuIconContainer,
-                  { backgroundColor: 'rgba(88, 86, 214, 0.1)' },
-                  isIPadDevice && styles.iPadMenuIconContainer,
-                  isIPadDevice &&
-                    isLandscape &&
-                    styles.iPadLandscapeMenuIconContainer,
-                  isTabletDevice && styles.tabletMenuIconContainer,
-                  isTabletDevice &&
-                    isLandscape &&
-                    styles.tabletLandscapeMenuIconContainer,
-                ]}
-              >
-                <FontAwesomeIcon
-                  icon={faGavel}
-                  size={
-                    isIPadDevice && isLandscape
-                      ? 18
-                      : isTabletDevice && isLandscape
-                      ? 20
-                      : isIPadDevice
-                      ? 22
-                      : isTabletDevice
-                      ? 23
-                      : 22
-                  }
-                  color='#5856D6'
-                />
-              </View>
-              <Text
-                style={[
-                  styles.menuItemText,
-                  isIPadDevice && styles.iPadMenuItemText,
-                  isIPadDevice &&
-                    isLandscape &&
-                    styles.iPadLandscapeMenuItemText,
-                  isTabletDevice && styles.tabletMenuItemText,
-                  isTabletDevice &&
-                    isLandscape &&
-                    styles.tabletLandscapeMenuItemText,
-                ]}
-              >
-                {t('behavior')}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.menuItem,
-                isIPadDevice && styles.iPadMenuItem,
-                isIPadDevice && isLandscape && styles.iPadLandscapeMenuItem,
-                isTabletDevice && styles.tabletMenuItem,
-                isTabletDevice && isLandscape && styles.tabletLandscapeMenuItem,
-              ]}
-              onPress={() => handleMenuItemPress('library')}
-            >
-              <View
-                style={[
-                  styles.menuIconContainer,
-                  { backgroundColor: 'rgba(255, 149, 0, 0.1)' },
-                  isIPadDevice && styles.iPadMenuIconContainer,
-                  isIPadDevice &&
-                    isLandscape &&
-                    styles.iPadLandscapeMenuIconContainer,
-                  isTabletDevice && styles.tabletMenuIconContainer,
-                  isTabletDevice &&
-                    isLandscape &&
-                    styles.tabletLandscapeMenuIconContainer,
-                ]}
-              >
-                <FontAwesomeIcon
-                  icon={faBookOpen}
-                  size={
-                    isIPadDevice && isLandscape
-                      ? 18
-                      : isTabletDevice && isLandscape
-                      ? 20
-                      : isIPadDevice
-                      ? 22
-                      : isTabletDevice
-                      ? 23
-                      : 22
-                  }
-                  color='#FF9500'
-                />
-              </View>
-              <Text
-                style={[
-                  styles.menuItemText,
-                  isIPadDevice && styles.iPadMenuItemText,
-                  isIPadDevice &&
-                    isLandscape &&
-                    styles.iPadLandscapeMenuItemText,
-                  isTabletDevice && styles.tabletMenuItemText,
-                  isTabletDevice &&
-                    isLandscape &&
-                    styles.tabletLandscapeMenuItemText,
-                ]}
-              >
-                Library
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.menuItem,
-                styles.disabledMenuItem,
-                isIPadDevice && styles.iPadMenuItem,
-                isIPadDevice && isLandscape && styles.iPadLandscapeMenuItem,
-                isTabletDevice && styles.tabletMenuItem,
-                isTabletDevice && isLandscape && styles.tabletLandscapeMenuItem,
-              ]}
-              disabled={true}
-            >
-              <View
-                style={[
-                  styles.menuIconContainer,
-                  { backgroundColor: 'rgba(52, 199, 89, 0.05)' },
-                  isIPadDevice && styles.iPadMenuIconContainer,
-                  isIPadDevice &&
-                    isLandscape &&
-                    styles.iPadLandscapeMenuIconContainer,
-                  isTabletDevice && styles.tabletMenuIconContainer,
-                  isTabletDevice &&
-                    isLandscape &&
-                    styles.tabletLandscapeMenuIconContainer,
-                ]}
-              >
-                <FontAwesomeIcon
-                  icon={faFileAlt}
-                  size={
-                    isIPadDevice && isLandscape
-                      ? 18
-                      : isTabletDevice && isLandscape
-                      ? 20
-                      : isIPadDevice
-                      ? 22
-                      : isTabletDevice
-                      ? 23
-                      : 22
-                  }
-                  color='#B0B0B0'
-                />
-              </View>
-              <Text
-                style={[
-                  styles.menuItemText,
-                  styles.disabledMenuText,
-                  isIPadDevice && styles.iPadMenuItemText,
-                  isIPadDevice &&
-                    isLandscape &&
-                    styles.iPadLandscapeMenuItemText,
-                  isTabletDevice && styles.tabletMenuItemText,
-                  isTabletDevice &&
-                    isLandscape &&
-                    styles.tabletLandscapeMenuItemText,
-                ]}
-              >
-                Materials
-              </Text>
-              <View style={styles.comingSoonBadge}>
-                <Text style={styles.comingSoonText}>Coming Soon</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.menuItem,
-                styles.disabledMenuItem,
-                isIPadDevice && styles.iPadMenuItem,
-                isIPadDevice && isLandscape && styles.iPadLandscapeMenuItem,
-                isTabletDevice && styles.tabletMenuItem,
-                isTabletDevice && isLandscape && styles.tabletLandscapeMenuItem,
-              ]}
-              disabled={true}
-            >
-              <View
-                style={[
-                  styles.menuIconContainer,
-                  { backgroundColor: 'rgba(90, 200, 250, 0.05)' },
-                  isIPadDevice && styles.iPadMenuIconContainer,
-                  isIPadDevice &&
-                    isLandscape &&
-                    styles.iPadLandscapeMenuIconContainer,
-                  isTabletDevice && styles.tabletMenuIconContainer,
-                  isTabletDevice &&
-                    isLandscape &&
-                    styles.tabletLandscapeMenuIconContainer,
-                ]}
-              >
-                <FontAwesomeIcon
-                  icon={faComments}
-                  size={
-                    isIPadDevice && isLandscape
-                      ? 18
-                      : isTabletDevice && isLandscape
-                      ? 20
-                      : isIPadDevice
-                      ? 22
-                      : isTabletDevice
-                      ? 23
-                      : 22
-                  }
-                  color='#B0B0B0'
-                />
-              </View>
-              <Text
-                style={[
-                  styles.menuItemText,
-                  styles.disabledMenuText,
-                  isIPadDevice && styles.iPadMenuItemText,
-                  isIPadDevice &&
-                    isLandscape &&
-                    styles.iPadLandscapeMenuItemText,
-                  isTabletDevice && styles.tabletMenuItemText,
-                  isTabletDevice &&
-                    isLandscape &&
-                    styles.tabletLandscapeMenuItemText,
-                ]}
-              >
-                Messages
-              </Text>
-              <View style={styles.comingSoonBadge}>
-                <Text style={styles.comingSoonText}>Coming Soon</Text>
-              </View>
-            </TouchableOpacity>
+            {getMenuItems(t).map((item) => (
+              <QuickActionTile
+                key={item.id}
+                title={item.title}
+                subtitle='' // Parent menu items don't have subtitles
+                icon={item.icon}
+                backgroundColor={item.backgroundColor}
+                iconColor={item.iconColor}
+                onPress={
+                  item.disabled
+                    ? undefined
+                    : () => handleMenuItemPress(item.action)
+                }
+                disabled={item.disabled}
+                badge={
+                  item.comingSoon ? (
+                    <ComingSoonBadge
+                      text='Soon'
+                      theme={theme}
+                      fontSizes={fontSizes}
+                    />
+                  ) : undefined
+                }
+                styles={styles}
+                isLandscape={isLandscape}
+              />
+            ))}
           </ScrollView>
         </View>
       </View>
@@ -1161,35 +828,193 @@ const createStyles = (theme, fontSizes) =>
       justifyContent: 'center',
       alignItems: 'center',
     },
-    menuGrid: {
+    // Quick Actions - Tile Layout (3 per row on mobile)
+    actionTilesGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      justifyContent: 'space-between',
-      paddingBottom: 20,
+      justifyContent: 'flex-start', // Better distribution for 3 tiles per row
+      gap: 8, // Smaller gap for 3-per-row layout
+      paddingBottom: 20, // Add padding for scrollable content
     },
-    // iPad-specific menu grid - 4 items per row, wraps to next row for additional items
-    iPadMenuGrid: {
+    // iPad-specific grid layout - 4 tiles per row, wraps to next row for additional tiles
+    iPadActionTilesGrid: {
       flexWrap: 'wrap',
-      justifyContent: 'space-between',
+      justifyContent: 'flex-start',
       gap: 8,
     },
-    // Tablet-specific menu grid - 4 items per row, wraps to next row for additional items
-    tabletMenuGrid: {
+    // Tablet-specific grid layout - 4 tiles per row, wraps to next row for additional tiles
+    tabletActionTilesGrid: {
       flexWrap: 'wrap',
-      justifyContent: 'space-between',
+      justifyContent: 'flex-start',
       gap: 10,
     },
-    // iPad landscape-specific menu grid - 6 items per row, wraps for additional items
-    iPadLandscapeMenuGrid: {
+    // iPad landscape-specific grid layout - 6 tiles per row, wraps for additional tiles
+    iPadLandscapeActionTilesGrid: {
       flexWrap: 'wrap',
       justifyContent: 'space-between',
       gap: 6,
     },
-    // Tablet landscape-specific menu grid - 6 items per row, wraps for additional items
-    tabletLandscapeMenuGrid: {
+    // Tablet landscape-specific grid layout - 6 tiles per row, wraps for additional tiles
+    tabletLandscapeActionTilesGrid: {
       flexWrap: 'wrap',
       justifyContent: 'space-between',
       gap: 8,
+    },
+    actionTile: {
+      width: (screenWidth - 64) / 3, // 3 tiles per row on mobile with margins and gap
+      aspectRatio: 1, // Square tiles
+      borderRadius: 20, // Slightly smaller border radius for smaller tiles
+      padding: 14, // Reduced padding for smaller tiles
+      justifyContent: 'center', // Center content vertically for better balance
+      alignItems: 'center', // Center content horizontally for smaller tiles
+
+      elevation: 8,
+      position: 'relative',
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.1)',
+      ...theme.shadows.medium,
+    },
+    // iPad-specific action tile - optimized for 4 per row, wraps for additional tiles
+    iPadActionTile: {
+      width: (screenWidth - 80) / 4 - 2, // Optimized for 4 tiles per row with wrapping support
+      minWidth: 160, // Minimum width to ensure tiles don't get too small
+      aspectRatio: 1, // Square tiles
+      borderRadius: 16,
+      padding: 12,
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    // Tablet-specific action tile - optimized for 4 per row, wraps for additional tiles
+    tabletActionTile: {
+      width: (screenWidth - 70) / 4 - 2, // Optimized for 4 tiles per row with wrapping support
+      minWidth: 150, // Minimum width to ensure tiles don't get too small
+      aspectRatio: 1, // Square tiles
+      borderRadius: 18,
+      padding: 14,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.18,
+      shadowRadius: 10,
+      elevation: 6,
+    },
+    // iPad landscape-specific action tile - optimized for 6 per row
+    iPadLandscapeActionTile: {
+      width: (screenWidth - 100) / 6 - 2, // 6 tiles per row in landscape with wrapping support
+      minWidth: 120, // Minimum width for landscape tiles
+      aspectRatio: 1, // Square tiles
+      borderRadius: 14,
+      padding: 10,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.12,
+      shadowRadius: 6,
+      elevation: 3,
+    },
+    // Tablet landscape-specific action tile - optimized for 6 per row
+    tabletLandscapeActionTile: {
+      width: (screenWidth - 90) / 6 - 2, // 6 tiles per row in landscape with wrapping support
+      minWidth: 110, // Minimum width for landscape tiles
+      aspectRatio: 1, // Square tiles
+      borderRadius: 16,
+      padding: 12,
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    disabledTile: {
+      opacity: 0.7,
+    },
+    tileIconContainer: {
+      width: 44, // Smaller icon container for 3-per-row layout
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: 'rgba(255, 255, 255, 0.25)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 10, // Reduced margin for smaller tiles
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.3)',
+    },
+    tileTitle: {
+      fontSize: Math.max(fontSizes.tileTitle - 5, 12), // Smaller font for 3-per-row layout
+      fontWeight: '700',
+      color: '#fff',
+      marginBottom: 3, // Reduced margin
+      letterSpacing: 0.2,
+      textAlign: 'center', // Center text for better balance in smaller tiles
+    },
+    tileSubtitle: {
+      fontSize: Math.max(fontSizes.tileSubtitle - 1, 10), // Smaller subtitle font
+      color: 'rgba(255, 255, 255, 0.8)',
+      fontWeight: '500',
+      marginBottom: 6, // Reduced margin
+      textAlign: 'center', // Center text for better balance
+    },
+    // iPad-specific tile text styles - smaller
+    iPadTileTitle: {
+      fontSize: Math.max(fontSizes.tileTitle - 2, 12),
+      marginBottom: 2,
+    },
+    iPadTileSubtitle: {
+      fontSize: Math.max(fontSizes.tileSubtitle - 1, 10),
+      marginBottom: 4,
+    },
+    // Tablet-specific tile text styles
+    tabletTileTitle: {
+      fontSize: Math.max(fontSizes.tileTitle - 1, 13),
+      marginBottom: 3,
+    },
+    tabletTileSubtitle: {
+      fontSize: Math.max(fontSizes.tileSubtitle - 0.5, 11),
+      marginBottom: 6,
+    },
+    // iPad landscape-specific tile text styles - even smaller for 6 per row
+    iPadLandscapeTileTitle: {
+      fontSize: Math.max(fontSizes.tileTitle - 3, 10),
+      marginBottom: 1,
+    },
+    iPadLandscapeTileSubtitle: {
+      fontSize: Math.max(fontSizes.tileSubtitle - 2, 8),
+      marginBottom: 2,
+    },
+    // Tablet landscape-specific tile text styles
+    tabletLandscapeTileTitle: {
+      fontSize: Math.max(fontSizes.tileTitle - 2, 11),
+      marginBottom: 2,
+    },
+    tabletLandscapeTileSubtitle: {
+      fontSize: Math.max(fontSizes.tileSubtitle - 1.5, 9),
+      marginBottom: 3,
+    },
+    // iPad-specific tile icon container - smaller
+    iPadTileIconContainer: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      marginBottom: 8,
+    },
+    // Tablet-specific tile icon container
+    tabletTileIconContainer: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      marginBottom: 10,
+    },
+    // iPad landscape-specific tile icon container - even smaller for 6 per row
+    iPadLandscapeTileIconContainer: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      marginBottom: 6,
+    },
+    // Tablet landscape-specific tile icon container
+    tabletLandscapeTileIconContainer: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      marginBottom: 8,
     },
     menuItem: {
       backgroundColor: theme.colors.surface,
@@ -1340,7 +1165,7 @@ const createStyles = (theme, fontSizes) =>
     },
     comingSoonText: {
       color: '#fff',
-      fontSize: 10,
+      fontSize: 3,
       fontWeight: 'bold',
     },
   });

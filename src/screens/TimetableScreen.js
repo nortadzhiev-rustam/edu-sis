@@ -43,12 +43,13 @@ import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import NotificationBadge from '../components/NotificationBadge';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function TimetableScreen({ navigation, route }) {
   const { theme } = useTheme();
   const { t, currentLanguage } = useLanguage();
   const fontSizes = getLanguageFontSizes(currentLanguage);
-  const { unreadCount } = useNotifications();
+  const { unreadCount, refreshNotifications } = useNotifications();
 
   const [timetable, setTimetable] = useState(null);
   const [availableDays, setAvailableDays] = useState([
@@ -61,6 +62,13 @@ export default function TimetableScreen({ navigation, route }) {
   const { authCode } = route.params || {};
 
   const styles = createStyles(theme, fontSizes);
+
+  // Refresh notifications when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshNotifications();
+    }, [refreshNotifications])
+  );
 
   // Enable rotation for this screen (optional - you can remove this if you want timetable to stay portrait)
   // useScreenOrientation(true);

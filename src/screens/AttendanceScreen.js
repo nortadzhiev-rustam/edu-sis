@@ -32,7 +32,9 @@ import { useScreenOrientation } from '../hooks/useScreenOrientation';
 import { Config, buildApiUrl } from '../config/env';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import NotificationBadge from '../components/NotificationBadge';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   isIPad,
   isTablet,
@@ -45,6 +47,7 @@ import { lockOrientationForDevice } from '../utils/orientationLock';
 export default function AttendanceScreen({ navigation, route }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
+  const { refreshNotifications } = useNotifications();
 
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
   const { studentName, authCode } = route.params || {};
@@ -162,6 +165,13 @@ export default function AttendanceScreen({ navigation, route }) {
       setLoading(false);
     }
   };
+
+  // Refresh notifications when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshNotifications();
+    }, [refreshNotifications])
+  );
 
   useEffect(() => {
     // Load dummy data for now
@@ -994,7 +1004,7 @@ const createStyles = (theme) =>
       ...theme.shadows.small,
       width: Platform.isPad
         ? Dimensions.get('window').width * 0.22
-        : Dimensions.get('window').width * 0.50,
+        : Dimensions.get('window').width * 0.5,
     },
     backToSummaryText: {
       marginLeft: 8,

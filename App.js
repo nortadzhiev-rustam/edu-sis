@@ -41,12 +41,14 @@ import {
   notificationListener,
   getDeviceToken,
   setupLocalNotifications,
+  setNavigationRef,
 } from './src/utils/messaging';
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
+  const navigationRef = React.useRef();
 
   useEffect(() => {
     console.log('🚀 APP LAUNCH: Starting app initialization...');
@@ -77,6 +79,12 @@ export default function App() {
         // Setup notification listeners
         console.log('👂 LISTENERS: Setting up notification listeners...');
         notificationListener();
+
+        // Set navigation reference for programmatic navigation from notifications
+        // Note: This will be set when NavigationContainer is ready
+        console.log(
+          '🧭 NAVIGATION: Navigation reference will be set when container is ready...'
+        );
 
         // Get the token if permission was granted
         console.log('🎫 TOKEN: Getting Firebase messaging token...');
@@ -149,7 +157,18 @@ export default function App() {
       <ThemeProvider>
         <LanguageProvider>
           <NotificationProvider>
-            <NavigationContainer>
+            <NavigationContainer
+              ref={navigationRef}
+              onReady={() => {
+                console.log(
+                  '🧭 NAVIGATION: NavigationContainer is ready, setting reference...'
+                );
+                // Add a small delay to ensure navigation is fully initialized
+                setTimeout(() => {
+                  setNavigationRef(navigationRef.current);
+                }, 100);
+              }}
+            >
               <StatusBar style='auto' />
               <Stack.Navigator
                 initialRouteName='Home'

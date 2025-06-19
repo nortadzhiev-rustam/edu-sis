@@ -10,13 +10,14 @@ import {
   RefreshControl,
   Modal,
   TextInput,
-  PanResponder,
-  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { Config, buildApiUrl } from '../config/env';
 import { useTheme } from '../contexts/ThemeContext';
+
+// Import reusable components
+import { SwipeableRecord } from '../components';
 
 import {
   faArrowLeft,
@@ -35,191 +36,22 @@ import {
   faUsers,
   faCheckSquare,
   faSquare,
-  faTrash,
 } from '@fortawesome/free-solid-svg-icons';
 
-// Swipeable Record Component
-const SwipeableRecord = ({ record, onDelete, canDelete, theme, children }) => {
-  const [translateX] = useState(new Animated.Value(0));
-  const [isRevealed, setIsRevealed] = useState(false);
-  const deleteButtonWidth = 70;
-
-  const panResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => canDelete,
-    onMoveShouldSetPanResponder: (_evt, gestureState) => {
-      // Only respond to horizontal swipes and only if delete is allowed
-      return (
-        canDelete &&
-        Math.abs(gestureState.dx) > Math.abs(gestureState.dy) &&
-        Math.abs(gestureState.dx) > 5
-      );
-    },
-    onPanResponderGrant: () => {
-      // Stop any ongoing animations
-      translateX.stopAnimation();
-      translateX.setOffset(translateX._value);
-      translateX.setValue(0);
-    },
-    onPanResponderMove: (_evt, gestureState) => {
-      // Only allow left swipe (negative dx) to reveal delete button
-      if (gestureState.dx < 0) {
-        const newValue = Math.max(gestureState.dx, -deleteButtonWidth);
-        translateX.setValue(newValue);
-      } else if (isRevealed && gestureState.dx > 0) {
-        // Allow right swipe to hide delete button when it's revealed
-        const currentOffset = isRevealed ? -deleteButtonWidth : 0;
-        const newValue = Math.min(currentOffset + gestureState.dx, 0);
-        translateX.setValue(newValue);
-      }
-    },
-    onPanResponderRelease: (_evt, gestureState) => {
-      translateX.flattenOffset();
-
-      if (gestureState.dx < -deleteButtonWidth / 2 && !isRevealed) {
-        // Swipe left enough to reveal delete button
-        Animated.spring(translateX, {
-          toValue: -deleteButtonWidth,
-          useNativeDriver: false,
-          tension: 100,
-          friction: 8,
-        }).start();
-        setIsRevealed(true);
-      } else if (gestureState.dx > deleteButtonWidth / 2 && isRevealed) {
-        // Swipe right enough to hide delete button
-        Animated.spring(translateX, {
-          toValue: 0,
-          useNativeDriver: false,
-          tension: 100,
-          friction: 8,
-        }).start();
-        setIsRevealed(false);
-      } else {
-        // Snap to appropriate position based on current state
-        const targetValue = isRevealed ? -deleteButtonWidth : 0;
-        Animated.spring(translateX, {
-          toValue: targetValue,
-          useNativeDriver: false,
-          tension: 100,
-          friction: 8,
-        }).start();
-      }
-    },
-  });
-
-  const handleDelete = () => {
-    // Animate back to original position first
-    Animated.spring(translateX, {
-      toValue: 0,
-      useNativeDriver: false,
-    }).start(() => {
-      setIsRevealed(false);
-      onDelete(record);
-    });
-  };
-
-  const handleTapOutside = () => {
-    if (isRevealed) {
-      Animated.spring(translateX, {
-        toValue: 0,
-        useNativeDriver: false,
-      }).start();
-      setIsRevealed(false);
-    }
-  };
-
-  if (!canDelete) {
-    // If delete is not allowed, return the record without swipe functionality
-    return children;
-  }
-
-  return (
-    <View
-      style={{
-        position: 'relative',
-        overflow: 'hidden',
-        borderRadius: 16,
-        marginBottom: 15,
-        marginHorizontal: 5,
-        shadowColor: theme.colors.shadow,
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
-        elevation: 4,
-      }}
-    >
-      {/* Delete Background (covers full width) */}
-      <View
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          top: 0,
-          bottom: 0,
-          backgroundColor: theme.colors.error,
-          justifyContent: 'center',
-          alignItems: 'flex-end',
-          paddingRight: 5,
-          borderRadius: 16,
-        }}
-      >
-        <TouchableOpacity
-          style={{
-            width: deleteButtonWidth,
-            height: '100%',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-          onPress={handleDelete}
-        >
-          <FontAwesomeIcon
-            icon={faTrash}
-            size={18}
-            color={theme.colors.headerText}
-          />
-          <Text
-            style={{
-              color: theme.colors.headerText,
-              fontSize: 10,
-              fontWeight: 'bold',
-              marginTop: 2,
-            }}
-          >
-            Delete
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Swipeable Record */}
-      <Animated.View
-        style={[
-          {
-            transform: [{ translateX }],
-            backgroundColor: theme.colors.surface,
-            borderRadius: 16,
-            zIndex: 1,
-            elevation: 8,
-            shadowColor: theme.colors.shadow,
-            shadowOffset: { width: 0, height: 10 },
-            shadowOpacity: 0.15,
-            shadowRadius: 12,
-          },
-        ]}
-        {...panResponder.panHandlers}
-      >
-        <View onTouchStart={handleTapOutside}>{children}</View>
-      </Animated.View>
-    </View>
-  );
-};
-
 export default function TeacherBPS({ route, navigation }) {
-  const { authCode, bpsData: initialData } = route.params || {};
+  const {
+    authCode,
+    bpsData: initialData,
+    selectedBranch: initialSelectedBranch,
+  } = route.params || {};
   const { theme } = useTheme();
   const styles = getStyles(theme);
 
   const [bpsData, setBpsData] = useState(initialData);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedBranch, setSelectedBranch] = useState(0);
+  const [selectedBranch, setSelectedBranch] = useState(
+    initialSelectedBranch || 0
+  );
   const [loading, setLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -232,7 +64,7 @@ export default function TeacherBPS({ route, navigation }) {
   const [expandedClasses, setExpandedClasses] = useState(new Set());
   const [modalStep, setModalStep] = useState(1);
   const [isMultipleSelection, setIsMultipleSelection] = useState(false);
-  const [submissionErrors, setSubmissionErrors] = useState([]);
+
   const [selectedBehaviorType, setSelectedBehaviorType] = useState(null);
 
   const fetchBPSData = async () => {
@@ -254,6 +86,7 @@ export default function TeacherBPS({ route, navigation }) {
       if (response.ok) {
         const data = await response.json();
         setBpsData(data);
+        console.log('BPS data:', data);
       } else {
         Alert.alert('Error', 'Failed to fetch BPS data');
       }
@@ -293,7 +126,6 @@ export default function TeacherBPS({ route, navigation }) {
     }
 
     setLoading(true);
-    setSubmissionErrors([]);
 
     try {
       const url = buildApiUrl(Config.API_ENDPOINTS.STORE_BPS);
@@ -517,21 +349,10 @@ export default function TeacherBPS({ route, navigation }) {
     setSearchQuery('');
     setModalStep(1);
     setIsMultipleSelection(false);
-    setSubmissionErrors([]);
     setSelectedBehaviorType(null);
 
-    // Ensure at least one class is expanded when modal opens
-    const groupedStudents = getGroupedStudents();
-    const classNames = Object.keys(groupedStudents).sort((a, b) =>
-      a.localeCompare(b)
-    );
-
-    if (classNames.length > 0) {
-      // Expand the first class by default
-      setExpandedClasses(new Set([classNames[0]]));
-    } else {
-      setExpandedClasses(new Set());
-    }
+    // Start with no classes expanded
+    setExpandedClasses(new Set());
   };
 
   // Optimized function to use structured BPS data instead of multiple API calls
@@ -1509,7 +1330,13 @@ export default function TeacherBPS({ route, navigation }) {
 
                 {Object.keys(getFilteredStudents()).length > 0 ? (
                   Object.keys(getFilteredStudents())
-                    .sort((a, b) => a.localeCompare(b))
+                    .sort((a, b) => {
+                      // Natural sort for class names with numbers (e.g., Year 2, Year 10, Year 11)
+                      return a.localeCompare(b, undefined, {
+                        numeric: true,
+                        sensitivity: 'base',
+                      });
+                    })
                     .map((className) => {
                       const students = getFilteredStudents()[className];
                       const isExpanded = expandedClasses.has(className);
@@ -2798,7 +2625,7 @@ const getStyles = (theme) =>
     },
     studentsContainer: {
       paddingHorizontal: 15,
-      paddingBottom: 15,
+      paddingVertical: 15,
     },
     studentItem: {
       flexDirection: 'row',

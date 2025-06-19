@@ -3,7 +3,7 @@
  * Manages notifications for multiple students in parent view
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNotifications } from '../contexts/NotificationContext';
 
 export const useParentNotifications = () => {
@@ -20,11 +20,27 @@ export const useParentNotifications = () => {
   const [selectedStudentAuthCode, setSelectedStudentAuthCode] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Track which students are currently being loaded to prevent duplicate calls
+  const loadingStudentsRef = useRef(new Set());
+
+  // Track the last time refreshAllStudents was called to prevent rapid successive calls
+  const lastRefreshTimeRef = useRef(0);
+  const REFRESH_DEBOUNCE_MS = 2000; // 2 seconds
+
   // Load notifications for a specific student
   const loadNotificationsForStudent = useCallback(
     async (studentAuthCode) => {
       if (!studentAuthCode) return;
 
+      // Prevent duplicate calls for the same student
+      if (loadingStudentsRef.current.has(studentAuthCode)) {
+        console.log(
+          `Already loading notifications for student ${studentAuthCode}`
+        );
+        return;
+      }
+
+      loadingStudentsRef.current.add(studentAuthCode);
       setLoading(true);
       try {
         const result = await loadStudentNotifications(studentAuthCode);
@@ -41,6 +57,7 @@ export const useParentNotifications = () => {
         console.error('Error loading student notifications:', error);
         return { notifications: [], unreadCount: 0 };
       } finally {
+        loadingStudentsRef.current.delete(studentAuthCode);
         setLoading(false);
       }
     },
@@ -119,6 +136,14 @@ export const useParentNotifications = () => {
         console.log('No students to refresh notifications for');
         return;
       }
+
+      // Debounce rapid successive calls
+      const now = Date.now();
+      if (now - lastRefreshTimeRef.current < REFRESH_DEBOUNCE_MS) {
+        console.log('Debouncing refreshAllStudents call');
+        return;
+      }
+      lastRefreshTimeRef.current = now;
 
       console.log(`Refreshing notifications for ${students.length} students`);
       setLoading(true);

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Notifications from 'expo-notifications';
 import {
   getNotificationHistory,
   getUnreadNotificationCount,
@@ -39,6 +40,35 @@ export const NotificationProvider = ({ children }) => {
   const [studentNotifications, setStudentNotifications] = useState({});
   const [studentUnreadCounts, setStudentUnreadCounts] = useState({});
   const [currentStudentAuthCode, setCurrentStudentAuthCode] = useState(null);
+
+  // Update app icon badge when unread count changes
+  const updateAppIconBadge = async (count) => {
+    try {
+      await Notifications.setBadgeCountAsync(count);
+      console.log(`📱 BADGE: App icon badge updated to ${count}`);
+    } catch (error) {
+      console.error('❌ BADGE: Error updating app icon badge:', error);
+    }
+  };
+
+  // Calculate total unread count including student notifications for parent users
+  const getTotalUnreadCount = () => {
+    // Get total unread count from all student notifications
+    const studentUnreadTotal = Object.values(studentUnreadCounts).reduce(
+      (total, count) => total + count,
+      0
+    );
+
+    // Return the higher of main unread count or student unread total
+    // This handles both teacher/student accounts and parent accounts
+    return Math.max(unreadCount, studentUnreadTotal);
+  };
+
+  // Update app icon badge whenever unread count or student unread counts change
+  useEffect(() => {
+    const totalUnread = getTotalUnreadCount();
+    updateAppIconBadge(totalUnread);
+  }, [unreadCount, studentUnreadCounts]);
 
   // Load notifications on mount
   useEffect(() => {
@@ -248,6 +278,8 @@ export const NotificationProvider = ({ children }) => {
       if (success) {
         setNotifications([]);
         setUnreadCount(0);
+        // Clear app icon badge when all notifications are cleared
+        await updateAppIconBadge(0);
       }
       return success;
     } catch (error) {
@@ -462,12 +494,15 @@ export const NotificationProvider = ({ children }) => {
   };
 
   // Set current student for notification context
-  const setCurrentStudent = (studentAuthCode) => {
-    setCurrentStudentAuthCode(studentAuthCode);
-    if (studentAuthCode && !studentNotifications[studentAuthCode]) {
-      loadStudentNotifications(studentAuthCode);
-    }
-  };
+  const setCurrentStudent = React.useCallback(
+    (studentAuthCode) => {
+      setCurrentStudentAuthCode(studentAuthCode);
+      if (studentAuthCode && !studentNotifications[studentAuthCode]) {
+        loadStudentNotifications(studentAuthCode);
+      }
+    },
+    [studentNotifications, loadStudentNotifications]
+  );
 
   // Get current student's unread count
   const getCurrentStudentUnreadCount = () => {
@@ -492,6 +527,9 @@ export const NotificationProvider = ({ children }) => {
     getNotificationsByType,
     getRecentNotifications,
     addNotification,
+    // Badge management
+    updateAppIconBadge,
+    getTotalUnreadCount,
     // API functions
     fetchNotificationsFromAPI,
     markAPINotificationAsRead,

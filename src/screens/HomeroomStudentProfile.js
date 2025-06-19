@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -28,6 +28,11 @@ export default function HomeroomStudentProfile({ route, navigation }) {
   const styles = createStyles(theme);
   const { studentData } = route.params || {};
 
+  console.log(
+    'HomeroomStudentProfile received studentData:',
+    JSON.stringify(studentData, null, 2)
+  );
+
   if (!studentData) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -48,7 +53,58 @@ export default function HomeroomStudentProfile({ route, navigation }) {
     );
   }
 
-  const { student, attendance, discipline, assessments, library } = studentData;
+  // Handle different possible data structures
+  let student, attendance, discipline, assessments, library, parents;
+
+  if (studentData.student) {
+    // If data is structured as { student: {...}, attendance: {...}, ... }
+    ({ student, attendance, discipline, assessments, library, parents } =
+      studentData);
+  } else {
+    // If studentData itself is the student object
+    student = studentData;
+    attendance = studentData.attendance;
+    discipline = studentData.discipline;
+    assessments = studentData.assessments;
+    library = studentData.library;
+    parents = studentData.parents;
+  }
+
+  console.log('Processed data:');
+  console.log('- student:', student);
+  console.log('- attendance:', attendance);
+  console.log('- discipline:', discipline);
+  console.log('- assessments:', assessments);
+  console.log('- library:', library);
+  console.log('- parents:', parents);
+  console.log('- parents type:', typeof parents);
+  console.log('- parents is array:', Array.isArray(parents));
+  console.log('- parents length:', parents ? parents.length : 'undefined');
+
+  // Additional check for student data
+  if (!student) {
+    console.log('No student data found, showing error');
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Student Profile</Text>
+          <View style={styles.headerRight} />
+        </View>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>No student information available</Text>
+          <Text style={styles.errorText}>
+            Raw data: {JSON.stringify(studentData, null, 2)}
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const renderInfoCard = (title, icon, children) => (
     <View style={styles.infoCard}>
@@ -135,23 +191,143 @@ export default function HomeroomStudentProfile({ route, navigation }) {
           'Contact Information',
           faPhone,
           <View style={styles.cardContent}>
-            <View style={styles.contactRow}>
-              <Text style={styles.contactLabel}>Parent Name:</Text>
-              <Text style={styles.contactValue}>
-                {student.parent_name || 'N/A'}
-              </Text>
-            </View>
-            <View style={styles.contactRow}>
-              <Text style={styles.contactLabel}>Phone:</Text>
-              <Text style={styles.contactValue}>
-                {student.parent_phone || 'N/A'}
-              </Text>
-            </View>
-            <View style={styles.contactRow}>
-              <Text style={styles.contactLabel}>Emergency Contact:</Text>
-              <Text style={styles.contactValue}>
-                {student.emergency_contact || 'N/A'}
-              </Text>
+            {(() => {
+              // Handle parents object with father and mother properties
+              if (!parents || typeof parents !== 'object') return null;
+
+              const parentEntries = [];
+
+              // Check for father and mother in the parents object
+              if (parents.father) {
+                parentEntries.push({ data: parents.father, type: 'Father' });
+              }
+              if (parents.mother) {
+                parentEntries.push({ data: parents.mother, type: 'Mother' });
+              }
+
+              return parentEntries.length > 0
+                ? parentEntries.map((parentEntry, index) => {
+                    const { data: parent, type: parentType } = parentEntry;
+                    return (
+                      <View key={index} style={styles.parentSection}>
+                        <Text style={styles.parentTypeHeader}>
+                          {parentType}
+                        </Text>
+
+                        <View style={styles.contactRow}>
+                          <Text style={styles.contactLabel}>Name:</Text>
+                          <Text style={styles.contactValue}>
+                            {parent.name || 'N/A'}
+                          </Text>
+                        </View>
+
+                        <View style={styles.contactRow}>
+                          <Text style={styles.contactLabel}>Email:</Text>
+                          <Text style={styles.contactValue}>
+                            {parent.email &&
+                            !parent.email.includes('@nomail.yet')
+                              ? parent.email
+                              : 'N/A'}
+                          </Text>
+                        </View>
+
+                        <View style={styles.contactRow}>
+                          <Text style={styles.contactLabel}>Phone:</Text>
+                          <Text style={styles.contactValue}>
+                            {parent.mobile || 'N/A'}
+                          </Text>
+                        </View>
+
+                        <View style={styles.contactRow}>
+                          <Text style={styles.contactLabel}>Address:</Text>
+                          <Text style={styles.contactValue}>
+                            {parent.address || 'N/A'}
+                          </Text>
+                        </View>
+
+                        {parent.nationality && (
+                          <View style={styles.contactRow}>
+                            <Text style={styles.contactLabel}>
+                              Nationality:
+                            </Text>
+                            <Text style={styles.contactValue}>
+                              {parent.nationality}
+                            </Text>
+                          </View>
+                        )}
+
+                        {parent.employer && (
+                          <View style={styles.contactRow}>
+                            <Text style={styles.contactLabel}>Employer:</Text>
+                            <Text style={styles.contactValue}>
+                              {parent.employer}
+                            </Text>
+                          </View>
+                        )}
+
+                        {parent.position && (
+                          <View style={styles.contactRow}>
+                            <Text style={styles.contactLabel}>Position:</Text>
+                            <Text style={styles.contactValue}>
+                              {parent.position}
+                            </Text>
+                          </View>
+                        )}
+
+                        {parent.business_phone && (
+                          <View style={styles.contactRow}>
+                            <Text style={styles.contactLabel}>
+                              Business Phone:
+                            </Text>
+                            <Text style={styles.contactValue}>
+                              {parent.business_phone}
+                            </Text>
+                          </View>
+                        )}
+
+                        {parent.business_email &&
+                          !parent.business_email.includes('@nomail.yet') && (
+                            <View style={styles.contactRow}>
+                              <Text style={styles.contactLabel}>
+                                Business Email:
+                              </Text>
+                              <Text style={styles.contactValue}>
+                                {parent.business_email}
+                              </Text>
+                            </View>
+                          )}
+
+                        {index < parentEntries.length - 1 && (
+                          <View style={styles.parentSeparator} />
+                        )}
+                      </View>
+                    );
+                  })
+                : null;
+            })()}
+
+            {/* Show fallback message if no parent data */}
+            {(!parents ||
+              (typeof parents === 'object' &&
+                !parents.father &&
+                !parents.mother)) && (
+              <View style={styles.contactRow}>
+                <Text style={styles.contactLabel}>Parent Information:</Text>
+                <Text style={styles.contactValue}>
+                  No parent data available
+                </Text>
+              </View>
+            )}
+
+            {/* Emergency Contact */}
+            <View style={styles.emergencySection}>
+              <Text style={styles.emergencyHeader}>Emergency Contact</Text>
+              <View style={styles.contactRow}>
+                <Text style={styles.contactLabel}>Contact:</Text>
+                <Text style={styles.contactValue}>
+                  {parents.father.mobile || 'N/A'}
+                </Text>
+              </View>
             </View>
           </View>
         )}
@@ -416,6 +592,34 @@ const createStyles = (theme) =>
       fontWeight: '500',
       flex: 2,
       textAlign: 'right',
+    },
+    parentSection: {
+      marginBottom: 16,
+    },
+    parentTypeHeader: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: theme.colors.primary,
+      marginBottom: 8,
+      textAlign: 'center',
+    },
+    parentSeparator: {
+      height: 1,
+      backgroundColor: theme.colors.border,
+      marginVertical: 12,
+    },
+    emergencySection: {
+      marginTop: 16,
+      paddingTop: 16,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border,
+    },
+    emergencyHeader: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: '#FF3B30',
+      marginBottom: 8,
+      textAlign: 'center',
     },
     medicalText: {
       fontSize: 14,

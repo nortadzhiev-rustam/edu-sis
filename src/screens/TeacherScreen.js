@@ -32,14 +32,18 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import NotificationBadge from '../components/NotificationBadge';
+import { QuickActionTile, ComingSoonBadge } from '../components';
 import { isIPad, isTablet } from '../utils/deviceDetection';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 export default function TeacherScreen({ route, navigation }) {
   const { theme } = useTheme();
   const { t, currentLanguage } = useLanguage();
+  const { refreshNotifications } = useNotifications();
   const fontSizes = getLanguageFontSizes(currentLanguage);
 
   // Device and orientation detection
@@ -55,21 +59,17 @@ export default function TeacherScreen({ route, navigation }) {
       Array.isArray(userData.roles) &&
       userData.roles.length > 0
     ) {
-      if (userData.roles.length === 1) {
-        // Single role - show role name and department if available
-        const role = userData.roles[0];
-        return role.branch_name && role.branch_name !== userData.department
-          ? `${role.role_name} (${role.branch_name})`
-          : role.role_name;
+      // Get unique role names across all branches
+      const uniqueRoles = [
+        ...new Set(userData.roles.map((role) => role.role_name)),
+      ];
+
+      if (uniqueRoles.length === 1) {
+        // Single unique role - just show the role name
+        return uniqueRoles[0];
       } else {
-        // Multiple roles - show count and primary role
-        const primaryRole = userData.roles[0];
-        const roleText =
-          primaryRole.branch_name &&
-          primaryRole.branch_name !== userData.department
-            ? `${primaryRole.role_name} (${primaryRole.branch_name})`
-            : primaryRole.role_name;
-        return `${roleText} +${userData.roles.length - 1} more`;
+        // Multiple unique roles - show them separated by dashes
+        return uniqueRoles.join(' - ');
       }
     }
 
@@ -84,7 +84,13 @@ export default function TeacherScreen({ route, navigation }) {
       Array.isArray(userData.roles) &&
       userData.roles.length > 1
     ) {
-      setShowAllRoles(true);
+      // Get unique role names to check if there are multiple unique roles
+      const uniqueRoles = [
+        ...new Set(userData.roles.map((role) => role.role_name)),
+      ];
+      if (uniqueRoles.length > 1) {
+        setShowAllRoles(true);
+      }
     }
   };
 
@@ -97,6 +103,16 @@ export default function TeacherScreen({ route, navigation }) {
     ) {
       return null;
     }
+
+    // Group roles by branch for display
+    const rolesByBranch = userData.roles.reduce((acc, role) => {
+      const branchName = role.branch_name || 'Unknown Branch';
+      if (!acc[branchName]) {
+        acc[branchName] = [];
+      }
+      acc[branchName].push(role);
+      return acc;
+    }, {});
 
     return (
       <Modal
@@ -112,14 +128,17 @@ export default function TeacherScreen({ route, navigation }) {
               style={styles.rolesContainer}
               showsVerticalScrollIndicator={false}
             >
-              {userData.roles.map((role, index) => (
-                <View key={index} style={styles.roleItem}>
-                  <Text style={styles.roleName}>{role.role_name}</Text>
-                  {role.branch_name && (
-                    <Text style={styles.roleDepartment}>
-                      {role.branch_name}
-                    </Text>
-                  )}
+              {Object.entries(rolesByBranch).map(([branchName, roles]) => (
+                <View key={branchName} style={styles.branchRoleGroup}>
+                  <Text style={styles.branchRoleGroupTitle}>{branchName}</Text>
+                  {roles.map((role, index) => (
+                    <View
+                      key={`${branchName}-${index}`}
+                      style={styles.roleItem}
+                    >
+                      <Text style={styles.roleName}>{role.role_name}</Text>
+                    </View>
+                  ))}
                 </View>
               ))}
             </ScrollView>
@@ -144,6 +163,10 @@ export default function TeacherScreen({ route, navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [studentCounts, setStudentCounts] = useState({}); // Store student counts per timetable ID
   const [branchStudentCounts, setBranchStudentCounts] = useState({}); // Store unique student counts per branch
+
+  // Branch selection state
+  const [selectedBranch, setSelectedBranch] = useState(0);
+  const [showBranchSelector, setShowBranchSelector] = useState(false);
 
   const [dashboardStats, setDashboardStats] = useState({
     totalClasses: 0,
@@ -173,6 +196,7 @@ export default function TeacherScreen({ route, navigation }) {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Teacher timetable data:', data);
         setTimetableData(data);
 
         // Calculate stats
@@ -334,6 +358,13 @@ export default function TeacherScreen({ route, navigation }) {
     }
   };
 
+  // Refresh notifications when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshNotifications();
+    }, [refreshNotifications])
+  );
+
   useEffect(() => {
     // If no userData from params, try to get from AsyncStorage
     const getUserData = async () => {
@@ -367,6 +398,13 @@ export default function TeacherScreen({ route, navigation }) {
       loadTeacherData();
     }
   }, [userData.authCode, loading]);
+
+  // Load saved branch selection when timetable data is available
+  useEffect(() => {
+    if (timetableData?.branches && timetableData.branches.length > 0) {
+      loadSavedBranchSelection();
+    }
+  }, [timetableData]);
 
   // Calculate unique students taught per branch using API data
   const calculateStudentsPerBranch = (branchId) => {
@@ -410,6 +448,61 @@ export default function TeacherScreen({ route, navigation }) {
     }
 
     return 0;
+  };
+
+  // Get current branch data
+  const getCurrentBranch = () => {
+    if (!timetableData?.branches || timetableData.branches.length === 0)
+      return null;
+    return timetableData.branches[selectedBranch] || timetableData.branches[0];
+  };
+
+  // Handle branch selection
+  const handleBranchSelection = async (branchIndex) => {
+    setSelectedBranch(branchIndex);
+    setShowBranchSelector(false);
+
+    // Save selected branch to AsyncStorage for persistence
+    try {
+      await AsyncStorage.setItem('selectedBranchIndex', branchIndex.toString());
+    } catch (error) {
+      console.error('Error saving selected branch:', error);
+    }
+
+    // Refresh data for the new branch
+    await loadTeacherData();
+  };
+
+  // Load saved branch selection
+  const loadSavedBranchSelection = async () => {
+    try {
+      const savedBranchIndex = await AsyncStorage.getItem(
+        'selectedBranchIndex'
+      );
+      if (savedBranchIndex !== null && timetableData?.branches) {
+        const branchIndex = parseInt(savedBranchIndex, 10);
+        if (branchIndex >= 0 && branchIndex < timetableData.branches.length) {
+          setSelectedBranch(branchIndex);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading saved branch selection:', error);
+    }
+  };
+
+  // Calculate stats for current branch only
+  const calculateBranchStats = () => {
+    const currentBranch = getCurrentBranch();
+    if (!currentBranch)
+      return { totalClasses: 0, attendanceTaken: 0, totalStudents: 0 };
+
+    const totalClasses = currentBranch.timetable.length;
+    const attendanceTaken = currentBranch.timetable.filter(
+      (item) => item.attendance_taken
+    ).length;
+    const totalStudents = branchStudentCounts[currentBranch.branch_id] || 0;
+
+    return { totalClasses, attendanceTaken, totalStudents };
   };
 
   // Note: Student counts are now fetched directly in fetchTeacherTimetable
@@ -514,16 +607,42 @@ export default function TeacherScreen({ route, navigation }) {
                 </Text>
                 <TouchableOpacity
                   onPress={handleRoleTap}
-                  activeOpacity={
-                    userData.roles && userData.roles.length > 1 ? 0.7 : 1
-                  }
+                  activeOpacity={(() => {
+                    if (
+                      userData.roles &&
+                      Array.isArray(userData.roles) &&
+                      userData.roles.length > 1
+                    ) {
+                      const uniqueRoles = [
+                        ...new Set(
+                          userData.roles.map((role) => role.role_name)
+                        ),
+                      ];
+                      return uniqueRoles.length > 1 ? 0.7 : 1;
+                    }
+                    return 1;
+                  })()}
                 >
                   <Text
                     style={[
                       styles.compactTeacherRole,
-                      userData.roles &&
-                        userData.roles.length > 1 &&
-                        styles.clickableRole,
+                      (() => {
+                        if (
+                          userData.roles &&
+                          Array.isArray(userData.roles) &&
+                          userData.roles.length > 1
+                        ) {
+                          const uniqueRoles = [
+                            ...new Set(
+                              userData.roles.map((role) => role.role_name)
+                            ),
+                          ];
+                          return uniqueRoles.length > 1
+                            ? styles.clickableRole
+                            : null;
+                        }
+                        return null;
+                      })(),
                     ]}
                   >
                     {formatUserRoles(userData)} • ID: {userData.id || 'N/A'}
@@ -544,54 +663,129 @@ export default function TeacherScreen({ route, navigation }) {
                     />
                   </View>
                   <View style={styles.branchSummaryInfo}>
-                    <Text style={styles.branchSummaryTitle}>
-                      {timetableData.branches.length === 1
-                        ? timetableData.branches[0].branch_name
-                        : `${timetableData.branches.length} Branches`}
-                    </Text>
+                    <TouchableOpacity
+                      onPress={() =>
+                        timetableData.branches.length > 1 &&
+                        setShowBranchSelector(!showBranchSelector)
+                      }
+                      activeOpacity={
+                        timetableData.branches.length > 1 ? 0.7 : 1
+                      }
+                      style={styles.branchTitleContainer}
+                    >
+                      <Text style={styles.branchSummaryTitle}>
+                        {timetableData.branches.length === 1
+                          ? timetableData.branches[0].branch_name
+                          : getCurrentBranch()?.branch_name || 'Select Branch'}
+                      </Text>
+                      {timetableData.branches.length > 1 && (
+                        <FontAwesomeIcon
+                          icon={faChevronRight}
+                          size={12}
+                          color={theme.colors.textSecondary}
+                          style={[
+                            styles.branchChevron,
+                            showBranchSelector && styles.branchChevronRotated,
+                          ]}
+                        />
+                      )}
+                    </TouchableOpacity>
                     <Text style={styles.branchSummarySubtitle}>
                       Academic Year:{' '}
                       {timetableData.global_academic_year?.academic_year ||
-                        'N/A'}
+                        'N/A'}{' '}
+                      / Week: {timetableData.branches[0]?.current_week || 'N/A'}
+                      {timetableData.branches.length > 1 && (
+                        <Text style={styles.branchCount}>
+                          {' '}
+                          • {selectedBranch + 1} of{' '}
+                          {timetableData.branches.length}
+                        </Text>
+                      )}
                     </Text>
                   </View>
                 </View>
+
+                {/* Branch Selector Dropdown */}
+                {showBranchSelector && timetableData.branches.length > 1 && (
+                  <View style={styles.branchSelectorDropdown}>
+                    <ScrollView
+                      style={styles.branchSelectorScroll}
+                      showsVerticalScrollIndicator={false}
+                    >
+                      {timetableData.branches.map((branch, index) => (
+                        <TouchableOpacity
+                          key={branch.branch_id}
+                          style={[
+                            styles.branchSelectorItem,
+                            selectedBranch === index &&
+                              styles.branchSelectorItemSelected,
+                          ]}
+                          onPress={() => handleBranchSelection(index)}
+                        >
+                          <View style={styles.branchSelectorItemContent}>
+                            <Text
+                              style={[
+                                styles.branchSelectorItemText,
+                                selectedBranch === index &&
+                                  styles.branchSelectorItemTextSelected,
+                              ]}
+                            >
+                              {branch.branch_name}
+                            </Text>
+                            {selectedBranch === index && (
+                              <FontAwesomeIcon
+                                icon={faChevronRight}
+                                size={14}
+                                color={theme.colors.primary}
+                              />
+                            )}
+                          </View>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
 
                 {/* Quick Stats Row */}
                 <View style={styles.quickStatsRow}>
                   <View style={styles.quickStat}>
                     <Text style={styles.quickStatNumber}>
-                      {timetableData.branches.reduce(
-                        (sum, branch) => sum + branch.timetable.length,
-                        0
-                      )}
+                      {(() => {
+                        const currentBranch = getCurrentBranch();
+                        return currentBranch
+                          ? currentBranch.timetable.length
+                          : 0;
+                      })()}
                     </Text>
-                    <Text style={styles.quickStatLabel}>Classes</Text>
+                    <Text style={styles.quickStatLabel}>Weekly Classes</Text>
                   </View>
                   <View style={styles.quickStat}>
                     <Text style={styles.quickStatNumber}>
-                      {Object.keys(branchStudentCounts).length === 0 &&
-                      Object.keys(studentCounts).length === 0
-                        ? '...'
-                        : Object.values(branchStudentCounts).reduce(
-                            (sum, count) => sum + count,
-                            0
-                          )}
+                      {(() => {
+                        const currentBranch = getCurrentBranch();
+                        if (!currentBranch) return 0;
+                        const branchStudentCount =
+                          branchStudentCounts[currentBranch.branch_id];
+                        return branchStudentCount !== undefined
+                          ? branchStudentCount
+                          : '...';
+                      })()}
                     </Text>
                     <Text style={styles.quickStatLabel}>Students</Text>
                   </View>
                   <View style={styles.quickStat}>
                     <Text style={styles.quickStatNumber}>
-                      {timetableData.branches.reduce(
-                        (sum, branch) =>
-                          sum +
-                          branch.timetable.filter(
-                            (item) => item.attendance_taken
-                          ).length,
-                        0
-                      )}
+                      {(() => {
+                        const currentBranch = getCurrentBranch();
+                        return currentBranch
+                          ? currentBranch.timetable.filter(
+                              (item) => item.attendance_taken
+                            ).length
+                          : 0;
+                      })()}
                     </Text>
-                    <Text style={styles.quickStatLabel}>Attendance</Text>
+                    <Text style={styles.quickStatLabel}>Attendance Taken</Text>
                   </View>
                 </View>
               </View>
@@ -615,492 +809,117 @@ export default function TeacherScreen({ route, navigation }) {
               ]}
             >
               {/* Timetable Tile */}
-              <TouchableOpacity
-                style={[
-                  styles.actionTile,
-                  { backgroundColor: theme.colors.primary },
-                  isIPadDevice && styles.iPadActionTile,
-                  isIPadDevice && isLandscape && styles.iPadLandscapeActionTile,
-                  isTabletDevice && styles.tabletActionTile,
-                  isTabletDevice &&
-                    isLandscape &&
-                    styles.tabletLandscapeActionTile,
-                ]}
+              <QuickActionTile
+                title={t('viewTimetable')}
+                subtitle='Schedule & Attendance'
+                icon={faCalendarAlt}
+                backgroundColor={theme.colors.primary}
+                iconColor={theme.colors.headerText}
                 onPress={() =>
                   navigation.navigate('TeacherTimetable', {
                     authCode: userData.authCode,
                     teacherName: userData.name,
                     timetableData: timetableData,
+                    selectedBranch: selectedBranch,
                   })
                 }
-                activeOpacity={0.8}
-              >
-                <View
-                  style={[
-                    styles.tileIconContainer,
-                    isIPadDevice && styles.iPadTileIconContainer,
-                    isIPadDevice &&
-                      isLandscape &&
-                      styles.iPadLandscapeTileIconContainer,
-                    isTabletDevice && styles.tabletTileIconContainer,
-                    isTabletDevice &&
-                      isLandscape &&
-                      styles.tabletLandscapeTileIconContainer,
-                  ]}
-                >
-                  <FontAwesomeIcon
-                    icon={faCalendarAlt}
-                    size={
-                      isIPadDevice && isLandscape
-                        ? 16
-                        : isTabletDevice && isLandscape
-                        ? 18
-                        : isIPadDevice
-                        ? 20
-                        : isTabletDevice
-                        ? 24
-                        : 28
-                    }
-                    color={theme.colors.headerText}
-                  />
-                </View>
-                <Text
-                  style={[
-                    styles.tileTitle,
-                    isIPadDevice && styles.iPadTileTitle,
-                    isIPadDevice &&
-                      isLandscape &&
-                      styles.iPadLandscapeTileTitle,
-                    isTabletDevice && styles.tabletTileTitle,
-                    isTabletDevice &&
-                      isLandscape &&
-                      styles.tabletLandscapeTileTitle,
-                  ]}
-                >
-                  {t('viewTimetable')}
-                </Text>
-                <Text
-                  style={[
-                    styles.tileSubtitle,
-                    isIPadDevice && styles.iPadTileSubtitle,
-                    isIPadDevice &&
-                      isLandscape &&
-                      styles.iPadLandscapeTileSubtitle,
-                    isTabletDevice && styles.tabletTileSubtitle,
-                    isTabletDevice &&
-                      isLandscape &&
-                      styles.tabletLandscapeTileSubtitle,
-                  ]}
-                >
-                  Schedule & Attendance
-                </Text>
-              </TouchableOpacity>
+                styles={styles}
+                isLandscape={isLandscape}
+              />
 
               {/* BPS Management Tile */}
-              <TouchableOpacity
-                style={[
-                  styles.actionTile,
-                  { backgroundColor: '#AF52DE' },
-                  isIPadDevice && styles.iPadActionTile,
-                  isIPadDevice && isLandscape && styles.iPadLandscapeActionTile,
-                  isTabletDevice && styles.tabletActionTile,
-                  isTabletDevice &&
-                    isLandscape &&
-                    styles.tabletLandscapeActionTile,
-                ]}
+              <QuickActionTile
+                title={t('manageBPS')}
+                subtitle='Behavior Points'
+                icon={faGavel}
+                backgroundColor='#AF52DE'
+                iconColor='#fff'
                 onPress={() =>
                   navigation.navigate('TeacherBPS', {
                     authCode: userData.authCode,
                     teacherName: userData.name,
+                    selectedBranch: selectedBranch,
                   })
                 }
-                activeOpacity={0.8}
-              >
-                <View
-                  style={[
-                    styles.tileIconContainer,
-                    isIPadDevice && styles.iPadTileIconContainer,
-                    isIPadDevice &&
-                      isLandscape &&
-                      styles.iPadLandscapeTileIconContainer,
-                    isTabletDevice && styles.tabletTileIconContainer,
-                    isTabletDevice &&
-                      isLandscape &&
-                      styles.tabletLandscapeTileIconContainer,
-                  ]}
-                >
-                  <FontAwesomeIcon
-                    icon={faGavel}
-                    size={
-                      isIPadDevice && isLandscape
-                        ? 16
-                        : isTabletDevice && isLandscape
-                        ? 18
-                        : isIPadDevice
-                        ? 20
-                        : isTabletDevice
-                        ? 24
-                        : 28
-                    }
-                    color='#fff'
-                  />
-                </View>
-                <Text
-                  style={[
-                    styles.tileTitle,
-                    isIPadDevice && styles.iPadTileTitle,
-                    isIPadDevice &&
-                      isLandscape &&
-                      styles.iPadLandscapeTileTitle,
-                    isTabletDevice && styles.tabletTileTitle,
-                    isTabletDevice &&
-                      isLandscape &&
-                      styles.tabletLandscapeTileTitle,
-                  ]}
-                >
-                  {t('manageBPS')}
-                </Text>
-                <Text
-                  style={[
-                    styles.tileSubtitle,
-                    isIPadDevice && styles.iPadTileSubtitle,
-                    isIPadDevice &&
-                      isLandscape &&
-                      styles.iPadLandscapeTileSubtitle,
-                    isTabletDevice && styles.tabletTileSubtitle,
-                    isTabletDevice &&
-                      isLandscape &&
-                      styles.tabletLandscapeTileSubtitle,
-                  ]}
-                >
-                  Behavior Points
-                </Text>
-              </TouchableOpacity>
+                styles={styles}
+                isLandscape={isLandscape}
+              />
 
               {/* Homework Management Tile */}
-              <TouchableOpacity
-                style={[
-                  styles.actionTile,
-                  { backgroundColor: '#34C759' },
-                  isIPadDevice && styles.iPadActionTile,
-                  isIPadDevice && isLandscape && styles.iPadLandscapeActionTile,
-                  isTabletDevice && styles.tabletActionTile,
-                  isTabletDevice &&
-                    isLandscape &&
-                    styles.tabletLandscapeActionTile,
-                ]}
+              <QuickActionTile
+                title='Homework'
+                subtitle='Assignments & Review'
+                icon={faClipboardList}
+                backgroundColor='#34C759'
+                iconColor='#fff'
                 onPress={() =>
                   navigation.navigate('TeacherHomework', {
                     authCode: userData.authCode,
                     teacherName: userData.name,
+                    selectedBranch: selectedBranch,
                   })
                 }
-                activeOpacity={0.8}
-              >
-                <View
-                  style={[
-                    styles.tileIconContainer,
-                    isIPadDevice && styles.iPadTileIconContainer,
-                    isIPadDevice &&
-                      isLandscape &&
-                      styles.iPadLandscapeTileIconContainer,
-                    isTabletDevice && styles.tabletTileIconContainer,
-                    isTabletDevice &&
-                      isLandscape &&
-                      styles.tabletLandscapeTileIconContainer,
-                  ]}
-                >
-                  <FontAwesomeIcon
-                    icon={faClipboardList}
-                    size={
-                      isIPadDevice && isLandscape
-                        ? 16
-                        : isTabletDevice && isLandscape
-                        ? 18
-                        : isIPadDevice
-                        ? 20
-                        : isTabletDevice
-                        ? 24
-                        : 28
-                    }
-                    color='#fff'
-                  />
-                </View>
-                <Text
-                  style={[
-                    styles.tileTitle,
-                    isIPadDevice && styles.iPadTileTitle,
-                    isIPadDevice &&
-                      isLandscape &&
-                      styles.iPadLandscapeTileTitle,
-                    isTabletDevice && styles.tabletTileTitle,
-                    isTabletDevice &&
-                      isLandscape &&
-                      styles.tabletLandscapeTileTitle,
-                  ]}
-                >
-                  Homework
-                </Text>
-                <Text
-                  style={[
-                    styles.tileSubtitle,
-                    isIPadDevice && styles.iPadTileSubtitle,
-                    isIPadDevice &&
-                      isLandscape &&
-                      styles.iPadLandscapeTileSubtitle,
-                    isTabletDevice && styles.tabletTileSubtitle,
-                    isTabletDevice &&
-                      isLandscape &&
-                      styles.tabletLandscapeTileSubtitle,
-                  ]}
-                >
-                  Assignments & Review
-                </Text>
-              </TouchableOpacity>
+                styles={styles}
+                isLandscape={isLandscape}
+              />
 
               {/* Homeroom Tile - Conditional */}
               {userData.is_homeroom && (
-                <TouchableOpacity
-                  style={[
-                    styles.actionTile,
-                    { backgroundColor: '#FF6B35' },
-                    isIPadDevice && styles.iPadActionTile,
-                    isIPadDevice &&
-                      isLandscape &&
-                      styles.iPadLandscapeActionTile,
-                    isTabletDevice && styles.tabletActionTile,
-                    isTabletDevice &&
-                      isLandscape &&
-                      styles.tabletLandscapeActionTile,
-                  ]}
+                <QuickActionTile
+                  title='Homeroom'
+                  subtitle='Class Management'
+                  icon={faHome}
+                  backgroundColor='#FF6B35'
+                  iconColor='#fff'
                   onPress={() =>
                     navigation.navigate('HomeroomScreen', {
                       authCode: userData.authCode,
                       teacherName: userData.name,
+                      selectedBranch: selectedBranch,
                     })
                   }
-                >
-                  <View
-                    style={[
-                      styles.tileIconContainer,
-                      isIPadDevice && styles.iPadTileIconContainer,
-                      isIPadDevice &&
-                        isLandscape &&
-                        styles.iPadLandscapeTileIconContainer,
-                      isTabletDevice && styles.tabletTileIconContainer,
-                      isTabletDevice &&
-                        isLandscape &&
-                        styles.tabletLandscapeTileIconContainer,
-                    ]}
-                  >
-                    <FontAwesomeIcon
-                      icon={faHome}
-                      size={
-                        isIPadDevice && isLandscape
-                          ? 16
-                          : isTabletDevice && isLandscape
-                          ? 18
-                          : isIPadDevice
-                          ? 20
-                          : isTabletDevice
-                          ? 24
-                          : 28
-                      }
-                      color='#fff'
-                    />
-                  </View>
-                  <Text
-                    style={[
-                      styles.tileTitle,
-                      isIPadDevice && styles.iPadTileTitle,
-                      isIPadDevice &&
-                        isLandscape &&
-                        styles.iPadLandscapeTileTitle,
-                      isTabletDevice && styles.tabletTileTitle,
-                      isTabletDevice &&
-                        isLandscape &&
-                        styles.tabletLandscapeTileTitle,
-                    ]}
-                  >
-                    Homeroom
-                  </Text>
-                  <Text
-                    style={[
-                      styles.tileSubtitle,
-                      isIPadDevice && styles.iPadTileSubtitle,
-                      isIPadDevice &&
-                        isLandscape &&
-                        styles.iPadLandscapeTileSubtitle,
-                      isTabletDevice && styles.tabletTileSubtitle,
-                      isTabletDevice &&
-                        isLandscape &&
-                        styles.tabletLandscapeTileSubtitle,
-                    ]}
-                  >
-                    Class Management
-                  </Text>
-                </TouchableOpacity>
+                  styles={styles}
+                  isLandscape={isLandscape}
+                />
               )}
 
               {/* Reports Tile - Disabled */}
-              <TouchableOpacity
-                style={[
-                  styles.actionTile,
-                  styles.disabledTile,
-                  { backgroundColor: '#B0B0B0' },
-                  isIPadDevice && styles.iPadActionTile,
-                  isIPadDevice && isLandscape && styles.iPadLandscapeActionTile,
-                  isTabletDevice && styles.tabletActionTile,
-                  isTabletDevice &&
-                    isLandscape &&
-                    styles.tabletLandscapeActionTile,
-                ]}
+              <QuickActionTile
+                title={t('reports')}
+                subtitle={t('analyticsStats')}
+                icon={faChartLine}
+                backgroundColor='#B0B0B0'
+                iconColor='#fff'
                 disabled={true}
-                activeOpacity={1}
-              >
-                <View
-                  style={[
-                    styles.tileIconContainer,
-                    isIPadDevice && styles.iPadTileIconContainer,
-                    isIPadDevice &&
-                      isLandscape &&
-                      styles.iPadLandscapeTileIconContainer,
-                    isTabletDevice && styles.tabletTileIconContainer,
-                    isTabletDevice &&
-                      isLandscape &&
-                      styles.tabletLandscapeTileIconContainer,
-                  ]}
-                >
-                  <FontAwesomeIcon
-                    icon={faChartLine}
-                    size={
-                      isIPadDevice && isLandscape
-                        ? 16
-                        : isTabletDevice && isLandscape
-                        ? 18
-                        : isIPadDevice
-                        ? 20
-                        : isTabletDevice
-                        ? 24
-                        : 28
-                    }
-                    color='#fff'
+                badge={
+                  <ComingSoonBadge
+                    text={t('comingSoon')}
+                    theme={theme}
+                    fontSizes={fontSizes}
                   />
-                </View>
-                <Text
-                  style={[
-                    styles.tileTitle,
-                    isIPadDevice && styles.iPadTileTitle,
-                    isIPadDevice &&
-                      isLandscape &&
-                      styles.iPadLandscapeTileTitle,
-                    isTabletDevice && styles.tabletTileTitle,
-                    isTabletDevice &&
-                      isLandscape &&
-                      styles.tabletLandscapeTileTitle,
-                  ]}
-                >
-                  {t('reports')}
-                </Text>
-                <Text
-                  style={[
-                    styles.tileSubtitle,
-                    isIPadDevice && styles.iPadTileSubtitle,
-                    isIPadDevice &&
-                      isLandscape &&
-                      styles.iPadLandscapeTileSubtitle,
-                    isTabletDevice && styles.tabletTileSubtitle,
-                    isTabletDevice &&
-                      isLandscape &&
-                      styles.tabletLandscapeTileSubtitle,
-                  ]}
-                >
-                  {t('analyticsStats')}
-                </Text>
-                <View style={styles.comingSoonBadge}>
-                  <Text style={styles.comingSoonText}>{t('comingSoon')}</Text>
-                </View>
-              </TouchableOpacity>
+                }
+                styles={styles}
+                isLandscape={isLandscape}
+              />
 
               {/* Class Materials Tile - Disabled */}
-              <TouchableOpacity
-                style={[
-                  styles.actionTile,
-                  styles.disabledTile,
-                  { backgroundColor: '#B0B0B0' },
-                  isIPadDevice && styles.iPadActionTile,
-                  isIPadDevice && isLandscape && styles.iPadLandscapeActionTile,
-                  isTabletDevice && styles.tabletActionTile,
-                  isTabletDevice &&
-                    isLandscape &&
-                    styles.tabletLandscapeActionTile,
-                ]}
+              <QuickActionTile
+                title={t('materials')}
+                subtitle={t('resourcesFiles')}
+                icon={faBookOpen}
+                backgroundColor='#B0B0B0'
+                iconColor='#fff'
                 disabled={true}
-                activeOpacity={1}
-              >
-                <View
-                  style={[
-                    styles.tileIconContainer,
-                    isIPadDevice && styles.iPadTileIconContainer,
-                    isIPadDevice &&
-                      isLandscape &&
-                      styles.iPadLandscapeTileIconContainer,
-                    isTabletDevice && styles.tabletTileIconContainer,
-                    isTabletDevice &&
-                      isLandscape &&
-                      styles.tabletLandscapeTileIconContainer,
-                  ]}
-                >
-                  <FontAwesomeIcon
-                    icon={faBookOpen}
-                    size={
-                      isIPadDevice && isLandscape
-                        ? 16
-                        : isTabletDevice && isLandscape
-                        ? 18
-                        : isIPadDevice
-                        ? 20
-                        : isTabletDevice
-                        ? 24
-                        : 28
-                    }
-                    color='#fff'
+                badge={
+                  <ComingSoonBadge
+                    text={t('comingSoon')}
+                    theme={theme}
+                    fontSizes={fontSizes}
                   />
-                </View>
-                <Text
-                  style={[
-                    styles.tileTitle,
-                    isIPadDevice && styles.iPadTileTitle,
-                    isIPadDevice &&
-                      isLandscape &&
-                      styles.iPadLandscapeTileTitle,
-                    isTabletDevice && styles.tabletTileTitle,
-                    isTabletDevice &&
-                      isLandscape &&
-                      styles.tabletLandscapeTileTitle,
-                  ]}
-                >
-                  {t('materials')}
-                </Text>
-                <Text
-                  style={[
-                    styles.tileSubtitle,
-                    isIPadDevice && styles.iPadTileSubtitle,
-                    isIPadDevice &&
-                      isLandscape &&
-                      styles.iPadLandscapeTileSubtitle,
-                    isTabletDevice && styles.tabletTileSubtitle,
-                    isTabletDevice &&
-                      isLandscape &&
-                      styles.tabletLandscapeTileSubtitle,
-                  ]}
-                >
-                  {t('resourcesFiles')}
-                </Text>
-                <View style={styles.comingSoonBadge}>
-                  <Text style={styles.comingSoonText}>{t('comingSoon')}</Text>
-                </View>
-              </TouchableOpacity>
+                }
+                styles={styles}
+                isLandscape={isLandscape}
+              />
             </View>
           </View>
 
@@ -1187,7 +1006,6 @@ const createStyles = (theme, fontSizes) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      ...theme.shadows.medium,
     },
     headerLeft: {
       flexDirection: 'row',
@@ -1251,7 +1069,7 @@ const createStyles = (theme, fontSizes) =>
       marginBottom: 15,
       borderRadius: 16,
       padding: 16,
-      ...theme.shadows.medium,
+      ...theme.shadows.small,
     },
 
     // Teacher Section
@@ -1289,8 +1107,7 @@ const createStyles = (theme, fontSizes) =>
       fontWeight: '500',
     },
     clickableRole: {
-      textDecorationLine: 'underline',
-      color: theme.colors.primary,
+      color: theme.colors.textSecondary,
     },
 
     // Branch Summary Section
@@ -1316,16 +1133,71 @@ const createStyles = (theme, fontSizes) =>
     branchSummaryInfo: {
       flex: 1,
     },
+    branchTitleContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 2,
+    },
     branchSummaryTitle: {
       fontSize: 14,
       fontWeight: 'bold',
       color: theme.colors.text,
-      marginBottom: 2,
+      flex: 1,
+    },
+    branchChevron: {
+      marginLeft: 6,
+      transform: [{ rotate: '0deg' }],
+    },
+    branchChevronRotated: {
+      transform: [{ rotate: '90deg' }],
     },
     branchSummarySubtitle: {
       fontSize: 11,
       color: theme.colors.textSecondary,
       fontWeight: '500',
+    },
+    branchCount: {
+      fontSize: 10,
+      color: theme.colors.primary,
+      fontWeight: '600',
+    },
+
+    // Branch Selector Dropdown
+    branchSelectorDropdown: {
+      marginTop: 12,
+      backgroundColor: theme.colors.background,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      maxHeight: 200,
+      ...theme.shadows.small,
+    },
+    branchSelectorScroll: {
+      maxHeight: 200,
+    },
+    branchSelectorItem: {
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    branchSelectorItemSelected: {
+      backgroundColor: theme.colors.primary + '10',
+    },
+    branchSelectorItemContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    branchSelectorItemText: {
+      fontSize: 14,
+      color: theme.colors.text,
+      fontWeight: '500',
+      flex: 1,
+    },
+    branchSelectorItemTextSelected: {
+      color: theme.colors.primary,
+      fontWeight: '600',
     },
 
     // Quick Stats Row
@@ -1350,6 +1222,7 @@ const createStyles = (theme, fontSizes) =>
       fontWeight: '600',
       textTransform: 'uppercase',
       letterSpacing: 0.5,
+      textAlign: 'center',
     },
 
     // Stats Container
@@ -1440,10 +1313,7 @@ const createStyles = (theme, fontSizes) =>
       padding: 20,
       justifyContent: 'space-between',
       alignItems: 'flex-start',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.2,
-      shadowRadius: 12,
+      ...theme.shadows.medium,
       elevation: 8,
       position: 'relative',
       overflow: 'hidden',
@@ -1772,24 +1642,31 @@ const createStyles = (theme, fontSizes) =>
     rolesContainer: {
       maxHeight: 300,
     },
+    branchRoleGroup: {
+      marginBottom: 16,
+    },
+    branchRoleGroupTitle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: theme.colors.primary,
+      marginBottom: 8,
+      paddingBottom: 4,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
     roleItem: {
       backgroundColor: theme.colors.background,
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 12,
-      borderLeftWidth: 4,
-      borderLeftColor: '#007AFF',
+      borderRadius: 8,
+      padding: 12,
+      marginBottom: 6,
+      marginLeft: 8,
+      borderLeftWidth: 3,
+      borderLeftColor: theme.colors.primary,
     },
     roleName: {
-      fontSize: 16,
+      fontSize: 15,
       fontWeight: '600',
       color: theme.colors.text,
-      marginBottom: 4,
-    },
-    roleDepartment: {
-      fontSize: 14,
-      color: theme.colors.textSecondary,
-      fontStyle: 'italic',
     },
     modalCloseButton: {
       backgroundColor: '#007AFF',

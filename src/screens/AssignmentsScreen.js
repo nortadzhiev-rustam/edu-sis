@@ -1020,12 +1020,8 @@ const createStyles = (theme) =>
       marginBottom: 16,
       marginHorizontal: 16,
       elevation: 6,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.2,
-      shadowRadius: 8,
-
       width: '100%',
+      ...theme.shadows.medium,
     },
     cardTopSection: {
       padding: 16,

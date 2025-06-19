@@ -91,15 +91,20 @@ export default function TeacherProfile({ route, navigation }) {
       Array.isArray(userData.roles) &&
       userData.roles.length > 0
     ) {
-      return userData.roles
-        .map((role) => {
-          return role.branch_name && role.branch_name !== userData.department
-            ? `${role.role_name} (${role.branch_name})`
-            : role.role_name;
-        })
-        .join(', ');
+      // Get unique role names across all branches
+      const uniqueRoles = [
+        ...new Set(userData.roles.map((role) => role.role_name)),
+      ];
+
+      if (uniqueRoles.length === 1) {
+        // Single unique role - just show the role name
+        return uniqueRoles[0];
+      } else {
+        // Multiple unique roles - show them separated by dashes
+        return uniqueRoles.join(' - ');
+      }
     }
-    return userData.roles[0].role_name || 'Teacher';
+    return userData.position || 'Teacher';
   };
 
   const ProfileItem = ({ icon, label, value, onPress }) => (

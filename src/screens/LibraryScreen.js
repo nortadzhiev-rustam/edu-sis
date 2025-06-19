@@ -31,11 +31,12 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import NotificationBadge from '../components/NotificationBadge';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function LibraryScreen({ navigation, route }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const { unreadCount } = useNotifications();
+  const { unreadCount, refreshNotifications } = useNotifications();
 
   const [libraryData, setLibraryData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -101,6 +102,13 @@ export default function LibraryScreen({ navigation, route }) {
     await fetchLibraryData();
     setRefreshing(false);
   };
+
+  // Refresh notifications when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshNotifications();
+    }, [refreshNotifications])
+  );
 
   // Load data on component mount
   useEffect(() => {

@@ -13,6 +13,11 @@ import { Alert, Platform, Linking } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 
+// Navigation reference for programmatic navigation
+let navigationRef = null;
+let isNavigationReady = false;
+let pendingNavigationActions = [];
+
 // Configure notification behavior
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -286,27 +291,36 @@ export const notificationListener = () => {
 
   const messaging = getMessaging();
 
+  // Firebase messaging listeners
   // When the application is running in the background
   onNotificationOpenedApp(messaging, (remoteMessage) => {
-    console.log('🔔 BACKGROUND NOTIFICATION: App opened from background');
+    console.log(
+      '🔔 FIREBASE BACKGROUND: App opened from background notification'
+    );
     console.log('📋 Notification data:', remoteMessage.notification);
     console.log('📦 Message data:', remoteMessage.data);
     console.log('🏷️ Message ID:', remoteMessage.messageId);
 
-    // Navigate to appropriate screen if needed
-    handleNotificationNavigation(remoteMessage);
+    // Add a delay to ensure navigation is ready when app opens from background
+    setTimeout(() => {
+      handleNotificationNavigation(remoteMessage);
+    }, 500);
   });
 
   // When the application is opened from a quit state
   getInitialNotification(messaging).then((remoteMessage) => {
     if (remoteMessage) {
-      console.log('🔔 QUIT STATE NOTIFICATION: App opened from quit state');
+      console.log(
+        '🔔 FIREBASE QUIT STATE: App opened from quit state notification'
+      );
       console.log('📋 Notification data:', remoteMessage.notification);
       console.log('📦 Message data:', remoteMessage.data);
       console.log('🏷️ Message ID:', remoteMessage.messageId);
 
-      // Navigate to appropriate screen if needed
-      handleNotificationNavigation(remoteMessage);
+      // Add a longer delay for quit state as app needs more time to initialize
+      setTimeout(() => {
+        handleNotificationNavigation(remoteMessage);
+      }, 1000);
     } else {
       console.log('📱 NORMAL LAUNCH: App opened normally (no notification)');
     }
@@ -314,11 +328,45 @@ export const notificationListener = () => {
 
   // Handle foreground messages
   onMessage(messaging, async (remoteMessage) => {
-    console.log('Received foreground message:', remoteMessage);
+    console.log(
+      '🔔 FIREBASE FOREGROUND: Received foreground message:',
+      remoteMessage
+    );
     // Show local notification for foreground messages
     await showLocalNotification(remoteMessage);
     // Store notification in history
     await storeNotificationInHistory(remoteMessage);
+  });
+
+  // Expo notifications listeners for local notifications
+  // Handle notification taps when app is in background/foreground
+  Notifications.addNotificationResponseReceivedListener((response) => {
+    console.log('🔔 EXPO NOTIFICATION: User tapped on notification');
+    console.log(
+      '📦 Notification data:',
+      response.notification.request.content.data
+    );
+
+    // Create a remoteMessage-like object for consistency
+    const mockRemoteMessage = {
+      data: response.notification.request.content.data,
+      notification: {
+        title: response.notification.request.content.title,
+        body: response.notification.request.content.body,
+      },
+    };
+
+    // Add a small delay to ensure navigation is ready
+    setTimeout(() => {
+      handleNotificationNavigation(mockRemoteMessage);
+    }, 200);
+  });
+
+  // Handle notification received while app is in foreground
+  Notifications.addNotificationReceivedListener((notification) => {
+    console.log('🔔 EXPO FOREGROUND: Notification received while app is open');
+    console.log('📦 Notification data:', notification.request.content.data);
+    // Note: This doesn't trigger navigation as the user didn't tap the notification
   });
 };
 
@@ -455,6 +503,13 @@ export async function storeNotificationInHistory(remoteMessage) {
       JSON.stringify(trimmedNotifications)
     );
 
+    // Update app icon badge count
+    const unreadCount = trimmedNotifications.filter((n) => !n.read).length;
+    await Notifications.setBadgeCountAsync(unreadCount);
+    console.log(
+      `📱 BADGE: Updated app icon badge to ${unreadCount} after storing notification`
+    );
+
     console.log('Notification stored in history:', notificationRecord.title);
   } catch (error) {
     console.error('Error storing notification in history:', error);
@@ -488,6 +543,14 @@ export async function markNotificationAsRead(notificationId) {
       'notificationHistory',
       JSON.stringify(updatedNotifications)
     );
+
+    // Update app icon badge count
+    const unreadCount = updatedNotifications.filter((n) => !n.read).length;
+    await Notifications.setBadgeCountAsync(unreadCount);
+    console.log(
+      `📱 BADGE: Updated app icon badge to ${unreadCount} after marking notification as read`
+    );
+
     return true;
   } catch (error) {
     console.error('Error marking notification as read:', error);
@@ -499,6 +562,13 @@ export async function markNotificationAsRead(notificationId) {
 export async function clearNotificationHistory() {
   try {
     await AsyncStorage.removeItem('notificationHistory');
+
+    // Clear app icon badge when all notifications are cleared
+    await Notifications.setBadgeCountAsync(0);
+    console.log(
+      '📱 BADGE: Cleared app icon badge after clearing all notifications'
+    );
+
     return true;
   } catch (error) {
     console.error('Error clearing notification history:', error);
@@ -506,35 +576,197 @@ export async function clearNotificationHistory() {
   }
 }
 
+// Set navigation reference for programmatic navigation
+export function setNavigationRef(ref) {
+  console.log('🧭 NAVIGATION: Setting navigation reference...');
+  navigationRef = ref;
+  isNavigationReady = true;
+
+  // Process any pending navigation actions
+  processPendingNavigationActions();
+}
+
+// Process pending navigation actions
+function processPendingNavigationActions() {
+  if (pendingNavigationActions.length > 0) {
+    console.log(
+      `🧭 NAVIGATION: Processing ${pendingNavigationActions.length} pending navigation actions...`
+    );
+    const actionsToProcess = [...pendingNavigationActions];
+    pendingNavigationActions = [];
+
+    actionsToProcess.forEach((action) => {
+      try {
+        action();
+      } catch (error) {
+        console.error('❌ NAVIGATION: Error processing pending action:', error);
+        // Re-queue failed actions
+        pendingNavigationActions.push(action);
+      }
+    });
+  }
+}
+
+// Retry mechanism for pending actions
+let retryInterval = null;
+function startRetryMechanism() {
+  if (retryInterval) return; // Already started
+
+  retryInterval = setInterval(() => {
+    if (
+      pendingNavigationActions.length > 0 &&
+      isNavigationReady &&
+      navigationRef
+    ) {
+      console.log('🔄 NAVIGATION: Retrying pending navigation actions...');
+      processPendingNavigationActions();
+    }
+
+    // Stop retrying if no pending actions
+    if (pendingNavigationActions.length === 0) {
+      clearInterval(retryInterval);
+      retryInterval = null;
+    }
+  }, 2000); // Retry every 2 seconds
+}
+
+// Queue navigation action if navigation is not ready
+function queueNavigationAction(action) {
+  console.log(
+    '⏳ NAVIGATION: Queueing navigation action until navigation is ready...'
+  );
+  pendingNavigationActions.push(action);
+
+  // Start retry mechanism if not already started
+  startRetryMechanism();
+}
+
+// Safe navigation function that checks if navigation is ready
+function safeNavigate(screenName, params = {}) {
+  const navigationAction = () => {
+    try {
+      if (navigationRef && typeof navigationRef.navigate === 'function') {
+        // Check if navigation is ready (if method exists)
+        if (
+          navigationRef.isReady &&
+          typeof navigationRef.isReady === 'function'
+        ) {
+          if (navigationRef.isReady()) {
+            console.log(
+              `🚀 NAVIGATION: Navigating to ${screenName} (ready check passed) with params:`,
+              params
+            );
+            navigationRef.navigate(screenName, params);
+          } else {
+            console.log(
+              '⏳ NAVIGATION: Navigation not ready yet, queueing action...'
+            );
+            throw new Error('Navigation not ready');
+          }
+        } else {
+          // Fallback for older React Navigation versions or different implementations
+          console.log(
+            `🚀 NAVIGATION: Navigating to ${screenName} (fallback method) with params:`,
+            params
+          );
+          navigationRef.navigate(screenName, params);
+        }
+      } else {
+        console.error('❌ NAVIGATION: Navigation reference is null or invalid');
+        throw new Error('Invalid navigation reference');
+      }
+    } catch (error) {
+      console.error('❌ NAVIGATION: Error during navigation:', error.message);
+      throw error;
+    }
+  };
+
+  if (isNavigationReady && navigationRef) {
+    try {
+      navigationAction();
+    } catch (error) {
+      console.log(
+        '⏳ NAVIGATION: Queueing action due to error:',
+        error.message
+      );
+      // Queue the action to retry later
+      queueNavigationAction(navigationAction);
+    }
+  } else {
+    console.log('⏳ NAVIGATION: Navigation not ready, queueing action...');
+    queueNavigationAction(navigationAction);
+  }
+}
+
+// Get user type from stored data
+async function getUserType() {
+  try {
+    const userData = await AsyncStorage.getItem('userData');
+    if (userData) {
+      const parsedData = JSON.parse(userData);
+      // Determine user type based on stored data
+      if (parsedData.is_teacher || parsedData.role === 'teacher') {
+        return 'teacher';
+      } else if (parsedData.role === 'parent' || parsedData.is_parent) {
+        return 'parent';
+      } else {
+        return 'student';
+      }
+    }
+    return 'student'; // Default fallback
+  } catch (error) {
+    console.error('Error getting user type:', error);
+    return 'student';
+  }
+}
+
 // Handle notification navigation
-export function handleNotificationNavigation(remoteMessage) {
+export async function handleNotificationNavigation(remoteMessage) {
   try {
     const { data } = remoteMessage;
 
-    if (!data) return;
+    console.log('🔔 NAVIGATION: Handling notification navigation...');
+    console.log('📦 Navigation data:', data);
 
-    // Handle different notification types
-    switch (data.type) {
-      case 'attendance':
-        // Navigate to attendance screen
-        console.log('Navigate to attendance screen');
-        break;
-      case 'grade':
-        // Navigate to grades screen
-        console.log('Navigate to grades screen');
-        break;
-      case 'announcement':
-        // Navigate to announcements screen
-        console.log('Navigate to announcements screen');
-        break;
-      case 'timetable':
-        // Navigate to timetable screen
-        console.log('Navigate to timetable screen');
-        break;
-      default:
-        // Navigate to home screen
-        console.log('Navigate to home screen');
-        break;
+    // Check if navigation reference is available
+    if (!navigationRef) {
+      console.warn(
+        '⚠️ NAVIGATION: Navigation reference not set, cannot navigate'
+      );
+      return;
+    }
+
+    // Get user type to determine navigation parameters
+    const userType = await getUserType();
+    const authCode = await AsyncStorage.getItem('authCode');
+
+    console.log('👤 NAVIGATION: User type:', userType);
+    console.log('🔑 NAVIGATION: Auth code available:', !!authCode);
+
+    // Always navigate to NotificationScreen when notification is tapped
+    // This provides a consistent experience regardless of notification type
+    const navigationParams = {
+      userType: userType,
+    };
+
+    // Add authCode for student notifications
+    if (userType === 'student' && authCode) {
+      navigationParams.authCode = authCode;
+    }
+
+    console.log(
+      '🚀 NAVIGATION: Attempting to navigate to NotificationScreen with params:',
+      navigationParams
+    );
+
+    // Use safe navigation function
+    safeNavigate('NotificationScreen', navigationParams);
+
+    // Log the specific notification type for analytics
+    if (data?.type) {
+      console.log(
+        `📊 ANALYTICS: User opened app from ${data.type} notification`
+      );
     }
   } catch (error) {
     console.error('Error handling notification navigation:', error);

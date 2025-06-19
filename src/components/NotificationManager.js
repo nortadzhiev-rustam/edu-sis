@@ -16,11 +16,17 @@ import {
   Modal,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import {
+  faTimes,
+  faPlus,
+  faPaperPlane,
+} from '@fortawesome/free-solid-svg-icons';
 import { useNotificationAPI } from '../hooks/useNotificationAPI';
-import { Colors, Typography, Spacing } from '../styles/GlobalStyles';
+import { useTheme } from '../contexts/ThemeContext';
 
 const NotificationManager = ({ visible, onClose, userRole = 'staff' }) => {
+  const { theme } = useTheme();
   const {
     loading,
     error,
@@ -169,12 +175,18 @@ const NotificationManager = ({ visible, onClose, userRole = 'staff' }) => {
             onPress={() => removeRecipient(recipient)}
             style={styles.removeChipButton}
           >
-            <Icon name='close' size={16} color={Colors.surface} />
+            <FontAwesomeIcon
+              icon={faTimes}
+              size={16}
+              color={theme.colors.headerText}
+            />
           </TouchableOpacity>
         </View>
       ))}
     </View>
   );
+
+  const styles = createStyles(theme);
 
   if (userRole !== 'staff' && userRole !== 'admin') {
     return null;
@@ -191,7 +203,11 @@ const NotificationManager = ({ visible, onClose, userRole = 'staff' }) => {
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Send Notification</Text>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Icon name='close' size={24} color={Colors.text} />
+            <FontAwesomeIcon
+              icon={faTimes}
+              size={24}
+              color={theme.colors.text}
+            />
           </TouchableOpacity>
         </View>
 
@@ -229,13 +245,17 @@ const NotificationManager = ({ visible, onClose, userRole = 'staff' }) => {
                   value={recipientInput}
                   onChangeText={setRecipientInput}
                   placeholder='Enter user IDs separated by commas'
-                  placeholderTextColor={Colors.textSecondary}
+                  placeholderTextColor={theme.colors.textSecondary}
                 />
                 <TouchableOpacity
                   onPress={addRecipient}
                   style={styles.addButton}
                 >
-                  <Icon name='add' size={20} color={Colors.surface} />
+                  <FontAwesomeIcon
+                    icon={faPlus}
+                    size={20}
+                    color={theme.colors.headerText}
+                  />
                 </TouchableOpacity>
               </View>
               {formData.recipients.length > 0 && renderRecipientChips()}
@@ -250,7 +270,7 @@ const NotificationManager = ({ visible, onClose, userRole = 'staff' }) => {
               value={formData.title}
               onChangeText={(value) => handleInputChange('title', value)}
               placeholder='Enter notification title'
-              placeholderTextColor={Colors.textSecondary}
+              placeholderTextColor={theme.colors.textSecondary}
               maxLength={100}
             />
           </View>
@@ -263,7 +283,7 @@ const NotificationManager = ({ visible, onClose, userRole = 'staff' }) => {
               value={formData.message}
               onChangeText={(value) => handleInputChange('message', value)}
               placeholder='Enter notification message'
-              placeholderTextColor={Colors.textSecondary}
+              placeholderTextColor={theme.colors.textSecondary}
               multiline
               numberOfLines={4}
               maxLength={500}
@@ -320,10 +340,14 @@ const NotificationManager = ({ visible, onClose, userRole = 'staff' }) => {
             disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator size='small' color={Colors.surface} />
+              <ActivityIndicator size='small' color={theme.colors.headerText} />
             ) : (
               <>
-                <Icon name='send' size={20} color={Colors.surface} />
+                <FontAwesomeIcon
+                  icon={faPaperPlane}
+                  size={20}
+                  color={theme.colors.headerText}
+                />
                 <Text style={styles.sendButtonText}>Send Notification</Text>
               </>
             )}
@@ -334,139 +358,141 @@ const NotificationManager = ({ visible, onClose, userRole = 'staff' }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: Spacing.medium,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  headerTitle: {
-    ...Typography.heading2,
-    color: Colors.text,
-  },
-  closeButton: {
-    padding: Spacing.small,
-  },
-  content: {
-    flex: 1,
-    padding: Spacing.medium,
-  },
-  errorContainer: {
-    backgroundColor: Colors.error,
-    padding: Spacing.medium,
-    borderRadius: 8,
-    marginBottom: Spacing.medium,
-  },
-  errorText: {
-    ...Typography.body2,
-    color: Colors.surface,
-  },
-  formGroup: {
-    marginBottom: Spacing.large,
-  },
-  label: {
-    ...Typography.body1,
-    fontWeight: '600',
-    color: Colors.text,
-    marginBottom: Spacing.small,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 8,
-    padding: Spacing.medium,
-    ...Typography.body1,
-    color: Colors.text,
-    backgroundColor: Colors.surface,
-  },
-  messageInput: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
-  pickerContainer: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 8,
-    backgroundColor: Colors.surface,
-  },
-  picker: {
-    height: 50,
-    color: Colors.text,
-  },
-  recipientInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  recipientInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 8,
-    padding: Spacing.medium,
-    ...Typography.body1,
-    color: Colors.text,
-    backgroundColor: Colors.surface,
-    marginRight: Spacing.small,
-  },
-  addButton: {
-    backgroundColor: Colors.primary,
-    padding: Spacing.medium,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  recipientChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: Spacing.small,
-  },
-  recipientChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.small,
-    paddingVertical: 4,
-    borderRadius: 16,
-    marginRight: Spacing.small,
-    marginBottom: Spacing.small,
-  },
-  recipientChipText: {
-    ...Typography.caption,
-    color: Colors.surface,
-    marginRight: 4,
-  },
-  removeChipButton: {
-    padding: 2,
-  },
-  footer: {
-    padding: Spacing.medium,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-  },
-  sendButton: {
-    backgroundColor: Colors.primary,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: Spacing.medium,
-    borderRadius: 8,
-  },
-  disabledButton: {
-    opacity: 0.6,
-  },
-  sendButtonText: {
-    ...Typography.body1,
-    fontWeight: '600',
-    color: Colors.surface,
-    marginLeft: Spacing.small,
-  },
-});
+const createStyles = (theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: theme.colors.text,
+    },
+    closeButton: {
+      padding: 8,
+    },
+    content: {
+      flex: 1,
+      padding: 16,
+    },
+    errorContainer: {
+      backgroundColor: theme.colors.error,
+      padding: 16,
+      borderRadius: 8,
+      marginBottom: 16,
+    },
+    errorText: {
+      fontSize: 14,
+      color: theme.colors.headerText,
+    },
+    formGroup: {
+      marginBottom: 20,
+    },
+    label: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.colors.text,
+      marginBottom: 8,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: 8,
+      padding: 16,
+      fontSize: 16,
+      color: theme.colors.text,
+      backgroundColor: theme.colors.surface,
+    },
+    messageInput: {
+      height: 100,
+      textAlignVertical: 'top',
+    },
+    pickerContainer: {
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: 8,
+      backgroundColor: theme.colors.surface,
+    },
+    picker: {
+      height: 50,
+      color: theme.colors.text,
+    },
+    recipientInputContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    recipientInput: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: 8,
+      padding: 16,
+      fontSize: 16,
+      color: theme.colors.text,
+      backgroundColor: theme.colors.surface,
+      marginRight: 8,
+    },
+    addButton: {
+      backgroundColor: theme.colors.primary,
+      padding: 16,
+      borderRadius: 8,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    recipientChips: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      marginTop: 8,
+    },
+    recipientChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.colors.primary,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 16,
+      marginRight: 8,
+      marginBottom: 8,
+    },
+    recipientChipText: {
+      fontSize: 12,
+      color: theme.colors.headerText,
+      marginRight: 4,
+    },
+    removeChipButton: {
+      padding: 2,
+    },
+    footer: {
+      padding: 16,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border,
+    },
+    sendButton: {
+      backgroundColor: theme.colors.primary,
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 16,
+      borderRadius: 8,
+    },
+    disabledButton: {
+      opacity: 0.6,
+    },
+    sendButtonText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.colors.headerText,
+      marginLeft: 8,
+    },
+  });
 
 export default NotificationManager;
