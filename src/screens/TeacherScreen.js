@@ -358,10 +358,27 @@ export default function TeacherScreen({ route, navigation }) {
     }
   };
 
-  // Refresh notifications when screen comes into focus
+  // Refresh notifications when screen comes into focus (with debouncing)
+  const lastNotificationRefresh = React.useRef(0);
+  const isRefreshingNotifications = React.useRef(false);
+
   useFocusEffect(
     React.useCallback(() => {
-      refreshNotifications();
+      const now = Date.now();
+      // Only refresh notifications if:
+      // 1. It's been more than 30 seconds since last refresh
+      // 2. We're not currently refreshing notifications
+      if (
+        now - lastNotificationRefresh.current > 30000 &&
+        !isRefreshingNotifications.current
+      ) {
+        lastNotificationRefresh.current = now;
+        isRefreshingNotifications.current = true;
+
+        refreshNotifications().finally(() => {
+          isRefreshingNotifications.current = false;
+        });
+      }
     }, [refreshNotifications])
   );
 

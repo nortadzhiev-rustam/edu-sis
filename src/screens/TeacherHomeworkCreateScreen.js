@@ -8,25 +8,25 @@ import {
   ScrollView,
   Alert,
   TextInput,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faArrowLeft, faPlus, faSave } from '@fortawesome/free-solid-svg-icons';
+import {
+  faArrowLeft,
+  faPlus,
+  faSave,
+  faCalendarAlt,
+} from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { buildApiUrl } from '../config/env';
-
-// Conditional import for iOS DateTimePicker
-let DateTimePicker = null;
-if (Platform.OS === 'ios') {
-  DateTimePicker = require('@react-native-community/datetimepicker').default;
-}
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
 export default function TeacherHomeworkCreateScreen({ navigation, route }) {
   const { theme } = useTheme();
   const { authCode } = route.params || {};
 
-  const [classes, setClasses] = useState([]);
+  const [branchData, setBranchData] = useState(null);
+  const [selectedBranch, setSelectedBranch] = useState(0);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
 
@@ -35,20 +35,18 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
   const [description, setDescription] = useState('');
   const [selectedClass, setSelectedClass] = useState(null);
   const [selectedStudents, setSelectedStudents] = useState([]);
-  const [deadlineDate, setDeadlineDate] = useState(new Date());
-  const [deadlineTime, setDeadlineTime] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [deadline, setDeadline] = useState(new Date());
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
 
   const styles = createStyles(theme);
 
   useEffect(() => {
     if (authCode) {
-      fetchClasses();
+      fetchBranchData();
     }
   }, [authCode]);
 
-  const fetchClasses = async () => {
+  const fetchBranchData = async () => {
     try {
       const response = await fetch(
         buildApiUrl(`/teacher/homework/classes?auth_code=${authCode}`),
@@ -64,7 +62,23 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          setClasses(data.data || []);
+          // Check if the response has branches structure
+          if (data.branches && Array.isArray(data.branches)) {
+            setBranchData(data);
+          } else {
+            // Legacy format - convert to branch structure
+            setBranchData({
+              success: true,
+              branches: [
+                {
+                  branch_id: 1,
+                  branch_name: 'Main Branch',
+                  branch_description: 'Main Branch',
+                  classes: data.data || [],
+                },
+              ],
+            });
+          }
         } else {
           Alert.alert('Error', 'Failed to fetch classes');
         }
@@ -100,20 +114,13 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
       return;
     }
 
-    if (!deadlineDate) {
-      Alert.alert('Error', 'Please select deadline date');
+    if (!deadline) {
+      Alert.alert('Error', 'Please select deadline');
       return;
     }
 
-    if (!deadlineTime) {
-      Alert.alert('Error', 'Please select deadline time');
-      return;
-    }
-
-    // Combine date and time
-    const combinedDeadline = `${formatDate(deadlineDate)} ${formatTime(
-      deadlineTime
-    )}`;
+    // Format deadline for API
+    const combinedDeadline = formatDateTime(deadline);
 
     setCreating(true);
     try {
@@ -173,150 +180,54 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
     setSelectedStudents([]);
   };
 
-  // Date picker handlers - Android compatible approach
-  const showDatePickerModal = () => {
-    if (Platform.OS === 'android') {
-      // For Android, use Alert.prompt as a reliable fallback
-      const today = new Date();
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const exampleDate = formatDate(tomorrow);
-
-      Alert.prompt(
-        'Select Deadline Date',
-        `Enter date in YYYY-MM-DD format\nExample: ${exampleDate}`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Set Date',
-            onPress: (text) => {
-              if (text && text.trim()) {
-                // Try to parse the date
-                const inputDate = text.trim();
-                const date = new Date(inputDate);
-                const todayStart = new Date();
-                todayStart.setHours(0, 0, 0, 0);
-
-                // Validate date format and value
-                if (!isNaN(date.getTime()) && date >= todayStart) {
-                  setDeadlineDate(date);
-                  Alert.alert(
-                    'Success',
-                    `Deadline date set to ${formatDate(date)}`
-                  );
-                } else {
-                  Alert.alert(
-                    'Invalid Date',
-                    'Please enter a valid future date in YYYY-MM-DD format.\n\nExample: 2024-12-25'
-                  );
-                }
-              }
-            },
-          },
-        ],
-        'plain-text',
-        formatDate(deadlineDate)
-      );
-    } else {
-      // iOS - use the existing DateTimePicker
-      setShowDatePicker(true);
-    }
+  // Date picker handlers
+  const showDatePicker = () => {
+    setDatePickerVisibility(true);
   };
 
-  const showTimePickerModal = () => {
-    if (Platform.OS === 'android') {
-      // For Android, use Alert.prompt as a reliable fallback
-      Alert.prompt(
-        'Select Deadline Time',
-        'Enter time in 24-hour format (HH:MM)\nExamples: 09:30, 14:45, 23:59',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Set Time',
-            onPress: (text) => {
-              if (text && text.trim()) {
-                const inputTime = text.trim();
-                const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/;
-
-                if (timeRegex.test(inputTime)) {
-                  const [hours, minutes] = inputTime.split(':').map(Number);
-                  const newTime = new Date(deadlineTime);
-                  newTime.setHours(hours, minutes, 0, 0);
-                  setDeadlineTime(newTime);
-                  Alert.alert(
-                    'Success',
-                    `Deadline time set to ${formatTime(newTime)}`
-                  );
-                } else {
-                  Alert.alert(
-                    'Invalid Time',
-                    'Please enter a valid time in HH:MM format.\n\nExamples:\n• 09:30 (9:30 AM)\n• 14:45 (2:45 PM)\n• 23:59 (11:59 PM)'
-                  );
-                }
-              }
-            },
-          },
-        ],
-        'plain-text',
-        formatTime(deadlineTime)
-      );
-    } else {
-      // iOS - use the existing DateTimePicker
-      setShowTimePicker(true);
-    }
+  const hideDatePicker = () => {
+    setDatePickerVisibility(false);
   };
 
-  // iOS DateTimePicker handlers
-  const onDateChange = (event, selectedDate) => {
-    if (Platform.OS === 'android') {
-      setShowDatePicker(false);
-    }
-
-    if (event.type === 'dismissed') {
-      setShowDatePicker(false);
-      return;
-    }
-
-    if (selectedDate) {
-      setDeadlineDate(selectedDate);
-      if (Platform.OS === 'ios') {
-        setShowDatePicker(false);
-      }
-    }
+  const handleConfirm = (selectedDate) => {
+    setDeadline(selectedDate);
+    hideDatePicker();
   };
 
-  const onTimeChange = (event, selectedTime) => {
-    if (Platform.OS === 'android') {
-      setShowTimePicker(false);
-    }
+  const formatDateTime = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
 
-    if (event.type === 'dismissed') {
-      setShowTimePicker(false);
-      return;
-    }
-
-    if (selectedTime) {
-      setDeadlineTime(selectedTime);
-      if (Platform.OS === 'ios') {
-        setShowTimePicker(false);
-      }
-    }
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   };
 
-  const formatDate = (date) => {
-    return date.toLocaleDateString('en-CA'); // YYYY-MM-DD format
-  };
-
-  const formatTime = (date) => {
-    return date.toLocaleTimeString('en-GB', {
-      hour12: false,
+  const formatDisplayDateTime = (date) => {
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit',
-    }); // HH:MM:SS format
+      hour12: true,
+    });
   };
 
-  if (loading) {
+  // Helper functions for branch management
+  const getCurrentBranch = () => {
+    if (!branchData?.branches || branchData.branches.length === 0) return null;
+    return branchData.branches[selectedBranch] || branchData.branches[0];
+  };
+
+  const getCurrentClasses = () => {
+    const branch = getCurrentBranch();
+    return branch?.classes || [];
+  };
+
+  if (loading || !branchData) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
@@ -393,10 +304,46 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
           />
         </View>
 
+        {/* Branch Selection */}
+        {branchData?.branches && branchData.branches.length > 1 && (
+          <View style={styles.inputSection}>
+            <Text style={styles.inputLabel}>Select Branch</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.branchSelector}
+            >
+              {branchData.branches.map((branch, index) => (
+                <TouchableOpacity
+                  key={branch.branch_id}
+                  style={[
+                    styles.branchTab,
+                    selectedBranch === index && styles.branchTabSelected,
+                  ]}
+                  onPress={() => {
+                    setSelectedBranch(index);
+                    setSelectedClass(null); // Reset class selection when branch changes
+                    setSelectedStudents([]); // Reset student selection
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.branchTabText,
+                      selectedBranch === index && styles.branchTabTextSelected,
+                    ]}
+                  >
+                    {branch.branch_description}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
         {/* Class Selection */}
         <View style={styles.inputSection}>
           <Text style={styles.inputLabel}>Select Class *</Text>
-          {classes.map((classItem) => (
+          {getCurrentClasses().map((classItem) => (
             <TouchableOpacity
               key={classItem.grade_id}
               style={[
@@ -420,6 +367,14 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
               </Text>
             </TouchableOpacity>
           ))}
+
+          {getCurrentClasses().length === 0 && (
+            <View style={styles.noClassesContainer}>
+              <Text style={styles.noClassesText}>
+                No classes available for the selected branch
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Student Selection */}
@@ -476,68 +431,66 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
         <View style={styles.inputSection}>
           <Text style={styles.inputLabel}>Deadline *</Text>
 
-          {/* Date and Time Pickers */}
-          <View style={styles.dateTimeContainer}>
-            <View style={styles.dateTimeInput}>
-              <Text style={styles.dateTimeLabel}>Date</Text>
-              <TouchableOpacity onPress={showDatePickerModal}>
-                <TextInput
-                  style={styles.textInput}
-                  value={formatDate(deadlineDate)}
-                  placeholder='Select date'
-                  placeholderTextColor={theme.colors.textSecondary}
-                  editable={false}
-                  showSoftInputOnFocus={false}
-                  pointerEvents='none'
-                />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.dateTimeInput}>
-              <Text style={styles.dateTimeLabel}>Time</Text>
-              <TouchableOpacity onPress={showTimePickerModal}>
-                <TextInput
-                  style={styles.textInput}
-                  value={formatTime(deadlineTime)}
-                  placeholder='Select time'
-                  placeholderTextColor={theme.colors.textSecondary}
-                  editable={false}
-                  showSoftInputOnFocus={false}
-                  pointerEvents='none'
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Date Picker Modal - iOS Only */}
-          {Platform.OS === 'ios' && showDatePicker && DateTimePicker && (
-            <DateTimePicker
-              value={deadlineDate}
-              mode='date'
-              display='default'
-              onChange={onDateChange}
-              minimumDate={new Date()}
-              themeVariant='light'
+          <TouchableOpacity
+            style={styles.dateTimeButton}
+            onPress={showDatePicker}
+            activeOpacity={0.7}
+          >
+            <FontAwesomeIcon
+              icon={faCalendarAlt}
+              size={16}
+              color={theme.colors.primary}
+              style={styles.dateTimeIcon}
             />
-          )}
+            <View style={styles.dateTimeTextContainer}>
+              <Text style={styles.dateTimeValue}>
+                {formatDisplayDateTime(deadline)}
+              </Text>
+              <Text style={styles.dateTimeLabel}>Tap to change deadline</Text>
+            </View>
+          </TouchableOpacity>
 
-          {/* Time Picker Modal - iOS Only */}
-          {Platform.OS === 'ios' && showTimePicker && DateTimePicker && (
-            <DateTimePicker
-              value={deadlineTime}
-              mode='time'
-              display='default'
-              onChange={onTimeChange}
-              themeVariant='light'
-              is24Hour={true}
-            />
-          )}
-
-          <Text style={styles.inputHint}>
-            {Platform.OS === 'android'
-              ? 'Tap date/time fields above to set homework deadline'
-              : 'Tap to select date and time for homework deadline'}
-          </Text>
+          <DateTimePickerModal
+            isVisible={isDatePickerVisible}
+            mode='datetime'
+            onConfirm={handleConfirm}
+            onCancel={hideDatePicker}
+            minimumDate={new Date()}
+            date={deadline}
+            is24Hour={false}
+            display='spinner'
+            // Theme support
+            isDarkModeEnabled={theme.mode === 'dark'}
+            // iOS Modal Styling - Bottom sheet style
+            modalStyleIOS={{
+              backgroundColor: theme.colors.surface,
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              marginTop: 'auto',
+              marginBottom: 0,
+              marginHorizontal: 0,
+              maxHeight: '50%',
+              ...theme.shadows.large,
+            }}
+            backdropStyleIOS={{
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            }}
+            pickerContainerStyleIOS={{
+              backgroundColor: theme.colors.surface,
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              paddingHorizontal: 20,
+              paddingTop: 20,
+              paddingBottom: 20,
+            }}
+            // iOS Button Styling
+            confirmTextIOS='Set Deadline'
+            cancelTextIOS='Cancel'
+            buttonTextColorIOS={theme.colors.primary}
+            // Test IDs for automation
+            confirmButtonTestID='confirm-date-button'
+            cancelButtonTestID='cancel-date-button'
+          />
         </View>
 
         {/* Create Button */}
@@ -643,22 +596,97 @@ const createStyles = (theme) =>
       marginTop: 4,
       fontStyle: 'italic',
     },
-    dateTimeContainer: {
+    dateTimeButton: {
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: 12,
+      padding: 16,
       flexDirection: 'row',
-      gap: 12,
+      alignItems: 'center',
+      ...theme.shadows.small,
+      // Add subtle hover/press effect
+      transform: [{ scale: 1 }],
     },
-    dateTimeInput: {
+    dateTimeIcon: {
+      marginRight: 12,
+    },
+    dateTimeTextContainer: {
       flex: 1,
     },
+    dateTimeValue: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.colors.text,
+      marginBottom: 2,
+    },
     dateTimeLabel: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+    },
+
+    // Date Picker Modal Styles
+    modalStyle: {
+      backgroundColor: theme.colors.surface,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      marginTop: 'auto',
+      marginBottom: 0,
+      marginHorizontal: 0,
+      maxHeight: '40%',
+      ...theme.shadows.large,
+    },
+    backdropStyle: {
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    pickerContainerStyle: {
+      backgroundColor: theme.colors.surface,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      paddingHorizontal: 20,
+      paddingTop: 10,
+      paddingBottom: 10,
+      minHeight: 200,
+      maxHeight: 200,
+    },
+    confirmButtonText: {
+      color: theme.colors.primary,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    cancelButtonText: {
+      color: theme.colors.textSecondary,
+      fontSize: 16,
+      fontWeight: '500',
+    },
+
+    // Branch Selection
+    branchSelector: {
+      marginTop: 8,
+    },
+    branchTab: {
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: 20,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      marginRight: 8,
+      minWidth: 80,
+      alignItems: 'center',
+    },
+    branchTabSelected: {
+      backgroundColor: theme.colors.primary,
+      borderColor: theme.colors.primary,
+    },
+    branchTabText: {
       fontSize: 14,
       fontWeight: '500',
       color: theme.colors.text,
-      marginBottom: 6,
     },
-    inputText: {
-      fontSize: 16,
-      color: theme.colors.text,
+    branchTabTextSelected: {
+      color: '#fff',
+      fontWeight: '600',
     },
 
     // Class Selection
@@ -681,6 +709,20 @@ const createStyles = (theme) =>
     selectedClassOptionText: {
       color: theme.colors.primary,
       fontWeight: '600',
+    },
+    noClassesContainer: {
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: 12,
+      padding: 20,
+      alignItems: 'center',
+      marginTop: 8,
+    },
+    noClassesText: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      fontStyle: 'italic',
     },
 
     // Student Selection

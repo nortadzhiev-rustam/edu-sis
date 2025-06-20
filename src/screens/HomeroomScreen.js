@@ -341,73 +341,50 @@ export default function HomeroomScreen({ route, navigation }) {
           />
         }
       >
-        {/* Classroom Overview */}
+        {/* Compact Classroom Overview */}
         {classroomData && (
-          <View style={styles.overviewCard}>
-            <View style={styles.classroomHeader}>
-              <View style={styles.classroomIconContainer}>
-                <FontAwesomeIcon icon={faUserGraduate} size={24} color='#fff' />
+          <View style={styles.compactOverviewCard}>
+            <View style={styles.compactHeader}>
+              <View style={styles.compactIconContainer}>
+                <FontAwesomeIcon icon={faUserGraduate} size={20} color='#fff' />
               </View>
-              <View style={styles.classroomTitleContainer}>
-                <Text style={styles.classroomTitle}>
+              <View style={styles.compactTitleContainer}>
+                <Text style={styles.compactClassroomTitle}>
                   {classroomData.classroom_name}
                 </Text>
-                <Text style={styles.classroomSubtitle}>Homeroom Class</Text>
+                <Text style={styles.compactClassroomSubtitle}>
+                  Homeroom Class
+                </Text>
               </View>
             </View>
 
-            <View style={styles.statsContainer}>
-              <View style={styles.statCard}>
-                <View
-                  style={[
-                    styles.statIconContainer,
-                    { backgroundColor: '#007AFF15' },
-                  ]}
-                >
-                  <FontAwesomeIcon icon={faUsers} size={20} color='#007AFF' />
-                </View>
-                <View style={styles.statContent}>
-                  <Text style={styles.statNumber}>
-                    {classroomData.total_students}
-                  </Text>
-                  <Text style={styles.statLabel}>Total Students</Text>
-                </View>
+            <View style={styles.compactStatsContainer}>
+              <View style={styles.compactStatItem}>
+                <FontAwesomeIcon icon={faUsers} size={16} color='#007AFF' />
+                <Text style={styles.compactStatNumber}>
+                  {classroomData.total_students}
+                </Text>
+                <Text style={styles.compactStatLabel}>Total</Text>
               </View>
 
-              <View style={styles.genderStatsRow}>
-                <View style={[styles.statCard, styles.genderStatCard]}>
-                  <View
-                    style={[
-                      styles.statIconContainer,
-                      { backgroundColor: '#34C75915' },
-                    ]}
-                  >
-                    <FontAwesomeIcon icon={faMars} size={20} color='#34C759' />
-                  </View>
-                  <View style={styles.statContent}>
-                    <Text style={styles.statNumber}>
-                      {classroomData.male_students}
-                    </Text>
-                    <Text style={styles.statLabel}>Male</Text>
-                  </View>
-                </View>
+              <View style={styles.compactStatDivider} />
 
-                <View style={[styles.statCard, styles.genderStatCard]}>
-                  <View
-                    style={[
-                      styles.statIconContainer,
-                      { backgroundColor: '#FF9F0A15' },
-                    ]}
-                  >
-                    <FontAwesomeIcon icon={faVenus} size={20} color='#FF9F0A' />
-                  </View>
-                  <View style={styles.statContent}>
-                    <Text style={styles.statNumber}>
-                      {classroomData.female_students}
-                    </Text>
-                    <Text style={styles.statLabel}>Female</Text>
-                  </View>
-                </View>
+              <View style={styles.compactStatItem}>
+                <FontAwesomeIcon icon={faMars} size={16} color='#34C759' />
+                <Text style={styles.compactStatNumber}>
+                  {classroomData.male_students}
+                </Text>
+                <Text style={styles.compactStatLabel}>Male</Text>
+              </View>
+
+              <View style={styles.compactStatDivider} />
+
+              <View style={styles.compactStatItem}>
+                <FontAwesomeIcon icon={faVenus} size={16} color='#FF9F0A' />
+                <Text style={styles.compactStatNumber}>
+                  {classroomData.female_students}
+                </Text>
+                <Text style={styles.compactStatLabel}>Female</Text>
               </View>
             </View>
           </View>
@@ -569,6 +546,79 @@ const createStyles = (theme) =>
     content: {
       flex: 1,
     },
+    // Compact Overview Card Styles
+    compactOverviewCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      margin: 16,
+      marginBottom: 12,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      overflow: 'hidden',
+    },
+    compactHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.colors.primary,
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+    },
+    compactIconContainer: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    compactTitleContainer: {
+      flex: 1,
+    },
+    compactClassroomTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#fff',
+    },
+    compactClassroomSubtitle: {
+      fontSize: 12,
+      color: 'rgba(255, 255, 255, 0.8)',
+      marginTop: 2,
+    },
+    compactStatsContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+    },
+    compactStatItem: {
+      flex: 1,
+      alignItems: 'center',
+    },
+    compactStatNumber: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginTop: 4,
+      marginBottom: 2,
+    },
+    compactStatLabel: {
+      fontSize: 11,
+      color: theme.colors.textSecondary,
+      fontWeight: '500',
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    compactStatDivider: {
+      width: 1,
+      height: 32,
+      backgroundColor: theme.colors.border,
+      marginHorizontal: 8,
+    },
+    // Legacy Overview Card Styles (keeping for compatibility)
     overviewCard: {
       backgroundColor: theme.colors.surface,
       borderRadius: 16,

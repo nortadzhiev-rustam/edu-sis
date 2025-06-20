@@ -933,9 +933,10 @@ const createStyles = (theme, fontSizes) =>
       backgroundColor: 'rgba(255, 255, 255, 0.25)',
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: 10, // Reduced margin for smaller tiles
+      marginBottom: 5, // Reduced margin for smaller tiles
       borderWidth: 1,
       borderColor: 'rgba(255, 255, 255, 0.3)',
+      marginTop: 20,
     },
     tileTitle: {
       fontSize: Math.max(fontSizes.tileTitle - 5, 12), // Smaller font for 3-per-row layout

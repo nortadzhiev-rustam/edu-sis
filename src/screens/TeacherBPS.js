@@ -922,7 +922,7 @@ export default function TeacherBPS({ route, navigation }) {
                           styles.compactBranchTabTextSelected,
                       ]}
                     >
-                      {branch.branch_name.split(' ')[0]}
+                      {branch.branch_description}
                     </Text>
                   </TouchableOpacity>
                 ))}

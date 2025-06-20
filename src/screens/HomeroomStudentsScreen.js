@@ -19,6 +19,10 @@ import {
   faBirthdayCake,
   faVenusMars,
   faUserMd,
+  faUserGraduate,
+  faUsers,
+  faMars,
+  faVenus,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { Config, buildApiUrl } from '../config/env';
@@ -63,7 +67,6 @@ export default function HomeroomStudentsScreen({ route, navigation }) {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Students API response:', JSON.stringify(data, null, 2));
         if (data.success) {
           // Handle different possible data structures
           let studentsArray = [];
@@ -71,17 +74,12 @@ export default function HomeroomStudentsScreen({ route, navigation }) {
             studentsArray = data.data;
           } else if (data.data && Array.isArray(data.data.students)) {
             studentsArray = data.data.students;
-          } else if (
-            data.data &&
-            data.data.data &&
-            Array.isArray(data.data.data)
-          ) {
+          } else if (data?.data?.data && Array.isArray(data.data.data)) {
             studentsArray = data.data.data;
           } else {
             console.log('Unexpected data structure:', data.data);
             studentsArray = [];
           }
-          console.log('Setting students array:', studentsArray);
           setStudents(studentsArray);
         } else {
           setError('Failed to load students');
@@ -123,12 +121,7 @@ export default function HomeroomStudentsScreen({ route, navigation }) {
 
       if (response.ok) {
         const data = await response.json();
-        console.log(
-          'Student profile API response:',
-          JSON.stringify(data, null, 2)
-        );
         if (data.success) {
-          console.log('Navigating to profile with data:', data.data);
           navigation.navigate('HomeroomStudentProfile', {
             studentData: data.data,
             authCode,
@@ -291,6 +284,55 @@ export default function HomeroomStudentsScreen({ route, navigation }) {
         <View style={styles.headerRight} />
       </View>
 
+      {/* Fixed Compact Classroom Overview */}
+      {classroomData && (
+        <View style={styles.compactOverviewCard}>
+          <View style={styles.compactHeader}>
+            <View style={styles.compactIconContainer}>
+              <FontAwesomeIcon icon={faUserGraduate} size={20} color='#fff' />
+            </View>
+            <View style={styles.compactTitleContainer}>
+              <Text style={styles.compactClassroomTitle}>
+                {classroomData.classroom_name}
+              </Text>
+              <Text style={styles.compactClassroomSubtitle}>
+                Homeroom Class
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.compactStatsContainer}>
+            <View style={styles.compactStatItem}>
+              <FontAwesomeIcon icon={faUsers} size={16} color='#007AFF' />
+              <Text style={styles.compactStatNumber}>
+                {classroomData.total_students}
+              </Text>
+              <Text style={styles.compactStatLabel}>Total</Text>
+            </View>
+
+            <View style={styles.compactStatDivider} />
+
+            <View style={styles.compactStatItem}>
+              <FontAwesomeIcon icon={faMars} size={16} color='#34C759' />
+              <Text style={styles.compactStatNumber}>
+                {classroomData.male_students}
+              </Text>
+              <Text style={styles.compactStatLabel}>Male</Text>
+            </View>
+
+            <View style={styles.compactStatDivider} />
+
+            <View style={styles.compactStatItem}>
+              <FontAwesomeIcon icon={faVenus} size={16} color='#FF9F0A' />
+              <Text style={styles.compactStatNumber}>
+                {classroomData.female_students}
+              </Text>
+              <Text style={styles.compactStatLabel}>Female</Text>
+            </View>
+          </View>
+        </View>
+      )}
+
       <ScrollView
         style={styles.content}
         refreshControl={
@@ -302,19 +344,6 @@ export default function HomeroomStudentsScreen({ route, navigation }) {
           />
         }
       >
-        {classroomData && (
-          <View style={styles.classroomInfo}>
-            <Text style={styles.classroomName}>
-              {classroomData.classroom_name}
-            </Text>
-            <Text style={styles.classroomStats}>
-              {classroomData.total_students} students •{' '}
-              {classroomData.male_students} male •{' '}
-              {classroomData.female_students} female
-            </Text>
-          </View>
-        )}
-
         <View style={styles.studentsContainer}>
           {Array.isArray(students) ? (
             students.map(renderStudentCard)
@@ -407,6 +436,81 @@ const createStyles = (theme) =>
     content: {
       flex: 1,
     },
+    // Compact Overview Card Styles - Fixed at top
+    compactOverviewCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 8,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      overflow: 'hidden',
+      zIndex: 1,
+    },
+    compactHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.colors.primary,
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+    },
+    compactIconContainer: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    compactTitleContainer: {
+      flex: 1,
+    },
+    compactClassroomTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#fff',
+    },
+    compactClassroomSubtitle: {
+      fontSize: 12,
+      color: 'rgba(255, 255, 255, 0.8)',
+      marginTop: 2,
+    },
+    compactStatsContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+    },
+    compactStatItem: {
+      flex: 1,
+      alignItems: 'center',
+    },
+    compactStatNumber: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginTop: 4,
+      marginBottom: 2,
+    },
+    compactStatLabel: {
+      fontSize: 11,
+      color: theme.colors.textSecondary,
+      fontWeight: '500',
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    compactStatDivider: {
+      width: 1,
+      height: 32,
+      backgroundColor: theme.colors.border,
+      marginHorizontal: 8,
+    },
+    // Legacy styles (keeping for compatibility)
     classroomInfo: {
       backgroundColor: theme.colors.surface,
       padding: 16,
@@ -430,6 +534,7 @@ const createStyles = (theme) =>
     },
     studentsContainer: {
       paddingHorizontal: 16,
+      paddingTop: 8, // Reduced top padding since header is fixed
     },
     studentCard: {
       backgroundColor: theme.colors.surface,

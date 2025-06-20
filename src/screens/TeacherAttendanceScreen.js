@@ -33,6 +33,7 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
     gradeName,
     authCode,
     isUpdate = false, // Whether this is updating existing attendance
+    onAttendanceSubmitted, // Callback to refresh parent screen
   } = route.params || {};
 
   const [students, setStudents] = useState([]);
@@ -264,8 +265,12 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
 
         if (isSuccessful) {
           // Fetch updated attendance details to refresh the state
-
           await fetchAttendanceDetails();
+
+          // Call the callback to refresh the parent screen
+          if (onAttendanceSubmitted) {
+            onAttendanceSubmitted();
+          }
 
           Alert.alert(
             'Success',
@@ -402,67 +407,63 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scrollView}>
-        {/* Class Info */}
-        <View style={styles.classInfo}>
-          <View
-            style={{
-              flex: 1,
-              flexDirection: 'row',
-              justifyContent: 'center',
-              alignItems: 'baseline',
-            }}
-          >
-            <Text style={styles.subjectName}>{gradeName} </Text>
-          </View>
-
-          <Text style={styles.dateText}>
+      {/* Fixed Compact Class Info & Attendance Summary */}
+      <View style={styles.compactInfoContainer}>
+        <View style={styles.classInfoSection}>
+          <Text style={styles.compactSubjectName}>{gradeName}</Text>
+          <Text style={styles.compactDateText}>
             {new Date().toLocaleDateString('en-US', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
+              weekday: 'short',
+              month: 'short',
               day: 'numeric',
             })}
           </Text>
         </View>
 
-        {/* Attendance Summary */}
-        <View style={styles.summaryContainer}>
-          <Text style={styles.summaryTitle}>Attendance Summary</Text>
-          <View style={styles.summaryStats}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{summary.total}</Text>
-              <Text style={styles.statLabel}>Total</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text
-                style={[styles.statNumber, { color: theme.colors.success }]}
-              >
-                {summary.present}
-              </Text>
-              <Text style={styles.statLabel}>Present</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={[styles.statNumber, { color: theme.colors.error }]}>
-                {summary.absent}
-              </Text>
-              <Text style={styles.statLabel}>Absent</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text
-                style={[styles.statNumber, { color: theme.colors.warning }]}
-              >
-                {summary.late}
-              </Text>
-              <Text style={styles.statLabel}>Late</Text>
-            </View>
+        <View style={styles.compactSummarySection}>
+          <View style={styles.compactStatItem}>
+            <Text style={styles.compactStatNumber}>{summary.total}</Text>
+            <Text style={styles.compactStatLabel}>Total</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.compactStatItem}>
+            <Text
+              style={[
+                styles.compactStatNumber,
+                { color: theme.colors.success },
+              ]}
+            >
+              {summary.present}
+            </Text>
+            <Text style={styles.compactStatLabel}>Present</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.compactStatItem}>
+            <Text
+              style={[
+                styles.compactStatNumber,
+                { color: theme.colors.warning },
+              ]}
+            >
+              {summary.late}
+            </Text>
+            <Text style={styles.compactStatLabel}>Late</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.compactStatItem}>
+            <Text
+              style={[styles.compactStatNumber, { color: theme.colors.error }]}
+            >
+              {summary.absent}
+            </Text>
+            <Text style={styles.compactStatLabel}>Absent</Text>
           </View>
         </View>
+      </View>
 
+      <ScrollView style={styles.scrollView}>
         {/* Students List */}
         <View style={styles.studentsContainer}>
-          <Text style={styles.studentsTitle}>Students ({students.length})</Text>
-
           {students.map((student) => (
             <View key={student.student_id} style={styles.studentCard}>
               <View style={styles.studentInfo}>
@@ -497,7 +498,7 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
                     styles.attendanceButton,
                     styles.presentButton,
                     student.attendance_status === 'present' &&
-                      styles.selectedButton,
+                      styles.selectedPresentButton,
                   ]}
                   onPress={() =>
                     updateStudentStatus(student.student_id, 'present')
@@ -528,7 +529,7 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
                     styles.attendanceButton,
                     styles.lateButton,
                     student.attendance_status === 'late' &&
-                      styles.selectedButton,
+                      styles.selectedLateButton,
                   ]}
                   onPress={() =>
                     updateStudentStatus(student.student_id, 'late')
@@ -559,7 +560,7 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
                     styles.attendanceButton,
                     styles.absentButton,
                     student.attendance_status === 'absent' &&
-                      styles.selectedButton,
+                      styles.selectedAbsentButton,
                   ]}
                   onPress={() =>
                     updateStudentStatus(student.student_id, 'absent')
@@ -669,6 +670,70 @@ const createStyles = (theme) =>
       fontSize: 16,
       color: theme.colors.textSecondary,
     },
+    // Compact Info Container - Fixed at top
+    compactInfoContainer: {
+      backgroundColor: theme.colors.surface,
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 8,
+      borderRadius: 16,
+      shadowColor: theme.colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 4,
+      overflow: 'hidden',
+      zIndex: 1,
+    },
+    classInfoSection: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    compactSubjectName: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: theme.colors.text,
+    },
+    compactDateText: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: theme.colors.textSecondary,
+    },
+    compactSummarySection: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+    },
+    compactStatItem: {
+      flex: 1,
+      alignItems: 'center',
+    },
+    compactStatNumber: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: theme.colors.text,
+      marginBottom: 2,
+    },
+    compactStatLabel: {
+      fontSize: 11,
+      color: theme.colors.textSecondary,
+      fontWeight: '500',
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    statDivider: {
+      width: 1,
+      height: 32,
+      backgroundColor: theme.colors.border,
+      marginHorizontal: 8,
+    },
+    // Legacy styles (keeping for compatibility)
     classInfo: {
       backgroundColor: theme.colors.surface,
       margin: 20,
@@ -735,6 +800,7 @@ const createStyles = (theme) =>
     },
     studentsContainer: {
       marginHorizontal: 20,
+      marginTop: 8, // Reduced top margin since header is fixed
       marginBottom: 100, // Space for submit button
     },
     studentsTitle: {
@@ -814,9 +880,17 @@ const createStyles = (theme) =>
       backgroundColor: theme.colors.error + '15',
       borderColor: theme.colors.error,
     },
-    selectedButton: {
-      backgroundColor: theme.colors.primary,
-      borderColor: theme.colors.primary,
+    selectedPresentButton: {
+      backgroundColor: theme.colors.success,
+      borderColor: theme.colors.success,
+    },
+    selectedLateButton: {
+      backgroundColor: theme.colors.warning,
+      borderColor: theme.colors.warning,
+    },
+    selectedAbsentButton: {
+      backgroundColor: theme.colors.error,
+      borderColor: theme.colors.error,
     },
     buttonText: {
       fontSize: 12,

@@ -315,28 +315,80 @@ export default function TeacherHomeworkScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
-        </TouchableOpacity>
+      {/* Compact Header */}
+      <View style={styles.compactHeaderContainer}>
+        {/* Navigation Header */}
+        <View style={styles.navigationHeader}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+          </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Homework Management</Text>
+          <Text style={styles.headerTitle}>Homework</Text>
 
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() =>
-            navigation.navigate('TeacherHomeworkCreate', {
-              authCode,
-              teacherName,
-            })
-          }
-        >
-          <FontAwesomeIcon icon={faPlus} size={18} color='#fff' />
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() =>
+              navigation.navigate('TeacherHomeworkCreate', {
+                authCode,
+                teacherName,
+              })
+            }
+          >
+            <FontAwesomeIcon icon={faPlus} size={18} color='#fff' />
+          </TouchableOpacity>
+        </View>
+
+        {/* Homework Overview */}
+        {!loading && homeworkList.length > 0 && (
+          <View style={styles.homeworkOverview}>
+            <View style={styles.overviewItem}>
+              <FontAwesomeIcon
+                icon={faClipboardList}
+                size={16}
+                color='#007AFF'
+              />
+              <Text style={styles.overviewNumber}>{homeworkList.length}</Text>
+              <Text style={styles.overviewLabel}>Total</Text>
+            </View>
+
+            <View style={styles.overviewDivider} />
+
+            <View style={styles.overviewItem}>
+              <FontAwesomeIcon icon={faCheckCircle} size={16} color='#34C759' />
+              <Text style={styles.overviewNumber}>
+                {homeworkList.filter((hw) => hw.status === 'active').length}
+              </Text>
+              <Text style={styles.overviewLabel}>Active</Text>
+            </View>
+
+            <View style={styles.overviewDivider} />
+
+            <View style={styles.overviewItem}>
+              <FontAwesomeIcon
+                icon={faExclamationTriangle}
+                size={16}
+                color='#FF3B30'
+              />
+              <Text style={styles.overviewNumber}>
+                {homeworkList.filter((hw) => hw.status === 'expired').length}
+              </Text>
+              <Text style={styles.overviewLabel}>Expired</Text>
+            </View>
+
+            <View style={styles.overviewDivider} />
+
+            <View style={styles.overviewItem}>
+              <FontAwesomeIcon icon={faClock} size={16} color='#FF9500' />
+              <Text style={styles.overviewNumber}>
+                {homeworkList.filter((hw) => hw.status === 'draft').length}
+              </Text>
+              <Text style={styles.overviewLabel}>Draft</Text>
+            </View>
+          </View>
+        )}
       </View>
 
       {/* Content */}
@@ -364,9 +416,6 @@ export default function TeacherHomeworkScreen({ navigation, route }) {
             renderEmptyState()
           ) : (
             <View style={styles.homeworkList}>
-              <Text style={styles.sectionTitle}>
-                Homework Assignments ({homeworkList.length})
-              </Text>
               {homeworkList.map(renderHomeworkCard)}
             </View>
           )}
@@ -382,6 +431,60 @@ const createStyles = (theme) =>
       flex: 1,
       backgroundColor: theme.colors.background,
     },
+    // Compact Header Styles
+    compactHeaderContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 8,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      overflow: 'hidden',
+      zIndex: 1,
+    },
+    navigationHeader: {
+      backgroundColor: theme.colors.headerBackground,
+      padding: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    homeworkOverview: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      backgroundColor: theme.colors.surface,
+    },
+    overviewItem: {
+      flex: 1,
+      alignItems: 'center',
+    },
+    overviewNumber: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginTop: 4,
+      marginBottom: 2,
+    },
+    overviewLabel: {
+      fontSize: 11,
+      color: theme.colors.textSecondary,
+      fontWeight: '500',
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    overviewDivider: {
+      width: 1,
+      height: 32,
+      backgroundColor: theme.colors.border,
+      marginHorizontal: 8,
+    },
+    // Legacy header style (keeping for compatibility)
     header: {
       backgroundColor: theme.colors.headerBackground,
       padding: 15,
@@ -422,7 +525,9 @@ const createStyles = (theme) =>
     },
     content: {
       flex: 1,
-      padding: 20,
+      paddingHorizontal: 20,
+      paddingTop: 8, // Reduced top padding since header is compact
+      paddingBottom: 20,
     },
     sectionTitle: {
       fontSize: 24,

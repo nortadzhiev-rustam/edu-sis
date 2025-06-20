@@ -282,51 +282,70 @@ export default function HomeroomDisciplineScreen({ route, navigation }) {
         <View style={styles.headerRight} />
       </View>
 
-      {/* Fixed Summary Card */}
+      {/* Fixed Compact Summary Card */}
       {disciplineData && (
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryHeader}>
-            <FontAwesomeIcon
-              icon={faClipboardList}
-              size={20}
-              color={theme.colors.primary}
-            />
-            <Text style={styles.summaryTitle}>
-              {classroomData.classroom_name} - Last 30 Days
-            </Text>
+        <View style={styles.compactOverviewCard}>
+          <View style={styles.compactHeader}>
+            <View style={styles.compactIconContainer}>
+              <FontAwesomeIcon icon={faClipboardList} size={20} color='#fff' />
+            </View>
+            <View style={styles.compactTitleContainer}>
+              <Text style={styles.compactClassroomTitle}>
+                {classroomData.classroom_name}
+              </Text>
+              <Text style={styles.compactClassroomSubtitle}>
+                Discipline Records - Last 30 Days
+              </Text>
+            </View>
           </View>
 
-          <View style={styles.summaryStats}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>
+          <View style={styles.compactStatsContainer}>
+            <View style={styles.compactStatItem}>
+              <FontAwesomeIcon
+                icon={faClipboardList}
+                size={16}
+                color='#007AFF'
+              />
+              <Text style={styles.compactStatNumber}>
                 {disciplineData.summary.total_records}
               </Text>
-              <Text style={styles.statLabel}>Total Records</Text>
+              <Text style={styles.compactStatLabel}>Total</Text>
             </View>
-            <View style={styles.statItem}>
-              <Text style={[styles.statNumber, { color: '#FF3B30' }]}>
+
+            <View style={styles.compactStatDivider} />
+
+            <View style={styles.compactStatItem}>
+              <FontAwesomeIcon
+                icon={faExclamationTriangle}
+                size={16}
+                color='#FF3B30'
+              />
+              <Text style={[styles.compactStatNumber, { color: '#FF3B30' }]}>
                 {disciplineData.summary.total_dps_points}
               </Text>
-              <Text style={styles.statLabel}>DPS Points</Text>
+              <Text style={styles.compactStatLabel}>DPS</Text>
             </View>
-            <View style={styles.statItem}>
-              <Text style={[styles.statNumber, { color: '#34C759' }]}>
+
+            <View style={styles.compactStatDivider} />
+
+            <View style={styles.compactStatItem}>
+              <FontAwesomeIcon icon={faStar} size={16} color='#34C759' />
+              <Text style={[styles.compactStatNumber, { color: '#34C759' }]}>
                 {disciplineData.summary.total_prs_points}
               </Text>
-              <Text style={styles.statLabel}>PRS Points</Text>
+              <Text style={styles.compactStatLabel}>PRS</Text>
             </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>
+
+            <View style={styles.compactStatDivider} />
+
+            <View style={styles.compactStatItem}>
+              <FontAwesomeIcon icon={faUser} size={16} color='#FF9500' />
+              <Text style={styles.compactStatNumber}>
                 {disciplineData.summary.students_with_records}
               </Text>
-              <Text style={styles.statLabel}>Students</Text>
+              <Text style={styles.compactStatLabel}>Students</Text>
             </View>
           </View>
-
-          <Text style={styles.dateRange}>
-            {disciplineData.date_range.start_date} to{' '}
-            {disciplineData.date_range.end_date}
-          </Text>
         </View>
       )}
 
@@ -428,57 +447,81 @@ const createStyles = (theme) =>
       fontSize: 16,
       fontWeight: '600',
     },
-    summaryCard: {
+    // Compact Overview Card Styles
+    compactOverviewCard: {
       backgroundColor: theme.colors.surface,
-      margin: 16,
+      borderRadius: 16,
+      marginHorizontal: 16,
+      marginTop: 8,
       marginBottom: 8,
-      borderRadius: 12,
-      padding: 20,
       elevation: 3,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.15,
       shadowRadius: 4,
+      overflow: 'hidden',
     },
-    studentsScrollView: {
-      marginTop: 15,
+    compactHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.colors.primary,
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+    },
+    compactIconContainer: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    compactTitleContainer: {
       flex: 1,
     },
-    summaryHeader: {
+    compactClassroomTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#fff',
+    },
+    compactClassroomSubtitle: {
+      fontSize: 12,
+      color: 'rgba(255, 255, 255, 0.8)',
+      marginTop: 2,
+    },
+    compactStatsContainer: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 16,
+      paddingHorizontal: 20,
+      paddingVertical: 16,
     },
-    summaryTitle: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: theme.colors.text,
-      marginLeft: 8,
-    },
-    summaryStats: {
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-      marginBottom: 16,
-    },
-    statItem: {
+    compactStatItem: {
+      flex: 1,
       alignItems: 'center',
     },
-    statNumber: {
-      fontSize: 20,
+    compactStatNumber: {
+      fontSize: 18,
       fontWeight: 'bold',
       color: theme.colors.text,
-      marginBottom: 4,
+      marginTop: 4,
+      marginBottom: 2,
     },
-    statLabel: {
-      fontSize: 12,
+    compactStatLabel: {
+      fontSize: 11,
       color: theme.colors.textSecondary,
-      textAlign: 'center',
+      fontWeight: '500',
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
     },
-    dateRange: {
-      fontSize: 12,
-      color: theme.colors.textSecondary,
-      textAlign: 'center',
-      fontStyle: 'italic',
+    compactStatDivider: {
+      width: 1,
+      height: 32,
+      backgroundColor: theme.colors.border,
+      marginHorizontal: 8,
+    },
+    studentsScrollView: {
+      flex: 1,
     },
     studentsContainer: {
       paddingHorizontal: 16,

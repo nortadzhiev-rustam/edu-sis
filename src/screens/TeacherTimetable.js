@@ -167,6 +167,7 @@ export default function TeacherTimetable({ route, navigation }) {
       gradeName,
       authCode,
       isUpdate: false,
+      onAttendanceSubmitted: fetchTimetableData, // Refresh timetable after attendance
     });
   };
 
@@ -180,6 +181,7 @@ export default function TeacherTimetable({ route, navigation }) {
       gradeName: classItem.grade_name,
       authCode,
       isUpdate: true,
+      onAttendanceSubmitted: fetchTimetableData, // Refresh timetable after attendance update
     });
   };
 
@@ -273,7 +275,7 @@ export default function TeacherTimetable({ route, navigation }) {
                         styles.compactBranchTabTextSelected,
                     ]}
                   >
-                    {branch.branch_name.split(' ')[0]}
+                    {branch.branch_description}
                   </Text>
                 </TouchableOpacity>
               ))}

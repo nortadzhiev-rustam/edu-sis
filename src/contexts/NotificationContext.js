@@ -76,9 +76,26 @@ export const NotificationProvider = ({ children }) => {
     setupLocalNotifications();
   }, []);
 
+  // Add debouncing to prevent excessive API calls
+  const lastLoadTime = React.useRef(0);
+  const isLoading = React.useRef(false);
+
   // Load notifications from API and local storage
   const loadNotifications = async () => {
     try {
+      // Prevent multiple simultaneous calls
+      if (isLoading.current) {
+        return;
+      }
+
+      // Debounce: only allow calls every 5 seconds
+      const now = Date.now();
+      if (now - lastLoadTime.current < 5000) {
+        return;
+      }
+
+      lastLoadTime.current = now;
+      isLoading.current = true;
       setLoading(true);
 
       // Try to fetch from API first
@@ -137,13 +154,14 @@ export const NotificationProvider = ({ children }) => {
       console.error('Error loading notifications:', error);
     } finally {
       setLoading(false);
+      isLoading.current = false;
     }
   };
 
-  // Refresh notifications
-  const refreshNotifications = async () => {
+  // Refresh notifications (with debouncing)
+  const refreshNotifications = React.useCallback(async () => {
     await loadNotifications();
-  };
+  }, []);
 
   // Mark notification as read
   const markAsRead = async (notificationId) => {

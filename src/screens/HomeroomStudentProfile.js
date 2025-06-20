@@ -28,11 +28,6 @@ export default function HomeroomStudentProfile({ route, navigation }) {
   const styles = createStyles(theme);
   const { studentData } = route.params || {};
 
-  console.log(
-    'HomeroomStudentProfile received studentData:',
-    JSON.stringify(studentData, null, 2)
-  );
-
   if (!studentData) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -69,17 +64,6 @@ export default function HomeroomStudentProfile({ route, navigation }) {
     library = studentData.library;
     parents = studentData.parents;
   }
-
-  console.log('Processed data:');
-  console.log('- student:', student);
-  console.log('- attendance:', attendance);
-  console.log('- discipline:', discipline);
-  console.log('- assessments:', assessments);
-  console.log('- library:', library);
-  console.log('- parents:', parents);
-  console.log('- parents type:', typeof parents);
-  console.log('- parents is array:', Array.isArray(parents));
-  console.log('- parents length:', parents ? parents.length : 'undefined');
 
   // Additional check for student data
   if (!student) {
@@ -135,57 +119,55 @@ export default function HomeroomStudentProfile({ route, navigation }) {
         <Text style={styles.headerTitle}>Student Profile</Text>
         <View style={styles.headerRight} />
       </View>
-
-      <ScrollView style={styles.content}>
-        {/* Student Basic Info */}
-        <View style={styles.profileHeader}>
-          <View style={styles.avatarContainer}>
-            {student.photo ? (
-              <Image
-                source={{ uri: student.photo }}
-                style={styles.profileAvatar}
-                resizeMode='cover'
+      {/* Student Basic Info */}
+      <View style={styles.profileHeader}>
+        <View style={styles.avatarContainer}>
+          {student.photo ? (
+            <Image
+              source={{ uri: student.photo }}
+              style={styles.profileAvatar}
+              resizeMode='cover'
+            />
+          ) : (
+            <View style={styles.profileAvatarPlaceholder}>
+              <FontAwesomeIcon
+                icon={faUser}
+                size={40}
+                color={theme.colors.primary}
               />
-            ) : (
-              <View style={styles.profileAvatarPlaceholder}>
-                <FontAwesomeIcon
-                  icon={faUser}
-                  size={40}
-                  color={theme.colors.primary}
-                />
-              </View>
-            )}
-          </View>
+            </View>
+          )}
+        </View>
 
-          <View style={styles.profileInfo}>
-            <Text style={styles.studentName}>{student.name}</Text>
+        <View style={styles.profileInfo}>
+          <Text style={styles.studentName}>{student.name}</Text>
 
-            <View style={styles.basicInfo}>
-              <View style={styles.infoRow}>
-                <FontAwesomeIcon
-                  icon={faVenusMars}
-                  size={14}
-                  color={theme.colors.textSecondary}
-                />
-                <Text style={styles.infoText}>
-                  Gender: {student.gender || 'N/A'}
-                </Text>
-              </View>
+          <View style={styles.basicInfo}>
+            <View style={styles.infoRow}>
+              <FontAwesomeIcon
+                icon={faVenusMars}
+                size={14}
+                color={theme.colors.textSecondary}
+              />
+              <Text style={styles.infoText}>
+                Gender: {student.gender || 'N/A'}
+              </Text>
+            </View>
 
-              <View style={styles.infoRow}>
-                <FontAwesomeIcon
-                  icon={faBirthdayCake}
-                  size={14}
-                  color={theme.colors.textSecondary}
-                />
-                <Text style={styles.infoText}>
-                  Birth Date: {student.birth_date || 'N/A'}
-                </Text>
-              </View>
+            <View style={styles.infoRow}>
+              <FontAwesomeIcon
+                icon={faBirthdayCake}
+                size={14}
+                color={theme.colors.textSecondary}
+              />
+              <Text style={styles.infoText}>
+                Birth Date: {student.birth_date || 'N/A'}
+              </Text>
             </View>
           </View>
         </View>
-
+      </View>
+      <ScrollView style={styles.content}>
         {/* Contact Information */}
         {renderInfoCard(
           'Contact Information',
