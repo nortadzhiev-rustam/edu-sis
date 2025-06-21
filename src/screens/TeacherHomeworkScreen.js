@@ -58,7 +58,6 @@ export default function TeacherHomeworkScreen({ navigation, route }) {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Homework list response data:', data);
         if (data.success) {
           setHomeworkList(data.data || []);
         } else {

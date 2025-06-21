@@ -47,6 +47,11 @@ export default function TeacherTimetable({ route, navigation }) {
 
   const [selectedDay, setSelectedDay] = useState(getCurrentDay());
 
+ 
+
+
+
+
   // Animation values
   const todayTabAnimation = useRef(new Animated.Value(1)).current;
   const contentOpacity = useRef(new Animated.Value(1)).current;

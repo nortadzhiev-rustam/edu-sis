@@ -43,6 +43,7 @@ import {
   getResponsiveSpacing,
 } from '../utils/deviceDetection';
 import { lockOrientationForDevice } from '../utils/orientationLock';
+import { createCustomShadow } from '../utils/commonStyles';
 
 export default function AttendanceScreen({ navigation, route }) {
   const { theme } = useTheme();
@@ -100,9 +101,6 @@ export default function AttendanceScreen({ navigation, route }) {
         Math.min(iPadConfig.maxItemsPerPage, calculatedRows)
       );
 
-      console.log(
-        `📱 iPad: ${screenWidth}x${screenHeight}, Items per page: ${itemsPerPage}`
-      );
       return itemsPerPage;
     }
 
@@ -129,9 +127,6 @@ export default function AttendanceScreen({ navigation, route }) {
     }
 
     const itemsPerPage = Math.max(minRows, Math.min(maxRows, calculatedRows));
-    console.log(
-      `📱 Device: ${screenWidth}x${screenHeight}, Items per page: ${itemsPerPage}`
-    );
     return itemsPerPage;
   };
 
@@ -774,11 +769,12 @@ const createStyles = (theme) =>
       backgroundColor: '#fff',
       borderRadius: 12,
       overflow: 'hidden',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 3,
-      elevation: 3,
+      ...createCustomShadow(theme, {
+        height: 2,
+        opacity: 0.1,
+        radius: 3,
+        elevation: 3,
+      }),
       flex: 1,
     },
     landscapeTableContainer: {
@@ -790,10 +786,12 @@ const createStyles = (theme) =>
     iPadTableContainer: {
       minHeight: 600, // iPad gets even more height
       borderRadius: 16, // Larger border radius for iPad
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.15,
-      shadowRadius: 6,
-      elevation: 6,
+      ...createCustomShadow(theme, {
+        height: 4,
+        opacity: 0.15,
+        radius: 6,
+        elevation: 6,
+      }),
     },
     tableHeader: {
       flexDirection: 'row',
@@ -879,11 +877,12 @@ const createStyles = (theme) =>
       backgroundColor: '#fff',
       padding: 15,
       borderRadius: 40,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
-      shadowRadius: 2,
-      elevation: 2,
+      ...createCustomShadow(theme, {
+        height: 1,
+        opacity: 0.1,
+        radius: 2,
+        elevation: 2,
+      }),
     },
     paginationButton: {
       backgroundColor: '#34C759',
@@ -998,13 +997,12 @@ const createStyles = (theme) =>
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: theme.colors.surface,
-      padding: 12,
+      paddingHorizontal: 15,
+      paddingVertical: 10,
       borderRadius: 20,
       marginBottom: 15,
+      alignSelf: 'flex-start', // This ensures the button only takes the width it needs
       ...theme.shadows.small,
-      width: Platform.isPad
-        ? Dimensions.get('window').width * 0.22
-        : Dimensions.get('window').width * 0.5,
     },
     backToSummaryText: {
       marginLeft: 8,

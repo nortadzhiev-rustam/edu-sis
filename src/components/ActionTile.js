@@ -1,6 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, View, StyleSheet } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { createSmallShadow, createMediumShadow } from '../utils/commonStyles';
 
 /**
  * ActionTile Component
@@ -164,13 +165,13 @@ const createStyles = (theme) =>
     },
     filledTile: {
       backgroundColor: theme.colors.primary,
-      ...theme.shadows?.medium,
+      ...createMediumShadow(theme),
     },
     outlinedTile: {
       backgroundColor: theme.colors.surface,
       borderWidth: 1,
       borderColor: theme.colors.border,
-      ...theme.shadows?.small,
+      ...createSmallShadow(theme),
     },
     minimalTile: {
       backgroundColor: theme.colors.surface,

@@ -42,7 +42,7 @@ const NotificationScreen = ({ navigation, route }) => {
     loadStudentNotifications,
   } = useNotifications();
 
-  const [filter, setFilter] = useState('all'); // 'all', 'unread', 'attendance', 'grade', 'announcement'
+  const [filter, setFilter] = useState('all'); // 'all', 'unread', 'behavior', 'attendance', 'grade', 'homework', 'announcement'
   const [refreshing, setRefreshing] = useState(false);
   const [userType, setUserType] = useState(null);
 
@@ -203,12 +203,54 @@ const NotificationScreen = ({ navigation, route }) => {
     switch (filter) {
       case 'unread':
         return activeNotifications.filter((n) => !n.read);
+      case 'behavior':
+        return activeNotifications.filter((n) =>
+          [
+            'behavior',
+            'bps_record',
+            'bps',
+            'discipline',
+            'behavior_positive',
+            'behavior_negative',
+          ].includes(n.type)
+        );
       case 'attendance':
-        return activeNotifications.filter((n) => n.type === 'attendance');
+        return activeNotifications.filter((n) =>
+          [
+            'attendance',
+            'attendance_absent',
+            'attendance_late',
+            'attendance_present',
+            'attendance_reminder',
+          ].includes(n.type)
+        );
       case 'grade':
-        return activeNotifications.filter((n) => n.type === 'grade');
+        return activeNotifications.filter((n) =>
+          [
+            'assessment',
+            'grade',
+            'grade_updated',
+            'assessment_published',
+            'grade_released',
+            'test_result',
+          ].includes(n.type)
+        );
+      case 'homework':
+        return activeNotifications.filter((n) =>
+          [
+            'homework',
+            'homework_assigned',
+            'homework_due',
+            'homework_submitted',
+            'homework_graded',
+          ].includes(n.type)
+        );
       case 'announcement':
-        return activeNotifications.filter((n) => n.type === 'announcement');
+        return activeNotifications.filter((n) =>
+          ['announcement', 'general', 'news', 'event', 'reminder'].includes(
+            n.type
+          )
+        );
       default:
         return activeNotifications;
     }
@@ -219,30 +261,7 @@ const NotificationScreen = ({ navigation, route }) => {
   const renderNotificationItem = ({ item }) => (
     <NotificationItem
       notification={item}
-      onPress={(notification) => {
-        // Handle notification navigation based on type
-        // Note: NotificationItem already handles markAsRead internally
-        switch (notification.type) {
-          case 'attendance':
-            // Navigate to attendance screen if available
-            break;
-          case 'grade':
-            // Navigate to grades screen if available
-            break;
-          case 'announcement':
-            // Navigate to announcements screen if available
-            break;
-          case 'timetable':
-            // Navigate to timetable screen if available
-            break;
-          default:
-            // Show notification details in alert
-            Alert.alert(notification.title, notification.body, [
-              { text: 'OK', style: 'default' },
-            ]);
-            break;
-        }
-      }}
+      // NotificationItem will handle navigation automatically
     />
   );
 
@@ -332,8 +351,10 @@ const NotificationScreen = ({ navigation, route }) => {
       >
         {renderFilterButton('all', 'All')}
         {renderFilterButton('unread', 'Unread')}
+        {renderFilterButton('behavior', 'Behavior')}
         {renderFilterButton('attendance', 'Attendance')}
         {renderFilterButton('grade', 'Grades')}
+        {renderFilterButton('homework', 'Homework')}
         {renderFilterButton('announcement', 'Announcements')}
       </ScrollView>
 

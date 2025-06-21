@@ -29,6 +29,7 @@ import {
 import { Config, buildApiUrl } from '../config/env';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { createSmallShadow, createMediumShadow } from '../utils/commonStyles';
 import { useNotifications } from '../contexts/NotificationContext';
 import NotificationBadge from '../components/NotificationBadge';
 import { useFocusEffect } from '@react-navigation/native';
@@ -792,7 +793,7 @@ const createStyles = (theme) =>
       width: '48%',
       marginBottom: 12,
       alignItems: 'center',
-      ...theme.shadows.small,
+      ...createSmallShadow(theme),
     },
     borrowingLimitCard: {
       borderLeftWidth: 4,
@@ -867,7 +868,7 @@ const createStyles = (theme) =>
       backgroundColor: theme.colors.surface,
       borderRadius: 16,
       padding: 20,
-      ...theme.shadows.medium,
+      ...createMediumShadow(theme),
     },
     quickActionsTitle: {
       fontSize: 18,

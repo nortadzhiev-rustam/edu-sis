@@ -8,12 +8,13 @@ import {
 } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
+import { createCustomShadow } from '../utils/commonStyles';
 
 /**
  * SwipeableRecord Component
- * 
+ *
  * A reusable component that provides swipe-to-delete functionality for record items.
- * 
+ *
  * @param {Object} props
  * @param {Object} props.record - The record data object
  * @param {Function} props.onDelete - Callback function when delete is triggered
@@ -133,11 +134,12 @@ const SwipeableRecord = ({
     borderRadius: 16,
     marginBottom: 15,
     marginHorizontal: 5,
-    shadowColor: theme.colors.shadow,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 4,
+    ...createCustomShadow(theme, {
+      height: 10,
+      opacity: 0.1,
+      radius: 10,
+      elevation: 4,
+    }),
   };
 
   const defaultDeleteButtonStyle = {
@@ -158,11 +160,12 @@ const SwipeableRecord = ({
     backgroundColor: theme.colors.surface,
     borderRadius: 16,
     zIndex: 1,
-    elevation: 8,
-    shadowColor: theme.colors.shadow,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
+    ...createCustomShadow(theme, {
+      height: 10,
+      opacity: 0.15,
+      radius: 12,
+      elevation: 8,
+    }),
   };
 
   return (

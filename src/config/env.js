@@ -24,7 +24,7 @@ export const Config = {
     UPDATE_ATTENDANCE: '/update-attendance/',
     STORE_BPS: '/discipline/store-bps',
     DELETE_BPS: '/discipline/delete-bps',
-
+    GET_TEACHER_CLASSES: '/teacher/attendance/classes',
     // Notification API Endpoints
     GET_NOTIFICATIONS_LEGACY: '/get-notifications/',
     GET_NOTIFICATIONS: '/notifications/list',

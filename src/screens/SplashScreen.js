@@ -54,17 +54,6 @@ export default function SplashScreen({ onAnimationComplete }) {
   });
 
   useEffect(() => {
-    // Debug logging for iPad
-    if (__DEV__) {
-      console.log('🎬 SPLASH: Starting splash screen');
-      console.log('📱 Device info:', {
-        width,
-        height,
-        isIPad: isIPadDevice,
-        aspectRatio: (width / height).toFixed(2),
-      });
-    }
-
     // Lock orientation based on device type
     lockOrientationForDevice();
 

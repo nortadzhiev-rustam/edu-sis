@@ -42,7 +42,6 @@ export default function HomeroomScreen({ route, navigation }) {
 
   const loadHomeroomData = async () => {
     if (!authCode) {
-      console.log('No authCode provided');
       setError('No authentication code provided');
       setLoading(false);
       return;
@@ -51,26 +50,18 @@ export default function HomeroomScreen({ route, navigation }) {
     try {
       setLoading(true);
       setError(null);
-      console.log('Loading homeroom data with authCode:', authCode);
 
       // First fetch classrooms to get classroom_id
       const classroom = await fetchClassrooms();
-      console.log('Fetched classroom:', classroom);
 
       if (classroom) {
         // Then fetch other data that depends on classroom_id
-        console.log(
-          'Fetching additional data for classroom:',
-          classroom.classroom_id
-        );
         await Promise.all([
           fetchTodayAttendance(classroom),
           fetchStudents(classroom),
           fetchDisciplineRecords(classroom),
         ]);
-        console.log('All data loaded successfully');
       } else {
-        console.log('No classroom data found');
         setError('No homeroom classroom found for this teacher');
       }
     } catch (error) {
@@ -87,7 +78,6 @@ export default function HomeroomScreen({ route, navigation }) {
       const url = buildApiUrl(Config.API_ENDPOINTS.GET_HOMEROOM_CLASSROOMS, {
         auth_code: authCode,
       });
-      console.log('Fetching classrooms from URL:', url);
 
       const response = await fetch(url, {
         method: 'GET',
@@ -97,21 +87,14 @@ export default function HomeroomScreen({ route, navigation }) {
         },
       });
 
-      console.log('Classrooms response status:', response.status);
-
       if (response.ok) {
         const data = await response.json();
-        console.log('Classrooms response data:', data);
 
         if (data.success && data.data && data.data.length > 0) {
           const classroom = data.data[0]; // Assuming teacher has one homeroom
           setClassroomData(classroom);
           return classroom;
-        } else {
-          console.log('No classroom data in response or empty array');
         }
-      } else {
-        console.log('Failed to fetch classrooms, status:', response.status);
       }
     } catch (error) {
       console.error('Error fetching classrooms:', error);
@@ -170,7 +153,6 @@ export default function HomeroomScreen({ route, navigation }) {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Students response data:', data);
         if (data.success) {
           // Handle different possible data structures
           let studentsData = {};
@@ -178,17 +160,11 @@ export default function HomeroomScreen({ route, navigation }) {
             studentsData = { students: data.data };
           } else if (data.data && Array.isArray(data.data.students)) {
             studentsData = data.data;
-          } else if (
-            data.data &&
-            data.data.data &&
-            Array.isArray(data.data.data)
-          ) {
+          } else if (data.data?.data && Array.isArray(data.data.data)) {
             studentsData = { students: data.data.data };
           } else {
-            console.log('Unexpected students data structure:', data.data);
             studentsData = { students: [] };
           }
-          console.log('Setting studentsData:', studentsData);
           setStudentsData(studentsData);
         }
       }
@@ -224,7 +200,6 @@ export default function HomeroomScreen({ route, navigation }) {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Discipline response data:', data);
         if (data.success) {
           setDisciplineData(data.data);
         }

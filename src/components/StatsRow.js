@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { createSmallShadow } from '../utils/commonStyles';
 
 /**
  * StatsRow Component
- * 
+ *
  * A reusable component for displaying statistics in a horizontal row layout.
- * 
+ *
  * @param {Object} props
  * @param {Array} props.stats - Array of stat objects with { label, value, icon?, color? }
  * @param {Object} props.theme - Theme object containing colors and styles
@@ -27,7 +28,7 @@ const StatsRow = ({
 
   const renderStat = (stat, index) => {
     const isLast = index === stats.length - 1;
-    
+
     return (
       <React.Fragment key={index}>
         <View style={[styles.statItem, styles[`${variant}StatItem`]]}>
@@ -40,7 +41,7 @@ const StatsRow = ({
               />
             </View>
           )}
-          
+
           <View style={[styles.statContent, styles[`${alignment}Aligned`]]}>
             <Text
               style={[
@@ -51,17 +52,12 @@ const StatsRow = ({
             >
               {stat.value}
             </Text>
-            <Text
-              style={[
-                styles.statLabel,
-                styles[`${variant}StatLabel`],
-              ]}
-            >
+            <Text style={[styles.statLabel, styles[`${variant}StatLabel`]]}>
               {stat.label}
             </Text>
           </View>
         </View>
-        
+
         {showDividers && !isLast && (
           <View style={[styles.divider, styles[`${variant}Divider`]]} />
         )}
@@ -78,7 +74,7 @@ const StatsRow = ({
 
 /**
  * StatCard Component
- * 
+ *
  * A reusable component for displaying a single statistic in card format.
  */
 const StatCard = ({
@@ -107,15 +103,11 @@ const StatCard = ({
     }
   };
 
-  const cardStyle = [
-    styles.card,
-    styles[`${size}Card`],
-    style,
-  ];
+  const cardStyle = [styles.card, styles[`${size}Card`], style];
 
-  const CardComponent = onPress ? 
-    require('react-native').TouchableOpacity : 
-    View;
+  const CardComponent = onPress
+    ? require('react-native').TouchableOpacity
+    : View;
 
   return (
     <CardComponent
@@ -125,7 +117,12 @@ const StatCard = ({
     >
       <View style={styles.cardHeader}>
         {icon && (
-          <View style={[styles.cardIconContainer, color && { backgroundColor: `${color}20` }]}>
+          <View
+            style={[
+              styles.cardIconContainer,
+              color && { backgroundColor: `${color}20` },
+            ]}
+          >
             <FontAwesomeIcon
               icon={icon}
               size={size === 'small' ? 16 : size === 'large' ? 24 : 20}
@@ -133,7 +130,7 @@ const StatCard = ({
             />
           </View>
         )}
-        
+
         <View style={styles.cardContent}>
           <Text style={[styles.cardValue, styles[`${size}CardValue`]]}>
             {value}
@@ -141,13 +138,13 @@ const StatCard = ({
           <Text style={[styles.cardLabel, styles[`${size}CardLabel`]]}>
             {label}
           </Text>
-          
+
           {subtitle && (
             <Text style={[styles.cardSubtitle, styles[`${size}CardSubtitle`]]}>
               {subtitle}
             </Text>
           )}
-          
+
           {trend && (
             <Text
               style={[
@@ -270,7 +267,7 @@ const createStyles = (theme) =>
       backgroundColor: theme.colors.surface,
       borderRadius: 12,
       padding: 16,
-      ...theme.shadows?.small,
+      ...createSmallShadow(theme),
     },
     smallCard: {
       padding: 12,

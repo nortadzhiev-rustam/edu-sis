@@ -37,6 +37,11 @@ import NotificationBadge from '../components/NotificationBadge';
 import { QuickActionTile, ComingSoonBadge } from '../components';
 import { isIPad, isTablet } from '../utils/deviceDetection';
 import { useFocusEffect } from '@react-navigation/native';
+import {
+  createSmallShadow,
+  createMediumShadow,
+  createCustomShadow,
+} from '../utils/commonStyles';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -160,20 +165,13 @@ export default function TeacherScreen({ route, navigation }) {
 
   // Teacher dashboard data
   const [timetableData, setTimetableData] = useState(null);
+  const [teacherClassesData, setTeacherClassesData] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [studentCounts, setStudentCounts] = useState({}); // Store student counts per timetable ID
   const [branchStudentCounts, setBranchStudentCounts] = useState({}); // Store unique student counts per branch
 
   // Branch selection state
   const [selectedBranch, setSelectedBranch] = useState(0);
   const [showBranchSelector, setShowBranchSelector] = useState(false);
-
-  const [dashboardStats, setDashboardStats] = useState({
-    totalClasses: 0,
-    attendanceTaken: 0,
-    totalStudents: 0,
-    branches: 0,
-  });
 
   const styles = createStyles(theme, fontSizes);
 
@@ -196,7 +194,6 @@ export default function TeacherScreen({ route, navigation }) {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Teacher timetable data:', data);
         setTimetableData(data);
 
         // Calculate stats
@@ -266,6 +263,68 @@ export default function TeacherScreen({ route, navigation }) {
     return [];
   };
 
+  // Fetch teacher classes with comprehensive student data
+  const fetchTeacherClasses = async () => {
+    if (!userData.authCode) return null;
+
+    try {
+      const response = await fetch(
+        buildApiUrl(Config.API_ENDPOINTS.GET_TEACHER_CLASSES, {
+          auth_code: userData.authCode,
+        }),
+        {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setTeacherClassesData(data.data);
+
+          // Calculate student counts from the comprehensive data
+          if (data.data?.branches) {
+            const branchCounts = {};
+            let totalUniqueStudents = new Set();
+
+            data.data.branches.forEach((branch) => {
+              let branchUniqueStudents = new Set();
+
+              branch.classes.forEach((classItem) => {
+                if (classItem.students && Array.isArray(classItem.students)) {
+                  classItem.students.forEach((student) => {
+                    if (student.student_id) {
+                      branchUniqueStudents.add(student.student_id);
+                      totalUniqueStudents.add(student.student_id);
+                    }
+                  });
+                }
+              });
+
+              branchCounts[branch.branch_id] = branchUniqueStudents.size;
+            });
+
+            setBranchStudentCounts(branchCounts);
+          }
+
+          return data.data;
+        } else {
+          console.error('Failed to fetch teacher classes:', data.message);
+        }
+      } else {
+        console.error('Failed to fetch teacher classes:', response.status);
+      }
+    } catch (error) {
+      console.error('Error fetching teacher classes:', error);
+    }
+
+    return null;
+  };
+
   // Fetch student lists for all timetable entries and count unique students
   const fetchAllStudentCounts = async (currentTimetableData = null) => {
     // Use passed data or current state
@@ -332,12 +391,11 @@ export default function TeacherScreen({ route, navigation }) {
         ])
       );
 
-      setStudentCounts(counts);
-      setBranchStudentCounts(branchCounts);
-      setDashboardStats((prev) => ({
-        ...prev,
-        totalStudents: allUniqueStudents.size,
-      }));
+      // Only update branch student counts if we don't have teacher classes data
+      // (teacher classes data provides more accurate counts)
+      if (!teacherClassesData?.branches) {
+        setBranchStudentCounts(branchCounts);
+      }
     } catch (error) {
       // Handle error silently
       console.error('Error fetching student counts:', error);
@@ -348,8 +406,13 @@ export default function TeacherScreen({ route, navigation }) {
   const loadTeacherData = async () => {
     setRefreshing(true);
     try {
-      // Load timetable data - will automatically fetch student counts
-      await fetchTeacherTimetable();
+      // Load comprehensive teacher classes data (includes student counts)
+      const classesData = await fetchTeacherClasses();
+
+      // Also load timetable data for attendance information
+      if (classesData) {
+        await fetchTeacherTimetable();
+      }
     } catch (error) {
       // Handle error silently
       console.error('Error loading teacher data:', error);
@@ -416,62 +479,35 @@ export default function TeacherScreen({ route, navigation }) {
     }
   }, [userData.authCode, loading]);
 
-  // Load saved branch selection when timetable data is available
+  // Load saved branch selection when branch data is available
   useEffect(() => {
-    if (timetableData?.branches && timetableData.branches.length > 0) {
+    const branches = teacherClassesData?.branches || timetableData?.branches;
+    if (branches && branches.length > 0) {
       loadSavedBranchSelection();
     }
-  }, [timetableData]);
+  }, [teacherClassesData, timetableData]);
 
-  // Calculate unique students taught per branch using API data
-  const calculateStudentsPerBranch = (branchId) => {
-    if (!timetableData?.branches) return 0;
-
-    // If we have the accurate branch student count from API, use that
-    if (branchStudentCounts[branchId] !== undefined) {
-      return branchStudentCounts[branchId];
-    }
-
-    // Find the branch for fallback calculation
-    const targetBranch = timetableData.branches.find(
-      (b) => b.branch_id === branchId
-    );
-    if (!targetBranch) return 0;
-
-    // Fallback: estimate based on average class size
-    // This is not accurate but better than summing all periods
-    const classCount = targetBranch.timetable.length;
-    if (classCount > 0 && Object.keys(studentCounts).length > 0) {
-      // Get average students per class for this branch
-      let totalStudentsInPeriods = 0;
-      let periodsWithData = 0;
-
-      targetBranch.timetable.forEach((classItem) => {
-        if (classItem.timetable_id && studentCounts[classItem.timetable_id]) {
-          totalStudentsInPeriods += studentCounts[classItem.timetable_id];
-          periodsWithData++;
-        }
-      });
-
-      if (periodsWithData > 0) {
-        // Estimate unique students (assuming some overlap between periods)
-        const avgStudentsPerPeriod = totalStudentsInPeriods / periodsWithData;
-        // Rough estimate: if teacher has multiple periods, assume 70% overlap
-        const estimatedUniqueStudents = Math.round(
-          avgStudentsPerPeriod * Math.min(periodsWithData, 2)
-        );
-        return estimatedUniqueStudents;
-      }
-    }
-
-    return 0;
-  };
-
-  // Get current branch data
+  // Get current branch data (prioritize teacher classes data, fallback to timetable)
   const getCurrentBranch = () => {
-    if (!timetableData?.branches || timetableData.branches.length === 0)
-      return null;
-    return timetableData.branches[selectedBranch] || timetableData.branches[0];
+    // Try teacher classes data first (more comprehensive)
+    if (
+      teacherClassesData?.branches &&
+      teacherClassesData.branches.length > 0
+    ) {
+      return (
+        teacherClassesData.branches[selectedBranch] ||
+        teacherClassesData.branches[0]
+      );
+    }
+
+    // Fallback to timetable data
+    if (timetableData?.branches && timetableData.branches.length > 0) {
+      return (
+        timetableData.branches[selectedBranch] || timetableData.branches[0]
+      );
+    }
+
+    return null;
   };
 
   // Handle branch selection
@@ -505,21 +541,6 @@ export default function TeacherScreen({ route, navigation }) {
     } catch (error) {
       console.error('Error loading saved branch selection:', error);
     }
-  };
-
-  // Calculate stats for current branch only
-  const calculateBranchStats = () => {
-    const currentBranch = getCurrentBranch();
-    if (!currentBranch)
-      return { totalClasses: 0, attendanceTaken: 0, totalStudents: 0 };
-
-    const totalClasses = currentBranch.timetable.length;
-    const attendanceTaken = currentBranch.timetable.filter(
-      (item) => item.attendance_taken
-    ).length;
-    const totalStudents = branchStudentCounts[currentBranch.branch_id] || 0;
-
-    return { totalClasses, attendanceTaken, totalStudents };
   };
 
   // Note: Student counts are now fetched directly in fetchTeacherTimetable
@@ -669,7 +690,10 @@ export default function TeacherScreen({ route, navigation }) {
             </View>
 
             {/* Branch Summary Section */}
-            {timetableData?.branches && timetableData.branches.length > 0 && (
+            {((teacherClassesData?.branches &&
+              teacherClassesData.branches.length > 0) ||
+              (timetableData?.branches &&
+                timetableData.branches.length > 0)) && (
               <View style={styles.branchSummarySection}>
                 <View style={styles.branchSummaryHeader}>
                   <View style={styles.branchIconWrapper}>
@@ -681,98 +705,146 @@ export default function TeacherScreen({ route, navigation }) {
                   </View>
                   <View style={styles.branchSummaryInfo}>
                     <TouchableOpacity
-                      onPress={() =>
-                        timetableData.branches.length > 1 &&
-                        setShowBranchSelector(!showBranchSelector)
-                      }
-                      activeOpacity={
-                        timetableData.branches.length > 1 ? 0.7 : 1
-                      }
+                      onPress={() => {
+                        const branches =
+                          teacherClassesData?.branches ||
+                          timetableData?.branches ||
+                          [];
+                        if (branches.length > 1) {
+                          setShowBranchSelector(!showBranchSelector);
+                        }
+                      }}
+                      activeOpacity={(() => {
+                        const branches =
+                          teacherClassesData?.branches ||
+                          timetableData?.branches ||
+                          [];
+                        return branches.length > 1 ? 0.7 : 1;
+                      })()}
                       style={styles.branchTitleContainer}
                     >
                       <Text style={styles.branchSummaryTitle}>
-                        {timetableData.branches.length === 1
-                          ? timetableData.branches[0].branch_name
-                          : getCurrentBranch()?.branch_name || 'Select Branch'}
+                        {(() => {
+                          const branches =
+                            teacherClassesData?.branches ||
+                            timetableData?.branches ||
+                            [];
+                          if (branches.length === 1) {
+                            return branches[0].branch_name;
+                          }
+                          return (
+                            getCurrentBranch()?.branch_name || 'Select Branch'
+                          );
+                        })()}
                       </Text>
-                      {timetableData.branches.length > 1 && (
-                        <FontAwesomeIcon
-                          icon={faChevronRight}
-                          size={12}
-                          color={theme.colors.textSecondary}
-                          style={[
-                            styles.branchChevron,
-                            showBranchSelector && styles.branchChevronRotated,
-                          ]}
-                        />
-                      )}
+                      {(() => {
+                        const branches =
+                          teacherClassesData?.branches ||
+                          timetableData?.branches ||
+                          [];
+                        return (
+                          branches.length > 1 && (
+                            <FontAwesomeIcon
+                              icon={faChevronRight}
+                              size={12}
+                              color={theme.colors.textSecondary}
+                              style={[
+                                styles.branchChevron,
+                                showBranchSelector &&
+                                  styles.branchChevronRotated,
+                              ]}
+                            />
+                          )
+                        );
+                      })()}
                     </TouchableOpacity>
                     <Text style={styles.branchSummarySubtitle}>
                       Academic Year:{' '}
-                      {timetableData.global_academic_year?.academic_year ||
+                      {timetableData?.global_academic_year?.academic_year ||
                         'N/A'}{' '}
-                      / Week: {timetableData.branches[0]?.current_week || 'N/A'}
-                      {timetableData.branches.length > 1 && (
-                        <Text style={styles.branchCount}>
-                          {' '}
-                          • {selectedBranch + 1} of{' '}
-                          {timetableData.branches.length}
-                        </Text>
-                      )}
+                      / Week:{' '}
+                      {timetableData?.branches?.[0]?.current_week || 'N/A'}
+                      {(() => {
+                        const branches =
+                          teacherClassesData?.branches ||
+                          timetableData?.branches ||
+                          [];
+                        return (
+                          branches.length > 1 && (
+                            <Text style={styles.branchCount}>
+                              {' '}
+                              • {selectedBranch + 1} of {branches.length}
+                            </Text>
+                          )
+                        );
+                      })()}
                     </Text>
                   </View>
                 </View>
 
                 {/* Branch Selector Dropdown */}
-                {showBranchSelector && timetableData.branches.length > 1 && (
-                  <View style={styles.branchSelectorDropdown}>
-                    <ScrollView
-                      style={styles.branchSelectorScroll}
-                      showsVerticalScrollIndicator={false}
-                    >
-                      {timetableData.branches.map((branch, index) => (
-                        <TouchableOpacity
-                          key={branch.branch_id}
-                          style={[
-                            styles.branchSelectorItem,
-                            selectedBranch === index &&
-                              styles.branchSelectorItemSelected,
-                          ]}
-                          onPress={() => handleBranchSelection(index)}
-                        >
-                          <View style={styles.branchSelectorItemContent}>
-                            <Text
-                              style={[
-                                styles.branchSelectorItemText,
-                                selectedBranch === index &&
-                                  styles.branchSelectorItemTextSelected,
-                              ]}
-                            >
-                              {branch.branch_name}
-                            </Text>
-                            {selectedBranch === index && (
-                              <FontAwesomeIcon
-                                icon={faChevronRight}
-                                size={14}
-                                color={theme.colors.primary}
-                              />
-                            )}
-                          </View>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View>
-                )}
+                {showBranchSelector &&
+                  (() => {
+                    const branches =
+                      teacherClassesData?.branches ||
+                      timetableData?.branches ||
+                      [];
+                    return (
+                      branches.length > 1 && (
+                        <View style={styles.branchSelectorDropdown}>
+                          <ScrollView
+                            style={styles.branchSelectorScroll}
+                            showsVerticalScrollIndicator={false}
+                          >
+                            {branches.map((branch, index) => (
+                              <TouchableOpacity
+                                key={branch.branch_id}
+                                style={[
+                                  styles.branchSelectorItem,
+                                  selectedBranch === index &&
+                                    styles.branchSelectorItemSelected,
+                                ]}
+                                onPress={() => handleBranchSelection(index)}
+                              >
+                                <View style={styles.branchSelectorItemContent}>
+                                  <Text
+                                    style={[
+                                      styles.branchSelectorItemText,
+                                      selectedBranch === index &&
+                                        styles.branchSelectorItemTextSelected,
+                                    ]}
+                                  >
+                                    {branch.branch_name}
+                                  </Text>
+                                  {selectedBranch === index && (
+                                    <FontAwesomeIcon
+                                      icon={faChevronRight}
+                                      size={14}
+                                      color={theme.colors.primary}
+                                    />
+                                  )}
+                                </View>
+                              </TouchableOpacity>
+                            ))}
+                          </ScrollView>
+                        </View>
+                      )
+                    );
+                  })()}
 
                 {/* Quick Stats Row */}
                 <View style={styles.quickStatsRow}>
                   <View style={styles.quickStat}>
                     <Text style={styles.quickStatNumber}>
                       {(() => {
-                        const currentBranch = getCurrentBranch();
-                        return currentBranch
-                          ? currentBranch.timetable.length
-                          : 0;
+                        // Get weekly classes from timetable data specifically
+                        const timetableBranch =
+                          timetableData?.branches?.[selectedBranch] ||
+                          timetableData?.branches?.[0];
+                        if (timetableBranch?.timetable) {
+                          return timetableBranch.timetable.length;
+                        }
+                        return 0;
                       })()}
                     </Text>
                     <Text style={styles.quickStatLabel}>Weekly Classes</Text>
@@ -794,12 +866,16 @@ export default function TeacherScreen({ route, navigation }) {
                   <View style={styles.quickStat}>
                     <Text style={styles.quickStatNumber}>
                       {(() => {
-                        const currentBranch = getCurrentBranch();
-                        return currentBranch
-                          ? currentBranch.timetable.filter(
-                              (item) => item.attendance_taken
-                            ).length
-                          : 0;
+                        // Get attendance taken from timetable data specifically
+                        const timetableBranch =
+                          timetableData?.branches?.[selectedBranch] ||
+                          timetableData?.branches?.[0];
+                        if (timetableBranch?.timetable) {
+                          return timetableBranch.timetable.filter(
+                            (item) => item.attendance_taken
+                          ).length;
+                        }
+                        return 0;
                       })()}
                     </Text>
                     <Text style={styles.quickStatLabel}>Attendance Taken</Text>
@@ -1086,7 +1162,7 @@ const createStyles = (theme, fontSizes) =>
       marginBottom: 15,
       borderRadius: 16,
       padding: 16,
-      ...theme.shadows.small,
+      ...createSmallShadow(theme),
     },
 
     // Teacher Section
@@ -1187,7 +1263,7 @@ const createStyles = (theme, fontSizes) =>
       borderWidth: 1,
       borderColor: theme.colors.border,
       maxHeight: 200,
-      ...theme.shadows.small,
+      ...createSmallShadow(theme),
     },
     branchSelectorScroll: {
       maxHeight: 200,
@@ -1265,7 +1341,7 @@ const createStyles = (theme, fontSizes) =>
       padding: 20,
       marginBottom: 15,
       alignItems: 'center',
-      ...theme.shadows.medium,
+      ...createMediumShadow(theme),
     },
     statIconContainer: {
       width: 50,
@@ -1330,8 +1406,7 @@ const createStyles = (theme, fontSizes) =>
       padding: 20,
       justifyContent: 'space-between',
       alignItems: 'flex-start',
-      ...theme.shadows.medium,
-      elevation: 8,
+      ...createMediumShadow(theme),
       position: 'relative',
       overflow: 'hidden',
       borderWidth: 1,
@@ -1344,10 +1419,12 @@ const createStyles = (theme, fontSizes) =>
       aspectRatio: 1, // Square tiles
       borderRadius: 16,
       padding: 12,
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.15,
-      shadowRadius: 8,
-      elevation: 4,
+      ...createCustomShadow(theme, {
+        height: 3,
+        opacity: 0.15,
+        radius: 8,
+        elevation: 4,
+      }),
     },
     // Tablet-specific action tile - optimized for 4 per row, wraps for additional tiles
     tabletActionTile: {
@@ -1356,10 +1433,12 @@ const createStyles = (theme, fontSizes) =>
       aspectRatio: 1, // Square tiles
       borderRadius: 18,
       padding: 14,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.18,
-      shadowRadius: 10,
-      elevation: 6,
+      ...createCustomShadow(theme, {
+        height: 4,
+        opacity: 0.18,
+        radius: 10,
+        elevation: 6,
+      }),
     },
     // iPad landscape-specific action tile - optimized for 6 per row
     iPadLandscapeActionTile: {
@@ -1368,10 +1447,12 @@ const createStyles = (theme, fontSizes) =>
       aspectRatio: 1, // Square tiles
       borderRadius: 14,
       padding: 10,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.12,
-      shadowRadius: 6,
-      elevation: 3,
+      ...createCustomShadow(theme, {
+        height: 2,
+        opacity: 0.12,
+        radius: 6,
+        elevation: 3,
+      }),
     },
     // Tablet landscape-specific action tile - optimized for 6 per row
     tabletLandscapeActionTile: {
@@ -1380,10 +1461,12 @@ const createStyles = (theme, fontSizes) =>
       aspectRatio: 1, // Square tiles
       borderRadius: 16,
       padding: 12,
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.15,
-      shadowRadius: 8,
-      elevation: 4,
+      ...createCustomShadow(theme, {
+        height: 3,
+        opacity: 0.15,
+        radius: 8,
+        elevation: 4,
+      }),
     },
     tileIconContainer: {
       width: 52,
@@ -1484,11 +1567,12 @@ const createStyles = (theme, fontSizes) =>
       justifyContent: 'center',
       alignItems: 'center',
       paddingHorizontal: 10,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
+      ...createCustomShadow(theme, {
+        height: 2,
+        opacity: 0.1,
+        radius: 4,
+        elevation: 3,
+      }),
     },
     tileBadgeText: {
       fontSize: 13,
@@ -1509,11 +1593,12 @@ const createStyles = (theme, fontSizes) =>
       paddingHorizontal: 8,
       paddingVertical: 4,
       borderRadius: 12,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.2,
-      shadowRadius: 4,
-      elevation: 3,
+      ...createCustomShadow(theme, {
+        height: 2,
+        opacity: 0.2,
+        radius: 4,
+        elevation: 3,
+      }),
     },
     comingSoonText: {
       color: '#fff',
@@ -1530,11 +1615,12 @@ const createStyles = (theme, fontSizes) =>
       backgroundColor: theme.colors.surface,
       borderRadius: 16,
       padding: 20,
-      shadowColor: theme.colors.shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 4,
+      ...createCustomShadow(theme, {
+        height: 2,
+        opacity: 0.1,
+        radius: 8,
+        elevation: 4,
+      }),
     },
     actionIconContainer: {
       width: 50,
@@ -1578,11 +1664,12 @@ const createStyles = (theme, fontSizes) =>
     featuresList: {
       backgroundColor: theme.colors.surface, // Changed from '#fff'
       borderRadius: 16,
-      shadowColor: theme.colors.shadow, // Changed from '#000'
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 4,
+      ...createCustomShadow(theme, {
+        height: 2,
+        opacity: 0.1,
+        radius: 8,
+        elevation: 4,
+      }),
     },
     featureItem: {
       flexDirection: 'row',

@@ -16,10 +16,10 @@ export default function WebViewWithAuth({ route, navigation }) {
   const { baseUrl, endpoint, title, authCode, studentId } = route.params;
   const [loading, setLoading] = useState(true);
   const [useHtmlFallback, setUseHtmlFallback] = useState(false);
-  
+
   // Construct the full URL with auth parameters
   const url = `${baseUrl}${endpoint}?authCode=${authCode}`;
-  
+
   // Fallback HTML content in case the URL fails to load
   const fallbackHtml = `
     <html>
@@ -66,14 +66,8 @@ export default function WebViewWithAuth({ route, navigation }) {
     console.error('WebView error:', error);
     setLoading(false);
     setUseHtmlFallback(true);
-    
-    // Log more detailed error information for debugging
-    if (error && error.nativeEvent) {
-      const { description, domain, code } = error.nativeEvent;
-      console.log(`WebView Error - Domain: ${domain}, Code: ${code}, Description: ${description}`);
-    }
   };
-  
+
   // Handle messages from WebView
   const handleMessage = (event) => {
     const { data } = event.nativeEvent;
@@ -89,7 +83,7 @@ export default function WebViewWithAuth({ route, navigation }) {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <FontAwesomeIcon icon={faArrowLeft} size={20} color="#fff" />
+          <FontAwesomeIcon icon={faArrowLeft} size={20} color='#fff' />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{title}</Text>
         <View style={styles.headerRight} />
@@ -98,12 +92,12 @@ export default function WebViewWithAuth({ route, navigation }) {
       <View style={styles.webViewContainer}>
         {loading && (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#007AFF" />
+            <ActivityIndicator size='large' color='#007AFF' />
           </View>
         )}
 
         <WebView
-          key="webViewKey"
+          key='webViewKey'
           source={useHtmlFallback ? { html: fallbackHtml } : { uri: url }}
           style={styles.webView}
           onLoadStart={() => setLoading(true)}
@@ -129,7 +123,7 @@ export default function WebViewWithAuth({ route, navigation }) {
           incognito={false}
           sharedCookiesEnabled={true}
           originWhitelist={['*']}
-          mixedContentMode="compatibility"
+          mixedContentMode='compatibility'
           allowsInlineMediaPlayback={true}
           useWebKit={true}
         />

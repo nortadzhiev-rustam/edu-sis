@@ -25,6 +25,7 @@ import {
 } from '../services/authService';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { createSmallShadow } from '../utils/commonStyles';
 
 const { width, height } = Dimensions.get('window');
 
@@ -67,11 +68,6 @@ export default function LoginScreen({ route, navigation }) {
     setLoading(true);
 
     try {
-      console.log('🔍 LOGIN DEBUG: About to login with token:', deviceToken);
-      console.log('🔍 LOGIN DEBUG: Token type:', typeof deviceToken);
-      console.log('🔍 LOGIN DEBUG: Token length:', deviceToken?.length || 0);
-      console.log('🔍 LOGIN DEBUG: Login type:', loginType);
-
       let userData;
 
       if (loginType === 'teacher') {
@@ -336,7 +332,7 @@ const createStyles = (theme, fontSizes) =>
       justifyContent: 'center',
       alignItems: 'center',
       marginTop: 15,
-      ...theme.shadows.small,
+      ...createSmallShadow(theme),
     },
     loginButtonText: {
       color: '#fff',

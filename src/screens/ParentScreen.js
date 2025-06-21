@@ -37,6 +37,7 @@ import ParentNotificationBadge from '../components/ParentNotificationBadge';
 import { QuickActionTile, ComingSoonBadge } from '../components';
 import { isIPad, isTablet } from '../utils/deviceDetection';
 import { useFocusEffect } from '@react-navigation/native';
+import { createCustomShadow, createMediumShadow } from '../utils/commonStyles';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -693,12 +694,13 @@ const createStyles = (theme, fontSizes) =>
       width: '100%',
       height: '100%',
       alignItems: 'center',
-      // Custom shadow for better Android compatibility
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.08,
-      shadowRadius: 3,
-      elevation: 1,
+      // Platform-specific shadow
+      ...createCustomShadow(theme, {
+        height: 1,
+        opacity: 0.08,
+        radius: 3,
+        elevation: 1,
+      }),
       borderWidth: 2,
       borderColor: 'transparent',
       position: 'relative',
@@ -715,12 +717,13 @@ const createStyles = (theme, fontSizes) =>
       justifyContent: 'center',
       alignItems: 'center',
       zIndex: 10,
-      // Custom shadow for better Android compatibility
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.08,
-      shadowRadius: 3,
-      elevation: 1,
+      // Platform-specific shadow
+      ...createCustomShadow(theme, {
+        height: 1,
+        opacity: 0.08,
+        radius: 3,
+        elevation: 1,
+      }),
     },
     selectedStudentTile: {
       borderColor: theme.colors.primary,
@@ -731,11 +734,14 @@ const createStyles = (theme, fontSizes) =>
           : theme.colors.surface,
       // Add a subtle inner glow effect for Android
       ...(Platform.OS === 'android' && {
+        elevation: 3,
+      }),
+      // iOS-specific glow effect
+      ...(Platform.OS === 'ios' && {
         shadowColor: theme.colors.primary,
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.15,
         shadowRadius: 8,
-        elevation: 3,
       }),
     },
     selectedStudentIcon: {
@@ -803,12 +809,13 @@ const createStyles = (theme, fontSizes) =>
       borderRadius: 12,
       padding: 20,
       alignItems: 'center',
-      // Custom shadow for better Android compatibility
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.08,
-      shadowRadius: 3,
-      elevation: 1,
+      // Platform-specific shadow
+      ...createCustomShadow(theme, {
+        height: 1,
+        opacity: 0.08,
+        radius: 3,
+        elevation: 1,
+      }),
     },
     emptyText: {
       fontSize: 18,
@@ -868,12 +875,11 @@ const createStyles = (theme, fontSizes) =>
       justifyContent: 'center', // Center content vertically for better balance
       alignItems: 'center', // Center content horizontally for smaller tiles
 
-      elevation: 8,
       position: 'relative',
       overflow: 'hidden',
       borderWidth: 1,
       borderColor: 'rgba(255, 255, 255, 0.1)',
-      ...theme.shadows.medium,
+      ...createMediumShadow(theme),
     },
     // iPad-specific action tile - optimized for 4 per row, wraps for additional tiles
     iPadActionTile: {
@@ -882,10 +888,12 @@ const createStyles = (theme, fontSizes) =>
       aspectRatio: 1, // Square tiles
       borderRadius: 16,
       padding: 12,
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.15,
-      shadowRadius: 8,
-      elevation: 4,
+      ...createCustomShadow(theme, {
+        height: 3,
+        opacity: 0.15,
+        radius: 8,
+        elevation: 4,
+      }),
     },
     // Tablet-specific action tile - optimized for 4 per row, wraps for additional tiles
     tabletActionTile: {
@@ -894,10 +902,12 @@ const createStyles = (theme, fontSizes) =>
       aspectRatio: 1, // Square tiles
       borderRadius: 18,
       padding: 14,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.18,
-      shadowRadius: 10,
-      elevation: 6,
+      ...createCustomShadow(theme, {
+        height: 4,
+        opacity: 0.18,
+        radius: 10,
+        elevation: 6,
+      }),
     },
     // iPad landscape-specific action tile - optimized for 6 per row
     iPadLandscapeActionTile: {
@@ -906,10 +916,12 @@ const createStyles = (theme, fontSizes) =>
       aspectRatio: 1, // Square tiles
       borderRadius: 14,
       padding: 10,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.12,
-      shadowRadius: 6,
-      elevation: 3,
+      ...createCustomShadow(theme, {
+        height: 2,
+        opacity: 0.12,
+        radius: 6,
+        elevation: 3,
+      }),
     },
     // Tablet landscape-specific action tile - optimized for 6 per row
     tabletLandscapeActionTile: {
@@ -918,10 +930,12 @@ const createStyles = (theme, fontSizes) =>
       aspectRatio: 1, // Square tiles
       borderRadius: 16,
       padding: 12,
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.15,
-      shadowRadius: 8,
-      elevation: 4,
+      ...createCustomShadow(theme, {
+        height: 3,
+        opacity: 0.15,
+        radius: 8,
+        elevation: 4,
+      }),
     },
     disabledTile: {
       opacity: 0.7,
@@ -1026,12 +1040,13 @@ const createStyles = (theme, fontSizes) =>
       aspectRatio: 1, // Square items
       alignItems: 'center',
       justifyContent: 'center', // Center content vertically
-      // Custom shadow for better Android compatibility
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.08,
-      shadowRadius: 3,
-      elevation: 1,
+      // Platform-specific shadow
+      ...createCustomShadow(theme, {
+        height: 1,
+        opacity: 0.08,
+        radius: 3,
+        elevation: 1,
+      }),
     },
     // iPad-specific menu item - optimized for 4 per row, wraps for additional items
     iPadMenuItem: {
@@ -1041,10 +1056,12 @@ const createStyles = (theme, fontSizes) =>
       borderRadius: 10,
       padding: 12,
       marginBottom: 12,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.06,
-      shadowRadius: 4,
-      elevation: 2,
+      ...createCustomShadow(theme, {
+        height: 2,
+        opacity: 0.06,
+        radius: 4,
+        elevation: 2,
+      }),
     },
     // Tablet-specific menu item - optimized for 4 per row, wraps for additional items
     tabletMenuItem: {
@@ -1054,10 +1071,12 @@ const createStyles = (theme, fontSizes) =>
       borderRadius: 11,
       padding: 13,
       marginBottom: 13,
-      shadowOffset: { width: 0, height: 1.5 },
-      shadowOpacity: 0.07,
-      shadowRadius: 3.5,
-      elevation: 1.5,
+      ...createCustomShadow(theme, {
+        height: 1.5,
+        opacity: 0.07,
+        radius: 3.5,
+        elevation: 1.5,
+      }),
     },
     // iPad landscape-specific menu item - optimized for 6 per row
     iPadLandscapeMenuItem: {
@@ -1067,10 +1086,12 @@ const createStyles = (theme, fontSizes) =>
       borderRadius: 8,
       padding: 10,
       marginBottom: 10,
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 3,
-      elevation: 1,
+      ...createCustomShadow(theme, {
+        height: 1,
+        opacity: 0.05,
+        radius: 3,
+        elevation: 1,
+      }),
     },
     // Tablet landscape-specific menu item - optimized for 6 per row
     tabletLandscapeMenuItem: {
@@ -1080,10 +1101,12 @@ const createStyles = (theme, fontSizes) =>
       borderRadius: 9,
       padding: 11,
       marginBottom: 11,
-      shadowOffset: { width: 0, height: 1.2 },
-      shadowOpacity: 0.06,
-      shadowRadius: 3.2,
-      elevation: 1.2,
+      ...createCustomShadow(theme, {
+        height: 1.2,
+        opacity: 0.06,
+        radius: 3.2,
+        elevation: 1.2,
+      }),
     },
     menuIconContainer: {
       width: 45,

@@ -41,6 +41,7 @@ import {
   getOptimalColumns,
 } from '../utils/deviceDetection';
 import { lockOrientationForDevice } from '../utils/orientationLock';
+import { createSmallShadow, createCustomShadow } from '../utils/commonStyles';
 
 const { width, height } = Dimensions.get('window');
 
@@ -67,13 +68,6 @@ export default function HomeScreen({ navigation }) {
     responsiveSpacing
   );
 
-  // Debug logging for layout
-  if (__DEV__ && isIPadDevice) {
-    console.log('🏠 HomeScreen iPad Layout Debug:');
-    console.log('📱 Screen dimensions:', { width, height });
-    console.log('🎯 Role button width:', isIPadDevice ? 280 : '48%');
-    console.log('📏 Responsive spacing:', responsiveSpacing);
-  }
   const handleTeacherPress = async () => {
     try {
       // Check if teacher is already logged in
@@ -330,7 +324,7 @@ const createStyles = (
       justifyContent: 'center',
       alignItems: 'center',
       zIndex: 1000,
-      ...theme.shadows.small,
+      ...createSmallShadow(theme),
     },
     scrollContainer: {
       flex: 1,
@@ -380,7 +374,7 @@ const createStyles = (
       borderRadius: 15,
       padding: 15,
       marginBottom: 20,
-      ...theme.shadows.small,
+      ...createSmallShadow(theme),
       marginLeft: 0,
     },
     roleButtonHorizontal: {
@@ -433,7 +427,7 @@ const createStyles = (
       width: '48%',
       flexDirection: 'row',
       alignItems: 'center',
-      ...theme.shadows.small,
+      ...createSmallShadow(theme),
     },
     resourceIconContainer: {
       width: 40,
@@ -465,11 +459,12 @@ const createStyles = (
       justifyContent: 'center',
       marginBottom: 15,
       alignSelf: 'center', // This should center it within the ScrollView
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.2,
-      shadowRadius: 3,
-      elevation: 3,
+      ...createCustomShadow(theme, {
+        height: 2,
+        opacity: 0.2,
+        radius: 3,
+        elevation: 3,
+      }),
     },
     socialMediaIconContainer: {
       marginRight: 10,
@@ -492,10 +487,11 @@ const createStyles = (
       justifyContent: 'center',
       alignItems: 'center',
       marginHorizontal: 10,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
-      shadowRadius: 2,
-      elevation: 2,
+      ...createCustomShadow(theme, {
+        height: 1,
+        opacity: 0.1,
+        radius: 2,
+        elevation: 2,
+      }),
     },
   });

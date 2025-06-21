@@ -217,16 +217,12 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
       const endpoint = Config.API_ENDPOINTS.TAKE_ATTENDANCE;
       const url = buildApiUrl(endpoint, { authCode });
 
-      console.log('Submitting attendance to URL:', url);
-
       const requestPayload = {
         auth_code: authCode,
         timetable: timetableId,
         attendance: formattedAttendance,
         topic: '', // Optional topic field
       };
-
-      console.log('Request payload:', JSON.stringify(requestPayload));
 
       const response = await fetch(url, {
         method: 'POST',
@@ -236,8 +232,6 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
         },
         body: JSON.stringify(requestPayload),
       });
-
-      console.log('Response status:', response.status);
 
       // Check if response is successful (200 status)
       if (response.status === 200) {
@@ -253,9 +247,6 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
           } catch (parseError) {
             console.error('JSON parse error:', parseError);
             // For 200 status, even if JSON parsing fails, we can treat as success
-            console.log(
-              'Treating as successful submission despite JSON parse error'
-            );
           }
         }
 
@@ -293,7 +284,6 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
       } else {
         // Handle non-200 status codes
         const responseText = await response.text();
-        console.log('Error response:', responseText);
 
         let errorMessage = 'Failed to submit attendance';
         try {

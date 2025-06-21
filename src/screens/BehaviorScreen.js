@@ -26,6 +26,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { createMediumShadow } from '../utils/commonStyles';
 
 export default function BehaviorScreen({ navigation, route }) {
   const { theme } = useTheme();
@@ -1193,7 +1194,7 @@ const createStyles = (theme) =>
       borderRadius: 16,
       padding: 20,
       width: '48%',
-      ...theme.shadows.medium,
+      ...createMediumShadow(theme),
     },
     detentionCardHeader: {
       flexDirection: 'row',

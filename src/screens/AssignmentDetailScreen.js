@@ -28,6 +28,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { buildApiUrl } from '../config/env';
+import { createSmallShadow } from '../utils/commonStyles';
 import { processHtmlContent, containsHtml } from '../utils/htmlUtils';
 import * as DocumentPicker from 'expo-document-picker';
 
@@ -114,12 +115,6 @@ export default function AssignmentDetailScreen({ navigation, route }) {
     const handleSubmit = async () => {
       setSubmitting(true);
       try {
-        console.log('Starting submission...');
-        console.log('Auth code:', authCode);
-        console.log('Detail ID:', assignmentData.detail_id);
-        console.log('Reply text:', replyText.trim());
-        console.log('Selected file:', selectedFile);
-
         const formData = new FormData();
         formData.append('auth_code', authCode);
         formData.append('detail_id', assignmentData.detail_id.toString());
@@ -134,19 +129,14 @@ export default function AssignmentDetailScreen({ navigation, route }) {
         }
 
         const url = buildApiUrl('/homework/submit');
-        console.log('Submitting to URL:', url);
 
         const response = await fetch(url, {
           method: 'POST',
           body: formData,
         });
 
-        console.log('Response status:', response.status);
-        console.log('Response ok:', response.ok);
-
         if (response.ok) {
           const responseData = await response.json();
-          console.log('Response data:', responseData);
 
           setAssignmentData((prev) => ({
             ...prev,
@@ -162,7 +152,6 @@ export default function AssignmentDetailScreen({ navigation, route }) {
           setShowUpdateForm(false);
         } else {
           const errorResponse = await response.text();
-          console.log('Error response:', errorResponse);
 
           try {
             const errorData = JSON.parse(errorResponse);
@@ -828,7 +817,7 @@ const createStyles = (theme) =>
       borderRadius: 16,
       padding: 20,
       marginBottom: 20,
-      ...theme.shadows.small,
+      ...createSmallShadow(theme),
     },
     submissionHeader: {
       flexDirection: 'row',

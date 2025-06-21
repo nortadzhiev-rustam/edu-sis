@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { createSmallShadow } from '../utils/commonStyles';
 
 /**
  * CommonCard Component
- * 
+ *
  * A reusable card component for displaying various types of content.
- * 
+ *
  * @param {Object} props
  * @param {React.ReactNode} props.children - Content to display inside the card
  * @param {Function} props.onPress - Callback function when card is pressed
@@ -24,7 +25,7 @@ const CommonCard = ({
   variant = 'default',
 }) => {
   const styles = createStyles(theme);
-  
+
   const cardStyle = [
     styles.card,
     styles[`${variant}Card`],
@@ -45,7 +46,7 @@ const CommonCard = ({
 
 /**
  * StatCard Component
- * 
+ *
  * A specialized card for displaying statistics with icon, title, and value.
  */
 const StatCard = ({
@@ -62,7 +63,11 @@ const StatCard = ({
   const styles = createStyles(theme);
 
   return (
-    <CommonCard onPress={onPress} theme={theme} style={[styles.statCard, style]}>
+    <CommonCard
+      onPress={onPress}
+      theme={theme}
+      style={[styles.statCard, style]}
+    >
       <View style={styles.statContent}>
         {icon && (
           <View
@@ -90,7 +95,7 @@ const StatCard = ({
 
 /**
  * RecordCard Component
- * 
+ *
  * A specialized card for displaying record information with header and details.
  */
 const RecordCard = ({
@@ -110,7 +115,11 @@ const RecordCard = ({
   const styles = createStyles(theme);
 
   return (
-    <CommonCard onPress={onPress} theme={theme} style={[styles.recordCard, style]}>
+    <CommonCard
+      onPress={onPress}
+      theme={theme}
+      style={[styles.recordCard, style]}
+    >
       <View style={styles.recordHeader}>
         {icon && (
           <View
@@ -147,7 +156,7 @@ const RecordCard = ({
           </View>
         )}
       </View>
-      
+
       {details && (
         <View style={styles.recordDetails}>
           {details.map((detail, index) => (
@@ -157,7 +166,7 @@ const RecordCard = ({
           ))}
         </View>
       )}
-      
+
       {children}
     </CommonCard>
   );
@@ -165,7 +174,7 @@ const RecordCard = ({
 
 /**
  * InfoCard Component
- * 
+ *
  * A specialized card for displaying informational content with optional actions.
  */
 const InfoCard = ({
@@ -197,7 +206,7 @@ const InfoCard = ({
           )}
         </View>
       </View>
-      
+
       {actions.length > 0 && (
         <View style={styles.infoActions}>
           {actions.map((action, index) => (
@@ -235,11 +244,7 @@ const createStyles = (theme) =>
       backgroundColor: theme.colors.surfaceVariant,
     },
     elevatedCard: {
-      shadowColor: theme.colors.shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
+      ...createSmallShadow(theme),
     },
 
     // StatCard styles

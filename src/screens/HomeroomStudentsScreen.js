@@ -77,7 +77,6 @@ export default function HomeroomStudentsScreen({ route, navigation }) {
           } else if (data?.data?.data && Array.isArray(data.data.data)) {
             studentsArray = data.data.data;
           } else {
-            console.log('Unexpected data structure:', data.data);
             studentsArray = [];
           }
           setStudents(studentsArray);
@@ -127,14 +126,12 @@ export default function HomeroomStudentsScreen({ route, navigation }) {
             authCode,
           });
         } else {
-          console.log('API returned success: false', data.message);
           Alert.alert(
             'Error',
             data.message || 'Failed to load student profile'
           );
         }
       } else {
-        console.log('HTTP error:', response.status, response.statusText);
         Alert.alert(
           'Error',
           `Failed to load student profile: ${response.status}`

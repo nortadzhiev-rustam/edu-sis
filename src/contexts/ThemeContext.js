@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Language-specific font size adjustments
@@ -52,6 +53,31 @@ export const getLanguageFontSizes = (language) => ({
   comingSoonText: getFontSize(10, language),
 });
 
+/**
+ * Creates platform-specific shadow styles
+ * iOS: Uses shadow properties (shadowColor, shadowOffset, shadowOpacity, shadowRadius)
+ * Android: Uses elevation property only
+ */
+const createPlatformShadow = (
+  shadowColor,
+  offset,
+  opacity,
+  radius,
+  elevation
+) => {
+  if (Platform.OS === 'ios') {
+    return {
+      shadowColor,
+      shadowOffset: offset,
+      shadowOpacity: opacity,
+      shadowRadius: radius,
+    };
+  }
+  return {
+    elevation,
+  };
+};
+
 const ThemeContext = createContext();
 
 export const useTheme = () => {
@@ -92,27 +118,9 @@ const lightTheme = {
     bpsBackground: '#F8F9FA', // Light background for BPS cards
   },
   shadows: {
-    small: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 2,
-    },
-    medium: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 4,
-    },
-    large: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.15,
-      shadowRadius: 16,
-      elevation: 8,
-    },
+    small: createPlatformShadow('#000', { width: 0, height: 2 }, 0.1, 4, 2),
+    medium: createPlatformShadow('#000', { width: 0, height: 4 }, 0.1, 8, 4),
+    large: createPlatformShadow('#000', { width: 0, height: 8 }, 0.15, 16, 8),
   },
 };
 
@@ -146,27 +154,9 @@ const darkTheme = {
     bpsBackground: '#2C2C2E', // Dark background for BPS cards
   },
   shadows: {
-    small: {
-      shadowColor: '#ccc',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.3,
-      shadowRadius: 4,
-      elevation: 2,
-    },
-    medium: {
-      shadowColor: '#ccc',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
-      elevation: 4,
-    },
-    large: {
-      shadowColor: '#ccc',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.4,
-      shadowRadius: 16,
-      elevation: 8,
-    },
+    small: createPlatformShadow('#ccc', { width: 0, height: 2 }, 0.3, 4, 2),
+    medium: createPlatformShadow('#ccc', { width: 0, height: 4 }, 0.3, 8, 4),
+    large: createPlatformShadow('#ccc', { width: 0, height: 8 }, 0.4, 16, 8),
   },
 };
 

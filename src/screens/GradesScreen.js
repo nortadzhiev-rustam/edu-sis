@@ -46,6 +46,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import NotificationBadge from '../components/NotificationBadge';
+import { createSmallShadow, createMediumShadow } from '../utils/commonStyles';
 
 // Simple separator component - only shows in portrait mode
 const GradeSeparator = () => null; // We'll use marginVertical on cards instead
@@ -117,7 +118,6 @@ export default function GradesScreen({ navigation, route }) {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Grades data:', data);
         setGrades(data);
       } else {
         // Handle error silently
@@ -1445,8 +1445,8 @@ const createStyles = (theme) =>
       marginVertical: 10,
       borderRadius: 24,
       padding: 20,
-      // Enhanced shadow properties using theme
-      ...theme.shadows.small,
+      // Enhanced shadow properties using platform-specific utilities
+      ...createSmallShadow(theme),
       position: 'relative',
       overflow: 'hidden',
       borderWidth: 1,
@@ -1464,8 +1464,8 @@ const createStyles = (theme) =>
       justifyContent: 'center',
       alignItems: 'center',
       marginRight: 12,
-      // Enhanced shadow using theme
-      ...theme.shadows.medium,
+      // Enhanced shadow using platform-specific utilities
+      ...createMediumShadow(theme),
     },
     subjectInfo: {
       flex: 1,
@@ -1553,8 +1553,8 @@ const createStyles = (theme) =>
       justifyContent: 'center',
       alignItems: 'center',
       marginBottom: 6,
-      // Enhanced shadow using theme
-      ...theme.shadows.small,
+      // Enhanced shadow using platform-specific utilities
+      ...createSmallShadow(theme),
     },
     gradeLetterText: {
       fontSize: 16,
@@ -1687,8 +1687,8 @@ const createStyles = (theme) =>
       borderRadius: 12,
       justifyContent: 'center',
       alignItems: 'center',
-      // Enhanced shadow using theme
-      ...theme.shadows.small,
+      // Enhanced shadow using platform-specific utilities
+      ...createSmallShadow(theme),
     },
 
     // Grades Screen Styles
@@ -1704,7 +1704,7 @@ const createStyles = (theme) =>
       paddingHorizontal: 12,
       backgroundColor: theme.colors.card,
       borderRadius: 20,
-      ...theme.shadows.small,
+      ...createSmallShadow(theme),
     },
     backToSubjectsText: {
       fontSize: 14,
@@ -1723,7 +1723,7 @@ const createStyles = (theme) =>
       borderRadius: 25,
       padding: 4,
       marginBottom: 15,
-      ...theme.shadows.small,
+      ...createSmallShadow(theme),
     },
     tabButton: {
       flex: 1,
@@ -1766,7 +1766,7 @@ const createStyles = (theme) =>
       padding: 20,
       marginHorizontal: 2, // Minimal horizontal margin for better width usage
       marginVertical: 6, // Add vertical margin for better spacing in two-column layout
-      ...theme.shadows.small,
+      ...createSmallShadow(theme),
       flex: 1, // Allow cards to expand in landscape mode
     },
     evenGradeCard: {
@@ -1939,7 +1939,7 @@ const createStyles = (theme) =>
       borderTopColor: theme.colors.border,
       marginTop: 20,
       borderRadius: 30,
-      ...theme.shadows.small,
+      ...createSmallShadow(theme),
       minHeight: 60, // Ensure minimum height for pagination
     },
     paginationButton: {

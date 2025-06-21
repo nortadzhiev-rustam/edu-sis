@@ -49,7 +49,6 @@ export default function TeacherProfile({ route, navigation }) {
       const storedUserData = await AsyncStorage.getItem('userData');
       if (storedUserData) {
         const parsedData = JSON.parse(storedUserData);
-        console.log('User data:', parsedData);
         setUserData(parsedData);
       }
     } catch (error) {

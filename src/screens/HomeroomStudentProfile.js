@@ -67,7 +67,6 @@ export default function HomeroomStudentProfile({ route, navigation }) {
 
   // Additional check for student data
   if (!student) {
-    console.log('No student data found, showing error');
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <View style={styles.header}>

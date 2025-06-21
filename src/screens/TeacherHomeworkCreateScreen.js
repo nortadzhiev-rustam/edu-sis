@@ -62,8 +62,15 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          // Check if the response has branches structure
-          if (data.branches && Array.isArray(data.branches)) {
+          // Check if the response has the new branches structure
+          if (
+            data.data &&
+            data.data.branches &&
+            Array.isArray(data.data.branches)
+          ) {
+            setBranchData(data.data);
+          } else if (data.branches && Array.isArray(data.branches)) {
+            // Old branches format (direct branches array)
             setBranchData(data);
           } else {
             // Legacy format - convert to branch structure
@@ -169,7 +176,7 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
   };
 
   const selectAllStudents = () => {
-    if (!selectedClass) return;
+    if (!selectedClass?.students || selectedClass.students.length === 0) return;
     const allStudentIds = selectedClass.students.map(
       (student) => student.student_id
     );
@@ -363,7 +370,8 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
                     styles.selectedClassOptionText,
                 ]}
               >
-                {classItem.grade_name} ({classItem.students.length} students)
+                {classItem.grade_name}
+                {classItem.subject_name && ` - ${classItem.subject_name}`}
               </Text>
             </TouchableOpacity>
           ))}
@@ -382,48 +390,63 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
           <View style={styles.inputSection}>
             <View style={styles.studentSelectionHeader}>
               <Text style={styles.inputLabel}>Select Students *</Text>
-              <View style={styles.selectionActions}>
-                <TouchableOpacity
-                  style={styles.selectionButton}
-                  onPress={selectAllStudents}
-                >
-                  <Text style={styles.selectionButtonText}>Select All</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.selectionButton}
-                  onPress={clearStudentSelection}
-                >
-                  <Text style={styles.selectionButtonText}>Clear</Text>
-                </TouchableOpacity>
-              </View>
+              {selectedClass.students && selectedClass.students.length > 0 && (
+                <View style={styles.selectionActions}>
+                  <TouchableOpacity
+                    style={styles.selectionButton}
+                    onPress={selectAllStudents}
+                  >
+                    <Text style={styles.selectionButtonText}>Select All</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.selectionButton}
+                    onPress={clearStudentSelection}
+                  >
+                    <Text style={styles.selectionButtonText}>Clear</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
 
-            <Text style={styles.selectionCount}>
-              {selectedStudents.length} of {selectedClass.students.length}{' '}
-              students selected
-            </Text>
-
-            {selectedClass.students.map((student) => (
-              <TouchableOpacity
-                key={student.student_id}
-                style={[
-                  styles.studentOption,
-                  selectedStudents.includes(student.student_id) &&
-                    styles.selectedStudentOption,
-                ]}
-                onPress={() => toggleStudentSelection(student.student_id)}
-              >
-                <Text
-                  style={[
-                    styles.studentOptionText,
-                    selectedStudents.includes(student.student_id) &&
-                      styles.selectedStudentOptionText,
-                  ]}
-                >
-                  {student.student_name}
+            {selectedClass.students && selectedClass.students.length > 0 && (
+              <>
+                <Text style={styles.selectionCount}>
+                  {selectedStudents.length} of {selectedClass.students.length}{' '}
+                  students selected
                 </Text>
-              </TouchableOpacity>
-            ))}
+
+                {selectedClass.students.map((student) => (
+                  <TouchableOpacity
+                    key={student.student_id}
+                    style={[
+                      styles.studentOption,
+                      selectedStudents.includes(student.student_id) &&
+                        styles.selectedStudentOption,
+                    ]}
+                    onPress={() => toggleStudentSelection(student.student_id)}
+                  >
+                    <Text
+                      style={[
+                        styles.studentOptionText,
+                        selectedStudents.includes(student.student_id) &&
+                          styles.selectedStudentOptionText,
+                      ]}
+                    >
+                      {student.student_name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </>
+            )}
+
+            {(!selectedClass.students ||
+              selectedClass.students.length === 0) && (
+              <View style={styles.noStudentsContainer}>
+                <Text style={styles.noStudentsText}>
+                  No students found for this class
+                </Text>
+              </View>
+            )}
           </View>
         )}
 
@@ -720,6 +743,21 @@ const createStyles = (theme) =>
       marginTop: 8,
     },
     noClassesText: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      fontStyle: 'italic',
+    },
+
+    noStudentsContainer: {
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: 12,
+      padding: 20,
+      alignItems: 'center',
+      marginTop: 8,
+    },
+    noStudentsText: {
       fontSize: 14,
       color: theme.colors.textSecondary,
       fontStyle: 'italic',

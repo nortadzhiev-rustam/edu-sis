@@ -18,6 +18,7 @@ import { useTheme } from '../contexts/ThemeContext';
 
 // Import reusable components
 import { SwipeableRecord } from '../components';
+import { createCustomShadow } from '../utils/commonStyles';
 
 import {
   faArrowLeft,
@@ -86,7 +87,6 @@ export default function TeacherBPS({ route, navigation }) {
       if (response.ok) {
         const data = await response.json();
         setBpsData(data);
-        console.log('BPS data:', data);
       } else {
         Alert.alert('Error', 'Failed to fetch BPS data');
       }
@@ -183,8 +183,6 @@ export default function TeacherBPS({ route, navigation }) {
         user_id: authCode, // Using authCode as user identifier for now
       };
 
-      console.log('Sending BPS request:', requestPayload);
-
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -196,7 +194,6 @@ export default function TeacherBPS({ route, navigation }) {
 
       if (response.ok) {
         const result = await response.json();
-        console.log('BPS response:', result);
 
         if (result.success) {
           const successMessage =
@@ -237,9 +234,6 @@ export default function TeacherBPS({ route, navigation }) {
               const failedResults = result.results.filter(
                 (r) => r.status === 'error'
               );
-              if (failedResults.length > 0) {
-                console.log('Failed BPS submissions:', failedResults);
-              }
             }
           }
         }
@@ -1915,11 +1909,12 @@ const getStyles = (theme) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      shadowColor: theme.colors.shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 5,
+      ...createCustomShadow(theme, {
+        height: 2,
+        opacity: 0.1,
+        radius: 4,
+        elevation: 5,
+      }),
     },
     headerLeft: {
       flexDirection: 'row',
@@ -1966,11 +1961,12 @@ const getStyles = (theme) =>
       marginHorizontal: 15,
       marginVertical: 10,
       borderRadius: 12,
-      shadowColor: theme.colors.shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
+      ...createCustomShadow(theme, {
+        height: 2,
+        opacity: 0.1,
+        radius: 4,
+        elevation: 3,
+      }),
     },
     compactBranchHeader: {
       flexDirection: 'row',
@@ -2060,11 +2056,12 @@ const getStyles = (theme) =>
       backgroundColor: theme.colors.surface,
       borderRadius: 16,
       padding: 20,
-      shadowColor: theme.colors.shadow,
-      shadowOffset: { width: 0, height: 10 },
-      shadowOpacity: 0.1,
-      shadowRadius: 10,
-      elevation: 4,
+      ...createCustomShadow(theme, {
+        height: 10,
+        opacity: 0.1,
+        radius: 10,
+        elevation: 4,
+      }),
     },
     recordHeader: {
       flexDirection: 'row',
@@ -2331,11 +2328,12 @@ const getStyles = (theme) =>
       padding: 20,
       borderRadius: 16,
       backgroundColor: theme.colors.surface,
-      shadowColor: theme.colors.shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 4,
+      ...createCustomShadow(theme, {
+        height: 2,
+        opacity: 0.1,
+        radius: 8,
+        elevation: 4,
+      }),
     },
     positiveTab: {
       borderWidth: 2,
@@ -2375,11 +2373,12 @@ const getStyles = (theme) =>
       padding: 20,
       borderRadius: 16,
       marginBottom: 12,
-      shadowColor: theme.colors.shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 4,
+      ...createCustomShadow(theme, {
+        height: 2,
+        opacity: 0.1,
+        radius: 8,
+        elevation: 4,
+      }),
     },
     behaviorItemSelected: {
       borderWidth: 2,
@@ -2447,11 +2446,12 @@ const getStyles = (theme) =>
       padding: 15,
       borderRadius: 12,
       marginBottom: 10,
-      shadowColor: theme.colors.shadow,
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
-      shadowRadius: 2,
-      elevation: 2,
+      ...createCustomShadow(theme, {
+        height: 1,
+        opacity: 0.1,
+        radius: 2,
+        elevation: 2,
+      }),
     },
     selectedItem: {
       borderWidth: 2,
@@ -2480,11 +2480,12 @@ const getStyles = (theme) =>
       borderRadius: 16,
       padding: 20,
       marginBottom: 25,
-      shadowColor: theme.colors.shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 4,
+      ...createCustomShadow(theme, {
+        height: 2,
+        opacity: 0.1,
+        radius: 8,
+        elevation: 4,
+      }),
     },
     reviewItem: {
       flexDirection: 'row',
@@ -2537,11 +2538,12 @@ const getStyles = (theme) =>
       backgroundColor: theme.colors.surface,
       borderRadius: 16,
       padding: 20,
-      shadowColor: theme.colors.shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 4,
+      ...createCustomShadow(theme, {
+        height: 2,
+        opacity: 0.1,
+        radius: 8,
+        elevation: 4,
+      }),
     },
     noteSectionTitle: {
       fontSize: 16,
@@ -2591,11 +2593,12 @@ const getStyles = (theme) =>
       marginBottom: 15,
       backgroundColor: theme.colors.surface,
       borderRadius: 12,
-      shadowColor: theme.colors.shadow,
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
-      shadowRadius: 2,
-      elevation: 2,
+      ...createCustomShadow(theme, {
+        height: 1,
+        opacity: 0.1,
+        radius: 2,
+        elevation: 2,
+      }),
     },
     classHeader: {
       flexDirection: 'row',
@@ -2774,11 +2777,12 @@ const getStyles = (theme) =>
       backgroundColor: theme.colors.surface,
       borderRadius: 12,
       marginBottom: 20,
-      shadowColor: theme.colors.shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
+      ...createCustomShadow(theme, {
+        height: 2,
+        opacity: 0.1,
+        radius: 4,
+        elevation: 3,
+      }),
     },
     selectedBehaviorsHeader: {
       flexDirection: 'row',
@@ -2843,11 +2847,12 @@ const getStyles = (theme) =>
       padding: 16,
       borderRadius: 12,
       marginBottom: 20,
-      shadowColor: theme.colors.shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
+      ...createCustomShadow(theme, {
+        height: 2,
+        opacity: 0.1,
+        radius: 4,
+        elevation: 3,
+      }),
     },
     selectedBehaviorIcon: {
       width: 40,

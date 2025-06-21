@@ -1,11 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { createCustomShadow } from '../utils/commonStyles';
 
 /**
  * ComingSoonBadge Component
- * 
+ *
  * A reusable badge component for indicating "Coming Soon" features.
- * 
+ *
  * @param {Object} props
  * @param {string} props.text - Badge text (default: 'Coming Soon')
  * @param {Object} props.theme - Theme object containing colors and styles
@@ -37,11 +38,12 @@ const createStyles = (theme, fontSizes) =>
       paddingHorizontal: 8,
       paddingVertical: 4,
       borderRadius: 12,
-      shadowColor: theme.colors.shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.2,
-      shadowRadius: 4,
-      elevation: 3,
+      ...createCustomShadow(theme, {
+        height: 2,
+        opacity: 0.2,
+        radius: 4,
+        elevation: 3,
+      }),
     },
     comingSoonText: {
       color: theme.colors.headerText,

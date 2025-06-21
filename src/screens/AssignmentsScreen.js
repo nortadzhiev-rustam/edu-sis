@@ -46,6 +46,7 @@ import {
 import { useScreenOrientation } from '../hooks/useScreenOrientation';
 import { useTheme } from '../contexts/ThemeContext';
 import { getHtmlPreview } from '../utils/htmlUtils';
+import { createSmallShadow, createMediumShadow } from '../utils/commonStyles';
 
 export default function AssignmentsScreen({ navigation, route }) {
   const { theme } = useTheme();
@@ -263,18 +264,12 @@ export default function AssignmentsScreen({ navigation, route }) {
 
   // Helper function to group assignments by subject
   const getSubjectGroups = () => {
-    console.log('getSubjectGroups called with assignments:', assignments);
-
     // Handle different possible API response structures
     let assignmentsArray = [];
 
     if (Array.isArray(assignments)) {
       assignmentsArray = assignments;
-    } else if (
-      assignments &&
-      assignments.data &&
-      Array.isArray(assignments.data)
-    ) {
+    } else if (assignments?.data && Array.isArray(assignments.data)) {
       assignmentsArray = assignments.data;
     } else if (assignments && typeof assignments === 'object') {
       // If assignments is an object, try to find an array property
@@ -286,10 +281,7 @@ export default function AssignmentsScreen({ navigation, route }) {
       }
     }
 
-    console.log('Processed assignments array:', assignmentsArray);
-
     if (!assignmentsArray || assignmentsArray.length === 0) {
-      console.log('No assignments found in array');
       return [];
     }
 
@@ -301,8 +293,6 @@ export default function AssignmentsScreen({ navigation, route }) {
         assignment.subjectName ||
         assignment.Subject ||
         'Unknown Subject';
-
-      console.log('Processing assignment:', assignment, 'Subject:', subject);
 
       if (!acc[subject]) {
         acc[subject] = [];
@@ -480,7 +470,6 @@ export default function AssignmentsScreen({ navigation, route }) {
           Alert.alert('Success', 'Assignment marked as completed!');
         } else {
           const errorResponse = await response.text();
-          console.log('Mark done error response:', errorResponse);
 
           try {
             const errorData = JSON.parse(errorResponse);
@@ -1021,7 +1010,7 @@ const createStyles = (theme) =>
       marginHorizontal: 16,
       elevation: 6,
       width: '100%',
-      ...theme.shadows.medium,
+      ...createMediumShadow(theme),
     },
     cardTopSection: {
       padding: 16,
@@ -1132,7 +1121,7 @@ const createStyles = (theme) =>
       paddingHorizontal: 15,
       paddingVertical: 10,
       borderRadius: 20,
-      ...theme.shadows.small,
+      ...createSmallShadow(theme),
     },
     backToSubjectsText: {
       marginLeft: 8,
@@ -1184,7 +1173,7 @@ const createStyles = (theme) =>
       borderRadius: 16,
       padding: 20,
       marginBottom: 15,
-      ...theme.shadows.medium,
+      ...createMediumShadow(theme),
     },
     assignmentCardHeader: {
       flexDirection: 'row',

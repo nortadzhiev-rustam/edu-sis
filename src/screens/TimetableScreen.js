@@ -41,6 +41,7 @@ import {
 import timetableData from '../data/dummyTimetable.json';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { createCustomShadow, createMediumShadow } from '../utils/commonStyles';
 import { useNotifications } from '../contexts/NotificationContext';
 import NotificationBadge from '../components/NotificationBadge';
 import { useFocusEffect } from '@react-navigation/native';
@@ -727,11 +728,12 @@ const createStyles = (theme, fontSizes) =>
       borderRadius: 25,
       justifyContent: 'center',
       alignItems: 'center',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
+      ...createCustomShadow(theme, {
+        height: 2,
+        opacity: 0.1,
+        radius: 4,
+        elevation: 3,
+      }),
     },
     periodNumber: {
       fontSize: 16,
@@ -752,7 +754,7 @@ const createStyles = (theme, fontSizes) =>
       borderRadius: 16,
       padding: 20,
       borderLeftWidth: 4,
-      ...theme.shadows.medium,
+      ...createMediumShadow(theme),
     },
     subjectCardHeader: {
       flexDirection: 'row',
