@@ -71,17 +71,6 @@ export async function getDeviceInfo() {
  * @returns {string} Device type (ios, android, tablet, etc.)
  */
 export function getDeviceType() {
-  if (Platform.OS === 'ios') {
-    // Check if it's an iPad
-    return 'ios';
-  } else if (Platform.OS === 'android') {
-    // Check if it's a tablet
-    if (Device.deviceType === Device.DeviceType.TABLET) {
-      return 'android_tablet';
-    }
-    return 'android';
-  }
-
   return Platform.OS; // fallback
 }
 

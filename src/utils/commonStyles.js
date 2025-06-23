@@ -349,9 +349,7 @@ export const createSmallShadow = (theme) => {
       shadowRadius: 4,
     };
   }
-  return {
-    elevation: 3,
-  };
+  return { elevation: 1 }; // Temporarily remove elevation completely on Android to test
 };
 
 /**
@@ -415,6 +413,44 @@ export const createCustomShadow = (theme, config) => {
   }
   return {
     elevation,
+  };
+};
+
+/**
+ * Creates iOS-only shadow (no elevation on Android to prevent clipping issues)
+ * @param {Object} theme - Theme object containing colors
+ * @returns {Object} Platform-specific shadow styles
+ */
+export const createIOSOnlyShadow = (theme) => {
+  if (Platform.OS === 'ios') {
+    return {
+      shadowColor: theme.colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+    };
+  }
+  return {}; // No elevation on Android to prevent clipping
+};
+
+/**
+ * Creates card shadow with border fallback for Android (no elevation to prevent clipping)
+ * @param {Object} theme - Theme object containing colors
+ * @returns {Object} Platform-specific shadow/border styles
+ */
+export const createCardShadow = (theme) => {
+  if (Platform.OS === 'ios') {
+    return {
+      shadowColor: theme.colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+    };
+  }
+  // Use subtle border on Android instead of elevation to prevent clipping
+  return {
+    borderWidth: 1,
+    borderColor: theme.colors.border || 'rgba(0, 0, 0, 0.1)',
   };
 };
 

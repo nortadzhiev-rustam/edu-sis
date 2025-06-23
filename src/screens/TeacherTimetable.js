@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from 'react';
 import {
   View,
   Text,
@@ -25,36 +31,46 @@ import { useTheme } from '../contexts/ThemeContext';
 
 export default function TeacherTimetable({ route, navigation }) {
   const { theme } = useTheme(); // Get theme object
-  const styles = createStyles(theme); // Pass theme to styles
+
+  // Memoize styles to prevent recreation on every render
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const {
     authCode,
     timetableData: initialData,
-    selectedBranch: initialSelectedBranch,
+    selectedBranch: initialSelectedBranch, // For backward compatibility
+    selectedBranchId: initialSelectedBranchId, // New branch_id parameter
   } = route.params || {};
 
   const [timetableData, setTimetableData] = useState(initialData);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedBranch, setSelectedBranch] = useState(
-    initialSelectedBranch || 0
-  );
+
+  // Initialize selectedBranchId - prioritize new parameter, fallback to index-based
+  const [selectedBranchId, setSelectedBranchId] = useState(() => {
+    // First priority: use the new selectedBranchId parameter
+    if (initialSelectedBranchId) {
+      return initialSelectedBranchId;
+    }
+
+    // Fallback: convert old selectedBranch index to branch_id
+    if (initialData?.branches && initialSelectedBranch !== undefined) {
+      const branch = initialData.branches[initialSelectedBranch];
+      return branch ? branch.branch_id : null;
+    }
+
+    return null;
+  });
   // Removed unused state variables since we now navigate to separate screen
 
   // Get current day of week (1 = Monday, 5=Friday) if Saturday or Sunday, set it to Monday
-  const getCurrentDay = () => {
+  const getCurrentDay = useCallback(() => {
     const today = new Date().getDay();
     return today === 0 || today === 6 ? 1 : today;
-  };
+  }, []);
 
   const [selectedDay, setSelectedDay] = useState(getCurrentDay());
 
- 
-
-
-
-
-  // Animation values
+  // Animation values for day tabs only
   const todayTabAnimation = useRef(new Animated.Value(1)).current;
-  const contentOpacity = useRef(new Animated.Value(1)).current;
   const tabIndicatorPosition = useRef(
     new Animated.Value(getCurrentDay() - 1)
   ).current;
@@ -95,45 +111,34 @@ export default function TeacherTimetable({ route, navigation }) {
     }).start();
   }, [selectedDay, tabIndicatorPosition]);
 
-  // Animated day change function
-  const animateToDay = (newDay) => {
-    if (newDay === selectedDay) return;
+  // Animated day change function for day tabs
+  const animateToDay = useCallback(
+    (newDay) => {
+      if (newDay === selectedDay) return;
 
-    // Animate tab scale
-    const tabIndex = newDay - 1;
-    Animated.sequence([
-      Animated.timing(tabScaleAnimations[tabIndex], {
-        toValue: 0.95,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(tabScaleAnimations[tabIndex], {
-        toValue: 1,
-        duration: 150,
-        useNativeDriver: true,
-      }),
-    ]).start();
+      // Animate tab scale
+      const tabIndex = newDay - 1;
+      Animated.sequence([
+        Animated.timing(tabScaleAnimations[tabIndex], {
+          toValue: 0.95,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(tabScaleAnimations[tabIndex], {
+          toValue: 1,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+      ]).start();
 
-    // Animate content transition
-    Animated.sequence([
-      Animated.timing(contentOpacity, {
-        toValue: 0.3,
-        duration: 150,
-        useNativeDriver: true,
-      }),
-      Animated.timing(contentOpacity, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    // Change the selected day
-    setSelectedDay(newDay);
-  };
+      // Change the selected day (no content animation)
+      setSelectedDay(newDay);
+    },
+    [selectedDay, tabScaleAnimations]
+  );
 
   // Fetch fresh timetable data
-  const fetchTimetableData = async () => {
+  const fetchTimetableData = useCallback(async () => {
     if (!authCode) return;
 
     try {
@@ -162,51 +167,65 @@ export default function TeacherTimetable({ route, navigation }) {
     } finally {
       setRefreshing(false);
     }
-  };
+  }, [authCode]);
 
   // Take attendance for a class
-  const takeAttendance = (timetableId, subjectName, gradeName) => {
-    navigation.navigate('TeacherAttendance', {
-      timetableId,
-      subjectName,
-      gradeName,
-      authCode,
-      isUpdate: false,
-      onAttendanceSubmitted: fetchTimetableData, // Refresh timetable after attendance
-    });
-  };
+  const takeAttendance = useCallback(
+    (timetableId, subjectName, gradeName) => {
+      navigation.navigate('TeacherAttendance', {
+        timetableId,
+        subjectName,
+        gradeName,
+        authCode,
+        isUpdate: false,
+        onAttendanceSubmitted: fetchTimetableData, // Refresh timetable after attendance
+      });
+    },
+    [navigation, authCode, fetchTimetableData]
+  );
 
   // Removed fetchAttendanceDetails function since we now navigate to separate screen
 
   // View attendance details for a class
-  const viewAttendanceDetails = (classItem) => {
-    navigation.navigate('TeacherAttendance', {
-      timetableId: classItem.timetable_id,
-      subjectName: classItem.subject_name,
-      gradeName: classItem.grade_name,
-      authCode,
-      isUpdate: true,
-      onAttendanceSubmitted: fetchTimetableData, // Refresh timetable after attendance update
-    });
-  };
+  const viewAttendanceDetails = useCallback(
+    (classItem) => {
+      navigation.navigate('TeacherAttendance', {
+        timetableId: classItem.timetable_id,
+        subjectName: classItem.subject_name,
+        gradeName: classItem.grade_name,
+        authCode,
+        isUpdate: true,
+        onAttendanceSubmitted: fetchTimetableData, // Refresh timetable after attendance update
+      });
+    },
+    [navigation, authCode, fetchTimetableData]
+  );
 
   // Get current branch data
-  const getCurrentBranch = () => {
+  const getCurrentBranch = useCallback(() => {
     if (!timetableData?.branches || timetableData.branches.length === 0)
       return null;
-    return timetableData.branches[selectedBranch] || timetableData.branches[0];
-  };
+
+    if (selectedBranchId) {
+      const branch = timetableData.branches.find(
+        (b) => b.branch_id === selectedBranchId
+      );
+      return branch || timetableData.branches[0];
+    }
+
+    return timetableData.branches[0];
+  }, [timetableData, selectedBranchId]);
 
   // Get classes for selected day
-  const getClassesForDay = () => {
+  const getClassesForDay = useCallback(() => {
     const branch = getCurrentBranch();
     if (!branch) return [];
 
     return branch.timetable.filter((item) => item.week_day === selectedDay);
-  };
+  }, [getCurrentBranch, selectedDay]);
 
-  // Get day name
-  const getDayName = (dayNumber) => {
+  // Get day name - memoized since it's used frequently
+  const getDayName = useCallback((dayNumber) => {
     const days = [
       '',
       'Monday',
@@ -218,15 +237,111 @@ export default function TeacherTimetable({ route, navigation }) {
       'Sunday',
     ];
     return days[dayNumber] || '';
-  };
+  }, []);
 
   useEffect(() => {
     if (!initialData) {
       fetchTimetableData();
     }
-  }, []);
+  }, [fetchTimetableData, initialData]);
 
-  const todayClasses = getClassesForDay();
+  // Initialize selectedBranchId when timetableData changes
+  useEffect(() => {
+    if (timetableData?.branches && !selectedBranchId) {
+      // First priority: use the new selectedBranchId parameter
+      if (initialSelectedBranchId) {
+        const branchExists = timetableData.branches.find(
+          (b) => b.branch_id === initialSelectedBranchId
+        );
+        if (branchExists) {
+          setSelectedBranchId(initialSelectedBranchId);
+          return;
+        }
+      }
+
+      // Fallback: convert old selectedBranch index to branch_id
+      if (
+        initialSelectedBranch !== undefined &&
+        timetableData.branches[initialSelectedBranch]
+      ) {
+        setSelectedBranchId(
+          timetableData.branches[initialSelectedBranch].branch_id
+        );
+      } else if (timetableData.branches.length > 0) {
+        setSelectedBranchId(timetableData.branches[0].branch_id);
+      }
+    }
+  }, [
+    timetableData,
+    selectedBranchId,
+    initialSelectedBranch,
+    initialSelectedBranchId,
+  ]);
+
+  // Memoize today's classes to prevent recalculation on every render
+  const todayClasses = useMemo(() => getClassesForDay(), [getClassesForDay]);
+
+  // Memoize sliding indicator style for day tabs
+  const slidingIndicatorStyle = useMemo(
+    () => [
+      styles.slidingIndicator,
+      {
+        left: tabIndicatorPosition.interpolate({
+          inputRange: [0, 1, 2, 3, 4],
+          outputRange: ['10%', '30%', '50%', '70%', '90%'],
+        }),
+      },
+    ],
+    [styles.slidingIndicator, tabIndicatorPosition]
+  );
+
+  // Memoize day tab render function to prevent recreation
+  const renderDayTab = useCallback(
+    (day) => {
+      const isSelected = selectedDay === day;
+      const isToday = day === getCurrentDay();
+      const dayAbbr = getDayName(day).substring(0, 3);
+      const tabIndex = day - 1;
+
+      const animatedTabStyle = {
+        transform: [{ scale: tabScaleAnimations[tabIndex] }],
+      };
+
+      return (
+        <View key={day} style={styles.dayTabContainer}>
+          <Animated.View style={animatedTabStyle}>
+            <TouchableOpacity
+              style={[
+                styles.dayTab,
+                isSelected && styles.selectedDayTab,
+                isToday && !isSelected && styles.todayDayTab,
+              ]}
+              onPress={() => animateToDay(day)}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[
+                  styles.dayTabText,
+                  isSelected && styles.selectedDayTabText,
+                  isToday && !isSelected && styles.todayDayTabText,
+                ]}
+              >
+                {dayAbbr}
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+      );
+    },
+    [
+      selectedDay,
+      getCurrentDay,
+      getDayName,
+      styles,
+      tabScaleAnimations,
+      animateToDay,
+    ]
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -257,38 +372,6 @@ export default function TeacherTimetable({ route, navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Fixed Selectors Header */}
-      <View style={styles.fixedSelectorsHeader}>
-        {/* Branch Selector */}
-        {timetableData?.branches && timetableData.branches.length > 1 && (
-          <View style={styles.compactBranchSelector}>
-            <Text style={styles.compactSectionTitle}>Branch</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {timetableData.branches.map((branch, index) => (
-                <TouchableOpacity
-                  key={branch.branch_id}
-                  style={[
-                    styles.compactBranchTab,
-                    selectedBranch === index && styles.compactBranchTabSelected,
-                  ]}
-                  onPress={() => setSelectedBranch(index)}
-                >
-                  <Text
-                    style={[
-                      styles.compactBranchTabText,
-                      selectedBranch === index &&
-                        styles.compactBranchTabTextSelected,
-                    ]}
-                  >
-                    {branch.branch_description}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-      </View>
-
       {/* Scrollable Classes List */}
       <ScrollView
         style={styles.classesScrollView}
@@ -302,9 +385,7 @@ export default function TeacherTimetable({ route, navigation }) {
         }
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View
-          style={[styles.classesListContainer, { opacity: contentOpacity }]}
-        >
+        <View style={styles.classesListContainer}>
           <View style={styles.classesHeader}>
             <Text style={styles.classesTitle}>
               {getDayName(selectedDay)} Classes
@@ -419,61 +500,17 @@ export default function TeacherTimetable({ route, navigation }) {
               </Text>
             </View>
           )}
-        </Animated.View>
+        </View>
       </ScrollView>
 
       {/* Redesigned Day Selector */}
       <View style={styles.daySelector}>
         <View style={styles.daySelectorBackground}>
           <View style={styles.dayTabsRow}>
-            {[1, 2, 3, 4, 5].map((day) => {
-              const isSelected = selectedDay === day;
-              const isToday = day === getCurrentDay();
-              const dayAbbr = getDayName(day).substring(0, 3);
-
-              return (
-                <View key={day} style={styles.dayTabContainer}>
-                  <Animated.View
-                    style={[
-                      { transform: [{ scale: tabScaleAnimations[day - 1] }] },
-                    ]}
-                  >
-                    <TouchableOpacity
-                      style={[
-                        styles.dayTab,
-                        isSelected && styles.selectedDayTab,
-                        isToday && !isSelected && styles.todayDayTab,
-                      ]}
-                      onPress={() => animateToDay(day)}
-                      activeOpacity={0.8}
-                    >
-                      <Text
-                        style={[
-                          styles.dayTabText,
-                          isSelected && styles.selectedDayTabText,
-                          isToday && !isSelected && styles.todayDayTabText,
-                        ]}
-                      >
-                        {dayAbbr}
-                      </Text>
-                    </TouchableOpacity>
-                  </Animated.View>
-                </View>
-              );
-            })}
+            {[1, 2, 3, 4, 5].map(renderDayTab)}
           </View>
           {/* Animated sliding indicator */}
-          <Animated.View
-            style={[
-              styles.slidingIndicator,
-              {
-                left: tabIndicatorPosition.interpolate({
-                  inputRange: [0, 1, 2, 3, 4],
-                  outputRange: ['10%', '30%', '50%', '70%', '90%'],
-                }),
-              },
-            ]}
-          />
+          <Animated.View style={slidingIndicatorStyle} />
         </View>
       </View>
     </SafeAreaView>
@@ -519,51 +556,6 @@ const createStyles = (theme) =>
     },
     scrollView: {
       flex: 1,
-    },
-
-    // Fixed Selectors Header
-    fixedSelectorsHeader: {
-      backgroundColor: theme.colors.surface,
-      paddingHorizontal: 15,
-      paddingVertical: 10,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
-      shadowColor: theme.colors.shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-
-    // Compact Branch Selector
-    compactBranchSelector: {
-      marginBottom: 10,
-    },
-    compactSectionTitle: {
-      fontSize: 12,
-      fontWeight: '600',
-      color: theme.colors.textSecondary,
-      marginBottom: 8,
-      textTransform: 'uppercase',
-      letterSpacing: 0.5,
-    },
-    compactBranchTab: {
-      backgroundColor: theme.colors.background,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 15,
-      marginRight: 8,
-    },
-    compactBranchTabSelected: {
-      backgroundColor: theme.colors.primary,
-    },
-    compactBranchTabText: {
-      fontSize: 12,
-      color: theme.colors.textSecondary,
-      fontWeight: '500',
-    },
-    compactBranchTabTextSelected: {
-      color: theme.colors.headerText,
     },
 
     // Redesigned Day Selector

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   FlatList,
   ScrollView,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -46,7 +47,11 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import NotificationBadge from '../components/NotificationBadge';
-import { createSmallShadow, createMediumShadow } from '../utils/commonStyles';
+import {
+  createSmallShadow,
+  createMediumShadow,
+  createCardShadow,
+} from '../utils/commonStyles';
 
 // Simple separator component - only shows in portrait mode
 const GradeSeparator = () => null; // We'll use marginVertical on cards instead
@@ -93,7 +98,8 @@ export default function GradesScreen({ navigation, route }) {
   // Determine if device is in landscape mode
   const isLandscape = screenData.width > screenData.height;
 
-  const styles = createStyles(theme);
+  // Memoize styles to prevent recreation on every render
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   // Fetch grades data
   const fetchGrades = async () => {
@@ -450,157 +456,155 @@ export default function GradesScreen({ navigation, route }) {
     );
   };
 
-  const renderSubjectCard = (subject) => {
-    const subjectColor = getSubjectColor(subject);
-    const subjectIcon = getSubjectIcon(subject);
-    const average = getSubjectAverage(subject);
+  const renderSubjectCard = useCallback(
+    (subject) => {
+      const subjectColor = getSubjectColor(subject);
+      const subjectIcon = getSubjectIcon(subject);
+      const average = getSubjectAverage(subject);
 
-    // Calculate grade counts
-    const summativeCount =
-      grades?.summative?.filter((g) => g.subject_name === subject)?.length || 0;
-    const formativeCount =
-      grades?.formative?.filter((g) => g.subject_name === subject)?.length || 0;
-    const totalGrades = summativeCount + formativeCount;
+      // Calculate grade counts
+      const summativeCount =
+        grades?.summative?.filter((g) => g.subject_name === subject)?.length ||
+        0;
+      const formativeCount =
+        grades?.formative?.filter((g) => g.subject_name === subject)?.length ||
+        0;
+      const totalGrades = summativeCount + formativeCount;
 
-    // Get grade letter based on average
-    const getGradeLetter = (avg) => {
-      if (!avg) return 'N/A';
-      if (avg >= 90) return 'A*';
-      if (avg >= 80) return 'A';
-      if (avg >= 70) return 'B';
-      if (avg >= 60) return 'C';
-      if (avg >= 50) return 'D';
-      return 'F';
-    };
+      // Get grade letter based on average
+      const getGradeLetter = (avg) => {
+        if (!avg) return 'N/A';
+        if (avg >= 90) return 'A*';
+        if (avg >= 80) return 'A';
+        if (avg >= 70) return 'B';
+        if (avg >= 60) return 'C';
+        if (avg >= 50) return 'D';
+        return 'F';
+      };
 
-    const gradeLetter = getGradeLetter(average);
+      const gradeLetter = getGradeLetter(average);
 
-    return (
-      <TouchableOpacity
-        key={subject}
-        style={[
-          styles.modernSubjectCard,
-          { backgroundColor: `${subjectColor}08` },
-        ]}
-        onPress={() => handleSubjectSelect(subject)}
-        activeOpacity={0.9}
-      >
-        {/* Header with Icon and Title */}
-        <View style={styles.cardHeader}>
-          <View style={styles.headerLeft}>
-            <View
-              style={[
-                styles.subjectIconContainer,
-                { backgroundColor: subjectColor },
-              ]}
-            >
-              <FontAwesomeIcon icon={subjectIcon} size={22} color='#fff' />
+      // Create dynamic styles (these are lightweight and subject-specific)
+      const cardBackgroundStyle = { backgroundColor: `${subjectColor}08` };
+      const iconContainerStyle = { backgroundColor: subjectColor };
+      const gradeCircleStyle = { borderColor: subjectColor };
+      const coloredTextStyle = { color: subjectColor };
+      const typeDotStyle = { backgroundColor: subjectColor };
+      const typeDotFadedStyle = { backgroundColor: `${subjectColor}60` };
+      const progressFillStyle = {
+        width: `${Math.min(average || 0, 100)}%`,
+        backgroundColor: subjectColor,
+      };
+
+      return (
+        <TouchableOpacity
+          key={subject}
+          style={[styles.modernSubjectCard, cardBackgroundStyle]}
+          onPress={() => handleSubjectSelect(subject)}
+          activeOpacity={0.9}
+        >
+          {/* Header with Icon and Title */}
+          <View style={styles.cardHeader}>
+            <View style={styles.headerLeft}>
+              <View style={[styles.subjectIconContainer, iconContainerStyle]}>
+                <FontAwesomeIcon icon={subjectIcon} size={22} color='#fff' />
+              </View>
+              <View style={styles.titleContainer}>
+                <Text style={styles.modernSubjectTitle} numberOfLines={2}>
+                  {subject}
+                </Text>
+                <View style={styles.assessmentInfo}>
+                  <FontAwesomeIcon icon={faBook} size={10} color='#666' />
+                  <Text style={styles.assessmentCount}>
+                    {totalGrades} assessments
+                  </Text>
+                </View>
+              </View>
             </View>
-            <View style={styles.titleContainer}>
-              <Text style={styles.modernSubjectTitle} numberOfLines={2}>
-                {subject}
-              </Text>
-              <View style={styles.assessmentInfo}>
-                <FontAwesomeIcon icon={faBook} size={10} color='#666' />
-                <Text style={styles.assessmentCount}>
-                  {totalGrades} assessments
+            <TouchableOpacity
+              style={styles.expandButton}
+              onPress={() => handleSubjectSelect(subject)}
+            >
+              <FontAwesomeIcon
+                icon={faChevronRight}
+                size={14}
+                color={subjectColor}
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Main Stats Row */}
+          <View style={styles.statsRow}>
+            <View style={styles.gradeSection}>
+              <View style={[styles.gradeCircle, gradeCircleStyle]}>
+                <Text style={[styles.gradeLetterText, coloredTextStyle]}>
+                  {gradeLetter}
                 </Text>
               </View>
+              <Text style={styles.gradeLabel}>Grade</Text>
+            </View>
+
+            <View style={styles.percentageSection}>
+              <View style={styles.percentageDisplay}>
+                <Text style={[styles.percentageNumber, coloredTextStyle]}>
+                  {average || '--'}
+                </Text>
+                <Text style={[styles.percentageSymbol, coloredTextStyle]}>
+                  %
+                </Text>
+              </View>
+              <Text style={styles.percentageLabel}>Average</Text>
             </View>
           </View>
-          <TouchableOpacity
-            style={styles.expandButton}
-            onPress={() => handleSubjectSelect(subject)}
-          >
-            <FontAwesomeIcon
-              icon={faChevronRight}
-              size={14}
-              color={subjectColor}
-            />
-          </TouchableOpacity>
-        </View>
 
-        {/* Main Stats Row */}
-        <View style={styles.statsRow}>
-          <View style={styles.gradeSection}>
-            <View style={[styles.gradeCircle, { borderColor: subjectColor }]}>
-              <Text style={[styles.gradeLetterText, { color: subjectColor }]}>
-                {gradeLetter}
-              </Text>
-            </View>
-            <Text style={styles.gradeLabel}>Grade</Text>
-          </View>
-
-          <View style={styles.percentageSection}>
-            <View style={styles.percentageDisplay}>
-              <Text style={[styles.percentageNumber, { color: subjectColor }]}>
-                {average || '--'}
-              </Text>
-              <Text style={[styles.percentageSymbol, { color: subjectColor }]}>
-                %
-              </Text>
-            </View>
-            <Text style={styles.percentageLabel}>Average</Text>
-          </View>
-        </View>
-
-        {/* Progress Bar */}
-        {average && (
-          <View style={styles.progressSection}>
-            <View style={styles.progressInfo}>
-              <Text style={styles.progressLabel}>Progress</Text>
-              <Text style={[styles.progressValue, { color: subjectColor }]}>
-                {average}%
-              </Text>
-            </View>
-            <View style={styles.progressBarWrapper}>
-              <View style={styles.progressTrack}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      width: `${Math.min(average, 100)}%`,
-                      backgroundColor: subjectColor,
-                    },
-                  ]}
-                />
+          {/* Progress Bar */}
+          {average && (
+            <View style={styles.progressSection}>
+              <View style={styles.progressInfo}>
+                <Text style={styles.progressLabel}>Progress</Text>
+                <Text style={[styles.progressValue, coloredTextStyle]}>
+                  {average}%
+                </Text>
+              </View>
+              <View style={styles.progressBarWrapper}>
+                <View style={styles.progressTrack}>
+                  <View style={[styles.progressFill, progressFillStyle]} />
+                </View>
               </View>
             </View>
-          </View>
-        )}
+          )}
 
-        {/* Bottom Info */}
-        <View style={styles.bottomInfo}>
-          <View style={styles.typeBreakdown}>
-            {summativeCount > 0 && (
-              <View style={styles.typeItem}>
-                <View
-                  style={[styles.typeDot, { backgroundColor: subjectColor }]}
-                />
-                <Text style={styles.typeText}>{summativeCount} Summative</Text>
-              </View>
-            )}
-            {formativeCount > 0 && (
-              <View style={styles.typeItem}>
-                <View
-                  style={[
-                    styles.typeDot,
-                    { backgroundColor: `${subjectColor}60` },
-                  ]}
-                />
-                <Text style={styles.typeText}>{formativeCount} Formative</Text>
-              </View>
-            )}
+          {/* Bottom Info */}
+          <View style={styles.bottomInfo}>
+            <View style={styles.typeBreakdown}>
+              {summativeCount > 0 && (
+                <View style={styles.typeItem}>
+                  <View style={[styles.typeDot, typeDotStyle]} />
+                  <Text style={styles.typeText}>
+                    {summativeCount} Summative
+                  </Text>
+                </View>
+              )}
+              {formativeCount > 0 && (
+                <View style={styles.typeItem}>
+                  <View style={[styles.typeDot, typeDotFadedStyle]} />
+                  <Text style={styles.typeText}>
+                    {formativeCount} Formative
+                  </Text>
+                </View>
+              )}
+            </View>
           </View>
-        </View>
 
-        {/* Floating Badge */}
-        <View style={[styles.floatingBadge, { backgroundColor: subjectColor }]}>
-          <FontAwesomeIcon icon={faTrophy} size={10} color='#fff' />
-        </View>
-      </TouchableOpacity>
-    );
-  };
+          {/* Floating Badge */}
+          <View style={[styles.floatingBadge, iconContainerStyle]}>
+            <FontAwesomeIcon icon={faTrophy} size={10} color='#fff' />
+          </View>
+        </TouchableOpacity>
+      );
+    },
+    [grades, styles]
+  );
 
   const renderTabButton = (tabName, title) => (
     <TouchableOpacity
@@ -1267,8 +1271,9 @@ export default function GradesScreen({ navigation, route }) {
               </Text>
             </View>
             <ScrollView
-              style={{ width: '100%' }}
+              style={styles.fullWidth}
               contentContainerStyle={styles.subjectGrid}
+              showsVerticalScrollIndicator={false}
             >
               {availableSubjects.map((subject) => renderSubjectCard(subject))}
             </ScrollView>
@@ -1437,6 +1442,9 @@ const createStyles = (theme) =>
       width: '100%',
       padding: 10,
     },
+    fullWidth: {
+      width: '100%',
+    },
 
     // Modern Subject Card Styles - Dashboard Design
     modernSubjectCard: {
@@ -1445,12 +1453,15 @@ const createStyles = (theme) =>
       marginVertical: 10,
       borderRadius: 24,
       padding: 20,
-      // Enhanced shadow properties using platform-specific utilities
-      ...createSmallShadow(theme),
-      position: 'relative',
-      overflow: 'hidden',
-      borderWidth: 1,
-      borderColor: theme.colors.border,
+      // Enhanced shadow with border fallback for Android (no elevation to prevent clipping)
+      ...createCardShadow(theme),
+
+      // Removed overflow: 'hidden' to prevent shadow clipping on Android
+      // Only show border on iOS - Android elevation provides sufficient visual separation
+      ...(Platform.OS === 'ios' && {
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+      }),
     },
     subjectCardHeader: {
       flexDirection: 'row',
@@ -1766,7 +1777,7 @@ const createStyles = (theme) =>
       padding: 20,
       marginHorizontal: 2, // Minimal horizontal margin for better width usage
       marginVertical: 6, // Add vertical margin for better spacing in two-column layout
-      ...createSmallShadow(theme),
+      ...createSmallShadow(theme), // Enhanced shadow with border fallback for Android
       flex: 1, // Allow cards to expand in landscape mode
     },
     evenGradeCard: {
@@ -1935,8 +1946,11 @@ const createStyles = (theme) =>
       paddingHorizontal: 15,
       paddingVertical: 12,
       backgroundColor: theme.colors.card,
-      borderTopWidth: 1,
-      borderTopColor: theme.colors.border,
+      // Only show top border on iOS - Android elevation provides sufficient visual separation
+      ...(Platform.OS === 'ios' && {
+        borderTopWidth: 1,
+        borderTopColor: theme.colors.border,
+      }),
       marginTop: 20,
       borderRadius: 30,
       ...createSmallShadow(theme),

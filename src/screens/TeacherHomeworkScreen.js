@@ -28,7 +28,7 @@ import { buildApiUrl } from '../config/env';
 
 export default function TeacherHomeworkScreen({ navigation, route }) {
   const { theme } = useTheme();
-  const { authCode, teacherName } = route.params || {};
+  const { authCode, teacherName, selectedBranchId } = route.params || {};
 
   const [homeworkList, setHomeworkList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -303,6 +303,7 @@ export default function TeacherHomeworkScreen({ navigation, route }) {
           navigation.navigate('TeacherHomeworkCreate', {
             authCode,
             teacherName,
+            selectedBranchId,
           })
         }
       >
@@ -333,6 +334,7 @@ export default function TeacherHomeworkScreen({ navigation, route }) {
               navigation.navigate('TeacherHomeworkCreate', {
                 authCode,
                 teacherName,
+                selectedBranchId,
               })
             }
           >

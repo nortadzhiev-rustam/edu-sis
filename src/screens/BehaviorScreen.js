@@ -1114,7 +1114,7 @@ const createStyles = (theme) =>
       marginLeft: 5,
     },
     behaviorDetailTitle: {
-      fontSize: 20,
+      fontSize: 16,
       fontWeight: 'bold',
       color: theme.colors.text,
     },

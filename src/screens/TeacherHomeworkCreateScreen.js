@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -20,13 +20,19 @@ import {
 import { useTheme } from '../contexts/ThemeContext';
 import { buildApiUrl } from '../config/env';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function TeacherHomeworkCreateScreen({ navigation, route }) {
   const { theme } = useTheme();
-  const { authCode } = route.params || {};
+  const {
+    authCode,
+    selectedBranchId: initialSelectedBranchId, // Get selected branch from params
+  } = route.params || {};
 
   const [branchData, setBranchData] = useState(null);
-  const [selectedBranch, setSelectedBranch] = useState(0);
+  const [selectedBranchId, setSelectedBranchId] = useState(
+    initialSelectedBranchId
+  );
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
 
@@ -46,6 +52,53 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
     }
   }, [authCode]);
 
+  // Initialize selectedBranchId when branchData loads or when route params change
+  useEffect(() => {
+    if (branchData?.branches) {
+      if (initialSelectedBranchId) {
+        const branchExists = branchData.branches.find(
+          (b) => b.branch_id === initialSelectedBranchId
+        );
+        if (branchExists) {
+          setSelectedBranchId(initialSelectedBranchId);
+          return;
+        }
+      }
+
+      // Fallback to first branch if no valid selectedBranchId
+      if (branchData.branches.length > 0 && !selectedBranchId) {
+        setSelectedBranchId(branchData.branches[0].branch_id);
+      }
+    }
+  }, [branchData, initialSelectedBranchId]);
+
+  // Reset class and student selection when branch changes
+  useEffect(() => {
+    setSelectedClass(null);
+    setSelectedStudents([]);
+  }, [selectedBranchId]);
+
+  // Update selectedBranchId when screen comes into focus with new params
+  useFocusEffect(
+    React.useCallback(() => {
+      // Always update if we have a valid initialSelectedBranchId and it's different
+      if (
+        initialSelectedBranchId &&
+        initialSelectedBranchId !== selectedBranchId
+      ) {
+        setSelectedBranchId(initialSelectedBranchId);
+      }
+      // If initialSelectedBranchId is undefined but we have branchData, set to first branch
+      else if (
+        !initialSelectedBranchId &&
+        branchData?.branches?.length > 0 &&
+        !selectedBranchId
+      ) {
+        setSelectedBranchId(branchData.branches[0].branch_id);
+      }
+    }, [initialSelectedBranchId, selectedBranchId, branchData])
+  );
+
   const fetchBranchData = async () => {
     try {
       const response = await fetch(
@@ -63,11 +116,7 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
         const data = await response.json();
         if (data.success) {
           // Check if the response has the new branches structure
-          if (
-            data.data &&
-            data.data.branches &&
-            Array.isArray(data.data.branches)
-          ) {
+          if (data?.data.branches && Array.isArray(data.data.branches)) {
             setBranchData(data.data);
           } else if (data.branches && Array.isArray(data.branches)) {
             // Old branches format (direct branches array)
@@ -226,13 +275,26 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
   // Helper functions for branch management
   const getCurrentBranch = () => {
     if (!branchData?.branches || branchData.branches.length === 0) return null;
-    return branchData.branches[selectedBranch] || branchData.branches[0];
+
+    if (selectedBranchId) {
+      const branch = branchData.branches.find(
+        (b) => b.branch_id === selectedBranchId
+      );
+      return branch || branchData.branches[0];
+    }
+
+    return branchData.branches[0];
   };
 
   const getCurrentClasses = () => {
     const branch = getCurrentBranch();
     return branch?.classes || [];
   };
+
+  // Memoize current classes to ensure re-render when branch changes
+  const currentClasses = useMemo(() => {
+    return getCurrentClasses();
+  }, [branchData, selectedBranchId]);
 
   if (loading || !branchData) {
     return (
@@ -311,46 +373,10 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
           />
         </View>
 
-        {/* Branch Selection */}
-        {branchData?.branches && branchData.branches.length > 1 && (
-          <View style={styles.inputSection}>
-            <Text style={styles.inputLabel}>Select Branch</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.branchSelector}
-            >
-              {branchData.branches.map((branch, index) => (
-                <TouchableOpacity
-                  key={branch.branch_id}
-                  style={[
-                    styles.branchTab,
-                    selectedBranch === index && styles.branchTabSelected,
-                  ]}
-                  onPress={() => {
-                    setSelectedBranch(index);
-                    setSelectedClass(null); // Reset class selection when branch changes
-                    setSelectedStudents([]); // Reset student selection
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.branchTabText,
-                      selectedBranch === index && styles.branchTabTextSelected,
-                    ]}
-                  >
-                    {branch.branch_description}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
         {/* Class Selection */}
         <View style={styles.inputSection}>
           <Text style={styles.inputLabel}>Select Class *</Text>
-          {getCurrentClasses().map((classItem) => (
+          {currentClasses.map((classItem) => (
             <TouchableOpacity
               key={classItem.grade_id}
               style={[
@@ -376,7 +402,7 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
             </TouchableOpacity>
           ))}
 
-          {getCurrentClasses().length === 0 && (
+          {currentClasses.length === 0 && (
             <View style={styles.noClassesContainer}>
               <Text style={styles.noClassesText}>
                 No classes available for the selected branch
@@ -681,35 +707,6 @@ const createStyles = (theme) =>
       color: theme.colors.textSecondary,
       fontSize: 16,
       fontWeight: '500',
-    },
-
-    // Branch Selection
-    branchSelector: {
-      marginTop: 8,
-    },
-    branchTab: {
-      backgroundColor: theme.colors.surface,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      borderRadius: 20,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      marginRight: 8,
-      minWidth: 80,
-      alignItems: 'center',
-    },
-    branchTabSelected: {
-      backgroundColor: theme.colors.primary,
-      borderColor: theme.colors.primary,
-    },
-    branchTabText: {
-      fontSize: 14,
-      fontWeight: '500',
-      color: theme.colors.text,
-    },
-    branchTabTextSelected: {
-      color: '#fff',
-      fontWeight: '600',
     },
 
     // Class Selection

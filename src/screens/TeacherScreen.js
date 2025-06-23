@@ -168,9 +168,14 @@ export default function TeacherScreen({ route, navigation }) {
   const [teacherClassesData, setTeacherClassesData] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [branchStudentCounts, setBranchStudentCounts] = useState({}); // Store unique student counts per branch
+  const [dashboardStats, setDashboardStats] = useState({
+    totalClasses: 0,
+    attendanceTaken: 0,
+    branches: 0,
+  });
 
-  // Branch selection state
-  const [selectedBranch, setSelectedBranch] = useState(0);
+  // Branch selection state - now using branch_id instead of array index
+  const [selectedBranchId, setSelectedBranchId] = useState(null);
   const [showBranchSelector, setShowBranchSelector] = useState(false);
 
   const styles = createStyles(theme, fontSizes);
@@ -216,8 +221,7 @@ export default function TeacherScreen({ route, navigation }) {
             branches: data.total_branches,
           }));
 
-          // Immediately fetch student counts with the fresh data
-          await fetchAllStudentCounts(data);
+          
         }
 
         return data;
@@ -229,40 +233,8 @@ export default function TeacherScreen({ route, navigation }) {
     return null;
   };
 
-  // Fetch student list for a specific timetable entry
-  const fetchStudentListForTimetable = async (timetableId) => {
-    if (!userData.authCode || !timetableId) {
-      return [];
-    }
 
-    try {
-      const url = buildApiUrl(Config.API_ENDPOINTS.GET_ATTENDANCE_DETAILS, {
-        authCode: userData.authCode,
-        timetableId: timetableId,
-      });
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-
-        if (data.success && data.students) {
-          return data.students; // Return the full student list
-        }
-      }
-    } catch (error) {
-      // Handle error silently
-    }
-
-    return [];
-  };
-
+ 
   // Fetch teacher classes with comprehensive student data
   const fetchTeacherClasses = async () => {
     if (!userData.authCode) return null;
@@ -325,83 +297,7 @@ export default function TeacherScreen({ route, navigation }) {
     return null;
   };
 
-  // Fetch student lists for all timetable entries and count unique students
-  const fetchAllStudentCounts = async (currentTimetableData = null) => {
-    // Use passed data or current state
-    const dataToUse = currentTimetableData || timetableData;
-
-    if (!dataToUse?.branches || !userData.authCode) {
-      return;
-    }
-
-    const counts = {};
-    const allUniqueStudents = new Set(); // Track unique students across all classes
-    const branchStudents = {}; // Track unique students per branch
-
-    // Collect all timetable IDs and fetch student lists
-    const timetablePromises = [];
-    dataToUse.branches.forEach((branch) => {
-      branchStudents[branch.branch_id] = new Set();
-
-      branch.timetable.forEach((classItem) => {
-        if (classItem.timetable_id) {
-          timetablePromises.push(
-            fetchStudentListForTimetable(classItem.timetable_id)
-              .then((students) => {
-                counts[classItem.timetable_id] = students.length;
-
-                // Add students to unique sets
-                students.forEach((student) => {
-                  if (student.student_id) {
-                    allUniqueStudents.add(student.student_id);
-                    branchStudents[branch.branch_id].add(student.student_id);
-                  }
-                });
-
-                return {
-                  timetableId: classItem.timetable_id,
-                  count: students.length,
-                  branchId: branch.branch_id,
-                  students: students,
-                };
-              })
-              .catch(() => {
-                counts[classItem.timetable_id] = 0;
-                return {
-                  timetableId: classItem.timetable_id,
-                  count: 0,
-                  branchId: branch.branch_id,
-                  students: [],
-                };
-              })
-          );
-        }
-      });
-    });
-
-    // Wait for all requests to complete
-    try {
-      await Promise.all(timetablePromises);
-
-      // Convert branch student sets to counts
-      const branchCounts = Object.fromEntries(
-        Object.entries(branchStudents).map(([branchId, studentSet]) => [
-          branchId,
-          studentSet.size,
-        ])
-      );
-
-      // Only update branch student counts if we don't have teacher classes data
-      // (teacher classes data provides more accurate counts)
-      if (!teacherClassesData?.branches) {
-        setBranchStudentCounts(branchCounts);
-      }
-    } catch (error) {
-      // Handle error silently
-      console.error('Error fetching student counts:', error);
-    }
-  };
-
+  
   // Load all teacher data
   const loadTeacherData = async () => {
     setRefreshing(true);
@@ -494,30 +390,37 @@ export default function TeacherScreen({ route, navigation }) {
       teacherClassesData?.branches &&
       teacherClassesData.branches.length > 0
     ) {
-      return (
-        teacherClassesData.branches[selectedBranch] ||
-        teacherClassesData.branches[0]
-      );
+      if (selectedBranchId) {
+        const branch = teacherClassesData.branches.find(
+          (b) => b.branch_id === selectedBranchId
+        );
+        return branch || teacherClassesData.branches[0];
+      }
+      return teacherClassesData.branches[0];
     }
 
     // Fallback to timetable data
     if (timetableData?.branches && timetableData.branches.length > 0) {
-      return (
-        timetableData.branches[selectedBranch] || timetableData.branches[0]
-      );
+      if (selectedBranchId) {
+        const branch = timetableData.branches.find(
+          (b) => b.branch_id === selectedBranchId
+        );
+        return branch || timetableData.branches[0];
+      }
+      return timetableData.branches[0];
     }
 
     return null;
   };
 
-  // Handle branch selection
-  const handleBranchSelection = async (branchIndex) => {
-    setSelectedBranch(branchIndex);
+  // Handle branch selection - now using branch_id instead of index
+  const handleBranchSelection = async (branchId) => {
+    setSelectedBranchId(branchId);
     setShowBranchSelector(false);
 
-    // Save selected branch to AsyncStorage for persistence
+    // Save selected branch ID to AsyncStorage for persistence
     try {
-      await AsyncStorage.setItem('selectedBranchIndex', branchIndex.toString());
+      await AsyncStorage.setItem('selectedBranchId', branchId.toString());
     } catch (error) {
       console.error('Error saving selected branch:', error);
     }
@@ -526,17 +429,49 @@ export default function TeacherScreen({ route, navigation }) {
     await loadTeacherData();
   };
 
-  // Load saved branch selection
+  // Load saved branch selection - now using branch_id
   const loadSavedBranchSelection = async () => {
     try {
+      // First try to load by branch_id (new method)
+      const savedBranchId = await AsyncStorage.getItem('selectedBranchId');
+      if (savedBranchId !== null) {
+        const branches =
+          teacherClassesData?.branches || timetableData?.branches;
+        if (branches) {
+          const branchExists = branches.find(
+            (branch) => branch.branch_id.toString() === savedBranchId
+          );
+          if (branchExists) {
+            setSelectedBranchId(parseInt(savedBranchId, 10));
+            return;
+          }
+        }
+      }
+
+      // Fallback: try to load by old index method and convert to branch_id
       const savedBranchIndex = await AsyncStorage.getItem(
         'selectedBranchIndex'
       );
-      if (savedBranchIndex !== null && timetableData?.branches) {
-        const branchIndex = parseInt(savedBranchIndex, 10);
-        if (branchIndex >= 0 && branchIndex < timetableData.branches.length) {
-          setSelectedBranch(branchIndex);
+      if (savedBranchIndex !== null) {
+        const branches =
+          teacherClassesData?.branches || timetableData?.branches;
+        if (branches) {
+          const branchIndex = parseInt(savedBranchIndex, 10);
+          if (branchIndex >= 0 && branchIndex < branches.length) {
+            const branchId = branches[branchIndex].branch_id;
+            setSelectedBranchId(branchId);
+            // Save the new format and remove old format
+            await AsyncStorage.setItem('selectedBranchId', branchId.toString());
+            await AsyncStorage.removeItem('selectedBranchIndex');
+            return;
+          }
         }
+      }
+
+      // If no saved selection, default to first branch
+      const branches = teacherClassesData?.branches || timetableData?.branches;
+      if (branches && branches.length > 0) {
+        setSelectedBranchId(branches[0].branch_id);
       }
     } catch (error) {
       console.error('Error loading saved branch selection:', error);
@@ -769,14 +704,18 @@ export default function TeacherScreen({ route, navigation }) {
                           teacherClassesData?.branches ||
                           timetableData?.branches ||
                           [];
-                        return (
-                          branches.length > 1 && (
+                        if (branches.length > 1 && selectedBranchId) {
+                          const currentIndex = branches.findIndex(
+                            (b) => b.branch_id === selectedBranchId
+                          );
+                          return (
                             <Text style={styles.branchCount}>
                               {' '}
-                              • {selectedBranch + 1} of {branches.length}
+                              • {currentIndex + 1} of {branches.length}
                             </Text>
-                          )
-                        );
+                          );
+                        }
+                        return null;
                       })()}
                     </Text>
                   </View>
@@ -796,27 +735,29 @@ export default function TeacherScreen({ route, navigation }) {
                             style={styles.branchSelectorScroll}
                             showsVerticalScrollIndicator={false}
                           >
-                            {branches.map((branch, index) => (
+                            {branches.map((branch) => (
                               <TouchableOpacity
                                 key={branch.branch_id}
                                 style={[
                                   styles.branchSelectorItem,
-                                  selectedBranch === index &&
+                                  selectedBranchId === branch.branch_id &&
                                     styles.branchSelectorItemSelected,
                                 ]}
-                                onPress={() => handleBranchSelection(index)}
+                                onPress={() =>
+                                  handleBranchSelection(branch.branch_id)
+                                }
                               >
                                 <View style={styles.branchSelectorItemContent}>
                                   <Text
                                     style={[
                                       styles.branchSelectorItemText,
-                                      selectedBranch === index &&
+                                      selectedBranchId === branch.branch_id &&
                                         styles.branchSelectorItemTextSelected,
                                     ]}
                                   >
                                     {branch.branch_name}
                                   </Text>
-                                  {selectedBranch === index && (
+                                  {selectedBranchId === branch.branch_id && (
                                     <FontAwesomeIcon
                                       icon={faChevronRight}
                                       size={14}
@@ -836,18 +777,9 @@ export default function TeacherScreen({ route, navigation }) {
                 <View style={styles.quickStatsRow}>
                   <View style={styles.quickStat}>
                     <Text style={styles.quickStatNumber}>
-                      {(() => {
-                        // Get weekly classes from timetable data specifically
-                        const timetableBranch =
-                          timetableData?.branches?.[selectedBranch] ||
-                          timetableData?.branches?.[0];
-                        if (timetableBranch?.timetable) {
-                          return timetableBranch.timetable.length;
-                        }
-                        return 0;
-                      })()}
+                      {dashboardStats.totalClasses}
                     </Text>
-                    <Text style={styles.quickStatLabel}>Weekly Classes</Text>
+                    <Text style={styles.quickStatLabel}>Weekly Lessons</Text>
                   </View>
                   <View style={styles.quickStat}>
                     <Text style={styles.quickStatNumber}>
@@ -866,14 +798,23 @@ export default function TeacherScreen({ route, navigation }) {
                   <View style={styles.quickStat}>
                     <Text style={styles.quickStatNumber}>
                       {(() => {
-                        // Get attendance taken from timetable data specifically
-                        const timetableBranch =
-                          timetableData?.branches?.[selectedBranch] ||
-                          timetableData?.branches?.[0];
-                        if (timetableBranch?.timetable) {
-                          return timetableBranch.timetable.filter(
+                        // Get attendance taken from current branch
+                        const currentBranch = getCurrentBranch();
+                        if (currentBranch?.timetable) {
+                          return currentBranch.timetable.filter(
                             (item) => item.attendance_taken
                           ).length;
+                        } else if (currentBranch?.classes) {
+                          // For teacherClassesData, we don't have attendance_taken info
+                          // So we'll show the timetable data if available
+                          const timetableBranch = timetableData?.branches?.find(
+                            (b) => b.branch_id === currentBranch.branch_id
+                          );
+                          if (timetableBranch?.timetable) {
+                            return timetableBranch.timetable.filter(
+                              (item) => item.attendance_taken
+                            ).length;
+                          }
                         }
                         return 0;
                       })()}
@@ -913,7 +854,7 @@ export default function TeacherScreen({ route, navigation }) {
                     authCode: userData.authCode,
                     teacherName: userData.name,
                     timetableData: timetableData,
-                    selectedBranch: selectedBranch,
+                    selectedBranchId: selectedBranchId,
                   })
                 }
                 styles={styles}
@@ -931,7 +872,7 @@ export default function TeacherScreen({ route, navigation }) {
                   navigation.navigate('TeacherBPS', {
                     authCode: userData.authCode,
                     teacherName: userData.name,
-                    selectedBranch: selectedBranch,
+                    selectedBranchId: selectedBranchId,
                   })
                 }
                 styles={styles}
@@ -949,7 +890,7 @@ export default function TeacherScreen({ route, navigation }) {
                   navigation.navigate('TeacherHomework', {
                     authCode: userData.authCode,
                     teacherName: userData.name,
-                    selectedBranch: selectedBranch,
+                    selectedBranchId: selectedBranchId,
                   })
                 }
                 styles={styles}
@@ -968,7 +909,7 @@ export default function TeacherScreen({ route, navigation }) {
                     navigation.navigate('HomeroomScreen', {
                       authCode: userData.authCode,
                       teacherName: userData.name,
-                      selectedBranch: selectedBranch,
+                      selectedBranchId: selectedBranchId,
                     })
                   }
                   styles={styles}

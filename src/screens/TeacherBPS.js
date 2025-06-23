@@ -43,16 +43,30 @@ export default function TeacherBPS({ route, navigation }) {
   const {
     authCode,
     bpsData: initialData,
-    selectedBranch: initialSelectedBranch,
+    selectedBranch: initialSelectedBranch, // For backward compatibility
+    selectedBranchId: initialSelectedBranchId, // New branch_id parameter
   } = route.params || {};
   const { theme } = useTheme();
   const styles = getStyles(theme);
 
   const [bpsData, setBpsData] = useState(initialData);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedBranch, setSelectedBranch] = useState(
-    initialSelectedBranch || 0
-  );
+
+  // Initialize selectedBranchId - prioritize new parameter, fallback to index-based
+  const [selectedBranchId, setSelectedBranchId] = useState(() => {
+    // First priority: use the new selectedBranchId parameter
+    if (initialSelectedBranchId) {
+      return initialSelectedBranchId;
+    }
+
+    // Fallback: convert old selectedBranch index to branch_id
+    if (initialData?.branches && initialSelectedBranch !== undefined) {
+      const branch = initialData.branches[initialSelectedBranch];
+      return branch ? branch.branch_id : null;
+    }
+
+    return null;
+  });
   const [loading, setLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -811,7 +825,15 @@ export default function TeacherBPS({ route, navigation }) {
 
   const getCurrentBranch = () => {
     if (!bpsData?.branches || bpsData.branches.length === 0) return null;
-    return bpsData.branches[selectedBranch] || bpsData.branches[0];
+
+    if (selectedBranchId) {
+      const branch = bpsData.branches.find(
+        (b) => b.branch_id === selectedBranchId
+      );
+      return branch || bpsData.branches[0];
+    }
+
+    return bpsData.branches[0];
   };
 
   const getFilteredRecords = () => {
@@ -834,6 +856,37 @@ export default function TeacherBPS({ route, navigation }) {
       fetchBPSData();
     }
   }, []);
+
+  // Initialize selectedBranchId when bpsData changes
+  useEffect(() => {
+    if (bpsData?.branches && !selectedBranchId) {
+      // First priority: use the new selectedBranchId parameter
+      if (initialSelectedBranchId) {
+        const branchExists = bpsData.branches.find(
+          (b) => b.branch_id === initialSelectedBranchId
+        );
+        if (branchExists) {
+          setSelectedBranchId(initialSelectedBranchId);
+          return;
+        }
+      }
+
+      // Fallback: convert old selectedBranch index to branch_id
+      if (
+        initialSelectedBranch !== undefined &&
+        bpsData.branches[initialSelectedBranch]
+      ) {
+        setSelectedBranchId(bpsData.branches[initialSelectedBranch].branch_id);
+      } else if (bpsData.branches.length > 0) {
+        setSelectedBranchId(bpsData.branches[0].branch_id);
+      }
+    }
+  }, [
+    bpsData,
+    selectedBranchId,
+    initialSelectedBranch,
+    initialSelectedBranchId,
+  ]);
 
   const currentBranch = getCurrentBranch();
   const filteredRecords = getFilteredRecords();
@@ -891,37 +944,6 @@ export default function TeacherBPS({ route, navigation }) {
                 Classes
               </Text>
             </View>
-
-            {/* Branch Selector for Multiple Branches */}
-            {bpsData?.branches && bpsData.branches.length > 1 && (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.compactBranchSelector}
-              >
-                {bpsData.branches.map((branch, index) => (
-                  <TouchableOpacity
-                    key={branch.branch_id}
-                    style={[
-                      styles.compactBranchTab,
-                      selectedBranch === index &&
-                        styles.compactBranchTabSelected,
-                    ]}
-                    onPress={() => setSelectedBranch(index)}
-                  >
-                    <Text
-                      style={[
-                        styles.compactBranchTabText,
-                        selectedBranch === index &&
-                          styles.compactBranchTabTextSelected,
-                      ]}
-                    >
-                      {branch.branch_description}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
           </View>
 
           {/* Filter Tabs */}
@@ -1988,27 +2010,7 @@ const getStyles = (theme) =>
       fontSize: 12,
       color: theme.colors.textSecondary,
     },
-    compactBranchSelector: {
-      maxWidth: 150,
-    },
-    compactBranchTab: {
-      backgroundColor: theme.colors.background,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 15,
-      marginLeft: 8,
-    },
-    compactBranchTabSelected: {
-      backgroundColor: theme.colors.secondary,
-    },
-    compactBranchTabText: {
-      fontSize: 12,
-      color: theme.colors.textSecondary,
-      fontWeight: '500',
-    },
-    compactBranchTabTextSelected: {
-      color: theme.colors.headerText,
-    },
+
     compactFilterTabs: {
       flexDirection: 'row',
       paddingHorizontal: 15,
