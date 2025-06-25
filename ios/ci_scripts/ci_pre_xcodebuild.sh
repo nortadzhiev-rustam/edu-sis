@@ -12,8 +12,8 @@ echo "📍 Current directory: $(pwd)"
 echo "📁 Directory contents:"
 ls -la
 
-# Navigate to iOS directory
-cd ios
+# Navigate to iOS directory (go up one level from ci_scripts)
+cd ..
 
 echo "📍 iOS directory: $(pwd)"
 echo "📁 iOS directory contents:"
