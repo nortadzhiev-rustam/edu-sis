@@ -19,6 +19,12 @@ echo "📍 iOS directory: $(pwd)"
 echo "📁 iOS directory contents:"
 ls -la
 
+# Print environment variables for debugging
+echo "🔍 Environment debugging:"
+echo "PATH: $PATH"
+echo "NODE_BINARY: $NODE_BINARY"
+echo "HOME: $HOME"
+
 # Check if Podfile exists
 if [ ! -f "Podfile" ]; then
     echo "❌ Podfile not found in ios directory"
@@ -34,6 +40,26 @@ else
     echo "✅ Podfile.lock found"
 fi
 
+# First, navigate to repository root to check for Node.js setup
+echo "🔍 Checking repository root for Node.js setup..."
+cd ..
+echo "📍 Repository root: $(pwd)"
+ls -la
+
+# Check if there's a package.json and node_modules
+if [ -f "package.json" ]; then
+    echo "✅ Found package.json in repository root"
+
+    # Try to install Node.js dependencies if node_modules doesn't exist
+    if [ ! -d "node_modules" ] && command -v npm &> /dev/null; then
+        echo "📦 Installing Node.js dependencies..."
+        npm install
+    fi
+fi
+
+# Go back to iOS directory
+cd ios
+
 # Check if Node.js is available
 if ! command -v node &> /dev/null; then
     echo "❌ Node.js not found - this is required for Expo/React Native Podfile"
@@ -43,6 +69,12 @@ if ! command -v node &> /dev/null; then
     if [ -f ".xcode.env" ]; then
         echo "📄 Found .xcode.env, sourcing it..."
         source .xcode.env
+
+        # Add NODE_BINARY to PATH if it's set
+        if [ -n "$NODE_BINARY" ] && [ -x "$NODE_BINARY" ]; then
+            export PATH="$(dirname $NODE_BINARY):$PATH"
+            echo "✅ Added NODE_BINARY directory to PATH: $(dirname $NODE_BINARY)"
+        fi
     fi
 
     # Check again after sourcing .xcode.env
@@ -56,6 +88,7 @@ if ! command -v node &> /dev/null; then
             "/opt/homebrew/bin/node"
             "/usr/bin/node"
             "$HOME/.nvm/versions/node/*/bin/node"
+            "/Volumes/workspace/repository/node_modules/.bin/node"
         )
 
         for node_path in "${NODE_PATHS[@]}"; do
@@ -73,9 +106,11 @@ if ! command -v node &> /dev/null; then
         echo "⚠️  Attempting to continue anyway..."
     else
         echo "✅ Node.js is now available: $(node --version)"
+        echo "📍 Node.js location: $(which node)"
     fi
 else
     echo "✅ Node.js already available: $(node --version)"
+    echo "📍 Node.js location: $(which node)"
 fi
 
 # Install CocoaPods if not already installed
