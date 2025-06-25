@@ -34,6 +34,50 @@ else
     echo "✅ Podfile.lock found"
 fi
 
+# Check if Node.js is available
+if ! command -v node &> /dev/null; then
+    echo "❌ Node.js not found - this is required for Expo/React Native Podfile"
+    echo "📦 Setting up Node.js environment..."
+
+    # Try to source the .xcode.env file which should set up Node.js path
+    if [ -f ".xcode.env" ]; then
+        echo "📄 Found .xcode.env, sourcing it..."
+        source .xcode.env
+    fi
+
+    # Check again after sourcing .xcode.env
+    if ! command -v node &> /dev/null; then
+        echo "❌ Node.js still not available after sourcing .xcode.env"
+        echo "🔍 Checking common Node.js installation paths..."
+
+        # Common Node.js paths in Xcode Cloud
+        NODE_PATHS=(
+            "/usr/local/bin/node"
+            "/opt/homebrew/bin/node"
+            "/usr/bin/node"
+            "$HOME/.nvm/versions/node/*/bin/node"
+        )
+
+        for node_path in "${NODE_PATHS[@]}"; do
+            if [ -x "$node_path" ] || ls $node_path 2>/dev/null; then
+                echo "✅ Found Node.js at: $node_path"
+                export PATH="$(dirname $node_path):$PATH"
+                break
+            fi
+        done
+    fi
+
+    # Final check
+    if ! command -v node &> /dev/null; then
+        echo "❌ Unable to find Node.js. This may cause CocoaPods installation to fail."
+        echo "⚠️  Attempting to continue anyway..."
+    else
+        echo "✅ Node.js is now available: $(node --version)"
+    fi
+else
+    echo "✅ Node.js already available: $(node --version)"
+fi
+
 # Install CocoaPods if not already installed
 if ! command -v pod &> /dev/null; then
     echo "📦 Installing CocoaPods..."
