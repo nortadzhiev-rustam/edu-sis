@@ -68,7 +68,8 @@ ios/*.ipa
 *.xcuserdatad
 *.xcuserstate
 # CocoaPods
-ios/Podfile.lock
+# Note: Keep Podfile.lock for consistent dependency versions across environments
+# ios/Podfile.lock - DO NOT IGNORE: needed for Xcode Cloud and consistent builds
 # Xcode project files that can be auto-generated
 ios/*.xcodeproj/project.xcworkspace/xcshareddata/
 # iOS build artifacts
