@@ -217,8 +217,30 @@ else
     if pod install; then
         echo "✅ CocoaPods installation successful (without verbose)"
     else
-        echo "❌ All CocoaPods installation attempts failed"
-        exit 1
+        echo "❌ Standard CocoaPods installation failed"
+        echo "🔄 Trying with simplified Podfile..."
+
+        # Backup original Podfile and use simplified version
+        if [ -f "Podfile.simple" ]; then
+            cp Podfile Podfile.backup
+            cp Podfile.simple Podfile
+            echo "✅ Switched to simplified Podfile"
+
+            # Try pod install with simplified Podfile
+            if pod install; then
+                echo "✅ CocoaPods installation successful with simplified Podfile"
+                echo "⚠️  Note: Using simplified Podfile - some features may not be available"
+            else
+                echo "❌ Even simplified Podfile installation failed"
+                # Restore original Podfile
+                cp Podfile.backup Podfile
+                echo "🔄 Restored original Podfile"
+                exit 1
+            fi
+        else
+            echo "❌ No simplified Podfile available"
+            exit 1
+        fi
     fi
 fi
 
