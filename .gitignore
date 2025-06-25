@@ -55,7 +55,8 @@ expo-env.d.ts
 # iOS
 ios/Pods/
 ios/build/
-ios/*.xcworkspace
+# Note: Keep .xcworkspace files for Xcode Cloud builds
+# ios/*.xcworkspace - DO NOT IGNORE: needed for Xcode Cloud
 ios/*.xcodeproj/project.xcworkspace/
 ios/*.xcodeproj/xcuserdata/
 ios/DerivedData/
