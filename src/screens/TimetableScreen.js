@@ -536,18 +536,6 @@ export default function TimetableScreen({ navigation, route }) {
           <FontAwesomeIcon icon={faCalendarAlt} size={20} color='#fff' />
           <Text style={styles.headerTitle}>{t('timetable')}</Text>
         </View>
-        <TouchableOpacity
-          style={styles.notificationButton}
-          onPress={() =>
-            navigation.navigate('NotificationScreen', {
-              userType: 'student',
-              authCode: authCode,
-            })
-          }
-        >
-          <FontAwesomeIcon icon={faBell} size={20} color='#fff' />
-          <NotificationBadge />
-        </TouchableOpacity>
       </View>
 
       <View style={styles.content}>
@@ -708,7 +696,9 @@ const createStyles = (theme, fontSizes) =>
       flex: 1,
     },
     modernScheduleList: {
-      paddingBottom: 20,
+      width: '100%',
+      paddingTop: 20,
+      paddingRight: 10,
     },
 
     // Timeline Styles
@@ -832,8 +822,8 @@ const createStyles = (theme, fontSizes) =>
       position: 'relative',
     },
     selectedModernDayTab: {
-      backgroundColor: '#AF52DE',
-      shadowColor: '#AF52DE',
+      backgroundColor: theme.colors.primary,
+      shadowColor: theme.colors.primary,
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.3,
       shadowRadius: 8,
@@ -865,7 +855,7 @@ const createStyles = (theme, fontSizes) =>
       right: -2,
       bottom: -2,
       borderRadius: 22,
-      backgroundColor: 'rgba(175, 82, 222, 0.2)',
+      backgroundColor: 'rgba(0, 106, 253, 0.2)',
       zIndex: -1,
     },
 

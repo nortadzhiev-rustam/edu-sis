@@ -33,6 +33,11 @@ import WebViewWithAuth from './src/screens/WebViewWithAuth';
 import SettingsScreen from './src/screens/SettingsScreen';
 import NotificationScreen from './src/screens/NotificationScreen';
 import LibraryScreen from './src/screens/LibraryScreen';
+import TeacherMessagingScreen from './src/screens/TeacherMessagingScreen';
+import StudentMessagingScreen from './src/screens/StudentMessagingScreen';
+import ConversationScreen from './src/screens/ConversationScreen';
+import CreateConversationScreen from './src/screens/CreateConversationScreen';
+import StudentCreateConversationScreen from './src/screens/StudentCreateConversationScreen';
 import { ThemeProvider } from './src/contexts/ThemeContext';
 import { LanguageProvider } from './src/contexts/LanguageContext';
 import { NotificationProvider } from './src/contexts/NotificationContext';
@@ -254,6 +259,26 @@ export default function App() {
                   component={NotificationScreen}
                 />
                 <Stack.Screen name='LibraryScreen' component={LibraryScreen} />
+                <Stack.Screen
+                  name='TeacherMessagingScreen'
+                  component={TeacherMessagingScreen}
+                />
+                <Stack.Screen
+                  name='StudentMessagingScreen'
+                  component={StudentMessagingScreen}
+                />
+                <Stack.Screen
+                  name='ConversationScreen'
+                  component={ConversationScreen}
+                />
+                <Stack.Screen
+                  name='CreateConversationScreen'
+                  component={CreateConversationScreen}
+                />
+                <Stack.Screen
+                  name='StudentCreateConversationScreen'
+                  component={StudentCreateConversationScreen}
+                />
               </Stack.Navigator>
               {/* <DevTokenDisplay /> */}
             </NavigationContainer>

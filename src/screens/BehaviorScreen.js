@@ -901,15 +901,6 @@ const createStyles = (theme) =>
     recordsContainer: {
       marginBottom: 20,
     },
-
-    // Behavior Cards
-    behaviorCard: {
-      backgroundColor: theme.colors.surface,
-      borderRadius: 16,
-      padding: 20,
-      marginBottom: 15,
-      ...theme.shadows.medium,
-    },
     evenCard: {
       backgroundColor: theme.colors.surfaceVariant,
     },

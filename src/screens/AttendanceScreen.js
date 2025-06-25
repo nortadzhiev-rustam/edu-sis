@@ -622,18 +622,6 @@ export default function AttendanceScreen({ navigation, route }) {
           <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('attendance')}</Text>
-        <TouchableOpacity
-          style={styles.notificationButton}
-          onPress={() =>
-            navigation.navigate('NotificationScreen', {
-              userType: 'student',
-              authCode: authCode,
-            })
-          }
-        >
-          <FontAwesomeIcon icon={faBell} size={18} color='#fff' />
-          <NotificationBadge />
-        </TouchableOpacity>
       </View>
 
       {/* Student Name Section - Hidden in landscape mode */}
@@ -679,7 +667,7 @@ const createStyles = (theme) =>
       backgroundColor: theme.colors.headerBackground,
       padding: 15,
       flexDirection: 'row',
-      justifyContent: 'space-between',
+
       alignItems: 'center',
     },
     backButton: {
@@ -694,6 +682,7 @@ const createStyles = (theme) =>
       color: '#fff',
       fontSize: isIPad ? getResponsiveFontSizes().title : 20,
       fontWeight: 'bold',
+      marginLeft: 20,
     },
     notificationButton: {
       width: 36,

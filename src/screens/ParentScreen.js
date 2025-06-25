@@ -28,6 +28,7 @@ import {
   faBell,
   faBookOpen,
   faFileAlt,
+  faHeartbeat,
 } from '@fortawesome/free-solid-svg-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
@@ -92,6 +93,14 @@ const getMenuItems = (t) => [
     action: 'library',
   },
   {
+    id: 'messages',
+    title: 'Messages',
+    icon: faComments,
+    backgroundColor: '#007AFF',
+    iconColor: '#fff',
+    action: 'messages',
+  },
+  {
     id: 'materials',
     title: 'Materials',
     icon: faFileAlt,
@@ -101,13 +110,14 @@ const getMenuItems = (t) => [
     disabled: true,
     comingSoon: true,
   },
+  // Health
   {
-    id: 'messages',
-    title: 'Messages',
-    icon: faComments,
-    backgroundColor: '#B0B0B0',
+    id: 'health',
+    title: 'Health',
+    icon: faHeartbeat,
+    backgroundColor: '#FF3B30',
     iconColor: '#fff',
-    action: 'messages',
+    action: 'health',
     disabled: true,
     comingSoon: true,
   },
@@ -267,11 +277,9 @@ export default function ParentScreen({ navigation }) {
         });
         break;
       case 'messages':
-        navigation.navigate('WebViewWithAuth', {
-          baseUrl: baseUrl,
-          endpoint: '/messages',
-          title: 'Messages',
+        navigation.navigate('StudentMessagingScreen', {
           authCode: selectedStudent.authCode,
+          studentName: selectedStudent.name,
         });
         break;
       case 'library':
@@ -874,9 +882,7 @@ const createStyles = (theme, fontSizes) =>
       padding: 14, // Reduced padding for smaller tiles
       justifyContent: 'center', // Center content vertically for better balance
       alignItems: 'center', // Center content horizontally for smaller tiles
-
       position: 'relative',
-      overflow: 'hidden',
       borderWidth: 1,
       borderColor: 'rgba(255, 255, 255, 0.1)',
       ...createMediumShadow(theme),
@@ -953,7 +959,7 @@ const createStyles = (theme, fontSizes) =>
       marginTop: 20,
     },
     tileTitle: {
-      fontSize: Math.max(fontSizes.tileTitle - 5, 12), // Smaller font for 3-per-row layout
+      fontSize: Math.max(fontSizes.tileTitle - 5, 10), // Smaller font for 3-per-row layout
       fontWeight: '700',
       color: '#fff',
       marginBottom: 3, // Reduced margin

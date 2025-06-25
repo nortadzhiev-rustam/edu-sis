@@ -743,8 +743,54 @@ export async function handleNotificationNavigation(remoteMessage) {
     console.log('👤 NAVIGATION: User type:', userType);
     console.log('🔑 NAVIGATION: Auth code available:', !!authCode);
 
-    // Always navigate to NotificationScreen when notification is tapped
-    // This provides a consistent experience regardless of notification type
+    // Handle messaging notifications specifically
+    if (data?.type === 'message' || data?.notification_type === 'message') {
+      console.log('💬 NAVIGATION: Handling message notification');
+
+      const conversationUuid = data.conversation_uuid || data.conversation_id;
+      const conversationTopic =
+        data.conversation_topic || data.topic || 'Conversation';
+
+      if (conversationUuid) {
+        // Navigate directly to the conversation
+        const conversationParams = {
+          conversationUuid,
+          conversationTopic,
+          authCode,
+        };
+
+        if (userType === 'teacher') {
+          conversationParams.teacherName = data.user_name || 'Teacher';
+          conversationParams.userType = 'teacher';
+        } else if (userType === 'student') {
+          conversationParams.studentName = data.user_name || 'Student';
+          conversationParams.userType = 'student';
+        }
+
+        console.log(
+          '🚀 NAVIGATION: Navigating to ConversationScreen with params:',
+          conversationParams
+        );
+        safeNavigate('ConversationScreen', conversationParams);
+        return;
+      } else {
+        // Navigate to messaging screen if no specific conversation
+        if (userType === 'teacher') {
+          safeNavigate('TeacherMessagingScreen', {
+            authCode,
+            teacherName: data.user_name || 'Teacher',
+          });
+        } else if (userType === 'student') {
+          safeNavigate('StudentMessagingScreen', {
+            authCode,
+            studentName: data.user_name || 'Student',
+          });
+        }
+        return;
+      }
+    }
+
+    // Default behavior for other notification types - navigate to NotificationScreen
     const navigationParams = {
       userType: userType,
     };

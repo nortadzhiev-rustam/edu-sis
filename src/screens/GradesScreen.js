@@ -1238,18 +1238,7 @@ export default function GradesScreen({ navigation, route }) {
               </Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity
-            style={styles.notificationButton}
-            onPress={() =>
-              navigation.navigate('NotificationScreen', {
-                userType: 'student',
-                authCode: authCode,
-              })
-            }
-          >
-            <FontAwesomeIcon icon={faBell} size={18} color='#fff' />
-            <NotificationBadge />
-          </TouchableOpacity>
+          
         </View>
       </View>
 

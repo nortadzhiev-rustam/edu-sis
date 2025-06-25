@@ -577,18 +577,7 @@ export default function LibraryScreen({ navigation, route }) {
           <FontAwesomeIcon icon={faArrowLeft} size={20} color='#fff' />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Library</Text>
-        <TouchableOpacity
-          style={styles.notificationButton}
-          onPress={() =>
-            navigation.navigate('NotificationScreen', {
-              userType: 'student',
-              authCode: authCode,
-            })
-          }
-        >
-          <FontAwesomeIcon icon={faBell} size={18} color='#fff' />
-          <NotificationBadge />
-        </TouchableOpacity>
+        
       </View>
 
       {/* Tab Navigation */}
@@ -634,7 +623,7 @@ const createStyles = (theme) =>
       backgroundColor: theme.colors.headerBackground,
       padding: 15,
       flexDirection: 'row',
-      justifyContent: 'space-between',
+      
       alignItems: 'center',
       ...theme.shadows.small,
     },
@@ -650,6 +639,7 @@ const createStyles = (theme) =>
       color: '#fff',
       fontSize: 22,
       fontWeight: 'bold',
+      marginLeft: 20
     },
     notificationButton: {
       width: 40,

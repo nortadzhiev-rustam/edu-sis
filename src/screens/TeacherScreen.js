@@ -28,6 +28,7 @@ import {
   faBell,
   faClipboardList,
   faHome,
+  faComments,
 } from '@fortawesome/free-solid-svg-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
@@ -220,8 +221,6 @@ export default function TeacherScreen({ route, navigation }) {
             attendanceTaken,
             branches: data.total_branches,
           }));
-
-          
         }
 
         return data;
@@ -233,8 +232,6 @@ export default function TeacherScreen({ route, navigation }) {
     return null;
   };
 
-
- 
   // Fetch teacher classes with comprehensive student data
   const fetchTeacherClasses = async () => {
     if (!userData.authCode) return null;
@@ -297,7 +294,6 @@ export default function TeacherScreen({ route, navigation }) {
     return null;
   };
 
-  
   // Load all teacher data
   const loadTeacherData = async () => {
     setRefreshing(true);
@@ -537,6 +533,268 @@ export default function TeacherScreen({ route, navigation }) {
           </TouchableOpacity>
         </View>
       </View>
+      {/* Compact Teacher & Branch Info Header */}
+      <View style={styles.compactTeacherHeader}>
+        {/* Teacher Info Section */}
+        <View style={styles.teacherSection}>
+          <View style={styles.teacherAvatar}>
+            {userData.photo ? (
+              <Image
+                source={{ uri: userData.photo }}
+                style={styles.avatarImage}
+                resizeMode='cover'
+              />
+            ) : (
+              <FontAwesomeIcon
+                icon={faUser}
+                size={20}
+                color={theme.colors.primary}
+              />
+            )}
+          </View>
+          <TouchableOpacity onPress={() => navigation.navigate('TeacherProfile')}>
+            <View style={styles.teacherInfo}>
+              <Text style={styles.compactTeacherName}>
+                {userData.name || 'Teacher'}
+              </Text>
+              <TouchableOpacity
+                onPress={handleRoleTap}
+                activeOpacity={(() => {
+                  if (
+                    userData.roles &&
+                    Array.isArray(userData.roles) &&
+                    userData.roles.length > 1
+                  ) {
+                    const uniqueRoles = [
+                      ...new Set(userData.roles.map((role) => role.role_name)),
+                    ];
+                    return uniqueRoles.length > 1 ? 0.7 : 1;
+                  }
+                  return 1;
+                })()}
+              >
+                <Text
+                  style={[
+                    styles.compactTeacherRole,
+                    (() => {
+                      if (
+                        userData.roles &&
+                        Array.isArray(userData.roles) &&
+                        userData.roles.length > 1
+                      ) {
+                        const uniqueRoles = [
+                          ...new Set(
+                            userData.roles.map((role) => role.role_name)
+                          ),
+                        ];
+                        return uniqueRoles.length > 1
+                          ? styles.clickableRole
+                          : null;
+                      }
+                      return null;
+                    })(),
+                  ]}
+                >
+                  {formatUserRoles(userData)} • ID: {userData.id || 'N/A'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Branch Summary Section */}
+        {((teacherClassesData?.branches &&
+          teacherClassesData.branches.length > 0) ||
+          (timetableData?.branches && timetableData.branches.length > 0)) && (
+          <View style={styles.branchSummarySection}>
+            <View style={styles.branchSummaryHeader}>
+              <View style={styles.branchIconWrapper}>
+                <FontAwesomeIcon
+                  icon={faBuilding}
+                  size={16}
+                  color={theme.colors.success}
+                />
+              </View>
+              <View style={styles.branchSummaryInfo}>
+                <TouchableOpacity
+                  onPress={() => {
+                    const branches =
+                      teacherClassesData?.branches ||
+                      timetableData?.branches ||
+                      [];
+                    if (branches.length > 1) {
+                      setShowBranchSelector(!showBranchSelector);
+                    }
+                  }}
+                  activeOpacity={(() => {
+                    const branches =
+                      teacherClassesData?.branches ||
+                      timetableData?.branches ||
+                      [];
+                    return branches.length > 1 ? 0.7 : 1;
+                  })()}
+                  style={styles.branchTitleContainer}
+                >
+                  <Text style={styles.branchSummaryTitle}>
+                    {(() => {
+                      const branches =
+                        teacherClassesData?.branches ||
+                        timetableData?.branches ||
+                        [];
+                      if (branches.length === 1) {
+                        return branches[0].branch_name;
+                      }
+                      return getCurrentBranch()?.branch_name || 'Select Branch';
+                    })()}
+                  </Text>
+                  {(() => {
+                    const branches =
+                      teacherClassesData?.branches ||
+                      timetableData?.branches ||
+                      [];
+                    return (
+                      branches.length > 1 && (
+                        <FontAwesomeIcon
+                          icon={faChevronRight}
+                          size={12}
+                          color={theme.colors.textSecondary}
+                          style={[
+                            styles.branchChevron,
+                            showBranchSelector && styles.branchChevronRotated,
+                          ]}
+                        />
+                      )
+                    );
+                  })()}
+                </TouchableOpacity>
+                <Text style={styles.branchSummarySubtitle}>
+                  Academic Year:{' '}
+                  {timetableData?.global_academic_year?.academic_year || 'N/A'}{' '}
+                  / Week: {timetableData?.branches?.[0]?.current_week || 'N/A'}
+                  {(() => {
+                    const branches =
+                      teacherClassesData?.branches ||
+                      timetableData?.branches ||
+                      [];
+                    if (branches.length > 1 && selectedBranchId) {
+                      const currentIndex = branches.findIndex(
+                        (b) => b.branch_id === selectedBranchId
+                      );
+                      return (
+                        <Text style={styles.branchCount}>
+                          {' '}
+                          • {currentIndex + 1} of {branches.length}
+                        </Text>
+                      );
+                    }
+                    return null;
+                  })()}
+                </Text>
+              </View>
+            </View>
+
+            {/* Branch Selector Dropdown */}
+            {showBranchSelector &&
+              (() => {
+                const branches =
+                  teacherClassesData?.branches || timetableData?.branches || [];
+                return (
+                  branches.length > 1 && (
+                    <View style={styles.branchSelectorDropdown}>
+                      <ScrollView
+                        style={styles.branchSelectorScroll}
+                        showsVerticalScrollIndicator={false}
+                      >
+                        {branches.map((branch) => (
+                          <TouchableOpacity
+                            key={branch.branch_id}
+                            style={[
+                              styles.branchSelectorItem,
+                              selectedBranchId === branch.branch_id &&
+                                styles.branchSelectorItemSelected,
+                            ]}
+                            onPress={() =>
+                              handleBranchSelection(branch.branch_id)
+                            }
+                          >
+                            <View style={styles.branchSelectorItemContent}>
+                              <Text
+                                style={[
+                                  styles.branchSelectorItemText,
+                                  selectedBranchId === branch.branch_id &&
+                                    styles.branchSelectorItemTextSelected,
+                                ]}
+                              >
+                                {branch.branch_name}
+                              </Text>
+                              {selectedBranchId === branch.branch_id && (
+                                <FontAwesomeIcon
+                                  icon={faChevronRight}
+                                  size={14}
+                                  color={theme.colors.primary}
+                                />
+                              )}
+                            </View>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )
+                );
+              })()}
+
+            {/* Quick Stats Row */}
+            <View style={styles.quickStatsRow}>
+              <View style={styles.quickStat}>
+                <Text style={styles.quickStatNumber}>
+                  {dashboardStats.totalClasses}
+                </Text>
+                <Text style={styles.quickStatLabel}>Weekly Lessons</Text>
+              </View>
+              <View style={styles.quickStat}>
+                <Text style={styles.quickStatNumber}>
+                  {(() => {
+                    const currentBranch = getCurrentBranch();
+                    if (!currentBranch) return 0;
+                    const branchStudentCount =
+                      branchStudentCounts[currentBranch.branch_id];
+                    return branchStudentCount !== undefined
+                      ? branchStudentCount
+                      : '...';
+                  })()}
+                </Text>
+                <Text style={styles.quickStatLabel}>Students</Text>
+              </View>
+              <View style={styles.quickStat}>
+                <Text style={styles.quickStatNumber}>
+                  {(() => {
+                    // Get attendance taken from current branch
+                    const currentBranch = getCurrentBranch();
+                    if (currentBranch?.timetable) {
+                      return currentBranch.timetable.filter(
+                        (item) => item.attendance_taken
+                      ).length;
+                    } else if (currentBranch?.classes) {
+                      // For teacherClassesData, we don't have attendance_taken info
+                      // So we'll show the timetable data if available
+                      const timetableBranch = timetableData?.branches?.find(
+                        (b) => b.branch_id === currentBranch.branch_id
+                      );
+                      if (timetableBranch?.timetable) {
+                        return timetableBranch.timetable.filter(
+                          (item) => item.attendance_taken
+                        ).length;
+                      }
+                    }
+                    return 0;
+                  })()}
+                </Text>
+                <Text style={styles.quickStatLabel}>Attendance Taken</Text>
+              </View>
+            </View>
+          </View>
+        )}
+      </View>
 
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -555,277 +813,6 @@ export default function TeacherScreen({ route, navigation }) {
             />
           }
         >
-          {/* Compact Teacher & Branch Info Header */}
-          <View style={styles.compactTeacherHeader}>
-            {/* Teacher Info Section */}
-            <View style={styles.teacherSection}>
-              <View style={styles.teacherAvatar}>
-                {userData.photo ? (
-                  <Image
-                    source={{ uri: userData.photo }}
-                    style={styles.avatarImage}
-                    resizeMode='cover'
-                  />
-                ) : (
-                  <FontAwesomeIcon
-                    icon={faUser}
-                    size={20}
-                    color={theme.colors.primary}
-                  />
-                )}
-              </View>
-              <View style={styles.teacherInfo}>
-                <Text style={styles.compactTeacherName}>
-                  {userData.name || 'Teacher'}
-                </Text>
-                <TouchableOpacity
-                  onPress={handleRoleTap}
-                  activeOpacity={(() => {
-                    if (
-                      userData.roles &&
-                      Array.isArray(userData.roles) &&
-                      userData.roles.length > 1
-                    ) {
-                      const uniqueRoles = [
-                        ...new Set(
-                          userData.roles.map((role) => role.role_name)
-                        ),
-                      ];
-                      return uniqueRoles.length > 1 ? 0.7 : 1;
-                    }
-                    return 1;
-                  })()}
-                >
-                  <Text
-                    style={[
-                      styles.compactTeacherRole,
-                      (() => {
-                        if (
-                          userData.roles &&
-                          Array.isArray(userData.roles) &&
-                          userData.roles.length > 1
-                        ) {
-                          const uniqueRoles = [
-                            ...new Set(
-                              userData.roles.map((role) => role.role_name)
-                            ),
-                          ];
-                          return uniqueRoles.length > 1
-                            ? styles.clickableRole
-                            : null;
-                        }
-                        return null;
-                      })(),
-                    ]}
-                  >
-                    {formatUserRoles(userData)} • ID: {userData.id || 'N/A'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Branch Summary Section */}
-            {((teacherClassesData?.branches &&
-              teacherClassesData.branches.length > 0) ||
-              (timetableData?.branches &&
-                timetableData.branches.length > 0)) && (
-              <View style={styles.branchSummarySection}>
-                <View style={styles.branchSummaryHeader}>
-                  <View style={styles.branchIconWrapper}>
-                    <FontAwesomeIcon
-                      icon={faBuilding}
-                      size={16}
-                      color={theme.colors.success}
-                    />
-                  </View>
-                  <View style={styles.branchSummaryInfo}>
-                    <TouchableOpacity
-                      onPress={() => {
-                        const branches =
-                          teacherClassesData?.branches ||
-                          timetableData?.branches ||
-                          [];
-                        if (branches.length > 1) {
-                          setShowBranchSelector(!showBranchSelector);
-                        }
-                      }}
-                      activeOpacity={(() => {
-                        const branches =
-                          teacherClassesData?.branches ||
-                          timetableData?.branches ||
-                          [];
-                        return branches.length > 1 ? 0.7 : 1;
-                      })()}
-                      style={styles.branchTitleContainer}
-                    >
-                      <Text style={styles.branchSummaryTitle}>
-                        {(() => {
-                          const branches =
-                            teacherClassesData?.branches ||
-                            timetableData?.branches ||
-                            [];
-                          if (branches.length === 1) {
-                            return branches[0].branch_name;
-                          }
-                          return (
-                            getCurrentBranch()?.branch_name || 'Select Branch'
-                          );
-                        })()}
-                      </Text>
-                      {(() => {
-                        const branches =
-                          teacherClassesData?.branches ||
-                          timetableData?.branches ||
-                          [];
-                        return (
-                          branches.length > 1 && (
-                            <FontAwesomeIcon
-                              icon={faChevronRight}
-                              size={12}
-                              color={theme.colors.textSecondary}
-                              style={[
-                                styles.branchChevron,
-                                showBranchSelector &&
-                                  styles.branchChevronRotated,
-                              ]}
-                            />
-                          )
-                        );
-                      })()}
-                    </TouchableOpacity>
-                    <Text style={styles.branchSummarySubtitle}>
-                      Academic Year:{' '}
-                      {timetableData?.global_academic_year?.academic_year ||
-                        'N/A'}{' '}
-                      / Week:{' '}
-                      {timetableData?.branches?.[0]?.current_week || 'N/A'}
-                      {(() => {
-                        const branches =
-                          teacherClassesData?.branches ||
-                          timetableData?.branches ||
-                          [];
-                        if (branches.length > 1 && selectedBranchId) {
-                          const currentIndex = branches.findIndex(
-                            (b) => b.branch_id === selectedBranchId
-                          );
-                          return (
-                            <Text style={styles.branchCount}>
-                              {' '}
-                              • {currentIndex + 1} of {branches.length}
-                            </Text>
-                          );
-                        }
-                        return null;
-                      })()}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Branch Selector Dropdown */}
-                {showBranchSelector &&
-                  (() => {
-                    const branches =
-                      teacherClassesData?.branches ||
-                      timetableData?.branches ||
-                      [];
-                    return (
-                      branches.length > 1 && (
-                        <View style={styles.branchSelectorDropdown}>
-                          <ScrollView
-                            style={styles.branchSelectorScroll}
-                            showsVerticalScrollIndicator={false}
-                          >
-                            {branches.map((branch) => (
-                              <TouchableOpacity
-                                key={branch.branch_id}
-                                style={[
-                                  styles.branchSelectorItem,
-                                  selectedBranchId === branch.branch_id &&
-                                    styles.branchSelectorItemSelected,
-                                ]}
-                                onPress={() =>
-                                  handleBranchSelection(branch.branch_id)
-                                }
-                              >
-                                <View style={styles.branchSelectorItemContent}>
-                                  <Text
-                                    style={[
-                                      styles.branchSelectorItemText,
-                                      selectedBranchId === branch.branch_id &&
-                                        styles.branchSelectorItemTextSelected,
-                                    ]}
-                                  >
-                                    {branch.branch_name}
-                                  </Text>
-                                  {selectedBranchId === branch.branch_id && (
-                                    <FontAwesomeIcon
-                                      icon={faChevronRight}
-                                      size={14}
-                                      color={theme.colors.primary}
-                                    />
-                                  )}
-                                </View>
-                              </TouchableOpacity>
-                            ))}
-                          </ScrollView>
-                        </View>
-                      )
-                    );
-                  })()}
-
-                {/* Quick Stats Row */}
-                <View style={styles.quickStatsRow}>
-                  <View style={styles.quickStat}>
-                    <Text style={styles.quickStatNumber}>
-                      {dashboardStats.totalClasses}
-                    </Text>
-                    <Text style={styles.quickStatLabel}>Weekly Lessons</Text>
-                  </View>
-                  <View style={styles.quickStat}>
-                    <Text style={styles.quickStatNumber}>
-                      {(() => {
-                        const currentBranch = getCurrentBranch();
-                        if (!currentBranch) return 0;
-                        const branchStudentCount =
-                          branchStudentCounts[currentBranch.branch_id];
-                        return branchStudentCount !== undefined
-                          ? branchStudentCount
-                          : '...';
-                      })()}
-                    </Text>
-                    <Text style={styles.quickStatLabel}>Students</Text>
-                  </View>
-                  <View style={styles.quickStat}>
-                    <Text style={styles.quickStatNumber}>
-                      {(() => {
-                        // Get attendance taken from current branch
-                        const currentBranch = getCurrentBranch();
-                        if (currentBranch?.timetable) {
-                          return currentBranch.timetable.filter(
-                            (item) => item.attendance_taken
-                          ).length;
-                        } else if (currentBranch?.classes) {
-                          // For teacherClassesData, we don't have attendance_taken info
-                          // So we'll show the timetable data if available
-                          const timetableBranch = timetableData?.branches?.find(
-                            (b) => b.branch_id === currentBranch.branch_id
-                          );
-                          if (timetableBranch?.timetable) {
-                            return timetableBranch.timetable.filter(
-                              (item) => item.attendance_taken
-                            ).length;
-                          }
-                        }
-                        return 0;
-                      })()}
-                    </Text>
-                    <Text style={styles.quickStatLabel}>Attendance Taken</Text>
-                  </View>
-                </View>
-              </View>
-            )}
-          </View>
-
           {/* Quick Actions */}
           <View style={styles.quickActionsContainer}>
             <Text style={styles.sectionTitle}>{t('quickActions')}</Text>
@@ -897,6 +884,23 @@ export default function TeacherScreen({ route, navigation }) {
                 isLandscape={isLandscape}
               />
 
+              {/* Messaging Tile */}
+              <QuickActionTile
+                title='Messages'
+                subtitle='Chat & Communication'
+                icon={faComments}
+                backgroundColor='#007AFF'
+                iconColor='#fff'
+                onPress={() =>
+                  navigation.navigate('TeacherMessagingScreen', {
+                    authCode: userData.authCode,
+                    teacherName: userData.name,
+                  })
+                }
+                styles={styles}
+                isLandscape={isLandscape}
+              />
+
               {/* Homeroom Tile - Conditional */}
               {userData.is_homeroom && (
                 <QuickActionTile
@@ -954,69 +958,6 @@ export default function TeacherScreen({ route, navigation }) {
                 styles={styles}
                 isLandscape={isLandscape}
               />
-            </View>
-          </View>
-
-          {/* Additional Features */}
-          <View style={styles.featuresContainer}>
-            <Text style={styles.sectionTitle}>{t('features')}</Text>
-            <View style={styles.featuresList}>
-              <TouchableOpacity
-                style={styles.featureItem}
-                onPress={() => navigation.navigate('TeacherProfile')}
-              >
-                <View
-                  style={[
-                    styles.featureIconContainer,
-                    { backgroundColor: '#007AFF15' },
-                  ]}
-                >
-                  <FontAwesomeIcon icon={faUser} size={20} color='#007AFF' />
-                </View>
-                <View style={styles.featureContent}>
-                  <Text style={styles.featureTitle}>{t('myProfile')}</Text>
-                  <Text style={styles.featureSubtitle}>
-                    {t('viewEditProfile')}
-                  </Text>
-                </View>
-                <FontAwesomeIcon icon={faChevronRight} size={16} color='#ccc' />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.featureItem, styles.disabledFeatureItem]}
-                disabled={true}
-                activeOpacity={1}
-              >
-                <View
-                  style={[
-                    styles.featureIconContainer,
-                    { backgroundColor: '#B0B0B015' },
-                  ]}
-                >
-                  <FontAwesomeIcon
-                    icon={faChartLine}
-                    size={20}
-                    color='#B0B0B0'
-                  />
-                </View>
-                <View style={styles.featureContent}>
-                  <Text
-                    style={[styles.featureTitle, styles.disabledFeatureText]}
-                  >
-                    {t('analytics')}
-                  </Text>
-                  <Text
-                    style={[styles.featureSubtitle, styles.disabledFeatureText]}
-                  >
-                    {t('teachingPerformance')}
-                  </Text>
-                </View>
-                <View style={styles.featureComingSoonBadge}>
-                  <Text style={styles.featureComingSoonText}>
-                    {t('comingSoon')}
-                  </Text>
-                </View>
-              </TouchableOpacity>
             </View>
           </View>
         </ScrollView>
@@ -1349,7 +1290,6 @@ const createStyles = (theme, fontSizes) =>
       alignItems: 'flex-start',
       ...createMediumShadow(theme),
       position: 'relative',
-      overflow: 'hidden',
       borderWidth: 1,
       borderColor: 'rgba(255, 255, 255, 0.1)',
     },

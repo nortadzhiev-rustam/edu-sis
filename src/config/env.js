@@ -46,6 +46,22 @@ export const Config = {
     GET_HOMEROOM_STUDENT_PROFILE: '/homeroom/student-profile',
     GET_HOMEROOM_STUDENTS: '/homeroom/students',
     GET_HOMEROOM_DISCIPLINE: '/homeroom/discipline',
+
+    // Messaging API Endpoints
+    GET_CONVERSATIONS: '/messaging/conversations',
+    GET_CONVERSATION_MESSAGES: '/messaging/conversation/messages',
+    GET_CONVERSATION_MEMBERS: '/messaging/conversation/members',
+    SEND_MESSAGE: '/messaging/send-message',
+    CREATE_CONVERSATION: '/messaging/create-conversation',
+    GET_AVAILABLE_USERS: '/messaging/available-users', // Legacy endpoint (deprecated)
+    GET_AVAILABLE_USERS_STUDENT: '/messaging/available-users/student', // Student-specific endpoint
+    GET_AVAILABLE_USERS_STAFF: '/messaging/available-users/staff', // Staff-specific endpoint
+    SEARCH_MESSAGES: '/messaging/search',
+    MARK_MESSAGES_READ: '/messaging/mark-read',
+    UPLOAD_MESSAGE_ATTACHMENT: '/messaging/upload-attachment',
+    DELETE_CONVERSATION: '/messaging/conversation/delete',
+    LEAVE_CONVERSATION: '/messaging/conversation/leave',
+    DELETE_MESSAGE: '/messaging/message/delete',
   },
 
   // Web Resources
