@@ -368,15 +368,17 @@ export const getConversations = async (customAuthCode = null) => {
  * @param {string} conversationUuid - UUID of the conversation
  * @param {number} page - Page number for pagination (default: 1)
  * @param {number} limit - Messages per page (default: 50)
+ * @param {string} userAuthCode - Optional authCode to use instead of getting from storage
  * @returns {Promise<Object>} - Messages data
  */
 export const getConversationMessages = async (
   conversationUuid,
   page = 1,
-  limit = 50
+  limit = 50,
+  userAuthCode = null
 ) => {
   try {
-    const authCode = await getAuthCode();
+    const authCode = userAuthCode || (await getAuthCode());
     if (!authCode) {
       throw new Error('No authentication code found');
     }
@@ -452,16 +454,18 @@ export const getConversationMessages = async (
  * @param {string} messageContent - Message text content
  * @param {string} messageType - Type of message (default: "text")
  * @param {string} attachmentUrl - Optional attachment URL
+ * @param {string} userAuthCode - Optional authCode to use instead of getting from storage
  * @returns {Promise<Object>} - Response data
  */
 export const sendMessage = async (
   conversationUuid,
   messageContent,
   messageType = 'text',
-  attachmentUrl = null
+  attachmentUrl = null,
+  userAuthCode = null
 ) => {
   try {
-    const authCode = await getAuthCode();
+    const authCode = userAuthCode || (await getAuthCode());
     if (!authCode) {
       throw new Error('No authentication code found');
     }
@@ -533,11 +537,18 @@ export const sendMessage = async (
  * Create a new conversation
  * @param {string} topic - Conversation topic/title
  * @param {Array<number>} members - Array of user IDs to include
+ * @param {string} userType - Type of user creating the conversation ('student' or 'staff')
+ * @param {string} userAuthCode - Optional authCode to use instead of getting from storage
  * @returns {Promise<Object>} - Response data
  */
-export const createConversation = async (topic, members) => {
+export const createConversation = async (
+  topic,
+  members,
+  userType = null,
+  userAuthCode = null
+) => {
   try {
-    const authCode = await getAuthCode();
+    const authCode = userAuthCode || (await getAuthCode());
     if (!authCode) {
       throw new Error('No authentication code found');
     }
@@ -600,13 +611,20 @@ export const createConversation = async (topic, members) => {
     }
 
     const url = buildApiUrl(Config.API_ENDPOINTS.CREATE_CONVERSATION);
+    const requestBody = {
+      authCode,
+      topic,
+      members,
+    };
+
+    // Include user_type if provided
+    if (userType) {
+      requestBody.user_type = userType;
+    }
+
     return await makeApiRequest(url, {
       method: 'POST',
-      body: JSON.stringify({
-        authCode,
-        topic,
-        members,
-      }),
+      body: JSON.stringify(requestBody),
     });
   } catch (error) {
     console.error('Error creating conversation:', error);
@@ -672,7 +690,7 @@ export const getAvailableUsers = async (userType = null) => {
 
     const params = { authCode };
     if (userType) {
-      params.user_type = userType;
+      params.user_type = userType; // Optional filter for returned users
     }
 
     const url = buildApiUrl(Config.API_ENDPOINTS.GET_AVAILABLE_USERS, params);
@@ -731,11 +749,15 @@ export const getAvailableUsers = async (userType = null) => {
  * Get available users for students (restricted access)
  * Students can only message: homeroom teacher, subject teachers, head of section, librarian, classmates
  * @param {string} userType - Optional filter by user type
+ * @param {string} studentAuthCode - Optional student authCode to use instead of getting from storage
  * @returns {Promise<Object>} - Available users data for students
  */
-export const getAvailableUsersForStudent = async (userType = null) => {
+export const getAvailableUsersForStudent = async (
+  userType = null,
+  studentAuthCode = null
+) => {
   try {
-    const authCode = await getAuthCode();
+    const authCode = studentAuthCode || (await getAuthCode());
     if (!authCode) {
       throw new Error('No authentication code found');
     }
@@ -832,9 +854,12 @@ export const getAvailableUsersForStudent = async (userType = null) => {
       };
     }
 
-    const params = { authCode };
+    const params = {
+      authCode,
+      user_type: 'student', // Requesting user type
+    };
     if (userType) {
-      params.user_type = userType;
+      params.filter_user_type = userType; // Optional filter for returned users
     }
 
     const url = buildApiUrl(
@@ -908,9 +933,12 @@ export const getAvailableUsersForStaff = async (userType = null) => {
       };
     }
 
-    const params = { authCode };
+    const params = {
+      authCode,
+      user_type: 'staff', // Requesting user type
+    };
     if (userType) {
-      params.user_type = userType;
+      params.filter_user_type = userType; // Optional filter for returned users
     }
 
     const url = buildApiUrl(
@@ -1092,11 +1120,15 @@ export const searchMessages = async (
 /**
  * Mark messages in a conversation as read
  * @param {string} conversationUuid - UUID of the conversation
+ * @param {string} userAuthCode - Optional authCode to use instead of getting from storage
  * @returns {Promise<Object>} - Response data
  */
-export const markMessagesAsRead = async (conversationUuid) => {
+export const markMessagesAsRead = async (
+  conversationUuid,
+  userAuthCode = null
+) => {
   try {
-    const authCode = await getAuthCode();
+    const authCode = userAuthCode || (await getAuthCode());
     if (!authCode) {
       throw new Error('No authentication code found');
     }
@@ -1182,11 +1214,15 @@ export const uploadMessageAttachment = async (file) => {
 /**
  * Delete an entire conversation (creator only)
  * @param {string} conversationUuid - UUID of the conversation to delete
+ * @param {string} userAuthCode - Optional authCode to use instead of getting from storage
  * @returns {Promise<Object>} - Response data
  */
-export const deleteConversation = async (conversationUuid) => {
+export const deleteConversation = async (
+  conversationUuid,
+  userAuthCode = null
+) => {
   try {
-    const authCode = await getAuthCode();
+    const authCode = userAuthCode || (await getAuthCode());
     if (!authCode) {
       throw new Error('No authentication code found');
     }
@@ -1250,11 +1286,15 @@ export const deleteConversation = async (conversationUuid) => {
 /**
  * Leave a conversation (any member can leave)
  * @param {string} conversationUuid - UUID of the conversation to leave
+ * @param {string} userAuthCode - Optional authCode to use instead of getting from storage
  * @returns {Promise<Object>} - Response data
  */
-export const leaveConversation = async (conversationUuid) => {
+export const leaveConversation = async (
+  conversationUuid,
+  userAuthCode = null
+) => {
   try {
-    const authCode = await getAuthCode();
+    const authCode = userAuthCode || (await getAuthCode());
     if (!authCode) {
       throw new Error('No authentication code found');
     }
@@ -1332,11 +1372,16 @@ export const leaveConversation = async (conversationUuid) => {
  * Delete a specific message (sender only, 24h limit)
  * @param {number} messageId - ID of the message to delete
  * @param {string} conversationUuid - UUID of the conversation containing the message
+ * @param {string} userAuthCode - Optional authCode to use instead of getting from storage
  * @returns {Promise<Object>} - Response data
  */
-export const deleteMessage = async (messageId, conversationUuid) => {
+export const deleteMessage = async (
+  messageId,
+  conversationUuid,
+  userAuthCode = null
+) => {
   try {
-    const authCode = await getAuthCode();
+    const authCode = userAuthCode || (await getAuthCode());
     if (!authCode) {
       throw new Error('No authentication code found');
     }

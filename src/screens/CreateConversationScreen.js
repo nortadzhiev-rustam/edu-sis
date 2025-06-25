@@ -98,7 +98,11 @@ const CreateConversationScreen = ({ navigation, route }) => {
     try {
       setCreating(true);
       const memberIds = selectedUsers.map((user) => user.id);
-      const response = await createConversation(topic.trim(), memberIds);
+      const response = await createConversation(
+        topic.trim(),
+        memberIds,
+        'staff'
+      );
 
       if (response.success && response.data) {
         Alert.alert('Success', 'Conversation created successfully', [

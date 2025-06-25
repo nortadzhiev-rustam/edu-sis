@@ -43,6 +43,7 @@ const ConversationScreen = ({ navigation, route }) => {
     teacherName,
     studentName,
     userType = 'teacher',
+    authCode,
   } = route.params;
 
   const [messages, setMessages] = useState([]);
@@ -92,7 +93,8 @@ const ConversationScreen = ({ navigation, route }) => {
         const response = await getConversationMessages(
           conversationUuid,
           pageNum,
-          50
+          50,
+          authCode
         );
 
         if (response.success && response.data) {
@@ -116,7 +118,7 @@ const ConversationScreen = ({ navigation, route }) => {
 
           // Mark messages as read
           if (pageNum === 1) {
-            await markMessagesAsRead(conversationUuid);
+            await markMessagesAsRead(conversationUuid, authCode);
           }
         }
       } catch (error) {
@@ -127,7 +129,7 @@ const ConversationScreen = ({ navigation, route }) => {
         setLoadingMore(false);
       }
     },
-    [conversationUuid]
+    [conversationUuid, authCode]
   );
 
   // Send message
@@ -153,7 +155,13 @@ const ConversationScreen = ({ navigation, route }) => {
       // Optimistically add message to UI (at the beginning since it's newest)
       setMessages((prev) => [tempMessage, ...prev]);
 
-      const response = await sendMessage(conversationUuid, tempMessage.content);
+      const response = await sendMessage(
+        conversationUuid,
+        tempMessage.content,
+        'text',
+        null,
+        authCode
+      );
 
       if (response.success && response.data) {
         // Handle both old and new API response structures
@@ -208,6 +216,7 @@ const ConversationScreen = ({ navigation, route }) => {
     userType,
     teacherName,
     studentName,
+    authCode,
   ]);
 
   // Load more messages
@@ -271,7 +280,8 @@ const ConversationScreen = ({ navigation, route }) => {
                 try {
                   const response = await deleteMessage(
                     messageId,
-                    conversationUuid
+                    conversationUuid,
+                    authCode
                   );
                   if (response.success) {
                     // Remove message from local state
@@ -297,7 +307,7 @@ const ConversationScreen = ({ navigation, route }) => {
         console.error('Error in handleDeleteMessage:', error);
       }
     },
-    [conversationUuid]
+    [conversationUuid, authCode]
   );
 
   // Handle leaving conversation
@@ -313,7 +323,10 @@ const ConversationScreen = ({ navigation, route }) => {
             style: 'destructive',
             onPress: async () => {
               try {
-                const response = await leaveConversation(conversationUuid);
+                const response = await leaveConversation(
+                  conversationUuid,
+                  authCode
+                );
                 if (response.success) {
                   Alert.alert('Success', 'Left conversation successfully', [
                     {
@@ -338,7 +351,7 @@ const ConversationScreen = ({ navigation, route }) => {
     } catch (error) {
       console.error('Error in handleLeaveConversation:', error);
     }
-  }, [conversationUuid, navigation]);
+  }, [conversationUuid, navigation, authCode]);
 
   // Handle deleting conversation (creator only)
   const handleDeleteConversation = useCallback(async () => {
@@ -353,7 +366,10 @@ const ConversationScreen = ({ navigation, route }) => {
             style: 'destructive',
             onPress: async () => {
               try {
-                const response = await deleteConversation(conversationUuid);
+                const response = await deleteConversation(
+                  conversationUuid,
+                  authCode
+                );
                 if (response.success) {
                   Alert.alert('Success', 'Conversation deleted successfully', [
                     {
@@ -378,7 +394,7 @@ const ConversationScreen = ({ navigation, route }) => {
     } catch (error) {
       console.error('Error in handleDeleteConversation:', error);
     }
-  }, [conversationUuid, navigation]);
+  }, [conversationUuid, navigation, authCode]);
 
   useEffect(() => {
     fetchMessages();

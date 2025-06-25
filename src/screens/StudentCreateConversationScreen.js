@@ -49,7 +49,7 @@ const StudentCreateConversationScreen = ({ navigation, route }) => {
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await getAvailableUsersForStudent(); // Get restricted users for students
+      const response = await getAvailableUsersForStudent(null, authCode); // Get restricted users for students
       if (response.success && response.data) {
         // Handle new grouped users structure for students
         const fetchedGroupedUsers = response.data.grouped_users || [];
@@ -57,16 +57,16 @@ const StudentCreateConversationScreen = ({ navigation, route }) => {
         // Convert array format to object format for compatibility
         const groupedUsersObj = {
           homeroom_teacher:
-            fetchedGroupedUsers.find((g) => g.type === 'homeroom_teacher')
+            fetchedGroupedUsers.find((g) => g.role === 'homeroom_teacher')
               ?.users || [],
           subject_teacher:
-            fetchedGroupedUsers.find((g) => g.type === 'subject_teacher')
+            fetchedGroupedUsers.find((g) => g.role === 'subject_teacher')
               ?.users || [],
           classmate:
-            fetchedGroupedUsers.find((g) => g.type === 'classmate')?.users ||
+            fetchedGroupedUsers.find((g) => g.role === 'classmate')?.users ||
             [],
         };
-
+        console.log('Fetched grouped users:', groupedUsersObj);
         setGroupedUsers(groupedUsersObj);
       }
     } catch (error) {
@@ -75,7 +75,7 @@ const StudentCreateConversationScreen = ({ navigation, route }) => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [authCode]);
 
   // Filter users based on search query
   const filteredGroupedUsers = {
@@ -118,7 +118,12 @@ const StudentCreateConversationScreen = ({ navigation, route }) => {
     try {
       setCreating(true);
       const memberIds = selectedUsers.map((user) => user.id);
-      const response = await createConversation(topic.trim(), memberIds);
+      const response = await createConversation(
+        topic.trim(),
+        memberIds,
+        'student',
+        authCode
+      );
 
       if (response.success && response.data) {
         Alert.alert('Success', 'Conversation created successfully', [
