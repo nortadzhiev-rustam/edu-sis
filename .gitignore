@@ -3,7 +3,8 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
+# Note: Keep one lock file for consistent dependency versions
+# package-lock.json - DO NOT IGNORE: needed for consistent npm builds
 yarn.lock
 pnpm-lock.yaml
 
@@ -47,8 +48,9 @@ web-build/
 # Expo Go
 .expo-shared/
 # EAS
-eas.json
-.easignore
+# Note: Keep EAS configuration files for builds
+# eas.json - DO NOT IGNORE: needed for EAS/Xcode Cloud builds
+# .easignore - DO NOT IGNORE: needed for EAS builds
 # Expo development
 expo-env.d.ts
 
@@ -57,7 +59,8 @@ ios/Pods/
 ios/build/
 # Note: Keep .xcworkspace files for Xcode Cloud builds
 # ios/*.xcworkspace - DO NOT IGNORE: needed for Xcode Cloud
-ios/*.xcodeproj/project.xcworkspace/
+# Note: Only ignore user-specific data in project.xcworkspace, keep shared data
+ios/*.xcodeproj/project.xcworkspace/xcuserdata/
 ios/*.xcodeproj/xcuserdata/
 ios/DerivedData/
 ios/*.hmap
@@ -71,7 +74,8 @@ ios/*.ipa
 # Note: Keep Podfile.lock for consistent dependency versions across environments
 # ios/Podfile.lock - DO NOT IGNORE: needed for Xcode Cloud and consistent builds
 # Xcode project files that can be auto-generated
-ios/*.xcodeproj/project.xcworkspace/xcshareddata/
+# Note: Keep xcshareddata for shared build settings and schemes
+# ios/*.xcodeproj/project.xcworkspace/xcshareddata/ - DO NOT IGNORE: needed for Xcode Cloud
 # iOS build artifacts
 ios/build/
 ios/Index/

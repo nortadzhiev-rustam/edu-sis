@@ -20,7 +20,8 @@ DerivedData
 *.hmap
 *.ipa
 *.xcuserstate
-project.xcworkspace
+# Note: Keep shared data in project.xcworkspace for Xcode Cloud
+project.xcworkspace/xcuserdata/
 .xcode.env.local
 
 # Bundle artifacts
