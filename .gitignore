@@ -110,7 +110,7 @@ android/app/release/
 # Android auto-generated files
 android/app/src/main/assets/index.android.js
 android/app/src/main/res/raw/
-android/app/src/main/res/drawable-*/
+# android/app/src/main/res/drawable-*/ - DO NOT IGNORE: contains app icons and splash screens needed for builds
 # Proguard
 # android/app/proguard-rules.pro - DO NOT IGNORE: needed for release builds
 
