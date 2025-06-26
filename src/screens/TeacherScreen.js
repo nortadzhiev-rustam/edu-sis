@@ -552,7 +552,9 @@ export default function TeacherScreen({ route, navigation }) {
               />
             )}
           </View>
-          <TouchableOpacity onPress={() => navigation.navigate('TeacherProfile')}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('TeacherProfile')}
+          >
             <View style={styles.teacherInfo}>
               <Text style={styles.compactTeacherName}>
                 {userData.name || 'Teacher'}
@@ -891,6 +893,7 @@ export default function TeacherScreen({ route, navigation }) {
                 icon={faComments}
                 backgroundColor='#007AFF'
                 iconColor='#fff'
+                disabled={true}
                 onPress={() =>
                   navigation.navigate('TeacherMessagingScreen', {
                     authCode: userData.authCode,

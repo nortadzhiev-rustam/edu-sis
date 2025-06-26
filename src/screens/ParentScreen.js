@@ -99,7 +99,9 @@ const getMenuItems = (t) => [
     icon: faComments,
     backgroundColor: '#007AFF',
     iconColor: '#fff',
+    disabled: true,
     action: 'messages',
+    comingSoon: true,
   },
   {
     id: 'materials',
