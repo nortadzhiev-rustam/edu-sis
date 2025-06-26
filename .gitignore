@@ -112,7 +112,7 @@ android/app/src/main/assets/index.android.js
 android/app/src/main/res/raw/
 android/app/src/main/res/drawable-*/
 # Proguard
-android/app/proguard-rules.pro
+# android/app/proguard-rules.pro - DO NOT IGNORE: needed for release builds
 
 # React Native
 # Metro
