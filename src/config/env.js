@@ -84,7 +84,7 @@ export const Config = {
   DEV: {
     USE_DUMMY_DATA: false,
     ENABLE_LOGGING: true, // Enable for app review debugging
-    ENABLE_DEBUG_MODE: true, // Enable detailed debugging for app review
+    ENABLE_DEBUG_MODE: false, // Enable detailed debugging for app review
   },
 
   // Network Configuration

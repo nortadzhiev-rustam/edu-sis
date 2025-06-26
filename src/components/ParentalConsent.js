@@ -18,18 +18,30 @@ import {
   faExclamationTriangle,
   faArrowLeft,
 } from '@fortawesome/free-solid-svg-icons';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
-const ParentalConsent = ({ 
-  studentData, 
-  onConsentGranted, 
-  onConsentDenied, 
-  onBack 
+const ParentalConsent = ({
+  studentData,
+  onConsentGranted,
+  onConsentDenied,
+  onBack,
 }) => {
-  const { theme, fontSizes } = useTheme();
-  const { t } = useLanguage();
-  
+  const { theme } = useTheme();
+  const { t, currentLanguage } = useLanguage();
+  const fontSizes = getLanguageFontSizes(currentLanguage);
+
+  // Fallback function for missing translations
+  const getText = (key, fallback) => {
+    try {
+      const translation = t(key);
+      return translation || fallback;
+    } catch (error) {
+      console.warn(`Translation missing for key: ${key}`);
+      return fallback;
+    }
+  };
+
   const [parentEmail, setParentEmail] = useState('');
   const [consentGiven, setConsentGiven] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -64,7 +76,7 @@ const ParentalConsent = ({
 
     try {
       setIsSubmitting(true);
-      
+
       // In a real implementation, this would send a verification email
       // and wait for parent confirmation
       const consentData = {
@@ -78,15 +90,14 @@ const ParentalConsent = ({
       };
 
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
       setStep('verification');
-      
+
       // Auto-proceed after showing verification message
       setTimeout(() => {
         onConsentGranted(consentData);
       }, 3000);
-      
     } catch (error) {
       console.error('Parental consent error:', error);
       Alert.alert(t('error'), t('parentalConsentError'));
@@ -117,8 +128,8 @@ const ParentalConsent = ({
           onChangeText={setParentEmail}
           placeholder={t('enterParentEmail')}
           placeholderTextColor={theme.colors.textSecondary}
-          keyboardType="email-address"
-          autoCapitalize="none"
+          keyboardType='email-address'
+          autoCapitalize='none'
           autoCorrect={false}
         />
       </View>
@@ -146,7 +157,10 @@ const ParentalConsent = ({
         </Text>
       </View>
 
-      <ScrollView style={styles.consentContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.consentContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.consentSection}>
           <Text style={styles.consentTitle}>{t('dataCollectionNotice')}</Text>
           <Text style={styles.consentText}>
@@ -156,29 +170,23 @@ const ParentalConsent = ({
 
         <View style={styles.consentSection}>
           <Text style={styles.consentTitle}>{t('dataUsage')}</Text>
-          <Text style={styles.consentText}>
-            {t('dataUsageText')}
-          </Text>
+          <Text style={styles.consentText}>{t('dataUsageText')}</Text>
         </View>
 
         <View style={styles.consentSection}>
           <Text style={styles.consentTitle}>{t('parentalRights')}</Text>
-          <Text style={styles.consentText}>
-            {t('parentalRightsText')}
-          </Text>
+          <Text style={styles.consentText}>{t('parentalRightsText')}</Text>
         </View>
 
         <TouchableOpacity
           style={styles.consentCheckbox}
           onPress={() => setConsentGiven(!consentGiven)}
         >
-          <View style={[styles.checkbox, consentGiven && styles.checkboxChecked]}>
+          <View
+            style={[styles.checkbox, consentGiven && styles.checkboxChecked]}
+          >
             {consentGiven && (
-              <FontAwesomeIcon
-                icon={faCheck}
-                size={12}
-                color="#fff"
-              />
+              <FontAwesomeIcon icon={faCheck} size={12} color='#fff' />
             )}
           </View>
           <Text style={styles.consentCheckboxText}>
@@ -201,7 +209,7 @@ const ParentalConsent = ({
           disabled={!consentGiven || isSubmitting}
         >
           {isSubmitting ? (
-            <ActivityIndicator size="small" color="#fff" />
+            <ActivityIndicator size='small' color='#fff' />
           ) : (
             <Text style={styles.primaryButtonText}>{t('grantConsent')}</Text>
           )}
@@ -235,10 +243,7 @@ const ParentalConsent = ({
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={onBack}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={onBack}>
           <FontAwesomeIcon
             icon={faArrowLeft}
             size={20}
@@ -251,8 +256,18 @@ const ParentalConsent = ({
 
       <View style={styles.content}>
         <View style={styles.progressIndicator}>
-          <View style={[styles.progressStep, step !== 'email' && styles.progressStepCompleted]} />
-          <View style={[styles.progressStep, step === 'verification' && styles.progressStepCompleted]} />
+          <View
+            style={[
+              styles.progressStep,
+              step !== 'email' && styles.progressStepCompleted,
+            ]}
+          />
+          <View
+            style={[
+              styles.progressStep,
+              step === 'verification' && styles.progressStepCompleted,
+            ]}
+          />
         </View>
 
         {step === 'email' && renderEmailStep()}
@@ -266,9 +281,7 @@ const ParentalConsent = ({
               size={16}
               color={theme.colors.warning}
             />
-            <Text style={styles.warningText}>
-              {t('coppaComplianceNotice')}
-            </Text>
+            <Text style={styles.warningText}>{t('coppaComplianceNotice')}</Text>
           </View>
         </View>
       </View>

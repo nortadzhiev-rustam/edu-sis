@@ -39,7 +39,13 @@ import { QuickActionTile, ComingSoonBadge } from '../components';
 import { isIPad, isTablet } from '../utils/deviceDetection';
 import { useFocusEffect } from '@react-navigation/native';
 import { createCustomShadow, createMediumShadow } from '../utils/commonStyles';
-import { validateComplianceForAccess } from '../services/familiesPolicyService';
+import {
+  checkComplianceStatus,
+  storeAgeVerification,
+  storeParentalConsent,
+} from '../services/familiesPolicyService';
+import AgeVerification from '../components/AgeVerification';
+import ParentalConsent from '../components/ParentalConsent';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -139,6 +145,11 @@ export default function ParentScreen({ navigation }) {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedStudent, setSelectedStudent] = useState(null);
+
+  // Families policy compliance state
+  const [showAgeVerification, setShowAgeVerification] = useState(false);
+  const [showParentalConsent, setShowParentalConsent] = useState(false);
+  const [pendingStudent, setPendingStudent] = useState(null);
   const flatListRef = React.useRef(null);
   const notificationsLoadedRef = React.useRef(new Set());
 
@@ -218,6 +229,35 @@ export default function ParentScreen({ navigation }) {
   };
 
   const handleStudentPress = async (student) => {
+    try {
+      // Check families policy compliance for this student
+      const compliance = await checkComplianceStatus(student.id);
+
+      if (!compliance.isCompliant) {
+        setPendingStudent(student);
+
+        if (compliance.reason === 'age_verification_required') {
+          setShowAgeVerification(true);
+          return;
+        }
+
+        if (compliance.reason === 'parental_consent_required') {
+          setShowParentalConsent(true);
+          return;
+        }
+      }
+
+      // Student is compliant, proceed with selection
+      await selectStudentAfterCompliance(student);
+    } catch (error) {
+      console.error('Compliance check error:', error);
+      // If compliance check fails, proceed anyway but log the error
+      await selectStudentAfterCompliance(student);
+    }
+  };
+
+  // Helper function to select student after compliance is verified
+  const selectStudentAfterCompliance = async (student) => {
     // Set the selected student
     setSelectedStudent(student);
 
@@ -232,6 +272,53 @@ export default function ParentScreen({ navigation }) {
     selectStudent(student);
   };
 
+  // Handle age verification completion
+  const handleAgeVerified = async (verificationResult) => {
+    try {
+      await storeAgeVerification(verificationResult);
+
+      setShowAgeVerification(false);
+
+      // Check if parental consent is required
+      if (verificationResult.requiresParentalConsent) {
+        setShowParentalConsent(true);
+      } else {
+        // Age verified and no parental consent needed, proceed
+        await selectStudentAfterCompliance(pendingStudent);
+        setPendingStudent(null);
+      }
+    } catch (error) {
+      console.error('Age verification error:', error);
+      Alert.alert('Error', 'Failed to verify age. Please try again.');
+    }
+  };
+
+  // Handle parental consent completion
+  const handleConsentGranted = async (consentData) => {
+    try {
+      await storeParentalConsent(consentData);
+
+      setShowParentalConsent(false);
+
+      // Consent granted, proceed with student selection
+      await selectStudentAfterCompliance(pendingStudent);
+      setPendingStudent(null);
+    } catch (error) {
+      console.error('Parental consent error:', error);
+      Alert.alert(
+        'Error',
+        'Failed to process parental consent. Please try again.'
+      );
+    }
+  };
+
+  // Handle compliance flow cancellation
+  const handleComplianceCancel = () => {
+    setShowAgeVerification(false);
+    setShowParentalConsent(false);
+    setPendingStudent(null);
+  };
+
   const handleMenuItemPress = async (action) => {
     if (!selectedStudent) {
       Alert.alert(t('noStudentSelected'), t('pleaseSelectStudent'));
@@ -242,22 +329,6 @@ export default function ParentScreen({ navigation }) {
     if (!selectedStudent.authCode) {
       Alert.alert(t('authenticationError'), t('unableToAuthenticate'));
       return;
-    }
-
-    // Check families policy compliance for student
-    try {
-      const isCompliant = await validateComplianceForAccess(selectedStudent.id);
-      if (!isCompliant) {
-        Alert.alert(
-          t('parentalConsentRequired'),
-          'This student account requires additional verification. Please contact support.',
-          [{ text: t('ok') }]
-        );
-        return;
-      }
-    } catch (error) {
-      console.error('Compliance check error:', error);
-      // Continue with normal flow if compliance check fails
     }
 
     // Handle different menu actions
@@ -461,6 +532,32 @@ export default function ParentScreen({ navigation }) {
       </View>
     </View>
   );
+
+  // Show age verification screen
+  if (showAgeVerification) {
+    return (
+      <AgeVerification
+        onAgeVerified={handleAgeVerified}
+        onCancel={handleComplianceCancel}
+        userType='student'
+      />
+    );
+  }
+
+  // Show parental consent screen
+  if (showParentalConsent) {
+    return (
+      <ParentalConsent
+        studentData={pendingStudent}
+        onConsentGranted={handleConsentGranted}
+        onConsentDenied={handleComplianceCancel}
+        onBack={() => {
+          setShowParentalConsent(false);
+          setShowAgeVerification(true);
+        }}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>

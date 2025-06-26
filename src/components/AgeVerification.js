@@ -10,14 +10,30 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faCalendarAlt, faChild, faShieldAlt } from '@fortawesome/free-solid-svg-icons';
-import { useTheme } from '../contexts/ThemeContext';
+import {
+  faCalendarAlt,
+  faChild,
+  faShieldAlt,
+} from '@fortawesome/free-solid-svg-icons';
+import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const AgeVerification = ({ onAgeVerified, onCancel, userType = 'student' }) => {
-  const { theme, fontSizes } = useTheme();
-  const { t } = useLanguage();
-  
+  const { theme } = useTheme();
+  const { t, currentLanguage } = useLanguage();
+  const fontSizes = getLanguageFontSizes(currentLanguage);
+
+  // Fallback function for missing translations
+  const getText = (key, fallback) => {
+    try {
+      const translation = t(key);
+      return translation || fallback;
+    } catch (error) {
+      console.warn(`Translation missing for key: ${key}`);
+      return fallback;
+    }
+  };
+
   const [birthDate, setBirthDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -29,11 +45,14 @@ const AgeVerification = ({ onAgeVerified, onCancel, userType = 'student' }) => {
     const birth = new Date(birthDate);
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birth.getDate())
+    ) {
       age--;
     }
-    
+
     return age;
   };
 
@@ -46,22 +65,25 @@ const AgeVerification = ({ onAgeVerified, onCancel, userType = 'student' }) => {
   const handleVerification = async () => {
     try {
       setIsVerifying(true);
-      
+
       const age = calculateAge(birthDate);
-      
+
       // Validate reasonable age ranges
       if (age < 3 || age > 100) {
         Alert.alert(
-          t('invalidAge'),
-          t('pleaseEnterValidBirthDate'),
-          [{ text: t('ok') }]
+          getText('invalidAge', 'Invalid Age'),
+          getText(
+            'pleaseEnterValidBirthDate',
+            'Please enter a valid birth date.'
+          ),
+          [{ text: getText('ok', 'OK') }]
         );
         return;
       }
 
       // Check if parental consent is required
       const requiresParentalConsent = age < 13;
-      
+
       const verificationResult = {
         age,
         birthDate: birthDate.toISOString(),
@@ -72,16 +94,19 @@ const AgeVerification = ({ onAgeVerified, onCancel, userType = 'student' }) => {
 
       if (requiresParentalConsent && userType === 'student') {
         Alert.alert(
-          t('parentalConsentRequired'),
-          t('parentalConsentRequiredMessage'),
+          getText('parentalConsentRequired', 'Parental Consent Required'),
+          getText(
+            'parentalConsentRequiredMessage',
+            'Users under 13 require parental consent to use this app.'
+          ),
           [
             {
-              text: t('cancel'),
+              text: getText('cancel', 'Cancel'),
               style: 'cancel',
               onPress: () => onCancel?.(),
             },
             {
-              text: t('continue'),
+              text: getText('continue', 'Continue'),
               onPress: () => onAgeVerified(verificationResult),
             },
           ]
@@ -92,9 +117,12 @@ const AgeVerification = ({ onAgeVerified, onCancel, userType = 'student' }) => {
     } catch (error) {
       console.error('Age verification error:', error);
       Alert.alert(
-        t('error'),
-        t('ageVerificationError'),
-        [{ text: t('ok') }]
+        getText('error', 'Error'),
+        getText(
+          'ageVerificationError',
+          'An error occurred during age verification. Please try again.'
+        ),
+        [{ text: getText('ok', 'OK') }]
       );
     } finally {
       setIsVerifying(false);
@@ -115,16 +143,23 @@ const AgeVerification = ({ onAgeVerified, onCancel, userType = 'student' }) => {
             size={48}
             color={theme.colors.primary}
           />
-          <Text style={styles.title}>{t('ageVerification')}</Text>
+          <Text style={styles.title}>
+            {getText('ageVerification', 'Age Verification')}
+          </Text>
           <Text style={styles.subtitle}>
-            {t('ageVerificationDescription')}
+            {getText(
+              'ageVerificationDescription',
+              'Please verify your age to ensure we provide appropriate content and comply with privacy regulations.'
+            )}
           </Text>
         </View>
 
         {/* Age Verification Form */}
         <View style={styles.form}>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t('birthDate')}</Text>
+            <Text style={styles.label}>
+              {getText('birthDate', 'Birth Date')}
+            </Text>
             <TouchableOpacity
               style={styles.dateInput}
               onPress={() => setShowDatePicker(true)}
@@ -134,18 +169,16 @@ const AgeVerification = ({ onAgeVerified, onCancel, userType = 'student' }) => {
                 size={20}
                 color={theme.colors.textSecondary}
               />
-              <Text style={styles.dateText}>
-                {formatDate(birthDate)}
-              </Text>
+              <Text style={styles.dateText}>{formatDate(birthDate)}</Text>
             </TouchableOpacity>
           </View>
 
           {showDatePicker && (
             <DateTimePicker
-              testID="dateTimePicker"
+              testID='dateTimePicker'
               value={birthDate}
-              mode="date"
-              display="default"
+              mode='date'
+              display='default'
               onChange={handleDateChange}
               maximumDate={new Date()}
               minimumDate={new Date(1920, 0, 1)}
@@ -160,7 +193,10 @@ const AgeVerification = ({ onAgeVerified, onCancel, userType = 'student' }) => {
               color={theme.colors.warning}
             />
             <Text style={styles.privacyText}>
-              {t('ageVerificationPrivacyNotice')}
+              {getText(
+                'ageVerificationPrivacyNotice',
+                'Your age information is used only for compliance with privacy laws and is not shared with third parties.'
+              )}
             </Text>
           </View>
         </View>
@@ -172,7 +208,9 @@ const AgeVerification = ({ onAgeVerified, onCancel, userType = 'student' }) => {
             onPress={onCancel}
             disabled={isVerifying}
           >
-            <Text style={styles.cancelButtonText}>{t('cancel')}</Text>
+            <Text style={styles.cancelButtonText}>
+              {getText('cancel', 'Cancel')}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -181,7 +219,9 @@ const AgeVerification = ({ onAgeVerified, onCancel, userType = 'student' }) => {
             disabled={isVerifying}
           >
             <Text style={styles.verifyButtonText}>
-              {isVerifying ? t('verifying') : t('verify')}
+              {isVerifying
+                ? getText('verifying', 'Verifying...')
+                : getText('verify', 'Verify')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -189,7 +229,10 @@ const AgeVerification = ({ onAgeVerified, onCancel, userType = 'student' }) => {
         {/* Legal Disclaimer */}
         <View style={styles.disclaimer}>
           <Text style={styles.disclaimerText}>
-            {t('ageVerificationDisclaimer')}
+            {getText(
+              'ageVerificationDisclaimer',
+              'By continuing, you confirm that the information provided is accurate.'
+            )}
           </Text>
         </View>
       </View>

@@ -886,24 +886,6 @@ export default function TeacherScreen({ route, navigation }) {
                 isLandscape={isLandscape}
               />
 
-              {/* Messaging Tile */}
-              <QuickActionTile
-                title='Messages'
-                subtitle='Chat & Communication'
-                icon={faComments}
-                backgroundColor='#007AFF'
-                iconColor='#fff'
-                disabled={true}
-                onPress={() =>
-                  navigation.navigate('TeacherMessagingScreen', {
-                    authCode: userData.authCode,
-                    teacherName: userData.name,
-                  })
-                }
-                styles={styles}
-                isLandscape={isLandscape}
-              />
-
               {/* Homeroom Tile - Conditional */}
               {userData.is_homeroom && (
                 <QuickActionTile
@@ -923,7 +905,30 @@ export default function TeacherScreen({ route, navigation }) {
                   isLandscape={isLandscape}
                 />
               )}
-
+              {/* Messaging Tile */}
+              <QuickActionTile
+                title='Messages'
+                subtitle='Chat & Communication'
+                icon={faComments}
+                backgroundColor='#007AFF'
+                iconColor='#fff'
+                disabled={true}
+                badge={
+                  <ComingSoonBadge
+                    text={t('comingSoon')}
+                    theme={theme}
+                    fontSizes={fontSizes}
+                  />
+                }
+                onPress={() =>
+                  navigation.navigate('TeacherMessagingScreen', {
+                    authCode: userData.authCode,
+                    teacherName: userData.name,
+                  })
+                }
+                styles={styles}
+                isLandscape={isLandscape}
+              />
               {/* Reports Tile - Disabled */}
               <QuickActionTile
                 title={t('reports')}
