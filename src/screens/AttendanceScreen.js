@@ -724,7 +724,7 @@ const createStyles = (theme) =>
     loadingText: {
       marginTop: 10,
       fontSize: 16,
-      color: '#666',
+      color: theme.colors.textSecondary,
     },
     emptyContainer: {
       flex: 1,
@@ -735,14 +735,14 @@ const createStyles = (theme) =>
     emptyText: {
       fontSize: 18,
       fontWeight: '600',
-      color: '#333',
+      color: theme.colors.text,
       marginTop: 20,
       marginBottom: 10,
       textAlign: 'center',
     },
     emptySubtext: {
       fontSize: 14,
-      color: '#666',
+      color: theme.colors.textSecondary,
       textAlign: 'center',
       lineHeight: 20,
     },
@@ -755,7 +755,7 @@ const createStyles = (theme) =>
       minHeight: 0, // Important for flex children
     },
     tableContainer: {
-      backgroundColor: '#fff',
+      backgroundColor: theme.colors.surface,
       borderRadius: 12,
       overflow: 'hidden',
       ...createCustomShadow(theme, {
@@ -805,7 +805,7 @@ const createStyles = (theme) =>
       paddingVertical: 12,
       paddingHorizontal: 10,
       borderBottomWidth: 1,
-      borderBottomColor: '#f0f0f0',
+      borderBottomColor: theme.colors.border,
       alignItems: 'center',
     },
     landscapeTableRow: {
@@ -813,7 +813,7 @@ const createStyles = (theme) =>
     },
     cellText: {
       fontSize: 13,
-      color: '#333',
+      color: theme.colors.text,
       textAlign: 'center',
     },
     dateColumn: {
@@ -863,7 +863,7 @@ const createStyles = (theme) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      backgroundColor: '#fff',
+      backgroundColor: theme.colors.surface,
       padding: 15,
       borderRadius: 40,
       ...createCustomShadow(theme, {
@@ -892,12 +892,12 @@ const createStyles = (theme) =>
     },
     paginationInfo: {
       fontSize: 14,
-      color: '#666',
+      color: theme.colors.textSecondary,
       fontWeight: '500',
     },
     debugInfo: {
       fontSize: 12,
-      color: '#999',
+      color: theme.colors.textSecondary,
       fontWeight: '400',
     },
     // Summary View Styles
@@ -917,7 +917,7 @@ const createStyles = (theme) =>
       width: '48%',
       marginBottom: 15,
       alignItems: 'center',
-      ...theme.shadows.medium,
+      ...theme.shadows.small,
     },
     totalDaysCard: {
       borderLeftWidth: 4,
@@ -957,7 +957,7 @@ const createStyles = (theme) =>
       borderRadius: 12,
       padding: 20,
       alignItems: 'center',
-      ...theme.shadows.medium,
+      ...theme.shadows.small,
     },
     attendanceRateLabel: {
       fontSize: 16,
@@ -1005,7 +1005,7 @@ const createStyles = (theme) =>
       padding: 15,
       alignItems: 'center',
       marginTop: 10,
-      ...theme.shadows.medium,
+      ...theme.shadows.small,
       marginBottom: 15,
     },
     dailyStatsButtonText: {
