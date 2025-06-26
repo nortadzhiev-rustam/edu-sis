@@ -23,6 +23,7 @@ import {
   studentLogin,
   saveUserData,
 } from '../services/authService';
+import { Config } from '../config/env';
 import {
   checkComplianceStatus,
   validateComplianceForAccess,
@@ -63,12 +64,32 @@ export default function LoginScreen({ route, navigation }) {
   useEffect(() => {
     // Get device token and log device info when component mounts
     const fetchDeviceToken = async () => {
-      // Log device information for debugging
-      await logDeviceInfo();
+      try {
+        // Log device information for debugging
+        await logDeviceInfo();
 
-      // Get device token
-      const token = await getDeviceToken();
-      setDeviceToken(token || '');
+        // Get device token
+        const token = await getDeviceToken();
+        setDeviceToken(token || '');
+
+        console.log(
+          '📱 LOGIN: Device token initialized:',
+          token ? 'available' : 'not available'
+        );
+
+        if (!token) {
+          console.warn(
+            '⚠️ LOGIN: No device token available, login may still work'
+          );
+          // Don't block login if device token is not available
+          // The API should handle missing device tokens gracefully
+        }
+      } catch (error) {
+        console.error('❌ LOGIN: Failed to get device token:', error);
+        console.log('🔄 LOGIN: Proceeding without device token');
+        // Set empty token to allow login attempt
+        setDeviceToken('');
+      }
     };
 
     fetchDeviceToken();
@@ -104,7 +125,7 @@ export default function LoginScreen({ route, navigation }) {
 
     const userData = await handleUserLogin(username, password);
 
-    if (userData) {
+    if (userData && !userData.error) {
       // Handle successful login
 
       // If adding a student account
@@ -154,7 +175,45 @@ export default function LoginScreen({ route, navigation }) {
         await handleComplianceCheck(userData);
       }
     } else {
-      Alert.alert('Login Failed', `Incorrect ${loginType} ID or password!`);
+      // Handle login failure with detailed error information
+      let errorMessage = `Incorrect ${loginType} ID or password!`;
+
+      if (userData && userData.error) {
+        console.log('🔍 LOGIN DEBUG: Error details received:', userData);
+
+        // Provide more specific error messages based on error type
+        switch (userData.errorType) {
+          case 'TypeError':
+            errorMessage =
+              'Network connection error. Please check your internet connection.';
+            break;
+          case 'NetworkError':
+            errorMessage =
+              'Unable to connect to server. Please try again later.';
+            break;
+          case 'TimeoutError':
+            errorMessage =
+              'Connection timeout. Please check your internet connection and try again.';
+            break;
+          default:
+            errorMessage = `Login failed: ${
+              userData.errorMessage || 'Unknown error'
+            }`;
+        }
+
+        // Log detailed error for debugging
+        console.error('🚨 LOGIN FAILURE DETAILS:', {
+          errorType: userData.errorType,
+          errorMessage: userData.errorMessage,
+          errorCode: userData.errorCode,
+          timestamp: userData.timestamp,
+          loginType,
+          username: username ? 'provided' : 'missing',
+          deviceToken: deviceToken ? 'available' : 'missing',
+        });
+      }
+
+      Alert.alert('Login Failed', errorMessage);
     }
   };
 
@@ -395,6 +454,26 @@ export default function LoginScreen({ route, navigation }) {
             )}
           </TouchableOpacity>
 
+          {/* Debug Information for App Review */}
+          {Config.DEV.ENABLE_DEBUG_MODE && (
+            <View style={styles.debugContainer}>
+              <Text style={styles.debugTitle}>Debug Info (App Review)</Text>
+              <Text style={styles.debugText}>
+                API URL: {Config.API_BASE_URL}
+              </Text>
+              <Text style={styles.debugText}>
+                Device Token: {deviceToken ? 'Available' : 'Not Available'}
+              </Text>
+              <Text style={styles.debugText}>Platform: {Platform.OS}</Text>
+              <Text style={styles.debugText}>
+                Dummy Data: {Config.DEV.USE_DUMMY_DATA ? 'Enabled' : 'Disabled'}
+              </Text>
+              <Text style={styles.debugText}>
+                Network Timeout: {Config.NETWORK.TIMEOUT}ms
+              </Text>
+            </View>
+          )}
+
           <TouchableOpacity style={styles.forgotPassword}>
             <Text style={styles.forgotPasswordText}>{t('forgotPassword')}</Text>
           </TouchableOpacity>
@@ -508,5 +587,24 @@ const createStyles = (theme, fontSizes) =>
     },
     activeLoginTypeText: {
       color: '#fff',
+    },
+    debugContainer: {
+      marginTop: 20,
+      padding: 15,
+      backgroundColor: theme.colors.surface,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    debugTitle: {
+      fontSize: fontSizes.small,
+      fontWeight: 'bold',
+      color: theme.colors.primary,
+      marginBottom: 8,
+    },
+    debugText: {
+      fontSize: fontSizes.small,
+      color: theme.colors.textSecondary,
+      marginBottom: 4,
     },
   });

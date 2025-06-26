@@ -108,7 +108,23 @@ export const teacherLogin = async (username, password, deviceToken) => {
 
       console.log('🔍 AUTH DEBUG: API URL:', apiUrl);
 
-      const response = await fetch(apiUrl);
+      // Add timeout and better error handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        Config.NETWORK.TIMEOUT
+      );
+
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        signal: controller.signal,
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+
+      clearTimeout(timeoutId);
 
       if (response.status === 200 || response.status === 201) {
         const data = await response.json();
@@ -121,7 +137,22 @@ export const teacherLogin = async (username, password, deviceToken) => {
         return null;
       }
     } catch (error) {
-      return null;
+      console.error('❌ TEACHER LOGIN ERROR:', error);
+      console.error('🔍 Error message:', error.message);
+      console.error('📊 Error code:', error.code);
+      console.error('🌐 Network error:', error.name);
+      console.error('📱 Device info available:', !!deviceInfo);
+      console.error('🔑 Device token available:', !!deviceToken);
+      console.error('🔗 API URL:', apiUrl);
+
+      // Return error details for debugging
+      return {
+        error: true,
+        errorType: error.name || 'NetworkError',
+        errorMessage: error.message || 'Unknown error',
+        errorCode: error.code,
+        timestamp: new Date().toISOString(),
+      };
     }
   }
 };
@@ -188,7 +219,23 @@ export const studentLogin = async (username, password, deviceToken) => {
 
       console.log('🔍 STUDENT AUTH DEBUG: API URL:', apiUrl);
 
-      const response = await fetch(apiUrl);
+      // Add timeout and better error handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        Config.NETWORK.TIMEOUT
+      );
+
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        signal: controller.signal,
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+
+      clearTimeout(timeoutId);
       if (response.status === 200 || response.status === 201) {
         const data = await response.json();
         if (data !== 0) {
@@ -201,7 +248,22 @@ export const studentLogin = async (username, password, deviceToken) => {
         return null;
       }
     } catch (error) {
-      return null;
+      console.error('❌ STUDENT LOGIN ERROR:', error);
+      console.error('🔍 Error message:', error.message);
+      console.error('📊 Error code:', error.code);
+      console.error('🌐 Network error:', error.name);
+      console.error('📱 Device info available:', !!deviceInfo);
+      console.error('🔑 Device token available:', !!deviceToken);
+      console.error('🔗 API URL:', apiUrl);
+
+      // Return error details for debugging
+      return {
+        error: true,
+        errorType: error.name || 'NetworkError',
+        errorMessage: error.message || 'Unknown error',
+        errorCode: error.code,
+        timestamp: new Date().toISOString(),
+      };
     }
   }
 };
