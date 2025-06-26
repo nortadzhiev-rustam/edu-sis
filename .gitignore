@@ -90,7 +90,7 @@ android/app/src/main/assets/app.manifest
 android/app/src/main/assets/index.android.bundle
 android/app/src/main/java/com/helloworld/MainApplication.java
 android/local.properties
-android/gradle.properties
+# android/gradle.properties - DO NOT IGNORE: needed for EAS builds (contains hermesEnabled, etc.)
 # Keystore files
 *.keystore
 *.jks
