@@ -39,6 +39,7 @@ import { QuickActionTile, ComingSoonBadge } from '../components';
 import { isIPad, isTablet } from '../utils/deviceDetection';
 import { useFocusEffect } from '@react-navigation/native';
 import { createCustomShadow, createMediumShadow } from '../utils/commonStyles';
+import { validateComplianceForAccess } from '../services/familiesPolicyService';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -229,19 +230,32 @@ export default function ParentScreen({ navigation }) {
     selectStudent(student);
   };
 
-  const handleMenuItemPress = (action) => {
+  const handleMenuItemPress = async (action) => {
     if (!selectedStudent) {
       Alert.alert(t('noStudentSelected'), t('pleaseSelectStudent'));
       return;
     }
 
-    // Base URL for the API
-    const baseUrl = Config.API_BASE_URL;
-
     // Check if student has an authCode
     if (!selectedStudent.authCode) {
       Alert.alert(t('authenticationError'), t('unableToAuthenticate'));
       return;
+    }
+
+    // Check families policy compliance for student
+    try {
+      const isCompliant = await validateComplianceForAccess(selectedStudent.id);
+      if (!isCompliant) {
+        Alert.alert(
+          t('parentalConsentRequired'),
+          'This student account requires additional verification. Please contact support.',
+          [{ text: t('ok') }]
+        );
+        return;
+      }
+    } catch (error) {
+      console.error('Compliance check error:', error);
+      // Continue with normal flow if compliance check fails
     }
 
     // Handle different menu actions

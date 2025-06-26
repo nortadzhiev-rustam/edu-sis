@@ -23,9 +23,15 @@ import {
   studentLogin,
   saveUserData,
 } from '../services/authService';
+import {
+  checkComplianceStatus,
+  validateComplianceForAccess,
+} from '../services/familiesPolicyService';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { createSmallShadow } from '../utils/commonStyles';
+import AgeVerification from '../components/AgeVerification';
+import ParentalConsent from '../components/ParentalConsent';
 
 const { width, height } = Dimensions.get('window');
 
@@ -46,6 +52,11 @@ export default function LoginScreen({ route, navigation }) {
 
   // Login type state (teacher or student)
   const [loginType, setLoginType] = useState(routeLoginType || 'teacher');
+
+  // Families policy compliance state
+  const [showAgeVerification, setShowAgeVerification] = useState(false);
+  const [showParentalConsent, setShowParentalConsent] = useState(false);
+  const [pendingUserData, setPendingUserData] = useState(null);
 
   const styles = createStyles(theme, fontSizes);
 
@@ -139,25 +150,151 @@ export default function LoginScreen({ route, navigation }) {
           Alert.alert('Error', 'Failed to save student account');
         }
       } else {
-        // Normal login flow - save user data to AsyncStorage
-        await saveUserData(userData, AsyncStorage);
-
-        // Navigate to appropriate screen based on user type
-        if (userData.userType === 'teacher') {
-          navigation.replace('TeacherScreen', { userData });
-        } else if (userData.userType === 'student') {
-          // For direct student login (not through parent)
-          Alert.alert(
-            'Student Login',
-            'Student direct login is not supported in this version'
-          );
-          // You could implement a student screen here if needed
-        }
+        // Normal login flow - check families policy compliance first
+        await handleComplianceCheck(userData);
       }
     } else {
       Alert.alert('Login Failed', `Incorrect ${loginType} ID or password!`);
     }
   };
+
+  // Handle families policy compliance checking
+  const handleComplianceCheck = async (userData) => {
+    try {
+      // For teachers, skip compliance check
+      if (userData.userType === 'teacher') {
+        await proceedWithLogin(userData);
+        return;
+      }
+
+      // For students, check compliance status
+      const compliance = await checkComplianceStatus(userData.id);
+
+      if (!compliance.isCompliant) {
+        setPendingUserData(userData);
+
+        if (compliance.reason === 'age_verification_required') {
+          setShowAgeVerification(true);
+          return;
+        }
+
+        if (compliance.reason === 'parental_consent_required') {
+          setShowParentalConsent(true);
+          return;
+        }
+      }
+
+      // User is compliant, proceed with login
+      await proceedWithLogin(userData);
+    } catch (error) {
+      console.error('Compliance check error:', error);
+      // In case of error, proceed with login but log the issue
+      await proceedWithLogin(userData);
+    }
+  };
+
+  // Proceed with normal login flow after compliance is verified
+  const proceedWithLogin = async (userData) => {
+    try {
+      // Save user data to AsyncStorage
+      await saveUserData(userData, AsyncStorage);
+
+      // Navigate to appropriate screen based on user type
+      if (userData.userType === 'teacher') {
+        navigation.replace('TeacherScreen', { userData });
+      } else if (userData.userType === 'student') {
+        // For direct student login (not through parent)
+        Alert.alert(
+          'Student Login',
+          'Student direct login is not supported in this version'
+        );
+        // You could implement a student screen here if needed
+      }
+    } catch (error) {
+      console.error('Login completion error:', error);
+      Alert.alert('Error', 'Failed to complete login process');
+    }
+  };
+
+  // Handle age verification completion
+  const handleAgeVerified = async (verificationResult) => {
+    try {
+      const { storeAgeVerification } = await import(
+        '../services/familiesPolicyService'
+      );
+      await storeAgeVerification(verificationResult);
+
+      setShowAgeVerification(false);
+
+      // Check if parental consent is required
+      if (verificationResult.requiresParentalConsent) {
+        setShowParentalConsent(true);
+      } else {
+        // Age verified and no parental consent needed, proceed
+        await proceedWithLogin(pendingUserData);
+        setPendingUserData(null);
+      }
+    } catch (error) {
+      console.error('Age verification error:', error);
+      Alert.alert('Error', 'Failed to verify age. Please try again.');
+    }
+  };
+
+  // Handle parental consent completion
+  const handleConsentGranted = async (consentData) => {
+    try {
+      const { storeParentalConsent } = await import(
+        '../services/familiesPolicyService'
+      );
+      await storeParentalConsent(consentData);
+
+      setShowParentalConsent(false);
+
+      // Consent granted, proceed with login
+      await proceedWithLogin(pendingUserData);
+      setPendingUserData(null);
+    } catch (error) {
+      console.error('Parental consent error:', error);
+      Alert.alert(
+        'Error',
+        'Failed to process parental consent. Please try again.'
+      );
+    }
+  };
+
+  // Handle compliance flow cancellation
+  const handleComplianceCancel = () => {
+    setShowAgeVerification(false);
+    setShowParentalConsent(false);
+    setPendingUserData(null);
+    setLoading(false);
+  };
+
+  // Show age verification screen
+  if (showAgeVerification) {
+    return (
+      <AgeVerification
+        onAgeVerified={handleAgeVerified}
+        onCancel={handleComplianceCancel}
+        userType={pendingUserData?.userType || 'student'}
+      />
+    );
+  }
+
+  // Show parental consent screen
+  if (showParentalConsent) {
+    return (
+      <ParentalConsent
+        studentData={pendingUserData}
+        onConsentGranted={handleConsentGranted}
+        onConsentDenied={handleComplianceCancel}
+        onBack={() => {
+          setShowParentalConsent(false);
+          setShowAgeVerification(true);
+        }}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>

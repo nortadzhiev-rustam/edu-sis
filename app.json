@@ -44,6 +44,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.edunovaasia.edusis",
       "googleServicesFile": "./GoogleService-Info.plist",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "infoPlist": {
         "UIBackgroundModes": ["remote-notification"],
         "UISupportedInterfaceOrientations": ["UIInterfaceOrientationPortrait"],
@@ -52,7 +55,9 @@
           "UIInterfaceOrientationPortraitUpsideDown",
           "UIInterfaceOrientationLandscapeLeft",
           "UIInterfaceOrientationLandscapeRight"
-        ]
+        ],
+        "NSUserTrackingUsageDescription": "This app does not track users across apps or websites.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {

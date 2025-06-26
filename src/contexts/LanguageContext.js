@@ -201,6 +201,59 @@ const translations = {
     borrowedBooks: 'Borrowed Books',
     overdueItems: 'Overdue Items',
     borrowingLimits: 'Borrowing Limits',
+
+    // Families Policy & Age Verification
+    ageVerification: 'Age Verification',
+    ageVerificationDescription:
+      'Please verify your age to ensure we provide appropriate content and comply with privacy regulations.',
+    birthDate: 'Birth Date',
+    invalidAge: 'Invalid Age',
+    pleaseEnterValidBirthDate: 'Please enter a valid birth date.',
+    parentalConsentRequired: 'Parental Consent Required',
+    parentalConsentRequiredMessage:
+      'Users under 13 require parental consent to use this app.',
+    ageVerificationError:
+      'An error occurred during age verification. Please try again.',
+    ageVerificationPrivacyNotice:
+      'Your age information is used only for compliance with privacy laws and is not shared with third parties.',
+    ageVerificationDisclaimer:
+      'By continuing, you confirm that the information provided is accurate.',
+    verifying: 'Verifying...',
+    verify: 'Verify',
+
+    // Parental Consent
+    parentalConsent: 'Parental Consent',
+    parentEmailRequired: 'Parent Email Required',
+    parentEmailDescription:
+      "We need a parent or guardian's email address to obtain consent for data collection.",
+    parentGuardianEmail: 'Parent/Guardian Email',
+    enterParentEmail: "Enter parent's email address",
+    pleaseEnterParentEmail:
+      "Please enter a parent or guardian's email address.",
+    pleaseEnterValidEmail: 'Please enter a valid email address.',
+    parentalConsentDescription:
+      'As required by law, we need parental consent before collecting any personal information from users under 13.',
+    dataCollectionNotice: 'Data Collection Notice',
+    dataCollectionNoticeText:
+      'We collect only the minimum information necessary to provide educational services, including student name, grade information, and academic progress.',
+    dataUsage: 'How We Use Data',
+    dataUsageText:
+      'Student data is used exclusively for educational purposes and is never sold or shared with third parties for commercial purposes.',
+    parentalRights: 'Your Rights as a Parent',
+    parentalRightsText:
+      "You have the right to review, modify, or delete your child's information at any time. You may also withdraw consent, though this may limit app functionality.",
+    parentalConsentAgreement:
+      "I consent to the collection and use of my child's information as described above.",
+    grantConsent: 'Grant Consent',
+    consentGranted: 'Consent Granted',
+    consentGrantedDescription:
+      'Thank you for providing consent. Your child can now safely use the app.',
+    verificationEmailSent: 'A verification email has been sent to {email}.',
+    coppaComplianceNotice:
+      "This app complies with COPPA (Children's Online Privacy Protection Act) and other applicable privacy laws.",
+    parentalConsentError:
+      'An error occurred while processing parental consent. Please try again.',
+    continue: 'Continue',
   },
   my: {
     // Common
