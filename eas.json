@@ -21,7 +21,8 @@
         "buildType": "app-bundle",
         "credentialsSource": "local",
         "env": {
-          "GRADLE_OPTS": "-Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx4g"
+          "GRADLE_OPTS": "-Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx4g",
+          "GOOGLE_SERVICE_ACCOUNT_KEY": "$GOOGLE_SERVICE_ACCOUNT_KEY"
         }
       },
       "ios": {
@@ -35,7 +36,7 @@
   "submit": {
     "production": {
       "android": {
-        "serviceAccountKeyPath": "./edunova-bfi-5edf3e44e317.json",
+        "serviceAccountKeyPath": "./google-service-account-key.json",
         "track": "internal"
       }
     }
