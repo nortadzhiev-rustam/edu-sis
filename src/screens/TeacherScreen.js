@@ -29,6 +29,7 @@ import {
   faClipboardList,
   faHome,
   faComments,
+  faHeartbeat,
 } from '@fortawesome/free-solid-svg-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
@@ -504,6 +505,152 @@ export default function TeacherScreen({ route, navigation }) {
     ]);
   };
 
+  // Get quick actions array
+  const getQuickActions = () => {
+    const actions = [
+      {
+        id: 'timetable',
+        title: t('viewTimetable'),
+        subtitle: 'Schedule & Attendance',
+        icon: faCalendarAlt,
+        backgroundColor: theme.colors.primary,
+        iconColor: theme.colors.headerText,
+        disabled: false,
+        onPress: () =>
+          navigation.navigate('TeacherTimetable', {
+            authCode: userData.authCode,
+            teacherName: userData.name,
+            timetableData: timetableData,
+            selectedBranchId: selectedBranchId,
+          }),
+      },
+      {
+        id: 'bps',
+        title: t('manageBPS'),
+        subtitle: 'Behavior Points',
+        icon: faGavel,
+        backgroundColor: '#AF52DE',
+        iconColor: '#fff',
+        disabled: false,
+        onPress: () =>
+          navigation.navigate('TeacherBPS', {
+            authCode: userData.authCode,
+            teacherName: userData.name,
+            selectedBranchId: selectedBranchId,
+          }),
+      },
+      {
+        id: 'homework',
+        title: 'Homework',
+        subtitle: 'Assignments & Review',
+        icon: faClipboardList,
+        backgroundColor: '#34C759',
+        iconColor: '#fff',
+        disabled: false,
+        onPress: () =>
+          navigation.navigate('TeacherHomework', {
+            authCode: userData.authCode,
+            teacherName: userData.name,
+            selectedBranchId: selectedBranchId,
+          }),
+      },
+      {
+        id: 'messaging',
+        title: 'Messages',
+        subtitle: 'Chat & Communication',
+        icon: faComments,
+        backgroundColor: '#007AFF',
+        iconColor: '#fff',
+        disabled: true,
+        badge: (
+          <ComingSoonBadge
+            text={t('comingSoon')}
+            theme={theme}
+            fontSizes={fontSizes}
+          />
+        ),
+        onPress: () =>
+          navigation.navigate('TeacherMessagingScreen', {
+            authCode: userData.authCode,
+            teacherName: userData.name,
+          }),
+      },
+      {
+        id: 'reports',
+        title: t('reports'),
+        subtitle: t('analyticsStats'),
+        icon: faChartLine,
+        backgroundColor: '#B0B0B0',
+        iconColor: '#fff',
+        disabled: true,
+        badge: (
+          <ComingSoonBadge
+            text={t('comingSoon')}
+            theme={theme}
+            fontSizes={fontSizes}
+          />
+        ),
+        onPress: () => {},
+      },
+      {
+        id: 'materials',
+        title: t('materials'),
+        subtitle: t('resourcesFiles'),
+        icon: faBookOpen,
+        backgroundColor: '#B0B0B0',
+        iconColor: '#fff',
+        disabled: true,
+        badge: (
+          <ComingSoonBadge
+            text={t('comingSoon')}
+            theme={theme}
+            fontSizes={fontSizes}
+          />
+        ),
+        onPress: () => {},
+      },
+      // Health quick action
+      {
+        id: 'health',
+        title: 'Health',
+        subtitle: 'Student Well-being',
+        icon: faHeartbeat,
+        backgroundColor: '#FF3B30',
+        iconColor: '#fff',
+        disabled: true,
+        badge: (
+          <ComingSoonBadge
+            text={t('comingSoon')}
+            theme={theme}
+            fontSizes={fontSizes}
+          />
+        ),
+        onPress: () => {},
+      },
+    ];
+
+    // Add homeroom action conditionally
+    if (userData.is_homeroom) {
+      actions.splice(3, 0, {
+        id: 'homeroom',
+        title: 'Homeroom',
+        subtitle: 'Class Management',
+        icon: faHome,
+        backgroundColor: '#FF6B35',
+        iconColor: '#fff',
+        disabled: false,
+        onPress: () =>
+          navigation.navigate('HomeroomScreen', {
+            authCode: userData.authCode,
+            teacherName: userData.name,
+            selectedBranchId: selectedBranchId,
+          }),
+      });
+    }
+
+    return actions;
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
@@ -831,141 +978,21 @@ export default function TeacherScreen({ route, navigation }) {
                   styles.tabletLandscapeActionTilesGrid,
               ]}
             >
-              {/* Timetable Tile */}
-              <QuickActionTile
-                title={t('viewTimetable')}
-                subtitle='Schedule & Attendance'
-                icon={faCalendarAlt}
-                backgroundColor={theme.colors.primary}
-                iconColor={theme.colors.headerText}
-                onPress={() =>
-                  navigation.navigate('TeacherTimetable', {
-                    authCode: userData.authCode,
-                    teacherName: userData.name,
-                    timetableData: timetableData,
-                    selectedBranchId: selectedBranchId,
-                  })
-                }
-                styles={styles}
-                isLandscape={isLandscape}
-              />
-
-              {/* BPS Management Tile */}
-              <QuickActionTile
-                title={t('manageBPS')}
-                subtitle='Behavior Points'
-                icon={faGavel}
-                backgroundColor='#AF52DE'
-                iconColor='#fff'
-                onPress={() =>
-                  navigation.navigate('TeacherBPS', {
-                    authCode: userData.authCode,
-                    teacherName: userData.name,
-                    selectedBranchId: selectedBranchId,
-                  })
-                }
-                styles={styles}
-                isLandscape={isLandscape}
-              />
-
-              {/* Homework Management Tile */}
-              <QuickActionTile
-                title='Homework'
-                subtitle='Assignments & Review'
-                icon={faClipboardList}
-                backgroundColor='#34C759'
-                iconColor='#fff'
-                onPress={() =>
-                  navigation.navigate('TeacherHomework', {
-                    authCode: userData.authCode,
-                    teacherName: userData.name,
-                    selectedBranchId: selectedBranchId,
-                  })
-                }
-                styles={styles}
-                isLandscape={isLandscape}
-              />
-
-              {/* Homeroom Tile - Conditional */}
-              {userData.is_homeroom && (
+              {getQuickActions().map((action) => (
                 <QuickActionTile
-                  title='Homeroom'
-                  subtitle='Class Management'
-                  icon={faHome}
-                  backgroundColor='#FF6B35'
-                  iconColor='#fff'
-                  onPress={() =>
-                    navigation.navigate('HomeroomScreen', {
-                      authCode: userData.authCode,
-                      teacherName: userData.name,
-                      selectedBranchId: selectedBranchId,
-                    })
-                  }
+                  key={action.id}
+                  title={action.title}
+                  subtitle={action.subtitle}
+                  icon={action.icon}
+                  backgroundColor={action.backgroundColor}
+                  iconColor={action.iconColor}
+                  disabled={action.disabled}
+                  badge={action.badge}
+                  onPress={action.onPress}
                   styles={styles}
                   isLandscape={isLandscape}
                 />
-              )}
-              {/* Messaging Tile */}
-              <QuickActionTile
-                title='Messages'
-                subtitle='Chat & Communication'
-                icon={faComments}
-                backgroundColor='#007AFF'
-                iconColor='#fff'
-                disabled={true}
-                badge={
-                  <ComingSoonBadge
-                    text={t('comingSoon')}
-                    theme={theme}
-                    fontSizes={fontSizes}
-                  />
-                }
-                onPress={() =>
-                  navigation.navigate('TeacherMessagingScreen', {
-                    authCode: userData.authCode,
-                    teacherName: userData.name,
-                  })
-                }
-                styles={styles}
-                isLandscape={isLandscape}
-              />
-              {/* Reports Tile - Disabled */}
-              <QuickActionTile
-                title={t('reports')}
-                subtitle={t('analyticsStats')}
-                icon={faChartLine}
-                backgroundColor='#B0B0B0'
-                iconColor='#fff'
-                disabled={true}
-                badge={
-                  <ComingSoonBadge
-                    text={t('comingSoon')}
-                    theme={theme}
-                    fontSizes={fontSizes}
-                  />
-                }
-                styles={styles}
-                isLandscape={isLandscape}
-              />
-
-              {/* Class Materials Tile - Disabled */}
-              <QuickActionTile
-                title={t('materials')}
-                subtitle={t('resourcesFiles')}
-                icon={faBookOpen}
-                backgroundColor='#B0B0B0'
-                iconColor='#fff'
-                disabled={true}
-                badge={
-                  <ComingSoonBadge
-                    text={t('comingSoon')}
-                    theme={theme}
-                    fontSizes={fontSizes}
-                  />
-                }
-                styles={styles}
-                isLandscape={isLandscape}
-              />
+              ))}
             </View>
           </View>
         </ScrollView>

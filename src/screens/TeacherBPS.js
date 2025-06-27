@@ -940,8 +940,7 @@ export default function TeacherBPS({ route, navigation }) {
                 {currentBranch.branch_name}
               </Text>
               <Text style={styles.compactBranchSubtitle}>
-                {getValidStudentsCount()} Students • {getTotalClassesCount()}{' '}
-                Classes
+                {getTotalClassesCount()} Classes
               </Text>
             </View>
           </View>

@@ -16,9 +16,10 @@
     "production": {
       "autoIncrement": true,
       "android": {
-        "gradleCommand": ":app:assembleRelease",
+        "gradleCommand": ":app:bundleRelease",
         "image": "latest",
-        "buildType": "apk",
+        "buildType": "app-bundle",
+        "credentialsSource": "local",
         "env": {
           "GRADLE_OPTS": "-Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx4g"
         }
@@ -32,6 +33,11 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "./edunova-bfi-5edf3e44e317.json",
+        "track": "internal"
+      }
+    }
   }
 }

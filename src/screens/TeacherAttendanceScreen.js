@@ -52,6 +52,14 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
     fetchAttendanceDetails();
   }, []);
 
+  // Enable submit button when students are loaded for new attendance
+  useEffect(() => {
+    if (students.length > 0 && !isUpdate && !loading) {
+      // For new attendance, all students default to 'present', so enable submit
+      setHasChanges(true);
+    }
+  }, [students, isUpdate, loading]);
+
   //fetch attendance details
   const fetchAttendanceDetails = async () => {
     try {
@@ -74,17 +82,25 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
 
         if (data.success) {
           // Set students data
-          setStudents(
-            data.students.map((student) => ({
-              ...student,
-              student_id: student.student_id,
-              student_name: student.student_name,
-              student_photo: student.student_photo || null,
-              roll_number: student.roll_number || student.student_id,
-              classroom_name: student.classroom_name,
-              attendance_status: student.attendance_status || null,
-            }))
-          );
+          const studentsWithDefaults = data.students.map((student) => ({
+            ...student,
+            student_id: student.student_id,
+            student_name: student.student_name,
+            student_photo: student.student_photo || null,
+            roll_number: student.roll_number || student.student_id,
+            classroom_name: student.classroom_name,
+            // For new attendance, force 'present' status; for updates, keep existing or default to 'present'
+            attendance_status: isUpdate
+              ? student.attendance_status || 'present'
+              : 'present',
+          }));
+
+          setStudents(studentsWithDefaults);
+
+          // If this is new attendance (not update), enable submit since students have default 'present' status
+          if (!isUpdate && studentsWithDefaults.length > 0) {
+            setHasChanges(true);
+          }
 
           // Set attendance summary
           if (data.attendance_summary) {
@@ -147,9 +163,10 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
                 student_photo: student.photo || null,
                 roll_number: student.roll_number || student.student_id,
                 classroom_name: student.classroom_name,
+                // Set default to 'present' for new attendance, keep existing for updates
                 attendance_status: isUpdate
                   ? getRandomAttendanceStatus()
-                  : null,
+                  : 'present',
               }));
 
               studentsData = [...studentsData, ...transformedStudents];
@@ -163,6 +180,11 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
         );
 
         setStudents(studentsData);
+
+        // If this is new attendance (not update), enable submit since all students default to 'present'
+        if (!isUpdate && studentsData.length > 0) {
+          setHasChanges(true);
+        }
       } else {
         Alert.alert('Error', 'Failed to load students data');
       }
@@ -476,7 +498,8 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
                 <View style={styles.studentDetails}>
                   <Text style={styles.studentName}>{student.student_name}</Text>
                   <Text style={styles.rollNumber}>
-                    Roll: {student.roll_number}
+                    Roll: {student.roll_number} | Status:{' '}
+                    {student.attendance_status || 'none'}
                   </Text>
                 </View>
               </View>

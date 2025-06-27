@@ -147,6 +147,14 @@ coverage/
 # android/app/google-services.json
 # ios/*/GoogleService-Info.plist
 
+# Credentials and Signing Keys
+credentials.json
+*.keystore
+*.jks
+# Google Cloud Service Account files
+*-service-account*.json
+edunova-bfi-*.json
+
 # Misc
 *.tgz
 *.tar.gz
