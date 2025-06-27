@@ -37,7 +37,10 @@
     "production": {
       "android": {
         "serviceAccountKeyPath": "./google-service-account-key.json",
-        "track": "internal"
+        "track": "internal",
+        "env": {
+          "GOOGLE_SERVICE_ACCOUNT_KEY": "$GOOGLE_SERVICE_ACCOUNT_KEY"
+        }
       }
     }
   }
