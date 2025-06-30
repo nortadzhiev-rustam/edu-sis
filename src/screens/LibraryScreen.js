@@ -32,6 +32,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { createSmallShadow, createMediumShadow } from '../utils/commonStyles';
 import { useNotifications } from '../contexts/NotificationContext';
 import NotificationBadge from '../components/NotificationBadge';
+import { getDemoStudentLibraryData } from '../services/demoModeService';
 import { useFocusEffect } from '@react-navigation/native';
 
 export default function LibraryScreen({ navigation, route }) {
@@ -67,6 +68,15 @@ export default function LibraryScreen({ navigation, route }) {
 
     try {
       setLoading(true);
+
+      // Check if this is demo mode
+      if (authCode && authCode.startsWith('DEMO_AUTH_')) {
+        console.log('🎭 DEMO MODE: Using demo student library data');
+        const demoData = getDemoStudentLibraryData();
+        setLibraryData(demoData);
+        setLoading(false);
+        return;
+      }
 
       const url = buildApiUrl('/student/library-data', {
         authCode,
@@ -577,7 +587,6 @@ export default function LibraryScreen({ navigation, route }) {
           <FontAwesomeIcon icon={faArrowLeft} size={20} color='#fff' />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Library</Text>
-        
       </View>
 
       {/* Tab Navigation */}
@@ -623,7 +632,7 @@ const createStyles = (theme) =>
       backgroundColor: theme.colors.headerBackground,
       padding: 15,
       flexDirection: 'row',
-      
+
       alignItems: 'center',
       ...theme.shadows.small,
     },
@@ -639,7 +648,7 @@ const createStyles = (theme) =>
       color: '#fff',
       fontSize: 22,
       fontWeight: 'bold',
-      marginLeft: 20
+      marginLeft: 20,
     },
     notificationButton: {
       width: 40,

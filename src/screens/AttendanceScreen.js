@@ -44,6 +44,7 @@ import {
 } from '../utils/deviceDetection';
 import { lockOrientationForDevice } from '../utils/orientationLock';
 import { createCustomShadow } from '../utils/commonStyles';
+import { getDemoStudentAttendanceData } from '../services/demoModeService';
 
 export default function AttendanceScreen({ navigation, route }) {
   const { theme } = useTheme();
@@ -135,6 +136,16 @@ export default function AttendanceScreen({ navigation, route }) {
   const fetchAttendanceData = async () => {
     try {
       setLoading(true);
+
+      // Check if this is demo mode
+      if (authCode && authCode.startsWith('DEMO_AUTH_')) {
+        console.log('🎭 DEMO MODE: Using demo student attendance data');
+        const demoData = getDemoStudentAttendanceData();
+        setAttendanceData(demoData);
+        setLoading(false);
+        return;
+      }
+
       const url = buildApiUrl(Config.API_ENDPOINTS.GET_STUDENT_ATTENDANCE, {
         authCode,
       });

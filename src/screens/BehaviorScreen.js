@@ -27,6 +27,7 @@ import {
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { createMediumShadow } from '../utils/commonStyles';
+import { getDemoStudentBPSData } from '../services/demoModeService';
 
 export default function BehaviorScreen({ navigation, route }) {
   const { theme } = useTheme();
@@ -65,6 +66,16 @@ export default function BehaviorScreen({ navigation, route }) {
 
     setLoading(true);
     try {
+      // Check if this is demo mode
+      if (authCode && authCode.startsWith('DEMO_AUTH_')) {
+        console.log('🎭 DEMO MODE: Using demo student BPS data');
+        const demoData = getDemoStudentBPSData();
+        setBehaviorData(demoData.behavior_records || []);
+        setDetentionData(demoData.detention_records || []);
+        setLoading(false);
+        return;
+      }
+
       const url = buildApiUrl(Config.API_ENDPOINTS.GET_STUDENT_BPS, {
         authCode,
       });

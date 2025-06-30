@@ -28,6 +28,8 @@ import {
   faChevronRight,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import { isDemoMode } from '../services/authService';
+import { getDemoTimetableData } from '../services/demoModeService';
 
 export default function TeacherTimetable({ route, navigation }) {
   const { theme } = useTheme(); // Get theme object
@@ -140,6 +142,17 @@ export default function TeacherTimetable({ route, navigation }) {
   // Fetch fresh timetable data
   const fetchTimetableData = useCallback(async () => {
     if (!authCode) return;
+
+    // Check if this is a demo authCode
+    if (authCode.startsWith('DEMO_AUTH_')) {
+      console.log(
+        '🎭 DEMO MODE: Using demo timetable data in TeacherTimetable'
+      );
+      const demoData = getDemoTimetableData('teacher');
+      setTimetableData(demoData);
+      setRefreshing(false);
+      return;
+    }
 
     try {
       setRefreshing(true);

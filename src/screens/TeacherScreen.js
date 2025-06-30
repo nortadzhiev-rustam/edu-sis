@@ -37,6 +37,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import NotificationBadge from '../components/NotificationBadge';
 import { QuickActionTile, ComingSoonBadge } from '../components';
+import DemoModeIndicator from '../components/DemoModeIndicator';
 import { isIPad, isTablet } from '../utils/deviceDetection';
 import { useFocusEffect } from '@react-navigation/native';
 import {
@@ -44,6 +45,12 @@ import {
   createMediumShadow,
   createCustomShadow,
 } from '../utils/commonStyles';
+import { isDemoMode } from '../services/authService';
+import {
+  getDemoTimetableData,
+  getDemoBPSData,
+  getDemoTeacherClassesData,
+} from '../services/demoModeService';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -186,6 +193,36 @@ export default function TeacherScreen({ route, navigation }) {
   const fetchTeacherTimetable = async () => {
     if (!userData.authCode) return null;
 
+    // Check if user is in demo mode
+    if (isDemoMode(userData)) {
+      console.log('🎭 DEMO MODE: Using demo timetable data');
+      const demoData = getDemoTimetableData('teacher');
+      setTimetableData(demoData);
+
+      // Calculate stats from demo data
+      if (demoData.success && demoData.branches) {
+        const totalClasses = demoData.branches.reduce(
+          (sum, branch) => sum + branch.timetable.length,
+          0
+        );
+        const attendanceTaken = demoData.branches.reduce(
+          (sum, branch) =>
+            sum +
+            branch.timetable.filter((item) => item.attendance_taken).length,
+          0
+        );
+
+        setDashboardStats((prev) => ({
+          ...prev,
+          totalClasses,
+          attendanceTaken,
+          branches: demoData.total_branches,
+        }));
+      }
+
+      return demoData;
+    }
+
     try {
       const url = buildApiUrl(Config.API_ENDPOINTS.GET_TEACHER_TIMETABLE, {
         authCode: userData.authCode,
@@ -236,6 +273,40 @@ export default function TeacherScreen({ route, navigation }) {
   // Fetch teacher classes with comprehensive student data
   const fetchTeacherClasses = async () => {
     if (!userData.authCode) return null;
+
+    // Check if user is in demo mode
+    if (isDemoMode(userData)) {
+      console.log('🎭 DEMO MODE: Using demo teacher classes data');
+      const demoData = getDemoTeacherClassesData();
+      setTeacherClassesData(demoData.data);
+
+      // Calculate student counts from the demo data
+      if (demoData.data?.branches) {
+        const branchCounts = {};
+        let totalUniqueStudents = new Set();
+
+        demoData.data.branches.forEach((branch) => {
+          let branchUniqueStudents = new Set();
+
+          branch.classes.forEach((classItem) => {
+            if (classItem.students && Array.isArray(classItem.students)) {
+              classItem.students.forEach((student) => {
+                if (student.student_id) {
+                  branchUniqueStudents.add(student.student_id);
+                  totalUniqueStudents.add(student.student_id);
+                }
+              });
+            }
+          });
+
+          branchCounts[branch.branch_id] = branchUniqueStudents.size;
+        });
+
+        setBranchStudentCounts(branchCounts);
+      }
+
+      return demoData.data;
+    }
 
     try {
       const response = await fetch(
@@ -749,6 +820,9 @@ export default function TeacherScreen({ route, navigation }) {
               </TouchableOpacity>
             </View>
           </TouchableOpacity>
+
+          {/* Demo Mode Indicator */}
+          <DemoModeIndicator userData={userData} />
         </View>
 
         {/* Branch Summary Section */}

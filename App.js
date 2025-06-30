@@ -48,6 +48,7 @@ import {
   setupLocalNotifications,
   setNavigationRef,
 } from './src/utils/messaging';
+import { getDemoCredentials } from './src/services/authService';
 
 const Stack = createNativeStackNavigator();
 
@@ -63,6 +64,17 @@ export default function App() {
       '🔧 React Native version:',
       Platform.constants?.reactNativeVersion || 'Unknown'
     );
+
+    // Log demo credentials for easy access
+    console.log('\n🎭 DEMO MODE CREDENTIALS:');
+    console.log('========================');
+    const demoCredentials = getDemoCredentials();
+    Object.entries(demoCredentials).forEach(([type, creds]) => {
+      console.log(
+        `${type.toUpperCase()}: ${creds.username} / ${creds.password}`
+      );
+    });
+    console.log('========================\n');
 
     // We don't need to check login status here anymore
     // as we'll check it when the user taps on the Teacher button

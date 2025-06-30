@@ -25,6 +25,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { buildApiUrl } from '../config/env';
+import { getDemoTeacherHomeworkData } from '../services/demoModeService';
 
 export default function TeacherHomeworkScreen({ navigation, route }) {
   const { theme } = useTheme();
@@ -44,6 +45,16 @@ export default function TeacherHomeworkScreen({ navigation, route }) {
   }, [authCode]);
 
   const fetchHomeworkList = async () => {
+    // Check if this is a demo authCode
+    if (authCode && authCode.startsWith('DEMO_AUTH_')) {
+      console.log('🎭 DEMO MODE: Using demo teacher homework data');
+      const demoData = getDemoTeacherHomeworkData();
+      setHomeworkList(demoData.data || []);
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
     try {
       const response = await fetch(
         buildApiUrl(`/teacher/homework/list?auth_code=${authCode}`),

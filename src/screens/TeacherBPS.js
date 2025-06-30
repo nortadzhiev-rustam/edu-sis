@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { Config, buildApiUrl } from '../config/env';
 import { useTheme } from '../contexts/ThemeContext';
+import { getDemoBPSData } from '../services/demoModeService';
 
 // Import reusable components
 import { SwipeableRecord } from '../components';
@@ -84,6 +85,15 @@ export default function TeacherBPS({ route, navigation }) {
 
   const fetchBPSData = async () => {
     if (!authCode) return;
+
+    // Check if this is a demo authCode
+    if (authCode.startsWith('DEMO_AUTH_')) {
+      console.log('🎭 DEMO MODE: Using demo BPS data in TeacherBPS');
+      const demoData = getDemoBPSData('teacher');
+      setBpsData(demoData);
+      setRefreshing(false);
+      return;
+    }
 
     try {
       setRefreshing(true);

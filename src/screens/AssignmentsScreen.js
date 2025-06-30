@@ -47,6 +47,7 @@ import { useScreenOrientation } from '../hooks/useScreenOrientation';
 import { useTheme } from '../contexts/ThemeContext';
 import { getHtmlPreview } from '../utils/htmlUtils';
 import { createSmallShadow, createMediumShadow } from '../utils/commonStyles';
+import { getDemoStudentHomeworkData } from '../services/demoModeService';
 
 export default function AssignmentsScreen({ navigation, route }) {
   const { theme } = useTheme();
@@ -397,6 +398,15 @@ export default function AssignmentsScreen({ navigation, route }) {
 
     setLoading(true);
     try {
+      // Check if this is demo mode
+      if (authCode && authCode.startsWith('DEMO_AUTH_')) {
+        console.log('🎭 DEMO MODE: Using demo student homework data');
+        const demoData = getDemoStudentHomeworkData();
+        setAssignments(demoData);
+        setLoading(false);
+        return;
+      }
+
       const url = buildApiUrl(Config.API_ENDPOINTS.GET_STUDENT_HOMEWORK, {
         authCode,
       });

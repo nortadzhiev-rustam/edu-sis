@@ -42,3 +42,7 @@ export { default as NotificationBadge } from './NotificationBadge';
 export { default as NotificationItem } from './NotificationItem';
 export { default as NotificationManager } from './NotificationManager';
 export { default as ParentNotificationBadge } from './ParentNotificationBadge';
+
+// Demo Mode Components
+export { default as DemoModeIndicator } from './DemoModeIndicator';
+export { default as DemoCredentialsCard } from './DemoCredentialsCard';

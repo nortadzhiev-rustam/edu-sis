@@ -37,6 +37,8 @@ import { useParentNotifications } from '../hooks/useParentNotifications';
 import ParentNotificationBadge from '../components/ParentNotificationBadge';
 import { QuickActionTile, ComingSoonBadge } from '../components';
 import { isIPad, isTablet } from '../utils/deviceDetection';
+import DemoModeIndicator from '../components/DemoModeIndicator';
+import { getDemoCredentials } from '../services/demoModeService';
 import { useFocusEffect } from '@react-navigation/native';
 import { createCustomShadow, createMediumShadow } from '../utils/commonStyles';
 import {
@@ -145,6 +147,7 @@ export default function ParentScreen({ navigation }) {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [currentUserData, setCurrentUserData] = useState(null);
 
   // Families policy compliance state
   const [showAgeVerification, setShowAgeVerification] = useState(false);
@@ -383,6 +386,22 @@ export default function ParentScreen({ navigation }) {
   // Extract loadStudents function to make it reusable
   const loadStudents = React.useCallback(async () => {
     try {
+      // Check if we're in demo mode
+      const userData = await AsyncStorage.getItem('userData');
+      if (userData) {
+        const parsedUserData = JSON.parse(userData);
+        setCurrentUserData(parsedUserData); // Set current user data for demo mode indicator
+
+        if (parsedUserData.demo_mode && parsedUserData.userType === 'student') {
+          console.log('🎭 DEMO MODE: Loading demo parent children data');
+          // Load demo children data
+          setStudents(parsedUserData.children || []);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Normal mode: load from AsyncStorage
       const savedStudents = await AsyncStorage.getItem('studentAccounts');
       if (savedStudents) {
         setStudents(JSON.parse(savedStudents));
@@ -586,6 +605,14 @@ export default function ParentScreen({ navigation }) {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Demo Mode Indicator */}
+      {currentUserData?.demo_mode && (
+        <DemoModeIndicator
+          userData={currentUserData}
+          style={{ marginHorizontal: 16 }}
+        />
+      )}
 
       <View style={styles.content}>
         <View style={styles.childrenSection}>

@@ -52,6 +52,7 @@ import {
   createMediumShadow,
   createCardShadow,
 } from '../utils/commonStyles';
+import { getDemoStudentGradesData } from '../services/demoModeService';
 
 // Simple separator component - only shows in portrait mode
 const GradeSeparator = () => null; // We'll use marginVertical on cards instead
@@ -109,6 +110,15 @@ export default function GradesScreen({ navigation, route }) {
 
     try {
       setLoading(true);
+
+      // Check if this is demo mode
+      if (authCode && authCode.startsWith('DEMO_AUTH_')) {
+        console.log('🎭 DEMO MODE: Using demo student grades data');
+        const demoData = getDemoStudentGradesData();
+        setGrades(demoData);
+        setLoading(false);
+        return;
+      }
 
       const url = buildApiUrl(Config.API_ENDPOINTS.GET_STUDENT_GRADES, {
         authCode,
@@ -189,25 +199,6 @@ export default function GradesScreen({ navigation, route }) {
   useEffect(() => {
     setCurrentPage(1);
   }, [activeTab, selectedSubject, showSubjectList]);
-
-  // Utility function to calculate and format score display
-  const formatScore = (score, percentage) => {
-    if (!score) return 'N/A';
-
-    if (score && percentage && percentage > 0) {
-      // Calculate max score: score = (percentage/100) * maxScore
-      // Therefore: maxScore = (score * 100) / percentage
-      const maxScore = Math.round((score * 100) / percentage);
-
-      // Validate the calculation makes sense
-      if (maxScore > 0 && maxScore >= score) {
-        return `${score}/${maxScore}`;
-      }
-    }
-
-    // Fallback to just showing the score if percentage calculation doesn't work
-    return `${score}`;
-  };
 
   // Pagination utility functions
   const getPaginatedData = (data) => {
@@ -437,15 +428,21 @@ export default function GradesScreen({ navigation, route }) {
     const subjectGrades = [];
     if (grades.summative) {
       grades.summative.forEach((grade) => {
-        if (grade.subject_name === subject && grade.score_percentage) {
-          subjectGrades.push(grade.score_percentage);
+        if (
+          grade.subject_name === subject &&
+          (grade.score_percentage || grade.percentage)
+        ) {
+          subjectGrades.push(grade.score_percentage || grade.percentage);
         }
       });
     }
     if (grades.formative) {
       grades.formative.forEach((grade) => {
-        if (grade.subject_name === subject && grade.score_percentage) {
-          subjectGrades.push(grade.score_percentage);
+        if (
+          grade.subject_name === subject &&
+          (grade.score_percentage || grade.percentage)
+        ) {
+          subjectGrades.push(grade.score_percentage || grade.percentage);
         }
       });
     }
@@ -907,17 +904,46 @@ export default function GradesScreen({ navigation, route }) {
 
     if (grades?.summative && Array.isArray(grades.summative)) {
       // Transform API data to match our table format
-      summativeData = grades.summative.map((item, index) => ({
-        id: index + 1,
-        date: item.date || 'N/A',
-        subject: item.subject_name || 'N/A',
-        strand: item.strand_name || 'N/A', // Not provided in API response
-        title: item.assessment_name || 'N/A',
-        score: formatScore(item.score, item.score_percentage),
-        percentage: item.score_percentage ? `${item.score_percentage}%` : 'N/A',
-        type: item.type_title || 'N/A',
-        teacher: item.teacher_name || 'N/A',
-      }));
+      summativeData = grades.summative.map((item, index) => {
+        // Handle different possible field names for score data
+        // API uses: score, score_percentage (not obtained_marks, percentage)
+        const obtainedMarks =
+          item.score ||
+          item.obtained_marks ||
+          item.marks_obtained ||
+          item.student_marks;
+        const maxMarks =
+          item.max_marks ||
+          item.total_marks ||
+          item.maximum_marks ||
+          item.full_marks ||
+          100;
+        const percentage =
+          item.score_percentage || item.percentage || item.percent;
+
+        // Create score display - check for null/undefined, not falsy values (0 is valid)
+        // If score is null/undefined, show "Not Graded" instead of "N/A"
+        const scoreDisplay =
+          obtainedMarks !== null && obtainedMarks !== undefined && maxMarks
+            ? `${obtainedMarks}/${maxMarks}`
+            : 'Not Graded';
+        const percentageDisplay =
+          percentage !== null && percentage !== undefined
+            ? `${percentage}%`
+            : 'Not Graded';
+
+        return {
+          id: item.id || index + 1,
+          date: item.date || 'N/A',
+          subject: item.subject_name || 'N/A',
+          strand: item.strand_name || item.category || 'N/A', // Use category as fallback for strand
+          title: item.assessment_name || 'N/A',
+          score: scoreDisplay,
+          percentage: percentageDisplay,
+          type: item.type_title || item.category || 'N/A', // Use category as fallback for type
+          teacher: item.teacher_name || item.teacher || 'N/A', // Use teacher as fallback
+        };
+      });
     } else {
       // Fallback dummy data for testing with different max scores
       summativeData = [
@@ -1135,18 +1161,24 @@ export default function GradesScreen({ navigation, route }) {
 
     if (grades?.formative && Array.isArray(grades.formative)) {
       // Transform API data to match our formative card format
-      formativeData = grades.formative.map((item, index) => ({
-        id: item.assessment_id || index + 1,
-        date: item.date || 'N/A',
-        subject: item.subject_name || 'N/A',
-        title: item.assessment_name || 'N/A',
-        teacher: item.teacher_name || 'N/A',
-        // Assessment criteria fields
-        tt1: item.tt1 || '', // EE
-        tt2: item.tt2 || '', // ME
-        tt3: item.tt3 || '', // AE
-        tt4: item.tt4 || '', // BE
-      }));
+      formativeData = grades.formative.map((item, index) => {
+        return {
+          id: item.id || index + 1,
+          date: item.date || 'N/A',
+          subject: item.subject_name || 'N/A',
+          title: item.assessment_name || 'N/A',
+          teacher: item.teacher_name || item.teacher || 'N/A',
+          grade: item.grade || 'N/A',
+          percentage: item.percentage || 0,
+          feedback: item.feedback || '',
+          category: item.category || 'N/A',
+          // Assessment criteria fields
+          tt1: item.tt1 || '', // EE
+          tt2: item.tt2 || '', // ME
+          tt3: item.tt3 || '', // AE
+          tt4: item.tt4 || '', // BE
+        };
+      });
     }
 
     // Filter by selected subject
@@ -1238,7 +1270,6 @@ export default function GradesScreen({ navigation, route }) {
               </Text>
             </TouchableOpacity>
           )}
-          
         </View>
       </View>
 

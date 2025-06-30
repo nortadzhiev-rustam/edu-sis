@@ -22,6 +22,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { Config, buildApiUrl } from '../config/env';
+import { getDemoTeacherAttendanceData } from '../services/demoModeService';
 
 export default function TeacherAttendanceScreen({ route, navigation }) {
   const { theme } = useTheme();
@@ -64,6 +65,56 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
   const fetchAttendanceDetails = async () => {
     try {
       setLoading(true);
+
+      // Check if this is demo mode
+      if (authCode && authCode.startsWith('DEMO_AUTH_')) {
+        console.log(
+          '🎭 DEMO MODE: Using demo attendance data for timetable ID:',
+          timetableId
+        );
+        const demoData = getDemoTeacherAttendanceData(timetableId);
+
+        if (demoData.success) {
+          // Set students data with demo data
+          const studentsWithDefaults = demoData.students.map((student) => ({
+            ...student,
+            student_id: student.student_id,
+            student_name: student.student_name,
+            student_photo: student.student_photo || null,
+            roll_number: student.roll_number || student.student_id,
+            classroom_name: student.classroom_name,
+            // For new attendance, force 'present' status; for updates, keep existing or default to 'present'
+            attendance_status: isUpdate
+              ? student.attendance_status || 'present'
+              : 'present',
+          }));
+
+          setStudents(studentsWithDefaults);
+
+          // If this is new attendance (not update), enable submit since students have default 'present' status
+          if (!isUpdate && studentsWithDefaults.length > 0) {
+            setHasChanges(true);
+          }
+
+          // Set demo attendance summary
+          const summary = {
+            present_count: studentsWithDefaults.filter(
+              (s) => s.attendance_status === 'present'
+            ).length,
+            late_count: studentsWithDefaults.filter(
+              (s) => s.attendance_status === 'late'
+            ).length,
+            absent_count: studentsWithDefaults.filter(
+              (s) => s.attendance_status === 'absent'
+            ).length,
+            not_taken_count: 0,
+          };
+          setAttendanceSummary(summary);
+          setLoading(false);
+          return;
+        }
+      }
+
       const url = buildApiUrl(Config.API_ENDPOINTS.GET_ATTENDANCE_DETAILS, {
         authCode,
         timetableId,
@@ -228,6 +279,33 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
 
     try {
       setSubmitting(true);
+
+      // Handle demo mode submission
+      if (authCode && authCode.startsWith('DEMO_AUTH_')) {
+        console.log('🎭 DEMO MODE: Simulating attendance submission');
+
+        // Simulate network delay
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        Alert.alert(
+          'Success',
+          'Attendance has been submitted successfully! (Demo Mode)',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Call the callback if provided
+                if (onAttendanceSubmitted) {
+                  onAttendanceSubmitted();
+                }
+                navigation.goBack();
+              },
+            },
+          ]
+        );
+        setSubmitting(false);
+        return;
+      }
 
       // Format attendance data according to backend expectations
       // Format: studentId|attendanceStatus|attendanceNote

@@ -45,6 +45,7 @@ import { createCustomShadow, createMediumShadow } from '../utils/commonStyles';
 import { useNotifications } from '../contexts/NotificationContext';
 import NotificationBadge from '../components/NotificationBadge';
 import { useFocusEffect } from '@react-navigation/native';
+import { getDemoTimetableData } from '../services/demoModeService';
 
 export default function TimetableScreen({ navigation, route }) {
   const { theme } = useTheme();
@@ -196,6 +197,17 @@ export default function TimetableScreen({ navigation, route }) {
 
   const fetchTimetable = async () => {
     try {
+      // Check if this is demo mode
+      if (authCode && authCode.startsWith('DEMO_AUTH_')) {
+        console.log('🎭 DEMO MODE: Using demo student timetable data');
+        const demoData = getDemoTimetableData('student');
+        if (demoData.success) {
+          // Convert demo data to the expected format
+          const convertedData = convertObjectToArrayFormat(demoData);
+          return convertedData;
+        }
+      }
+
       const url = buildApiUrl(Config.API_ENDPOINTS.GET_STUDENT_TIMETABLE, {
         authCode,
       });
