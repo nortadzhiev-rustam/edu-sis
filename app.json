@@ -43,6 +43,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.edunovaasia.edusis",
+      "buildNumber": "30",
       "googleServicesFile": "./GoogleService-Info.plist",
       "config": {
         "usesNonExemptEncryption": false
