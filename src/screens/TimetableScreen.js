@@ -467,7 +467,11 @@ export default function TimetableScreen({ navigation, route }) {
         >
           <View style={styles.subjectCardHeader}>
             <View style={styles.subjectInfo}>
-              <Text style={styles.modernSubjectText}>{item.subject}</Text>
+              <Text style={styles.modernSubjectText}>
+                {item.subject.length > 16
+                  ? `${item.subject.substring(0, 16)}...`
+                  : item.subject}
+              </Text>
               <View style={styles.teacherRow}>
                 <FontAwesomeIcon icon={faUser} size={14} color='#666' />
                 <Text style={styles.modernTeacherText}>{item.teacher}</Text>

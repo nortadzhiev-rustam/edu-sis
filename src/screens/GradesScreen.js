@@ -508,7 +508,9 @@ export default function GradesScreen({ navigation, route }) {
               </View>
               <View style={styles.titleContainer}>
                 <Text style={styles.modernSubjectTitle} numberOfLines={2}>
-                  {subject}
+                  {subject.length > 16
+                    ? `${subject.substring(0, 16)}...`
+                    : subject}
                 </Text>
                 <View style={styles.assessmentInfo}>
                   <FontAwesomeIcon icon={faBook} size={10} color='#666' />
