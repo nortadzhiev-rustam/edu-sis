@@ -1252,9 +1252,9 @@ export default function GradesScreen({ navigation, route }) {
               ? `${t('grades')} - Select Subject`
               : isLandscape
               ? `${selectedSubject} - ${
-                  activeTab === 'summative' ? 'Summative' : 'Formative'
+                  activeTab === 'summative' ? 'Summative' : 'Life Skills'
                 }`
-              : selectedSubject || t('grades')}
+              : selectedSubject.substring(0, 16) || t('grades')}
           </Text>
         </View>
         <View style={styles.headerRight}>
@@ -1319,7 +1319,7 @@ export default function GradesScreen({ navigation, route }) {
             {!isLandscape && (
               <View style={styles.tabContainer}>
                 {renderTabButton('summative', 'Summative')}
-                {renderTabButton('formative', 'Formative')}
+                {renderTabButton('formative', 'Life Skills')}
               </View>
             )}
 
@@ -1475,15 +1475,16 @@ const createStyles = (theme) =>
       marginVertical: 10,
       borderRadius: 24,
       padding: 20,
-      // Enhanced shadow with border fallback for Android (no elevation to prevent clipping)
-      ...createCardShadow(theme),
-
       // Removed overflow: 'hidden' to prevent shadow clipping on Android
       // Only show border on iOS - Android elevation provides sufficient visual separation
       ...(Platform.OS === 'ios' && {
         borderWidth: 1,
         borderColor: theme.colors.border,
       }),
+      // Enhanced shadow with border fallback for Android (no elevation to prevent clipping)
+      ...createCardShadow(theme),
+
+      
     },
     subjectCardHeader: {
       flexDirection: 'row',
