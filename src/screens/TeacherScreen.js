@@ -30,6 +30,7 @@ import {
   faHome,
   faComments,
   faHeartbeat,
+  faDoorOpen,
 } from '@fortawesome/free-solid-svg-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
@@ -646,12 +647,13 @@ export default function TeacherScreen({ route, navigation }) {
             teacherName: userData.name,
           }),
       },
+      // Health quick action
       {
-        id: 'reports',
-        title: t('reports'),
-        subtitle: t('analyticsStats'),
-        icon: faChartLine,
-        backgroundColor: '#B0B0B0',
+        id: 'health',
+        title: 'Health',
+        subtitle: 'Student Well-being',
+        icon: faHeartbeat,
+        backgroundColor: '#FF3B30',
         iconColor: '#fff',
         disabled: true,
         badge: (
@@ -680,13 +682,12 @@ export default function TeacherScreen({ route, navigation }) {
         ),
         onPress: () => {},
       },
-      // Health quick action
       {
-        id: 'health',
-        title: 'Health',
-        subtitle: 'Student Well-being',
-        icon: faHeartbeat,
-        backgroundColor: '#FF3B30',
+        id: 'reports',
+        title: t('reports'),
+        subtitle: t('analyticsStats'),
+        icon: faChartLine,
+        backgroundColor: '#B0B0B0',
         iconColor: '#fff',
         disabled: true,
         badge: (
@@ -747,7 +748,7 @@ export default function TeacherScreen({ route, navigation }) {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <FontAwesomeIcon icon={faSignOutAlt} size={22} color='#fff' />
+            <FontAwesomeIcon icon={faDoorOpen} size={22} color='#fff' />
           </TouchableOpacity>
         </View>
       </View>
@@ -815,7 +816,10 @@ export default function TeacherScreen({ route, navigation }) {
                     })(),
                   ]}
                 >
-                  {formatUserRoles(userData)} • ID: {userData.id || 'N/A'}
+                  {formatUserRoles(userData)}
+                </Text>
+                <Text style={styles.compactTeacherId}>
+                  ID: {userData.id || 'N/A'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -1115,10 +1119,10 @@ const createStyles = (theme, fontSizes) =>
       gap: 12,
     },
     notificationButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      // width: 40,
+      // height: 40,
+      // borderRadius: 20,
+      // backgroundColor: 'rgba(255, 255, 255, 0.2)',
       justifyContent: 'center',
       alignItems: 'center',
       position: 'relative',
@@ -1188,6 +1192,12 @@ const createStyles = (theme, fontSizes) =>
     compactTeacherRole: {
       fontSize: 12,
       color: theme.colors.textSecondary,
+      fontWeight: '500',
+    },
+    compactTeacherId: {
+      marginTop: 2,
+      fontSize: 12,
+      color: theme.colors.textLight,
       fontWeight: '500',
     },
     clickableRole: {

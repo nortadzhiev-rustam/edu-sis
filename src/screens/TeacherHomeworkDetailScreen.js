@@ -10,6 +10,7 @@ import {
   RefreshControl,
   Image,
   TextInput,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -17,21 +18,18 @@ import {
   faArrowLeft,
   faUser,
   faCalendarAlt,
-  faCheckCircle,
-  faClock,
-  faExclamationTriangle,
   faComment,
   faFileAlt,
-  faEye,
   faPaperPlane,
+  faExternalLinkAlt,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { buildApiUrl } from '../config/env';
-import { processHtmlContent, containsHtml } from '../utils/htmlUtils';
+import { processHtmlContent } from '../utils/htmlUtils';
 
 export default function TeacherHomeworkDetailScreen({ navigation, route }) {
   const { theme } = useTheme();
-  const { homeworkId, authCode, teacherName } = route.params || {};
+  const { homeworkId, authCode } = route.params || {};
 
   const [homeworkDetail, setHomeworkDetail] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -151,12 +149,32 @@ export default function TeacherHomeworkDetailScreen({ navigation, route }) {
     return 'Submitted';
   };
 
+  const navigateToStudentDetail = (submission) => {
+    navigation.navigate('StudentHomeworkDetail', {
+      submission,
+      homeworkTitle: homeworkDetail?.homework?.title || 'Homework',
+    });
+  };
+
+  const openFileLink = (url) => {
+    if (!url) return;
+
+    Linking.openURL(url).catch(() => {
+      Alert.alert('Error', 'Unable to open file link');
+    });
+  };
+
   const renderSubmissionCard = (submission) => {
     const statusColor = getSubmissionStatusColor(submission);
     const statusText = getSubmissionStatusText(submission);
 
     return (
-      <View key={submission.detail_id} style={styles.submissionCard}>
+      <TouchableOpacity
+        key={submission.detail_id}
+        style={styles.submissionCard}
+        onPress={() => navigateToStudentDetail(submission)}
+        activeOpacity={0.7}
+      >
         <View style={styles.submissionHeader}>
           <View style={styles.studentInfo}>
             {submission.student_photo ? (
@@ -190,22 +208,28 @@ export default function TeacherHomeworkDetailScreen({ navigation, route }) {
                 <Text style={styles.responseText}>
                   {processHtmlContent(submission.reply_data)}
                 </Text>
-                {containsHtml(submission.reply_data) && (
-                  <Text style={styles.htmlIndicatorSmall}>
-                    📄 Formatted response
-                  </Text>
-                )}
               </View>
             )}
 
             {submission.reply_file && (
               <View style={styles.fileSection}>
-                <FontAwesomeIcon
-                  icon={faFileAlt}
-                  size={16}
-                  color={theme.colors.primary}
-                />
-                <Text style={styles.fileName}>{submission.reply_file}</Text>
+                <Text style={styles.sectionLabel}>Submitted File:</Text>
+                <TouchableOpacity
+                  style={styles.fileButton}
+                  onPress={() => openFileLink(submission.reply_file)}
+                >
+                  <FontAwesomeIcon
+                    icon={faFileAlt}
+                    size={16}
+                    color={theme.colors.primary}
+                  />
+                  <Text style={styles.fileName}>Open File</Text>
+                  <FontAwesomeIcon
+                    icon={faExternalLinkAlt}
+                    size={14}
+                    color={theme.colors.textSecondary}
+                  />
+                </TouchableOpacity>
               </View>
             )}
 
@@ -279,7 +303,7 @@ export default function TeacherHomeworkDetailScreen({ navigation, route }) {
             )}
           </View>
         )}
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -360,9 +384,6 @@ export default function TeacherHomeworkDetailScreen({ navigation, route }) {
               ? processHtmlContent(homework.homework_data)
               : 'No description provided'}
           </Text>
-          {containsHtml(homework.homework_data) && (
-            <Text style={styles.htmlIndicator}>📄 Formatted content</Text>
-          )}
 
           <View style={styles.homeworkMeta}>
             <View style={styles.metaItem}>
@@ -376,15 +397,31 @@ export default function TeacherHomeworkDetailScreen({ navigation, route }) {
               </Text>
             </View>
 
-            {homework.homework_files && (
-              <View style={styles.metaItem}>
+            {(homework.homework_files || homework.homework_file) && (
+              <TouchableOpacity
+                style={styles.metaItem}
+                onPress={() =>
+                  openFileLink(
+                    homework.homework_file || homework.homework_files
+                  )
+                }
+              >
                 <FontAwesomeIcon
                   icon={faFileAlt}
                   size={16}
-                  color={theme.colors.textSecondary}
+                  color={theme.colors.primary}
                 />
-                <Text style={styles.metaText}>Files attached</Text>
-              </View>
+                <Text
+                  style={[styles.metaText, { color: theme.colors.primary }]}
+                >
+                  Reference File - Tap to open
+                </Text>
+                <FontAwesomeIcon
+                  icon={faExternalLinkAlt}
+                  size={12}
+                  color={theme.colors.primary}
+                />
+              </TouchableOpacity>
             )}
           </View>
         </View>
@@ -637,17 +674,25 @@ const createStyles = (theme) =>
       lineHeight: 20,
     },
     fileSection: {
-      flexDirection: 'row',
-      alignItems: 'center',
       backgroundColor: theme.colors.background,
       padding: 12,
       borderRadius: 8,
     },
+    fileButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.colors.surface,
+      padding: 12,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      gap: 8,
+    },
     fileName: {
       fontSize: 14,
       color: theme.colors.primary,
-      marginLeft: 8,
       fontWeight: '500',
+      flex: 1,
     },
     feedbackSection: {
       backgroundColor: '#34C75920',

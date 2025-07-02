@@ -588,7 +588,7 @@ export default function GradesScreen({ navigation, route }) {
                 <View style={styles.typeItem}>
                   <View style={[styles.typeDot, typeDotFadedStyle]} />
                   <Text style={styles.typeText}>
-                    {formativeCount} Formative
+                    {formativeCount} Life Skills
                   </Text>
                 </View>
               )}

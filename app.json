@@ -31,6 +31,12 @@
         {
           "ios": {
             "useFrameworks": "static"
+          },
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "minSdkVersion": 24,
+            "buildToolsVersion": "35.0.0"
           }
         }
       ]
@@ -68,7 +74,11 @@
       },
       "package": "com.edunovaasia.edusis",
       "googleServicesFile": "./google-services.json",
-      "screenOrientation": "portrait"
+      "screenOrientation": "portrait",
+      "compileSdkVersion": 35,
+      "targetSdkVersion": 35,
+      "minSdkVersion": 24,
+      "versionCode": 31
     },
     "web": {
       "favicon": "./assets/app_logo.png"

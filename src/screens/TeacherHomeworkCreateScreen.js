@@ -39,6 +39,7 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
   // Form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [fileLink, setFileLink] = useState('');
   const [selectedClass, setSelectedClass] = useState(null);
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [deadline, setDeadline] = useState(new Date());
@@ -193,6 +194,7 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
           students: selectedStudents,
           deadline: combinedDeadline,
           homework_data: description.trim(),
+          homework_files: fileLink.trim() || null,
         }),
       });
 
@@ -371,6 +373,25 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
             onChangeText={setDescription}
             textAlignVertical='top'
           />
+        </View>
+
+        {/* File Link Input */}
+        <View style={styles.inputSection}>
+          <Text style={styles.inputLabel}>File Link (Optional)</Text>
+          <TextInput
+            style={styles.textInput}
+            placeholder='Enter file URL (e.g., https://example.com/file.pdf)...'
+            placeholderTextColor={theme.colors.textSecondary}
+            value={fileLink}
+            onChangeText={setFileLink}
+            keyboardType='url'
+            autoCapitalize='none'
+            autoCorrect={false}
+          />
+          <Text style={styles.inputHint}>
+            Add a link to reference materials, documents, or files for this
+            homework
+          </Text>
         </View>
 
         {/* Class Selection */}

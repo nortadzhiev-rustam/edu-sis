@@ -347,6 +347,141 @@ export default function ParentScreen({ navigation }) {
     }
   }, [students]);
 
+  const cleanupStudentData = async (studentToDelete) => {
+    try {
+      // Clear student-specific notification data from context
+      // This will remove the student's notifications from memory
+      if (studentToDelete.authCode) {
+        // If this student was the currently selected one, clear the current student
+        if (selectedStudent && selectedStudent.id === studentToDelete.id) {
+          // The notification context will be updated when we set selectedStudent to null
+          selectStudent(null);
+        }
+      }
+
+      // List of AsyncStorage keys that might contain student-specific data
+      const keysToCheck = [
+        'selectedStudent',
+        'selectedStudentId',
+        'notificationHistory',
+        // Note: deviceToken and fcmToken are device-specific, not student-specific
+        // so we don't clean them up when removing a student
+      ];
+
+      // Additional keys that might contain student-specific cached data
+      const studentSpecificCacheKeys = [
+        `grades_${studentToDelete.authCode}`,
+        `homework_${studentToDelete.authCode}`,
+        `attendance_${studentToDelete.authCode}`,
+        `timetable_${studentToDelete.authCode}`,
+        `library_${studentToDelete.authCode}`,
+        `bps_${studentToDelete.authCode}`,
+        `notifications_${studentToDelete.authCode}`,
+        `student_data_${studentToDelete.id}`,
+        `student_cache_${studentToDelete.authCode}`,
+      ];
+
+      // Check and clean up each key
+      for (const key of keysToCheck) {
+        try {
+          const data = await AsyncStorage.getItem(key);
+          if (data) {
+            if (key === 'selectedStudent') {
+              // Check if the selected student is the one being deleted
+              const selectedStudentData = JSON.parse(data);
+              if (
+                selectedStudentData.id === studentToDelete.id ||
+                selectedStudentData.authCode === studentToDelete.authCode
+              ) {
+                await AsyncStorage.removeItem(key);
+                console.log(`Cleaned up ${key} for deleted student`);
+              }
+            } else if (key === 'selectedStudentId') {
+              // Check if the selected student ID matches
+              if (data === studentToDelete.id.toString()) {
+                await AsyncStorage.removeItem(key);
+                console.log(`Cleaned up ${key} for deleted student`);
+              }
+            } else if (key === 'notificationHistory') {
+              // Clean up notifications that might be student-specific
+              try {
+                const notifications = JSON.parse(data);
+                if (Array.isArray(notifications)) {
+                  // Filter out notifications related to the deleted student
+                  const filteredNotifications = notifications.filter(
+                    (notification) => {
+                      return !(
+                        notification.studentAuthCode ===
+                          studentToDelete.authCode ||
+                        notification.authCode === studentToDelete.authCode ||
+                        notification.studentId === studentToDelete.id
+                      );
+                    }
+                  );
+
+                  if (filteredNotifications.length !== notifications.length) {
+                    await AsyncStorage.setItem(
+                      key,
+                      JSON.stringify(filteredNotifications)
+                    );
+                    console.log(
+                      `Cleaned up student-specific notifications from ${key}`
+                    );
+                  }
+                }
+              } catch (parseError) {
+                console.log(`Could not parse ${key}, skipping cleanup`);
+              }
+            }
+            // For deviceToken and fcmToken, we keep them as they're device-specific, not student-specific
+          }
+        } catch (keyError) {
+          console.log(`Error checking ${key}:`, keyError);
+        }
+      }
+
+      // Clean up known student-specific cache keys
+      const existingCacheKeys = [];
+      for (const cacheKey of studentSpecificCacheKeys) {
+        try {
+          const data = await AsyncStorage.getItem(cacheKey);
+          if (data !== null) {
+            existingCacheKeys.push(cacheKey);
+          }
+        } catch (error) {
+          // Key doesn't exist or error reading, skip
+        }
+      }
+
+      if (existingCacheKeys.length > 0) {
+        await AsyncStorage.multiRemove(existingCacheKeys);
+        console.log(
+          `Cleaned up ${existingCacheKeys.length} known student-specific cache keys`
+        );
+      }
+
+      // Clear any other cached data that might be student-specific
+      // This includes any keys that might have been created dynamically with student IDs
+      const allKeys = await AsyncStorage.getAllKeys();
+      const dynamicStudentKeys = allKeys.filter(
+        (key) =>
+          key.includes(studentToDelete.id) ||
+          key.includes(studentToDelete.authCode) ||
+          (studentToDelete.username && key.includes(studentToDelete.username))
+      );
+
+      if (dynamicStudentKeys.length > 0) {
+        await AsyncStorage.multiRemove(dynamicStudentKeys);
+        console.log(
+          `Cleaned up ${dynamicStudentKeys.length} dynamic student-specific keys`
+        );
+      }
+    } catch (error) {
+      console.error('Error during student data cleanup:', error);
+      // Don't throw error as this is cleanup - the main deletion should still proceed
+    }
+  };
+
   const handleDeleteStudent = (studentToDelete) => {
     Alert.alert(
       t('deleteStudent'),
@@ -373,11 +508,12 @@ export default function ParentScreen({ navigation }) {
                 selectedStudent.id === studentToDelete.id
               ) {
                 setSelectedStudent(null);
-                // Also clear from AsyncStorage
-                await AsyncStorage.removeItem('selectedStudentId');
               }
 
-              // Update AsyncStorage
+              // Comprehensive cleanup of student-related data from AsyncStorage
+              await cleanupStudentData(studentToDelete);
+
+              // Update student accounts list in AsyncStorage
               await AsyncStorage.setItem(
                 'studentAccounts',
                 JSON.stringify(updatedStudents)
@@ -653,10 +789,10 @@ const createStyles = (theme, fontSizes) =>
       gap: 12,
     },
     notificationButton: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      // width: 36,
+      // height: 36,
+      // borderRadius: 18,
+      // backgroundColor: 'rgba(255, 255, 255, 0.2)',
       justifyContent: 'center',
       alignItems: 'center',
       position: 'relative',

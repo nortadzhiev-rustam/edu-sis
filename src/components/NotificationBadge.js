@@ -26,21 +26,21 @@ const createStyles = (theme) =>
   StyleSheet.create({
     badge: {
       backgroundColor: '#FF3B30',
-      borderRadius: 10,
-      minWidth: 20,
-      height: 20,
+      borderRadius: 9,
+      minWidth: 18,
+      height: 18,
       justifyContent: 'center',
       alignItems: 'center',
-      paddingHorizontal: 6,
+
       position: 'absolute',
-      top: -8,
-      right: -8,
+      top: -10,
+      right: -10,
       borderWidth: 2,
       borderColor: theme.colors.background,
     },
     badgeText: {
       color: '#FFFFFF',
-      fontSize: 12,
+      fontSize: 10,
       fontWeight: 'bold',
       textAlign: 'center',
     },

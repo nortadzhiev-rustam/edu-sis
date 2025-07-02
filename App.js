@@ -17,6 +17,7 @@ import TeacherBPS from './src/screens/TeacherBPS';
 import TeacherHomeworkScreen from './src/screens/TeacherHomeworkScreen';
 import TeacherHomeworkDetailScreen from './src/screens/TeacherHomeworkDetailScreen';
 import TeacherHomeworkCreateScreen from './src/screens/TeacherHomeworkCreateScreen';
+import StudentHomeworkDetailScreen from './src/screens/StudentHomeworkDetailScreen';
 import HomeroomScreen from './src/screens/HomeroomScreen';
 import HomeroomStudentsScreen from './src/screens/HomeroomStudentsScreen';
 import HomeroomStudentProfile from './src/screens/HomeroomStudentProfile';
@@ -218,6 +219,10 @@ export default function App() {
                 <Stack.Screen
                   name='TeacherHomeworkCreate'
                   component={TeacherHomeworkCreateScreen}
+                />
+                <Stack.Screen
+                  name='StudentHomeworkDetail'
+                  component={StudentHomeworkDetailScreen}
                 />
                 <Stack.Screen
                   name='HomeroomScreen'
