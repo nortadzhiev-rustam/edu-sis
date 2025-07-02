@@ -1197,8 +1197,8 @@ export default function GradesScreen({ navigation, route }) {
             {loading
               ? 'Loading formative grades...'
               : selectedSubject
-              ? `No formative grades available for ${selectedSubject}`
-              : 'No formative grades available'}
+              ? `No Life Skills grades available for ${selectedSubject}`
+              : 'No Life Skills grades available'}
           </Text>
         </View>
       );
