@@ -20,7 +20,13 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useMessaging } from '../contexts/MessagingContext';
-import { getConversations, searchMessages } from '../services/messagingService';
+import {
+  getConversations,
+  searchMessages,
+  deleteConversation,
+  leaveConversation,
+  markConversationAsRead,
+} from '../services/messagingService';
 import { ConversationItem } from '../components/messaging';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -206,6 +212,100 @@ const StudentMessagingScreen = ({ navigation, route }) => {
     setRefreshing(false);
   }, [fetchConversations, refreshUnreadCounts]);
 
+  // Handle delete conversation
+  const handleDeleteConversation = useCallback(
+    async (conversation) => {
+      try {
+        const response = await deleteConversation(
+          conversation.conversation_uuid,
+          authCode
+        );
+        if (response.success) {
+          // Remove from local state
+          setConversations((prev) =>
+            prev.filter(
+              (conv) =>
+                conv.conversation_uuid !== conversation.conversation_uuid
+            )
+          );
+          // Refresh unread counts
+          refreshUnreadCounts();
+          Alert.alert('Success', 'Conversation deleted successfully');
+        } else {
+          Alert.alert(
+            'Error',
+            response.error || 'Failed to delete conversation'
+          );
+        }
+      } catch (error) {
+        console.error('Error deleting conversation:', error);
+        Alert.alert('Error', 'Failed to delete conversation');
+      }
+    },
+    [authCode, refreshUnreadCounts]
+  );
+
+  // Handle leave conversation
+  const handleLeaveConversation = useCallback(
+    async (conversation) => {
+      try {
+        const response = await leaveConversation(
+          conversation.conversation_uuid,
+          authCode
+        );
+        if (response.success) {
+          // Remove from local state
+          setConversations((prev) =>
+            prev.filter(
+              (conv) =>
+                conv.conversation_uuid !== conversation.conversation_uuid
+            )
+          );
+          // Refresh unread counts
+          refreshUnreadCounts();
+          Alert.alert('Success', 'Left conversation successfully');
+        } else {
+          Alert.alert(
+            'Error',
+            response.error || 'Failed to leave conversation'
+          );
+        }
+      } catch (error) {
+        console.error('Error leaving conversation:', error);
+        Alert.alert('Error', 'Failed to leave conversation');
+      }
+    },
+    [authCode, refreshUnreadCounts]
+  );
+
+  // Handle mark conversation as read
+  const handleMarkAsRead = useCallback(
+    async (conversation) => {
+      try {
+        const response = await markConversationAsRead(
+          conversation.conversation_uuid,
+          authCode
+        );
+        if (response.success) {
+          // Update local state to mark as read
+          setConversations((prev) =>
+            prev.map((conv) =>
+              conv.conversation_uuid === conversation.conversation_uuid
+                ? { ...conv, unread_count: 0 }
+                : conv
+            )
+          );
+          // Refresh unread counts
+          refreshUnreadCounts();
+        }
+      } catch (error) {
+        console.error('Error marking conversation as read:', error);
+        Alert.alert('Error', 'Failed to mark conversation as read');
+      }
+    },
+    [authCode, refreshUnreadCounts]
+  );
+
   // Handle search and filter results for student
   const handleSearch = useCallback(
     async (query) => {
@@ -273,6 +373,9 @@ const StudentMessagingScreen = ({ navigation, route }) => {
           userType: 'student',
         })
       }
+      onDelete={handleDeleteConversation}
+      onLeave={handleLeaveConversation}
+      onMarkAsRead={handleMarkAsRead}
       showUnreadBadge={true}
       showMemberCount={true}
     />
@@ -413,7 +516,7 @@ const createStyles = (theme, fontSizes) => {
       justifyContent: 'space-between',
       paddingHorizontal: 16,
       paddingVertical: 12,
-      backgroundColor: theme.colors.primary,
+      backgroundColor: theme.colors.headerBackground,
     },
     backButton: {
       padding: 8,

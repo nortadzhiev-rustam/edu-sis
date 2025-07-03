@@ -493,7 +493,7 @@ const createStyles = (theme, fontSizes) => {
       justifyContent: 'space-between',
       paddingHorizontal: 16,
       paddingVertical: 12,
-      backgroundColor: theme.colors.primary,
+      backgroundColor: theme.colors.headerBackground,
     },
     backButton: {
       padding: 8,

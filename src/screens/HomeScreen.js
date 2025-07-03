@@ -342,7 +342,7 @@ const createStyles = (
       maxWidth: isIPadDevice ? 800 : '100%', // Limit content width on iPad
       alignSelf: 'center',
       width: '100%',
-      paddingBottom: 50, // Extra padding for landscape scrolling
+      paddingBottom: 10, // Extra padding for landscape scrolling
       minHeight: '100%', // Ensure content takes full height
     },
     logo: {

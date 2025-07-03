@@ -62,15 +62,66 @@ const CreateConversationScreen = ({ navigation, route }) => {
     }
   }, []);
 
+  // Process grouped users to extract Head of School from Head of Section
+  const processGroupedUsers = (groups) => {
+    const processedGroups = [];
+    let headOfSchoolUsers = [];
+
+    groups.forEach((group) => {
+      if (group.type === 'head_of_section') {
+        // Extract Head of School users (principal/director)
+        const headOfSchool = group.users.filter(
+          (user) =>
+            user.email?.toLowerCase().includes('principal') ||
+            user.email?.toLowerCase().includes('director')
+        );
+
+        // Remaining Head of Section users
+        const remainingHeadOfSection = group.users.filter(
+          (user) =>
+            !user.email?.toLowerCase().includes('principal') &&
+            !user.email?.toLowerCase().includes('director')
+        );
+
+        // Add Head of School users to separate array
+        headOfSchoolUsers = headOfSchool;
+
+        // Add remaining Head of Section users if any
+        if (remainingHeadOfSection.length > 0) {
+          processedGroups.push({
+            ...group,
+            users: remainingHeadOfSection,
+          });
+        }
+      } else {
+        // Keep other groups as is
+        processedGroups.push(group);
+      }
+    });
+
+    // Add Head of School group at the beginning if there are any users
+    if (headOfSchoolUsers.length > 0) {
+      processedGroups.unshift({
+        type: 'head_of_school',
+        type_label: 'Head of School',
+        users: headOfSchoolUsers,
+      });
+    }
+
+    return processedGroups;
+  };
+
   // Filter users based on search query
-  const filteredGroupedUsers = groupedUsers.map((group) => ({
-    ...group,
-    users: group.users.filter(
-      (user) =>
-        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email?.toLowerCase().includes(searchQuery.toLowerCase())
-    ),
-  }));
+  const filteredGroupedUsers = processGroupedUsers(groupedUsers).map(
+    (group) => ({
+      ...group,
+      users: group.users.filter(
+        (user) =>
+          user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.email?.toLowerCase().includes(searchQuery.toLowerCase())
+      ),
+    })
+  );
 
   // Toggle user selection
   const toggleUserSelection = (user) => {
@@ -296,7 +347,7 @@ const createStyles = (theme, fontSizes) => {
       justifyContent: 'space-between',
       paddingHorizontal: 16,
       paddingVertical: 12,
-      backgroundColor: theme.colors.primary,
+      backgroundColor: theme.colors.headerBackground,
     },
     backButton: {
       padding: 8,

@@ -12,6 +12,7 @@ import {
   faUserCheck,
   faBookOpen,
   faExclamationTriangle,
+  faComments,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNotifications } from '../contexts/NotificationContext';
@@ -74,6 +75,14 @@ const NotificationItem = ({ notification, onPress }) => {
 
       case 'timetable':
         return faCalendarCheck;
+        // Messaging notifications
+        case 'message':
+        case 'messaging':
+        case 'new_message':
+        case 'message_received':
+        case 'conversation':
+        case 'chat':
+          return faComments;
       default:
         return faBell;
     }
