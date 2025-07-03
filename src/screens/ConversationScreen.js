@@ -25,6 +25,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useMessaging } from '../contexts/MessagingContext';
 import {
   getConversationMessages,
   sendMessage,
@@ -34,9 +35,12 @@ import {
   leaveConversation,
 } from '../services/messagingService';
 import { MessageBubble, AttachmentHandler } from '../components/messaging';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ConversationScreen = ({ navigation, route }) => {
   const { theme, fontSizes } = useTheme();
+  const { markConversationAsReadLocally, markMessageAsReadLocally } =
+    useMessaging();
   const {
     conversationUuid,
     conversationTopic,
@@ -54,6 +58,8 @@ const ConversationScreen = ({ navigation, route }) => {
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [hasMarkedAsRead, setHasMarkedAsRead] = useState(false);
 
   const flatListRef = useRef(null);
 
@@ -65,6 +71,32 @@ const ConversationScreen = ({ navigation, route }) => {
   };
 
   const styles = createStyles(theme, safeFontSizes);
+
+  // Get current user ID from storage
+  const getCurrentUserId = useCallback(async () => {
+    try {
+      const userData = await AsyncStorage.getItem('userData');
+      if (userData) {
+        const user = JSON.parse(userData);
+        return user.id || user.user_id;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting current user ID:', error);
+      return null;
+    }
+  }, []);
+
+  // Initialize current user ID
+  useEffect(() => {
+    const initializeUserId = async () => {
+      console.log('🔍 Initializing current user ID...');
+      const userId = await getCurrentUserId();
+      console.log(`🔍 Got current user ID: ${userId}`);
+      setCurrentUserId(userId);
+    };
+    initializeUserId();
+  }, [getCurrentUserId]);
 
   // Helper function to determine if a message belongs to the current user
   const determineMessageOwnership = (message, currentUserType) => {
@@ -116,10 +148,8 @@ const ConversationScreen = ({ navigation, route }) => {
 
           setHasMore(response.data.pagination?.has_more || false);
 
-          // Mark messages as read
-          if (pageNum === 1) {
-            await markMessagesAsRead(conversationUuid, authCode);
-          }
+          // Note: Individual messages will be marked as read when user interacts with them
+          // The backend tracks read status using last read time, so unread_count will update automatically
         }
       } catch (error) {
         console.error('Error fetching messages:', error);
@@ -240,7 +270,14 @@ const ConversationScreen = ({ navigation, route }) => {
           console.log('Attachment pressed:', url);
         }}
         onMessagePress={(message) => {
-          // Handle message press - could show details or copy text
+          // Mark message as read locally if it's not the user's own message and it's unread
+          if (
+            currentUserId &&
+            message.sender?.id !== currentUserId &&
+            !message.is_read
+          ) {
+            markMessageAsReadHandler(message.message_id);
+          }
           console.log('Message pressed:', message);
         }}
         onMessageLongPress={(message) => {
@@ -396,9 +433,154 @@ const ConversationScreen = ({ navigation, route }) => {
     }
   }, [conversationUuid, navigation, authCode]);
 
+  // Mark individual message as read (local only - no API call since endpoint doesn't exist)
+  const markMessageAsReadHandler = useCallback(
+    async (messageId) => {
+      try {
+        console.log(`📖 Marking message ${messageId} as read (local only)`);
+
+        // Update local state only (no API call since endpoint doesn't exist)
+        setMessages((prevMessages) =>
+          prevMessages.map((msg) =>
+            msg.message_id === messageId
+              ? { ...msg, is_read: true, read_at: new Date().toISOString() }
+              : msg
+          )
+        );
+
+        // Update global messaging context
+        markMessageAsReadLocally(messageId, conversationUuid);
+
+        console.log(
+          `✅ Successfully marked message ${messageId} as read locally`
+        );
+      } catch (error) {
+        console.error('❌ Error marking message as read locally:', error);
+      }
+    },
+    [conversationUuid, markMessageAsReadLocally]
+  );
+
+  // Mark unread messages as read when screen loads (local only)
+  const markUnreadMessagesAsRead = useCallback(async () => {
+    try {
+      // Don't proceed if currentUserId is not available yet
+      if (!currentUserId) {
+        console.log(
+          '📖 Current user ID not available yet, skipping mark as read'
+        );
+        return;
+      }
+
+      console.log(
+        `📖 Marking unread messages in conversation ${conversationUuid} as read (local only)`
+      );
+      console.log(
+        `📊 Total messages: ${messages.length}, Current user ID: ${currentUserId}`
+      );
+
+      // Find unread messages from others
+      const unreadMessages = messages.filter(
+        (msg) => !msg.is_read && msg.sender?.id !== currentUserId
+      );
+
+      console.log(`📊 Unread messages from others: ${unreadMessages.length}`);
+      unreadMessages.forEach((msg) => {
+        console.log(
+          `📋 Unread message: ID=${msg.message_id}, sender=${msg.sender?.id}, is_read=${msg.is_read}`
+        );
+      });
+
+      if (unreadMessages.length > 0) {
+        console.log(
+          `📖 Found ${unreadMessages.length} unread messages to mark as read`
+        );
+
+        // Update all unread messages to read status locally (optimistic update)
+        setMessages((prevMessages) =>
+          prevMessages.map((msg) =>
+            !msg.is_read && msg.sender?.id !== currentUserId
+              ? { ...msg, is_read: true, read_at: new Date().toISOString() }
+              : msg
+          )
+        );
+
+        // Update local conversation read status
+        markConversationAsReadLocally(conversationUuid);
+
+        // Call API to mark messages as read on the backend
+        try {
+          console.log(
+            `📡 Calling API to mark messages as read for conversation ${conversationUuid}`
+          );
+          const response = await markMessagesAsRead(conversationUuid, authCode);
+          if (response.success) {
+            console.log(`✅ Successfully marked messages as read on backend`);
+          } else {
+            console.warn(
+              `⚠️ Failed to mark messages as read on backend:`,
+              response.error
+            );
+          }
+        } catch (error) {
+          console.error('❌ Error calling mark messages as read API:', error);
+        }
+
+        console.log(
+          `✅ Marked ${unreadMessages.length} messages as read locally and called API`
+        );
+      } else {
+        console.log(`📖 No unread messages found in conversation`);
+      }
+    } catch (error) {
+      console.error('❌ Error marking unread messages as read:', error);
+    }
+  }, [
+    conversationUuid,
+    messages,
+    currentUserId,
+    authCode,
+    markConversationAsReadLocally,
+  ]);
+
   useEffect(() => {
     fetchMessages();
   }, [fetchMessages]);
+
+  // Mark unread messages as read when messages are loaded (only once)
+  useEffect(() => {
+    console.log(
+      `🔍 useEffect check: messages=${messages.length}, currentUserId=${currentUserId}, hasMarkedAsRead=${hasMarkedAsRead}`
+    );
+
+    if (messages.length > 0 && currentUserId && !hasMarkedAsRead) {
+      // Check if there are unread messages from others
+      const unreadMessages = messages.filter(
+        (msg) => !msg.is_read && msg.sender?.id !== currentUserId
+      );
+
+      console.log(
+        `🔍 Found ${unreadMessages.length} unread messages in useEffect`
+      );
+
+      if (unreadMessages.length > 0) {
+        console.log(
+          `📖 Auto-marking ${unreadMessages.length} unread messages as read on conversation open`
+        );
+        markUnreadMessagesAsRead();
+        setHasMarkedAsRead(true); // Prevent multiple calls
+      } else {
+        console.log('📖 No unread messages to mark as read');
+        setHasMarkedAsRead(true); // Still set to true to prevent checking again
+      }
+    } else {
+      console.log(
+        `🔍 Skipping mark as read: messages=${
+          messages.length
+        }, currentUserId=${!!currentUserId}, hasMarkedAsRead=${hasMarkedAsRead}`
+      );
+    }
+  }, [messages, currentUserId, hasMarkedAsRead, markUnreadMessagesAsRead]);
 
   return (
     <SafeAreaView style={styles.container}>

@@ -3,7 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
+  SectionList,
   TouchableOpacity,
   TextInput,
   Alert,
@@ -13,13 +13,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
   faArrowLeft,
-  faCheck,
-  faUser,
   faSearch,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
-import { useLanguage } from '../contexts/LanguageContext';
 import {
   getAvailableUsersForStaff,
   createConversation,
@@ -28,11 +25,10 @@ import { UserSelector } from '../components/messaging';
 
 const CreateConversationScreen = ({ navigation, route }) => {
   const { theme, fontSizes } = useTheme();
-  const { t } = useLanguage();
   const { authCode, teacherName } = route.params;
 
   const [topic, setTopic] = useState('');
-  const [users, setUsers] = useState([]);
+  const [groupedUsers, setGroupedUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -53,8 +49,10 @@ const CreateConversationScreen = ({ navigation, route }) => {
       setLoading(true);
       const response = await getAvailableUsersForStaff();
       if (response.success && response.data) {
-        // Use the flat users list for backward compatibility
-        setUsers(response.data.users || []);
+        // Use the grouped users structure
+        const fetchedGroupedUsers = response.data.grouped_users || [];
+        console.log('Fetched grouped users for staff:', fetchedGroupedUsers);
+        setGroupedUsers(fetchedGroupedUsers);
       }
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -65,11 +63,14 @@ const CreateConversationScreen = ({ navigation, route }) => {
   }, []);
 
   // Filter users based on search query
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredGroupedUsers = groupedUsers.map((group) => ({
+    ...group,
+    users: group.users.filter(
+      (user) =>
+        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    ),
+  }));
 
   // Toggle user selection
   const toggleUserSelection = (user) => {
@@ -241,12 +242,35 @@ const CreateConversationScreen = ({ navigation, route }) => {
           <Text style={styles.loadingText}>Loading users...</Text>
         </View>
       ) : (
-        <FlatList
-          data={filteredUsers}
+        <SectionList
+          sections={filteredGroupedUsers
+            .filter((group) => group.users.length > 0) // Only show groups with users
+            .map((group) => ({
+              title: group.type_label || group.type,
+              data: group.users,
+              key: group.type,
+            }))}
           renderItem={renderUserItem}
+          renderSectionHeader={({ section: { title } }) => (
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionHeaderText}>{title}</Text>
+            </View>
+          )}
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
+          ListEmptyComponent={() => (
+            <View style={styles.emptyState}>
+              <FontAwesomeIcon
+                icon={faUsers}
+                size={48}
+                color={theme.colors.textSecondary}
+              />
+              <Text style={styles.emptyStateText}>
+                No users available to message
+              </Text>
+            </View>
+          )}
         />
       )}
     </SafeAreaView>
@@ -406,6 +430,30 @@ const createStyles = (theme, fontSizes) => {
       backgroundColor: theme.colors.primary + '20',
       justifyContent: 'center',
       alignItems: 'center',
+    },
+    sectionHeader: {
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    sectionHeaderText: {
+      fontSize: safeFontSizes.medium,
+      fontWeight: '600',
+      color: theme.colors.text,
+    },
+    emptyState: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: 64,
+    },
+    emptyStateText: {
+      fontSize: safeFontSizes.medium,
+      color: theme.colors.textSecondary,
+      marginTop: 16,
+      textAlign: 'center',
     },
   });
 };

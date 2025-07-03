@@ -183,6 +183,35 @@ const mockUsers = [
     photo: null,
     branch_id: 1,
   },
+  {
+    id: 7,
+    name: 'Dr. Smith',
+    email: 'principal@school.edu',
+    user_type: 'staff',
+    role: 'head_of_section',
+    photo:
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+    branch_id: 1,
+  },
+  {
+    id: 8,
+    name: 'Ms. Johnson',
+    email: 'director@school.edu',
+    user_type: 'staff',
+    role: 'head_of_section',
+    photo:
+      'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
+    branch_id: 1,
+  },
+  {
+    id: 9,
+    name: 'Mr. Wilson',
+    email: 'head.section@school.edu',
+    user_type: 'staff',
+    role: 'head_of_section',
+    photo: null,
+    branch_id: 1,
+  },
 ];
 
 const mockMessages = {
@@ -200,6 +229,9 @@ const mockMessages = {
       },
       created_at: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
       is_own_message: false, // This would be determined by the current user
+      is_read: true, // NEW: Message has been read by current user
+      read_by: [2], // User ID 2 (student) has read this message
+      read_at: new Date(Date.now() - 3000000).toISOString(), // Read 50 minutes ago
     },
     {
       message_id: 2,
@@ -213,7 +245,10 @@ const mockMessages = {
         photo: null,
       },
       created_at: new Date(Date.now() - 1800000).toISOString(), // 30 minutes ago
-      is_own_message: false, // This would be determined by the current user
+      is_own_message: true, // This is the current user's message
+      is_read: true, // NEW: Own messages are automatically read
+      read_by: [1], // User ID 1 (teacher) has read this message
+      read_at: new Date(Date.now() - 1200000).toISOString(), // Read 20 minutes ago
     },
     {
       message_id: 3,
@@ -229,6 +264,9 @@ const mockMessages = {
       },
       created_at: new Date(Date.now() - 900000).toISOString(), // 15 minutes ago
       is_own_message: false, // This would be determined by the current user
+      is_read: false, // NEW: Message is unread by current user
+      read_by: [], // Not read yet - this will show as unread
+      read_at: null,
     },
   ],
   'conv-uuid-2': [
@@ -244,7 +282,10 @@ const mockMessages = {
         photo: null,
       },
       created_at: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
-      is_own_message: false, // This would be determined by the current user
+      is_own_message: true, // This is the current user's message
+      is_read: true, // NEW: Own messages are automatically read
+      read_by: [4], // User ID 4 (teacher) has read this message
+      read_at: new Date(Date.now() - 6000000).toISOString(), // Read 1.7 hours ago
     },
     {
       message_id: 5,
@@ -260,6 +301,9 @@ const mockMessages = {
       },
       created_at: new Date(Date.now() - 5400000).toISOString(), // 1.5 hours ago
       is_own_message: false, // This would be determined by the current user
+      is_read: true, // NEW: Message has been read by current user
+      read_by: [2], // User ID 2 (student) has read this message
+      read_at: new Date(Date.now() - 4800000).toISOString(), // Read 1.3 hours ago
     },
     {
       message_id: 6,
@@ -273,7 +317,10 @@ const mockMessages = {
         photo: null,
       },
       created_at: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-      is_own_message: false, // This would be determined by the current user
+      is_own_message: true, // This is the current user's message
+      is_read: true, // NEW: Own messages are automatically read
+      read_by: [], // Not read yet by teacher
+      read_at: null,
     },
   ],
 };
@@ -290,6 +337,21 @@ const getAuthCode = async () => {
   } catch (error) {
     console.error('Error getting auth code:', error);
     return null;
+  }
+};
+
+// Helper function to get current user ID from storage
+const getCurrentUserId = async () => {
+  try {
+    const userData = await AsyncStorage.getItem('userData');
+    if (userData) {
+      const user = JSON.parse(userData);
+      return user.id || user.user_id || 2; // Default to 2 for mock data
+    }
+    return 2; // Default mock user ID
+  } catch (error) {
+    console.error('Error getting current user ID:', error);
+    return 2; // Default mock user ID
   }
 };
 
@@ -331,11 +393,35 @@ export const getConversations = async (customAuthCode = null) => {
     if (USE_MOCK_DATA) {
       // Return mock data for testing
       await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate network delay
+
+      // Calculate user-specific unread counts
+      const currentUserId = await getCurrentUserId();
+      const conversationsWithUserSpecificUnread = mockConversations.map(
+        (conv) => {
+          // Calculate unread count for current user
+          const messages = mockMessages[conv.conversation_uuid] || [];
+          const unreadCount = messages.filter((msg) => {
+            // Message is unread if:
+            // 1. It's not from the current user
+            // 2. Current user is not in the read_by array
+            return (
+              msg.sender.id !== currentUserId &&
+              (!msg.read_by || !msg.read_by.includes(currentUserId))
+            );
+          }).length;
+
+          return {
+            ...conv,
+            unread_count: unreadCount,
+          };
+        }
+      );
+
       return {
         success: true,
         data: {
-          conversations: mockConversations,
-          total_count: mockConversations.length,
+          conversations: conversationsWithUserSpecificUnread,
+          total_count: conversationsWithUserSpecificUnread.length,
         },
       };
     }
@@ -388,6 +474,16 @@ export const getConversationMessages = async (
       await new Promise((resolve) => setTimeout(resolve, 400)); // Simulate network delay
 
       const messages = mockMessages[conversationUuid] || [];
+      const currentUserId = await getCurrentUserId();
+
+      // Ensure all messages have the is_read field for consistency
+      const messagesWithReadStatus = messages.map((msg) => ({
+        ...msg,
+        is_read:
+          msg.is_read !== undefined
+            ? msg.is_read
+            : msg.read_by?.includes(currentUserId) || false,
+      }));
 
       return {
         success: true,
@@ -397,12 +493,12 @@ export const getConversationMessages = async (
             uuid: conversationUuid,
             topic: 'Mock Conversation',
           },
-          messages: messages,
+          messages: messagesWithReadStatus,
           pagination: {
             current_page: page,
             per_page: limit,
-            total_messages: messages.length,
-            total_pages: Math.ceil(messages.length / limit),
+            total_messages: messagesWithReadStatus.length,
+            total_pages: Math.ceil(messagesWithReadStatus.length / limit),
             has_more: false, // For simplicity, assume all messages fit in one page
           },
         },
@@ -487,6 +583,9 @@ export const sendMessage = async (
         },
         created_at: new Date().toISOString(),
         is_own_message: true,
+        is_read: true, // NEW: Sender automatically reads their own message
+        read_by: [2], // NEW: Add sender to read_by array
+        read_at: new Date().toISOString(), // NEW: Set read timestamp
       };
 
       // Add to mock messages (in real app, this would be handled by the server)
@@ -774,7 +873,8 @@ export const getAvailableUsersForStudent = async (
           user_type: 'staff',
           role: 'homeroom_teacher',
           email: 'homeroom@school.edu',
-          photo: null,
+          photo:
+            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
           branch_id: 1,
         },
         {
@@ -783,26 +883,58 @@ export const getAvailableUsersForStudent = async (
           user_type: 'staff',
           role: 'subject_teacher',
           email: 'math@school.edu',
-          photo: null,
+          photo: null, // This will show icon
           branch_id: 1,
         },
+        // Removed classmate mock data - students should primarily contact staff
         {
-          id: 3,
-          name: 'Classmate 1',
-          user_type: 'student',
-          role: 'classmate',
-          email: 'classmate1@school.edu',
-          photo: null,
-          branch_id: 1,
+          id: 5,
+          name: 'Head of Primary Section',
+          user_type: 'staff',
+          role: 'head_of_section',
+          email: 'head.primary@school.edu',
+          photo:
+            'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+          branch_id: 1, // Same branch as demo student
         },
         {
-          id: 4,
-          name: 'Classmate 2',
-          user_type: 'student',
-          role: 'classmate',
-          email: 'classmate2@school.edu',
-          photo: null,
-          branch_id: 1,
+          id: 6,
+          name: 'Head of Secondary Section',
+          user_type: 'staff',
+          role: 'head_of_section',
+          email: 'head.secondary@school.edu',
+          photo:
+            'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop&crop=face',
+          branch_id: 2, // Different branch - should be filtered out
+        },
+        {
+          id: 7,
+          name: 'Head of High School Section',
+          user_type: 'staff',
+          role: 'head_of_section',
+          email: 'head.highschool@school.edu',
+          photo: null, // This will show icon
+          branch_id: 1, // Same branch as demo student
+        },
+        {
+          id: 8,
+          name: 'School Principal',
+          user_type: 'staff',
+          role: 'head_of_section',
+          email: 'principal@school.edu',
+          photo:
+            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+          branch_id: 1, // Same branch as demo student
+        },
+        {
+          id: 9,
+          name: 'Academic Director',
+          user_type: 'staff',
+          role: 'head_of_section',
+          email: 'director@school.edu',
+          photo:
+            'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop&crop=face',
+          branch_id: 1, // Same branch as demo student
         },
       ];
 
@@ -813,8 +945,24 @@ export const getAvailableUsersForStudent = async (
         );
       }
 
+      // Helper function to check if user is head of school
+      const isHeadOfSchool = (user) => {
+        return (
+          user.role === 'head_of_section' &&
+          user.email &&
+          (user.email.toLowerCase().includes('principal') ||
+            user.email.toLowerCase().includes('director'))
+        );
+      };
+
       // Group users by their relationship to the student
       const groupedUsers = [
+        {
+          type: 'head_of_school',
+          type_label: 'Head of School',
+          count: filteredUsers.filter(isHeadOfSchool).length,
+          users: filteredUsers.filter(isHeadOfSchool),
+        },
         {
           type: 'homeroom_teacher',
           type_label: 'Homeroom Teacher',
@@ -835,12 +983,16 @@ export const getAvailableUsersForStudent = async (
           ),
         },
         {
-          type: 'classmate',
-          type_label: 'Classmates',
-          count: filteredUsers.filter((user) => user.role === 'classmate')
-            .length,
-          users: filteredUsers.filter((user) => user.role === 'classmate'),
+          type: 'head_of_section',
+          type_label: 'Head of Section',
+          count: filteredUsers.filter(
+            (user) => user.role === 'head_of_section' && !isHeadOfSchool(user)
+          ).length,
+          users: filteredUsers.filter(
+            (user) => user.role === 'head_of_section' && !isHeadOfSchool(user)
+          ),
         },
+        // Removed classmates - students should primarily contact staff, not other students
       ].filter((group) => group.count > 0);
 
       return {
@@ -896,24 +1048,55 @@ export const getAvailableUsersForStaff = async (userType = null) => {
         filteredUsers = mockUsers.filter((user) => user.user_type === userType);
       }
 
+      // Helper function to check if user is head of school
+      const isHeadOfSchool = (user) => {
+        return (
+          user.role === 'head_of_section' &&
+          user.email &&
+          (user.email.toLowerCase().includes('principal') ||
+            user.email.toLowerCase().includes('director'))
+        );
+      };
+
       const groupedUsers = [
+        {
+          type: 'head_of_school',
+          type_label: 'Head of School',
+          count: filteredUsers.filter(isHeadOfSchool).length,
+          users: filteredUsers.filter(isHeadOfSchool),
+        },
+        {
+          type: 'head_of_section',
+          type_label: 'Head of Section',
+          count: filteredUsers.filter(
+            (user) => user.role === 'head_of_section' && !isHeadOfSchool(user)
+          ).length,
+          users: filteredUsers.filter(
+            (user) => user.role === 'head_of_section' && !isHeadOfSchool(user)
+          ),
+        },
         {
           type: 'staff',
           type_label: 'Staff',
-          count: filteredUsers.filter((user) => user.user_type === 'staff')
-            .length,
-          users: filteredUsers.filter((user) => user.user_type === 'staff'),
+          count: filteredUsers.filter(
+            (user) =>
+              user.user_type === 'staff' && user.role !== 'head_of_section'
+          ).length,
+          users: filteredUsers.filter(
+            (user) =>
+              user.user_type === 'staff' && user.role !== 'head_of_section'
+          ),
         },
         {
           type: 'student',
-          type_label: 'Student',
+          type_label: 'Students',
           count: filteredUsers.filter((user) => user.user_type === 'student')
             .length,
           users: filteredUsers.filter((user) => user.user_type === 'student'),
         },
         {
           type: 'parent',
-          type_label: 'Parent',
+          type_label: 'Parents',
           count: filteredUsers.filter((user) => user.user_type === 'parent')
             .length,
           users: filteredUsers.filter((user) => user.user_type === 'parent'),
@@ -1451,6 +1634,195 @@ export const deleteMessage = async (
     });
   } catch (error) {
     console.error('Error deleting message:', error);
+    throw error;
+  }
+};
+
+// Mark conversation as read by marking all unread messages as read
+export const markConversationAsRead = async (conversationUuid, authCode) => {
+  try {
+    if (USE_MOCK_DATA) {
+      // Mark all unread messages in conversation as read by current user
+      const currentUserId = await getCurrentUserId();
+      const messages = mockMessages[conversationUuid] || [];
+      let markedCount = 0;
+
+      for (const message of messages) {
+        if (message.sender.id !== currentUserId && !message.is_read) {
+          // Mark unread messages from other users as read
+          message.is_read = true;
+          message.read_at = new Date().toISOString();
+
+          // Also update legacy read_by array for backward compatibility
+          if (!message.read_by) message.read_by = [];
+          if (!message.read_by.includes(currentUserId)) {
+            message.read_by.push(currentUserId);
+          }
+          markedCount++;
+        }
+      }
+
+      console.log(
+        `📖 MOCK: Marked ${markedCount} messages as read in conversation ${conversationUuid} for user ${currentUserId}`
+      );
+      return {
+        success: true,
+        data: {
+          conversation_uuid: conversationUuid,
+          messages_marked: markedCount,
+          unread_count: 0,
+        },
+      };
+    }
+
+    // Since there's no conversation mark as read endpoint, we need to mark individual messages
+    // This would typically be handled by the backend when user enters the conversation
+    // For now, we'll return success and let the backend handle it through last read time
+    console.log(
+      `📖 Conversation ${conversationUuid} read status will be updated by backend`
+    );
+    return {
+      success: true,
+      data: {
+        conversation_uuid: conversationUuid,
+        note: 'Read status updated via last read time tracking',
+      },
+    };
+  } catch (error) {
+    console.error('Error marking conversation as read:', error);
+    throw error;
+  }
+};
+
+// Mark specific message as read (NEW API endpoint)
+export const markMessageAsRead = async (
+  messageId,
+  conversationUuid,
+  authCode
+) => {
+  try {
+    if (USE_MOCK_DATA) {
+      // Update mock message read status using new is_read field
+      const currentUserId = await getCurrentUserId();
+      const messages = mockMessages[conversationUuid] || [];
+      const message = messages.find((msg) => msg.message_id === messageId);
+      if (message) {
+        // Update the message to be marked as read
+        message.is_read = true;
+        message.read_at = new Date().toISOString();
+
+        // Also update legacy read_by array for backward compatibility
+        if (!message.read_by) message.read_by = [];
+        if (!message.read_by.includes(currentUserId)) {
+          message.read_by.push(currentUserId);
+        }
+
+        console.log(
+          `📖 MOCK: Marked message ${messageId} as read by user ${currentUserId}`
+        );
+        return {
+          success: true,
+          data: {
+            message_id: messageId,
+            is_read: true,
+            read_at: message.read_at,
+          },
+        };
+      }
+      return { success: false, error: 'Message not found' };
+    }
+
+    // Use the new API endpoint for marking individual messages as read
+    const url = buildApiUrl(`/mobile-api/messaging/mark-message-read`);
+    const response = await makeApiRequest(url, {
+      method: 'POST',
+      body: JSON.stringify({
+        message_id: messageId,
+        conversation_uuid: conversationUuid,
+        authCode,
+      }),
+    });
+    return response;
+  } catch (error) {
+    console.error('Error marking message as read:', error);
+    throw error;
+  }
+};
+
+// Get unread conversations count by fetching conversations and calculating from unread_count
+export const getUnreadConversationsCount = async (authCode) => {
+  try {
+    if (USE_MOCK_DATA) {
+      const currentUserId = await getCurrentUserId();
+
+      // Calculate user-specific unread counts from mock data
+      let unreadConversations = 0;
+      let totalUnreadMessages = 0;
+
+      mockConversations.forEach((conv) => {
+        const messages = mockMessages[conv.conversation_uuid] || [];
+        const unreadCount = messages.filter((msg) => {
+          // Message is unread if:
+          // 1. It's not from the current user
+          // 2. Current user is not in the read_by array or is_read is false
+          return (
+            msg.sender.id !== currentUserId &&
+            !msg.is_read &&
+            (!msg.read_by || !msg.read_by.includes(currentUserId))
+          );
+        }).length;
+
+        if (unreadCount > 0) {
+          unreadConversations++;
+          totalUnreadMessages += unreadCount;
+        }
+      });
+
+      return {
+        success: true,
+        data: {
+          unread_conversations: unreadConversations,
+          total_unread_messages: totalUnreadMessages,
+        },
+      };
+    }
+
+    // Since there's no dedicated unread count endpoint, get it from conversations list
+    console.log('📊 Getting unread counts from conversations list...');
+    const conversationsResponse = await getConversations(authCode);
+
+    if (
+      conversationsResponse.success &&
+      conversationsResponse.data?.conversations
+    ) {
+      const conversations = conversationsResponse.data.conversations;
+
+      // Calculate unread counts from conversation data
+      let unreadConversations = 0;
+      let totalUnreadMessages = 0;
+
+      conversations.forEach((conv) => {
+        const unreadCount = conv.unread_count || 0;
+        if (unreadCount > 0) {
+          unreadConversations++;
+          totalUnreadMessages += unreadCount;
+        }
+      });
+
+      return {
+        success: true,
+        data: {
+          unread_conversations: unreadConversations,
+          total_unread_messages: totalUnreadMessages,
+        },
+      };
+    } else {
+      throw new Error(
+        'Failed to get conversations for unread count calculation'
+      );
+    }
+  } catch (error) {
+    console.error('Error getting unread count:', error);
     throw error;
   }
 };

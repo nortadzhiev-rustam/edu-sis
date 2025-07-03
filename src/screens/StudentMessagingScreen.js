@@ -19,12 +19,14 @@ import {
   faComments,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import { useMessaging } from '../contexts/MessagingContext';
 import { getConversations, searchMessages } from '../services/messagingService';
 import { ConversationItem } from '../components/messaging';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const StudentMessagingScreen = ({ navigation, route }) => {
   const { theme, fontSizes } = useTheme();
+  const { refreshUnreadCounts } = useMessaging();
   const { authCode, studentName } = route.params;
 
   const [conversations, setConversations] = useState([]);
@@ -199,8 +201,10 @@ const StudentMessagingScreen = ({ navigation, route }) => {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchConversations();
+    // Also refresh unread counts
+    refreshUnreadCounts();
     setRefreshing(false);
-  }, [fetchConversations]);
+  }, [fetchConversations, refreshUnreadCounts]);
 
   // Handle search and filter results for student
   const handleSearch = useCallback(

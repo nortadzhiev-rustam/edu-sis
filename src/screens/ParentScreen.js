@@ -34,6 +34,7 @@ import {
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useParentNotifications } from '../hooks/useParentNotifications';
+import { useMessaging } from '../contexts/MessagingContext';
 import ParentNotificationBadge from '../components/ParentNotificationBadge';
 import { QuickActionTile, ComingSoonBadge } from '../components';
 import { isIPad, isTablet } from '../utils/deviceDetection';
@@ -64,7 +65,7 @@ const getMenuItems = (t) => [
   },
   {
     id: 'assignments',
-    title: t('assignments'),
+    title: t('homework'),
     icon: faBook,
     backgroundColor: '#007AFF',
     iconColor: '#fff',
@@ -100,9 +101,9 @@ const getMenuItems = (t) => [
     icon: faComments,
     backgroundColor: '#007AFF',
     iconColor: '#fff',
-    disabled: true,
+    disabled: false,
     action: 'messages',
-    comingSoon: true,
+    comingSoon: false,
   },
   {
     id: 'materials',
@@ -146,6 +147,9 @@ export default function ParentScreen({ navigation }) {
 
   // Parent notifications hook
   const { selectStudent, refreshAllStudents } = useParentNotifications();
+
+  // Messaging hook for unread message counts
+  const { totalUnreadMessages } = useMessaging();
 
   const styles = createStyles(theme, fontSizes);
 
@@ -614,6 +618,36 @@ export default function ParentScreen({ navigation }) {
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity
+            style={styles.messageButton}
+            onPress={() => {
+              // Navigate to appropriate messaging screen based on user type
+              // For parents, we'll navigate to a general messaging screen or student messaging
+              if (selectedStudent) {
+                navigation.navigate('StudentMessagingScreen', {
+                  authCode: selectedStudent.authCode,
+                  studentName: selectedStudent.name,
+                });
+              } else {
+                // If no student selected, show alert or navigate to first student
+                if (students.length > 0) {
+                  navigation.navigate('StudentMessagingScreen', {
+                    authCode: students[0].authCode,
+                    studentName: students[0].name,
+                  });
+                }
+              }
+            }}
+          >
+            <FontAwesomeIcon icon={faComments} size={18} color='#fff' />
+            {totalUnreadMessages > 0 && (
+              <View style={styles.messageBadge}>
+                <Text style={styles.messageBadgeText}>
+                  {totalUnreadMessages > 99 ? '99+' : totalUnreadMessages}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
             style={styles.notificationButton}
             onPress={() =>
               navigation.navigate('NotificationScreen', { userType: 'parent' })
@@ -788,6 +822,37 @@ const createStyles = (theme, fontSizes) =>
       alignItems: 'center',
       gap: 12,
     },
+    messageButton: {
+      // width: 36,
+      // height: 36,
+      // borderRadius: 18,
+      // backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      position: 'relative',
+    },
+    messageBadge: {
+      badge: {
+        backgroundColor: '#FF3B30',
+        borderRadius: 9,
+        minWidth: 18,
+        height: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+
+        position: 'absolute',
+        top: -10,
+        right: -10,
+        borderWidth: 2,
+        borderColor: theme.colors.background,
+      },
+    },
+    messageBadgeText: {
+      color: '#FFFFFF',
+      fontSize: 10,
+      fontWeight: 'bold',
+      textAlign: 'center',
+    },
     notificationButton: {
       // width: 36,
       // height: 36,
@@ -817,7 +882,7 @@ const createStyles = (theme, fontSizes) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 15,
+      marginBottom: 5,
     },
     scrollIndicator: {
       backgroundColor: theme.colors.primaryLight,
@@ -843,11 +908,11 @@ const createStyles = (theme, fontSizes) =>
     sectionTitle: {
       fontSize: fontSizes.subtitle,
       fontWeight: '600',
-      marginBottom: 20,
+      marginBottom: 10,
       color: theme.colors.text,
     },
     listContainer: {
-      paddingBottom: 20,
+      paddingBottom: 10,
       paddingLeft: 12,
       paddingRight: 40,
     },
@@ -1009,9 +1074,9 @@ const createStyles = (theme, fontSizes) =>
     actionTilesGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      justifyContent: 'flex-start', // Better distribution for 3 tiles per row
+      justifyContent: 'space-between', // Better distribution for 3 tiles per row
       gap: 8, // Smaller gap for 3-per-row layout
-      paddingBottom: 20, // Add padding for scrollable content
+      paddingBottom: 30, // Add padding for scrollable content
     },
     // iPad-specific grid layout - 4 tiles per row, wraps to next row for additional tiles
     iPadActionTilesGrid: {
@@ -1038,7 +1103,7 @@ const createStyles = (theme, fontSizes) =>
       gap: 8,
     },
     actionTile: {
-      width: (screenWidth - 64) / 3, // 3 tiles per row on mobile with margins and gap
+      width: (screenWidth - 56) / 3, // 3 tiles per row: screen width - margins (32*2) - gaps (8*2) / 3
       aspectRatio: 1, // Square tiles
       borderRadius: 20, // Slightly smaller border radius for smaller tiles
       padding: 14, // Reduced padding for smaller tiles

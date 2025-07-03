@@ -22,12 +22,15 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useMessaging } from '../contexts/MessagingContext';
 import { getConversations, searchMessages } from '../services/messagingService';
 import { ConversationItem } from '../components/messaging';
 
 const TeacherMessagingScreen = ({ navigation, route }) => {
   const { theme, fontSizes } = useTheme();
   const { t } = useLanguage();
+  const { unreadConversations, totalUnreadMessages, refreshUnreadCounts } =
+    useMessaging();
   const { authCode, teacherName } = route.params;
 
   const [conversations, setConversations] = useState([]);
@@ -66,8 +69,10 @@ const TeacherMessagingScreen = ({ navigation, route }) => {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchConversations();
+    // Also refresh unread counts
+    refreshUnreadCounts();
     setRefreshing(false);
-  }, [fetchConversations]);
+  }, [fetchConversations, refreshUnreadCounts]);
 
   // Handle search
   const handleSearch = useCallback(async (query) => {

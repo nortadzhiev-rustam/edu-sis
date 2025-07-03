@@ -8,8 +8,10 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
   faArrowLeft,
@@ -30,7 +32,7 @@ const StudentCreateConversationScreen = ({ navigation, route }) => {
   const { authCode, studentName } = route.params;
 
   const [topic, setTopic] = useState('');
-  const [groupedUsers, setGroupedUsers] = useState({ staff: [], students: [] });
+  const [groupedUsers, setGroupedUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -45,29 +47,144 @@ const StudentCreateConversationScreen = ({ navigation, route }) => {
 
   const styles = createStyles(theme, safeFontSizes);
 
+  // Helper function to get current student's branch information
+  const getCurrentStudentBranch = useCallback(async () => {
+    try {
+      // Check all possible sources of student data
+      const userData = await AsyncStorage.getItem('userData');
+      const selectedStudent = await AsyncStorage.getItem('selectedStudent');
+      const studentAccounts = await AsyncStorage.getItem('studentAccounts');
+
+      console.log('🔍 DEBUG: userData exists:', !!userData);
+      console.log('🔍 DEBUG: selectedStudent exists:', !!selectedStudent);
+      console.log('🔍 DEBUG: studentAccounts exists:', !!studentAccounts);
+
+      // Priority 1: Check selectedStudent (parent mode)
+      if (selectedStudent) {
+        const selectedStudentData = JSON.parse(selectedStudent);
+        console.log('🔍 DEBUG: selectedStudent data:', selectedStudentData);
+        const branchId =
+          selectedStudentData.branch?.branch_id ||
+          selectedStudentData.branch_id ||
+          selectedStudentData.branchId;
+        if (branchId) {
+          console.log('🔍 DEBUG: Using selectedStudent branch_id:', branchId);
+          return branchId;
+        }
+      }
+
+      // Priority 2: Check main userData (direct student login)
+      if (userData) {
+        const parsedData = JSON.parse(userData);
+        console.log('🔍 DEBUG: Full student userData:', parsedData);
+        console.log('🔍 DEBUG: Student branch object:', parsedData.branch);
+
+        const branchId =
+          parsedData.branch?.branch_id ||
+          parsedData.branch_id ||
+          parsedData.branchId;
+
+        if (branchId) {
+          console.log('🔍 DEBUG: Using userData branch_id:', branchId);
+          return branchId;
+        }
+      }
+
+      console.log('🔍 DEBUG: No branch_id found in any source');
+      return null;
+    } catch (error) {
+      console.error('Error getting student branch:', error);
+      return null;
+    }
+  }, []);
+
   // Fetch available users (restricted for students)
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       const response = await getAvailableUsersForStudent(null, authCode); // Get restricted users for students
       if (response.success && response.data) {
-        // Handle new grouped users structure for students
+        // Handle new grouped users structure
         const fetchedGroupedUsers = response.data.grouped_users || [];
 
-        // Convert array format to object format for compatibility
-        const groupedUsersObj = {
-          homeroom_teacher:
-            fetchedGroupedUsers.find((g) => g.role === 'homeroom_teacher')
-              ?.users || [],
-          subject_teacher:
-            fetchedGroupedUsers.find((g) => g.role === 'subject_teacher')
-              ?.users || [],
-          classmate:
-            fetchedGroupedUsers.find((g) => g.role === 'classmate')?.users ||
-            [],
+        // Get current student's branch for filtering head of section
+        const studentBranchId = await getCurrentStudentBranch();
+
+        // Helper function to check if user is head of school
+        const isHeadOfSchool = (user) => {
+          return (
+            user.role === 'head_of_section' &&
+            user.email &&
+            (user.email.toLowerCase().includes('principal') ||
+              user.email.toLowerCase().includes('director'))
+          );
         };
-        console.log('Fetched grouped users:', groupedUsersObj);
-        setGroupedUsers(groupedUsersObj);
+
+        // Extract Head of School users and apply branch filtering to Head of Section
+        const processedGroupedUsers = fetchedGroupedUsers.map((group) => {
+          if (group.type === 'head_of_section' && studentBranchId) {
+            // Separate Head of School from Head of Section
+            const headOfSchoolUsers = group.users.filter(isHeadOfSchool);
+            const headOfSectionUsers = group.users.filter(
+              (user) => !isHeadOfSchool(user)
+            );
+
+            // Apply branch filtering only to Head of Section users
+            const filteredHeadOfSectionUsers = headOfSectionUsers.filter(
+              (user) => user.branch_id === studentBranchId
+            );
+
+            // Apply branch filtering to Head of School users too
+            const filteredHeadOfSchoolUsers = headOfSchoolUsers.filter(
+              (user) => user.branch_id === studentBranchId
+            );
+
+            console.log(
+              `🏢 BRANCH FILTER: Head of School - Original: ${headOfSchoolUsers.length}, Filtered: ${filteredHeadOfSchoolUsers.length}, Student Branch: ${studentBranchId}`
+            );
+            console.log(
+              `🏢 BRANCH FILTER: Head of Section - Original: ${headOfSectionUsers.length}, Filtered: ${filteredHeadOfSectionUsers.length}, Student Branch: ${studentBranchId}`
+            );
+
+            return {
+              ...group,
+              users: filteredHeadOfSectionUsers, // Only regular head of section users
+            };
+          }
+          return group;
+        });
+
+        // Add Head of School as a separate group at the top
+        const headOfSchoolUsers =
+          fetchedGroupedUsers
+            .find((group) => group.type === 'head_of_section')
+            ?.users.filter(
+              (user) =>
+                isHeadOfSchool(user) &&
+                (!studentBranchId || user.branch_id === studentBranchId)
+            ) || [];
+
+        const finalGroupedUsers = [];
+
+        // Add Head of School group first if there are any users
+        if (headOfSchoolUsers.length > 0) {
+          finalGroupedUsers.push({
+            type: 'head_of_school',
+            type_label: 'Head of School',
+            users: headOfSchoolUsers,
+          });
+        }
+
+        // Add all other groups except classmates/students
+        finalGroupedUsers.push(
+          ...processedGroupedUsers.filter(
+            (group) => group.type !== 'classmate' && group.type !== 'student'
+          )
+        );
+
+        console.log('Fetched grouped users:', finalGroupedUsers);
+        console.log('Student branch ID:', studentBranchId);
+        setGroupedUsers(finalGroupedUsers);
       }
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -75,21 +192,17 @@ const StudentCreateConversationScreen = ({ navigation, route }) => {
     } finally {
       setLoading(false);
     }
-  }, [authCode]);
+  }, [authCode, getCurrentStudentBranch]);
 
   // Filter users based on search query
-  const filteredGroupedUsers = {
-    staff: groupedUsers.staff.filter(
+  const filteredGroupedUsers = groupedUsers.map((group) => ({
+    ...group,
+    users: group.users.filter(
       (user) =>
         user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.email?.toLowerCase().includes(searchQuery.toLowerCase())
     ),
-    students: groupedUsers.students.filter(
-      (user) =>
-        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email?.toLowerCase().includes(searchQuery.toLowerCase())
-    ),
-  };
+  }));
 
   // Toggle user selection
   const toggleUserSelection = (user) => {
@@ -161,17 +274,33 @@ const StudentCreateConversationScreen = ({ navigation, route }) => {
         onPress={() => toggleUserSelection(item)}
       >
         <View style={styles.userAvatar}>
-          <FontAwesomeIcon
-            icon={item.user_type === 'staff' ? faChalkboardTeacher : faUser}
-            size={20}
-            color={theme.colors.primary}
-          />
+          {item.photo ? (
+            <Image
+              source={{ uri: item.photo }}
+              style={styles.avatarImage}
+              resizeMode='cover'
+            />
+          ) : (
+            <FontAwesomeIcon
+              icon={item.user_type === 'staff' ? faChalkboardTeacher : faUser}
+              size={20}
+              color={theme.colors.primary}
+            />
+          )}
         </View>
 
         <View style={styles.userInfo}>
           <Text style={styles.userName}>{item.name}</Text>
           <Text style={styles.userType}>
-            {item.user_type === 'staff' ? 'Teacher' : 'Student'}
+            {item.user_type === 'staff'
+              ? item.role === 'head_of_section'
+                ? item.email &&
+                  (item.email.toLowerCase().includes('principal') ||
+                    item.email.toLowerCase().includes('director'))
+                  ? 'Head of School'
+                  : 'Head of Section'
+                : 'Teacher'
+              : 'Student'}
             {item.email && ` • ${item.email}`}
           </Text>
         </View>
@@ -193,11 +322,12 @@ const StudentCreateConversationScreen = ({ navigation, route }) => {
   const renderSelectedSummary = () => {
     if (selectedUsers.length === 0) return null;
 
-    // Count selected teachers and students
-    const allUsers = [...groupedUsers.staff, ...groupedUsers.students];
+    // Count selected users by type
+    const allUsers = groupedUsers.flatMap((group) => group.users);
     const selectedUserObjects = allUsers.filter((user) =>
-      selectedUsers.includes(user.id)
+      selectedUsers.some((selectedUser) => selectedUser.id === user.id)
     );
+
     const teacherCount = selectedUserObjects.filter(
       (user) => user.user_type === 'staff'
     ).length;
@@ -310,18 +440,13 @@ const StudentCreateConversationScreen = ({ navigation, route }) => {
         </View>
       ) : (
         <SectionList
-          sections={[
-            {
-              title: 'Teachers',
-              data: filteredGroupedUsers.staff,
-              key: 'staff',
-            },
-            {
-              title: 'Students',
-              data: filteredGroupedUsers.students,
-              key: 'students',
-            },
-          ].filter((section) => section.data.length > 0)} // Only show sections with data
+          sections={filteredGroupedUsers
+            .filter((group) => group.users.length > 0) // Only show groups with users
+            .map((group) => ({
+              title: group.type_label || group.type,
+              data: group.users,
+              key: group.type,
+            }))}
           renderItem={renderUserItem}
           renderSectionHeader={({ section: { title } }) => (
             <View style={styles.sectionHeader}>
@@ -493,6 +618,12 @@ const createStyles = (theme, fontSizes) => {
       justifyContent: 'center',
       alignItems: 'center',
       marginRight: 12,
+      overflow: 'hidden', // Ensure image is clipped to circle
+    },
+    avatarImage: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
     },
     userInfo: {
       flex: 1,

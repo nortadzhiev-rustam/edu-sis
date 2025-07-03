@@ -17,6 +17,8 @@ import * as Device from 'expo-device';
 let navigationRef = null;
 let isNavigationReady = false;
 let pendingNavigationActions = [];
+const MAX_RETRY_ATTEMPTS = 3;
+const RETRY_INTERVAL = 2000;
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
@@ -586,6 +588,18 @@ export function setNavigationRef(ref) {
   processPendingNavigationActions();
 }
 
+// Clear all pending navigation actions (useful for cleanup)
+export function clearPendingNavigationActions() {
+  console.log(
+    `🧹 NAVIGATION: Clearing ${pendingNavigationActions.length} pending navigation actions`
+  );
+  pendingNavigationActions = [];
+  if (retryInterval) {
+    clearInterval(retryInterval);
+    retryInterval = null;
+  }
+}
+
 // Process pending navigation actions
 function processPendingNavigationActions() {
   if (pendingNavigationActions.length > 0) {
@@ -595,13 +609,36 @@ function processPendingNavigationActions() {
     const actionsToProcess = [...pendingNavigationActions];
     pendingNavigationActions = [];
 
-    actionsToProcess.forEach((action) => {
+    actionsToProcess.forEach((actionItem) => {
       try {
-        action();
+        if (typeof actionItem === 'function') {
+          // Legacy support for direct functions
+          actionItem();
+        } else {
+          // New format with retry count
+          actionItem.action();
+        }
       } catch (error) {
         console.error('❌ NAVIGATION: Error processing pending action:', error);
-        // Re-queue failed actions
-        pendingNavigationActions.push(action);
+
+        // Only re-queue if under retry limit
+        const retryCount = actionItem.retryCount || 0;
+        if (retryCount < MAX_RETRY_ATTEMPTS) {
+          console.log(
+            `🔄 NAVIGATION: Re-queueing action (attempt ${
+              retryCount + 1
+            }/${MAX_RETRY_ATTEMPTS})`
+          );
+          const actionToRequeue =
+            typeof actionItem === 'function'
+              ? { action: actionItem, retryCount: retryCount + 1 }
+              : { ...actionItem, retryCount: retryCount + 1 };
+          pendingNavigationActions.push(actionToRequeue);
+        } else {
+          console.error(
+            `❌ NAVIGATION: Max retry attempts (${MAX_RETRY_ATTEMPTS}) reached, dropping action`
+          );
+        }
       }
     });
   }
@@ -624,10 +661,13 @@ function startRetryMechanism() {
 
     // Stop retrying if no pending actions
     if (pendingNavigationActions.length === 0) {
+      console.log(
+        '✅ NAVIGATION: No more pending actions, stopping retry mechanism'
+      );
       clearInterval(retryInterval);
       retryInterval = null;
     }
-  }, 2000); // Retry every 2 seconds
+  }, RETRY_INTERVAL);
 }
 
 // Queue navigation action if navigation is not ready
@@ -635,7 +675,14 @@ function queueNavigationAction(action) {
   console.log(
     '⏳ NAVIGATION: Queueing navigation action until navigation is ready...'
   );
-  pendingNavigationActions.push(action);
+
+  // Create action item with retry count
+  const actionItem =
+    typeof action === 'function'
+      ? { action, retryCount: 0 }
+      : { ...action, retryCount: 0 };
+
+  pendingNavigationActions.push(actionItem);
 
   // Start retry mechanism if not already started
   startRetryMechanism();
@@ -704,15 +751,41 @@ async function getUserType() {
     const userData = await AsyncStorage.getItem('userData');
     if (userData) {
       const parsedData = JSON.parse(userData);
+      console.log('🔍 MESSAGING: Getting user type from userData:', parsedData);
+
+      // Check multiple possible fields for user type
+      const userType =
+        parsedData.userType || parsedData.user_type || parsedData.type;
+      const role = parsedData.role;
+
       // Determine user type based on stored data
-      if (parsedData.is_teacher || parsedData.role === 'teacher') {
+      if (
+        parsedData.is_teacher ||
+        role === 'teacher' ||
+        userType === 'teacher' ||
+        userType === 'staff'
+      ) {
+        console.log('👨‍🏫 MESSAGING: Detected user type: teacher');
         return 'teacher';
-      } else if (parsedData.role === 'parent' || parsedData.is_parent) {
+      } else if (
+        role === 'parent' ||
+        parsedData.is_parent ||
+        userType === 'parent'
+      ) {
+        console.log('👨‍👩‍👧‍👦 MESSAGING: Detected user type: parent');
         return 'parent';
+      } else if (userType === 'student' || role === 'student') {
+        console.log('👨‍🎓 MESSAGING: Detected user type: student');
+        return 'student';
       } else {
+        console.log(
+          '❓ MESSAGING: Unknown user type, defaulting to student. UserData:',
+          parsedData
+        );
         return 'student';
       }
     }
+    console.log('⚠️ MESSAGING: No userData found, defaulting to student');
     return 'student'; // Default fallback
   } catch (error) {
     console.error('Error getting user type:', error);
@@ -795,8 +868,8 @@ export async function handleNotificationNavigation(remoteMessage) {
       userType: userType,
     };
 
-    // Add authCode for student notifications
-    if (userType === 'student' && authCode) {
+    // Add authCode for all user types (not just students)
+    if (authCode) {
       navigationParams.authCode = authCode;
     }
 

@@ -58,6 +58,7 @@ export const Config = {
     GET_AVAILABLE_USERS_STAFF: '/messaging/available-users/staff', // Staff-specific endpoint
     SEARCH_MESSAGES: '/messaging/search',
     MARK_MESSAGES_READ: '/messaging/mark-read',
+    MARK_MESSAGE_READ: '/messaging/mark-message-read', // NEW: Individual message read endpoint
     UPLOAD_MESSAGE_ATTACHMENT: '/messaging/upload-attachment',
     DELETE_CONVERSATION: '/messaging/conversation/delete',
     LEAVE_CONVERSATION: '/messaging/conversation/leave',

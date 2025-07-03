@@ -81,7 +81,7 @@ const translations = {
     grades: 'Grades',
     attendance: 'Attendance',
     timetable: 'Timetable',
-    assignments: 'Assignments',
+    homework: 'Homework',
     behavior: 'Behavior',
     discipline: 'Discipline',
 
@@ -295,7 +295,7 @@ const translations = {
     grades: 'အမှတ်များ',
     attendance: 'တက်ရောက်မှု',
     timetable: 'အချိန်ဇယား',
-    assignments: 'စာတွေ',
+    homework: 'စာတွေ',
     behavior: 'အပြုအမူအမှတ်များ',
     discipline: 'စည်းကမ်း',
 
@@ -456,7 +456,7 @@ const translations = {
     grades: '成绩',
     attendance: '出勤',
     timetable: '时间表',
-    assignments: '作业',
+    homework: '作业',
     behavior: '行为分数',
     discipline: '纪律',
 
@@ -615,7 +615,7 @@ const translations = {
     grades: 'เกรด',
     attendance: 'การเข้าเรียน',
     timetable: 'ตารางเรียน',
-    assignments: 'การบ้าน',
+    homework: 'การบ้าน',
     behavior: 'คะแนนพฤติกรรม',
     discipline: 'วินัย',
 

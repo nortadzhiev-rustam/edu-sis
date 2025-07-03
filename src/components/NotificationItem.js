@@ -284,6 +284,46 @@ const NotificationItem = ({ notification, onPress }) => {
           navigation.navigate('TimetableScreen', navigationParams);
           break;
 
+        // Messaging notifications
+        case 'message':
+        case 'messaging':
+        case 'new_message':
+        case 'message_received':
+        case 'conversation':
+        case 'chat':
+          // Navigate to appropriate messaging screen based on user type
+          const userData = await AsyncStorage.getItem('userData');
+          if (userData) {
+            const user = JSON.parse(userData);
+            const userType = user.user_type || user.type;
+
+            if (userType === 'teacher' || userType === 'staff') {
+              navigation.navigate('TeacherMessagingScreen', {
+                authCode: navigationParams.authCode,
+                teacherName: navigationParams.studentName || user.name,
+              });
+            } else if (userType === 'student') {
+              navigation.navigate('StudentMessagingScreen', {
+                authCode: navigationParams.authCode,
+                studentName: navigationParams.studentName || user.name,
+              });
+            } else {
+              // Fallback for unknown user types
+              Alert.alert(
+                'Messaging',
+                'Please check your messages in the app.',
+                [{ text: 'OK', style: 'default' }]
+              );
+            }
+          } else {
+            Alert.alert(
+              'Error',
+              'Unable to determine user type for messaging navigation.',
+              [{ text: 'OK', style: 'default' }]
+            );
+          }
+          break;
+
         default:
           // Show notification details in alert for unknown types
           Alert.alert(notification.title, notification.body, [

@@ -36,6 +36,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useNotifications } from '../contexts/NotificationContext';
+import { useMessaging } from '../contexts/MessagingContext';
 import NotificationBadge from '../components/NotificationBadge';
 import { QuickActionTile, ComingSoonBadge } from '../components';
 import DemoModeIndicator from '../components/DemoModeIndicator';
@@ -59,6 +60,7 @@ export default function TeacherScreen({ route, navigation }) {
   const { theme } = useTheme();
   const { t, currentLanguage } = useLanguage();
   const { refreshNotifications } = useNotifications();
+  const { totalUnreadMessages } = useMessaging();
   const fontSizes = getLanguageFontSizes(currentLanguage);
 
   // Device and orientation detection
@@ -633,14 +635,14 @@ export default function TeacherScreen({ route, navigation }) {
         icon: faComments,
         backgroundColor: '#007AFF',
         iconColor: '#fff',
-        disabled: true,
-        badge: (
-          <ComingSoonBadge
-            text={t('comingSoon')}
-            theme={theme}
-            fontSizes={fontSizes}
-          />
-        ),
+        disabled: false,
+        // badge: (
+        //   <ComingSoonBadge
+        //     text={t('comingSoon')}
+        //     theme={theme}
+        //     fontSizes={fontSizes}
+        //   />
+        // ),
         onPress: () =>
           navigation.navigate('TeacherMessagingScreen', {
             authCode: userData.authCode,
@@ -653,7 +655,7 @@ export default function TeacherScreen({ route, navigation }) {
         title: 'Health',
         subtitle: 'Student Well-being',
         icon: faHeartbeat,
-        backgroundColor: '#FF3B30',
+        backgroundColor: '#006d77',
         iconColor: '#fff',
         disabled: true,
         badge: (
@@ -737,6 +739,25 @@ export default function TeacherScreen({ route, navigation }) {
         </View>
 
         <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.messageButton}
+            onPress={() =>
+              navigation.navigate('TeacherMessagingScreen', {
+                authCode: userData.authCode,
+                teacherName: userData.name,
+              })
+            }
+          >
+            <FontAwesomeIcon icon={faComments} size={20} color='#fff' />
+            {totalUnreadMessages > 0 && (
+              <View style={styles.messageBadge}>
+                <Text style={styles.messageBadgeText}>
+                  {totalUnreadMessages > 99 ? '99+' : totalUnreadMessages}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.notificationButton}
             onPress={() =>
@@ -1117,6 +1138,34 @@ const createStyles = (theme, fontSizes) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
+    },
+    messageButton: {
+      justifyContent: 'center',
+      alignItems: 'center',
+      position: 'relative',
+      paddingHorizontal: 8,
+    },
+    messageBadge: {
+      badge: {
+        backgroundColor: '#FF3B30',
+        borderRadius: 9,
+        minWidth: 18,
+        height: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+  
+        position: 'absolute',
+        top: -10,
+        right: -10,
+        borderWidth: 2,
+        borderColor: theme.colors.background,
+      },
+    },
+    messageBadgeText: {
+      color: '#FFFFFF',
+      fontSize: 10,
+      fontWeight: 'bold',
+      textAlign: 'center',
     },
     notificationButton: {
       // width: 40,

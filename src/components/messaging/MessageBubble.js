@@ -1,7 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faUser, faDownload } from '@fortawesome/free-solid-svg-icons';
+import {
+  faUser,
+  faDownload,
+  faCheck,
+  faCheckDouble,
+} from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { processHtmlContent } from '../../utils/htmlUtils';
 
@@ -20,6 +25,28 @@ const MessageBubble = ({
   const formatTimestamp = (timestamp) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // Render read status indicator for own messages
+  const renderReadStatus = () => {
+    if (!isOwnMessage) return null; // Only show read status for own messages
+
+    // Use the new is_read field if available, fallback to read_by array
+    const isRead =
+      message.is_read !== undefined
+        ? message.is_read
+        : message.read_by && message.read_by.length > 0;
+
+    return (
+      <View style={styles.readStatusContainer}>
+        <FontAwesomeIcon
+          icon={isRead ? faCheckDouble : faCheck}
+          size={12}
+          color={isRead ? theme.colors.success : theme.colors.textSecondary}
+          style={styles.readStatusIcon}
+        />
+      </View>
+    );
   };
 
   // Render attachment if present
@@ -137,14 +164,17 @@ const MessageBubble = ({
 
         {renderAttachment()}
 
-        <Text
-          style={[
-            styles.messageTime,
-            isOwnMessage ? styles.ownMessageTime : styles.otherMessageTime,
-          ]}
-        >
-          {formatTimestamp(message.created_at)}
-        </Text>
+        <View style={styles.messageFooter}>
+          <Text
+            style={[
+              styles.messageTime,
+              isOwnMessage ? styles.ownMessageTime : styles.otherMessageTime,
+            ]}
+          >
+            {formatTimestamp(message.created_at)}
+          </Text>
+          {renderReadStatus()}
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -262,6 +292,20 @@ const createStyles = (theme, fontSizes) => {
       marginLeft: 4,
       fontSize: safeFontSizes.small - 2,
       fontWeight: 'bold',
+      opacity: 0.8,
+    },
+    messageFooter: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginTop: 4,
+    },
+    readStatusContainer: {
+      marginLeft: 8,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    readStatusIcon: {
       opacity: 0.8,
     },
   });

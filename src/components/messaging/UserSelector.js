@@ -22,6 +22,17 @@ const UserSelector = ({
   // Get user type display text
   const getUserTypeText = () => {
     if (user.user_type === 'staff') {
+      if (user.role === 'head_of_section') {
+        // Check if this is a Head of School (principal or director)
+        if (
+          user.email &&
+          (user.email.toLowerCase().includes('principal') ||
+            user.email.toLowerCase().includes('director'))
+        ) {
+          return 'Head of School';
+        }
+        return 'Head of Section';
+      }
       return 'Teacher';
     } else if (user.user_type === 'student') {
       return 'Student';

@@ -42,7 +42,7 @@ const NotificationScreen = ({ navigation, route }) => {
     loadStudentNotifications,
   } = useNotifications();
 
-  const [filter, setFilter] = useState('all'); // 'all', 'unread', 'behavior', 'attendance', 'grade', 'homework', 'announcement'
+  const [filter, setFilter] = useState('all'); // 'all', 'unread', 'behavior', 'attendance', 'grade', 'homework', 'announcement', 'messaging'
   const [refreshing, setRefreshing] = useState(false);
   const [userType, setUserType] = useState(null);
 
@@ -71,7 +71,13 @@ const NotificationScreen = ({ navigation, route }) => {
         const userData = await AsyncStorage.getItem('userData');
         if (userData) {
           const user = JSON.parse(userData);
-          setUserType(user.userType || 'teacher'); // Default to teacher if not specified
+          // Use the actual user type from userData
+          const actualUserType = user.userType || user.user_type || user.type;
+          setUserType(actualUserType);
+          console.log(
+            '📱 NOTIFICATION: Detected user type from userData:',
+            actualUserType
+          );
         }
       } catch (error) {
         // Default to teacher if we can't determine user type
@@ -245,6 +251,17 @@ const NotificationScreen = ({ navigation, route }) => {
             'homework_graded',
           ].includes(n.type)
         );
+      case 'messaging':
+        return activeNotifications.filter((n) =>
+          [
+            'message',
+            'messaging',
+            'new_message',
+            'message_received',
+            'conversation',
+            'chat',
+          ].includes(n.type)
+        );
       case 'announcement':
         return activeNotifications.filter((n) =>
           ['announcement', 'general', 'news', 'event', 'reminder'].includes(
@@ -355,6 +372,7 @@ const NotificationScreen = ({ navigation, route }) => {
         {renderFilterButton('attendance', 'Attendance')}
         {renderFilterButton('grade', 'Grades')}
         {renderFilterButton('homework', 'Homework')}
+        {renderFilterButton('messaging', 'Messages')}
         {renderFilterButton('announcement', 'Announcements')}
       </ScrollView>
 
