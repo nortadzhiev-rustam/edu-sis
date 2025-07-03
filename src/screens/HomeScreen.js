@@ -102,10 +102,7 @@ export default function HomeScreen({ navigation }) {
         <FontAwesomeIcon icon={faCog} size={20} color={theme.colors.text} />
       </TouchableOpacity>
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={styles.content}>
         <Image
           source={require('../../assets/app_logo.png')}
           style={styles.logo}
@@ -300,7 +297,7 @@ export default function HomeScreen({ navigation }) {
             </View>
           </View>
         </Animated.View>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -348,19 +345,18 @@ const createStyles = (
     logo: {
       width: isIPadDevice ? Math.min(width * 0.3, 300) : width * 0.4,
       height: isIPadDevice ? Math.min(height * 0.12, 150) : height * 0.15,
-      marginTop: isIPadDevice ? height * 0.03 : height * 0.05,
+      // marginTop: isIPadDevice ? height * 0.03 : height * 0.001,
       marginBottom: isIPadDevice ? responsiveSpacing.lg : 20,
     },
     secondaryLogo: {
       width: isIPadDevice ? Math.min(width * 0.2, 200) : width * 0.3,
       height: isIPadDevice ? Math.min(height * 0.08, 50) : height * 0.05,
-      
     },
     title: {
       fontSize: isIPadDevice ? responsiveFonts.largeTitle : fontSizes.title,
       fontWeight: 'bold',
       color: theme.colors.text,
-      
+
       textAlign: 'center',
     },
     subtitle: {
@@ -383,7 +379,7 @@ const createStyles = (
       backgroundColor: theme.colors.surface,
       borderRadius: 15,
       padding: 15,
-      marginBottom: 20,
+      marginBottom: 10,
       ...createSmallShadow(theme),
       marginLeft: 0,
     },
@@ -419,7 +415,6 @@ const createStyles = (
       fontSize: fontSizes.subtitle,
       fontWeight: '600',
       color: theme.colors.text,
-      marginTop: 5,
       marginBottom: 10,
       alignSelf: 'flex-start',
     },
@@ -454,7 +449,7 @@ const createStyles = (
     },
     socialMediaSection: {
       width: '100%',
-      marginTop: 20,
+      marginTop: 10,
       marginBottom: 30,
       alignItems: 'center',
       justifyContent: 'center',

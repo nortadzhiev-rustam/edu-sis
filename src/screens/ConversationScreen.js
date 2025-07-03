@@ -11,8 +11,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
+  Keyboard,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
   faArrowLeft,
@@ -39,6 +43,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ConversationScreen = ({ navigation, route }) => {
   const { theme, fontSizes } = useTheme();
+  const insets = useSafeAreaInsets();
   const { markConversationAsReadLocally, markMessageAsReadLocally } =
     useMessaging();
   const {
@@ -618,7 +623,7 @@ const ConversationScreen = ({ navigation, route }) => {
       <KeyboardAvoidingView
         style={styles.content}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        keyboardVerticalOffset={0}
       >
         {/* Messages List */}
         {loading ? (
@@ -645,7 +650,9 @@ const ConversationScreen = ({ navigation, route }) => {
         )}
 
         {/* Message Input */}
-        <View style={styles.inputContainer}>
+        <View
+          style={[styles.inputContainer, { paddingBottom: 8, marginBottom: 0 }]}
+        >
           <View style={styles.inputWrapper}>
             <TextInput
               style={styles.textInput}
@@ -878,10 +885,16 @@ const createStyles = (theme, fontSizes) => {
       flexDirection: 'row',
       alignItems: 'flex-end',
       paddingHorizontal: 16,
-      paddingVertical: 12,
+      paddingTop: 8,
+      paddingBottom: 0, // Force no bottom padding
       backgroundColor: theme.colors.surface,
       borderTopWidth: 1,
       borderTopColor: theme.colors.border,
+      marginBottom: 0,
+      marginTop: 0,
+      // Force override any automatic padding
+      paddingBottomIOS: 0,
+      paddingBottomAndroid: 0,
     },
     inputWrapper: {
       flex: 1,
