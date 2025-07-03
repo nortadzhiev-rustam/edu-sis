@@ -9,6 +9,7 @@ import {
   Modal,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -30,6 +31,7 @@ export default function SettingsScreen({ navigation }) {
   const { theme, isDarkMode, toggleTheme } = useTheme();
   const { currentLanguage, changeLanguage, t, languages } = useLanguage();
   const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [showAboutModal, setShowAboutModal] = useState(false);
   const [isChangingLanguage, setIsChangingLanguage] = useState(false);
 
   const styles = createStyles(theme);
@@ -58,13 +60,7 @@ export default function SettingsScreen({ navigation }) {
   };
 
   const showAboutInfo = () => {
-    Alert.alert(
-      t('about'),
-      `${Config.APP.NAME}\n${t('version')}: ${
-        Config.APP.VERSION
-      }\n\nDeveloped by EduNova Asia`,
-      [{ text: t('ok'), style: 'default' }]
-    );
+    setShowAboutModal(true);
   };
 
   const LanguageModal = () => (
@@ -128,6 +124,54 @@ export default function SettingsScreen({ navigation }) {
               </TouchableOpacity>
             ))}
           </ScrollView>
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
+  );
+
+  const AboutModal = () => (
+    <Modal
+      visible={showAboutModal}
+      transparent={true}
+      animationType='fade'
+      onRequestClose={() => setShowAboutModal(false)}
+      statusBarTranslucent={false}
+    >
+      <TouchableOpacity
+        style={styles.aboutModalOverlay}
+        activeOpacity={1}
+        onPress={() => setShowAboutModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.aboutModalContent}
+          activeOpacity={1}
+          onPress={(e) => e.stopPropagation()}
+        >
+          {/* EduNova School Logo */}
+          <Image
+            source={require('../../assets/EduNova School Logo.png')}
+            style={styles.aboutLogo}
+            resizeMode='contain'
+          />
+
+          {/* App Information */}
+          <View style={styles.aboutInfo}>
+           
+            <Text style={styles.aboutVersion}>
+              {t('version')}: {Config.APP.VERSION}
+            </Text>
+            <Text style={styles.aboutDeveloper}>
+              Developed by EduNova Myanmar
+            </Text>
+          </View>
+
+          {/* Close Button */}
+          <TouchableOpacity
+            style={styles.aboutCloseButton}
+            onPress={() => setShowAboutModal(false)}
+          >
+            <Text style={styles.aboutCloseText}>{t('ok')}</Text>
+          </TouchableOpacity>
         </TouchableOpacity>
       </TouchableOpacity>
     </Modal>
@@ -270,6 +314,7 @@ export default function SettingsScreen({ navigation }) {
       </ScrollView>
 
       <LanguageModal />
+      <AboutModal />
     </SafeAreaView>
   );
 }
@@ -425,5 +470,64 @@ const createStyles = (theme) =>
     languageNative: {
       fontSize: 14,
       color: theme.colors.textSecondary,
+    },
+
+    // About Modal Styles
+    aboutModalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+    },
+    aboutModalContent: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 20,
+      padding: 30,
+      alignItems: 'center',
+      maxWidth: 350,
+      width: '100%',
+      ...theme.shadows.medium,
+    },
+    aboutLogo: {
+      width: 120,
+      height: 50,
+      marginTop: 20,
+    },
+    aboutInfo: {
+      alignItems: 'center',
+      marginBottom: 25,
+    },
+    aboutAppName: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 8,
+      textAlign: 'center',
+    },
+    aboutVersion: {
+      fontSize: 16,
+      color: theme.colors.textSecondary,
+      marginBottom: 8,
+      textAlign: 'center',
+    },
+    aboutDeveloper: {
+      fontSize: 14,
+      color: theme.colors.textLight,
+      textAlign: 'center',
+      fontStyle: 'italic',
+    },
+    aboutCloseButton: {
+      backgroundColor: theme.colors.primary,
+      paddingHorizontal: 30,
+      paddingVertical: 12,
+      borderRadius: 25,
+      minWidth: 100,
+    },
+    aboutCloseText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: '600',
+      textAlign: 'center',
     },
   });

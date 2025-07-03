@@ -112,7 +112,12 @@ export default function HomeScreen({ navigation }) {
           resizeMode='contain'
         />
 
-        <Text style={styles.title}>{t('welcomeTo')} SIS</Text>
+        <Text style={styles.title}>{t('welcomeTo')}</Text>
+        <Image
+          source={require('../../assets/EduNova School Logo.png')}
+          style={styles.secondaryLogo}
+          resizeMode='contain'
+        />
         <Text style={styles.subtitle}>Choose your role to continue</Text>
 
         <Animated.View
@@ -346,11 +351,16 @@ const createStyles = (
       marginTop: isIPadDevice ? height * 0.03 : height * 0.05,
       marginBottom: isIPadDevice ? responsiveSpacing.lg : 20,
     },
+    secondaryLogo: {
+      width: isIPadDevice ? Math.min(width * 0.2, 200) : width * 0.3,
+      height: isIPadDevice ? Math.min(height * 0.08, 50) : height * 0.05,
+      
+    },
     title: {
       fontSize: isIPadDevice ? responsiveFonts.largeTitle : fontSizes.title,
       fontWeight: 'bold',
       color: theme.colors.text,
-      marginBottom: isIPadDevice ? responsiveSpacing.md : 10,
+      
       textAlign: 'center',
     },
     subtitle: {
