@@ -901,7 +901,7 @@ const createStyles = (theme, fontSizes) => {
       color: theme.colors.textSecondary,
     },
     messagesList: {
-      paddingHorizontal: 16,
+      paddingHorizontal: 2,
       paddingVertical: 8,
     },
     loadingFooter: {

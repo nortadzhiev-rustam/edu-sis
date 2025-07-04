@@ -29,7 +29,6 @@ import {
 } from '../services/messagingService';
 import { ConversationItem } from '../components/messaging';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native';
 
 const StudentMessagingScreen = ({ navigation, route }) => {
   const { theme, fontSizes } = useTheme();
@@ -405,65 +404,30 @@ const StudentMessagingScreen = ({ navigation, route }) => {
     fetchConversations();
   }, []); // Only run once on mount
 
-  // Refresh conversations when screen comes into focus (with debouncing)
-  const lastFocusRefresh = React.useRef(0);
-  useFocusEffect(
-    React.useCallback(() => {
-      async function refreshOnFocus() {
-        const now = Date.now();
-        // Debounce: only allow refresh every 2 seconds
-        if (now - lastFocusRefresh.current < 2000) {
-          console.log(
-            '🔍 STUDENT MESSAGING: Skipping focus refresh - too soon'
-          );
-          return;
-        }
-
-        lastFocusRefresh.current = now;
+  // Listen for navigation events to refresh when returning from conversation
+  const lastNavigationRefresh = React.useRef(0);
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      const now = Date.now();
+      // Debounce: only allow refresh every 1 second to prevent excessive calls
+      if (now - lastNavigationRefresh.current < 1000) {
         console.log(
-          '🔍 STUDENT MESSAGING: Screen focused, refreshing conversations'
+          '🔍 STUDENT MESSAGING: Skipping navigation refresh - too soon'
         );
-
-        try {
-          setLoading(true);
-          const response = await getConversations(authCode);
-          if (response.success && response.data) {
-            const allConversations = response.data.conversations || [];
-            const currentUser = await getCurrentUserData();
-
-            const studentConversations = allConversations.filter(
-              (conversation) => {
-                if (currentUser) {
-                  return isStudentMember(conversation, currentUser);
-                }
-                if (studentName) {
-                  const hasStudents =
-                    conversation.members?.some(
-                      (m) => m.user_type === 'student'
-                    ) ||
-                    conversation.grouped_members?.some(
-                      (g) => g.type === 'student' && g.count > 0
-                    );
-                  return hasStudents;
-                }
-                return true;
-              }
-            );
-
-            setConversations(studentConversations);
-          }
-        } catch (error) {
-          console.error('Error refreshing conversations on focus:', error);
-        } finally {
-          setLoading(false);
-        }
-
-        refreshUnreadCounts();
+        return;
       }
 
-      refreshOnFocus();
-    }, [authCode, studentName, refreshUnreadCounts])
-  );
+      lastNavigationRefresh.current = now;
+      console.log(
+        '🔍 STUDENT MESSAGING: Navigation focus - refreshing conversations'
+      );
+      // Force refresh conversations and unread counts when screen gains focus
+      fetchConversations();
+      refreshUnreadCounts();
+    });
+
+    return unsubscribe;
+  }, [navigation, fetchConversations, refreshUnreadCounts]);
 
   useEffect(() => {
     const delayedSearch = setTimeout(() => {

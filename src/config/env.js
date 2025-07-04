@@ -80,6 +80,9 @@ export const Config = {
     SEND_HEALTH_NOTIFICATION: '/notifications/health/send',
     SEND_EMERGENCY_HEALTH_ALERT: '/notifications/health/emergency',
     SEND_HEALTH_REMINDER: '/notifications/health/reminder',
+
+    // Logout API Endpoints
+    REMOVE_USER_FROM_DEVICE: '/remove-user-from-device/',
   },
 
   // Web Resources

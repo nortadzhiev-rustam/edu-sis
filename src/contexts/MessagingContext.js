@@ -114,6 +114,15 @@ export const MessagingProvider = ({ children }) => {
     updateUnreadCounts();
   }, [updateUnreadCounts]);
 
+  // Cleanup function for logout
+  const cleanup = useCallback(() => {
+    console.log('🧹 MESSAGING: Cleaning up messaging context...');
+    setUnreadConversations(0);
+    setTotalUnreadMessages(0);
+    setLastUpdateTime(null);
+    console.log('✅ MESSAGING: Messaging context cleaned up');
+  }, []);
+
   // Initialize polling when component mounts and handle app state changes
   useEffect(() => {
     let interval;
@@ -213,6 +222,7 @@ export const MessagingProvider = ({ children }) => {
       markMessageAsReadLocally,
       refreshUnreadCounts,
       refreshOnAppForeground,
+      cleanup,
     }),
     [
       unreadConversations,
@@ -226,6 +236,7 @@ export const MessagingProvider = ({ children }) => {
       markMessageAsReadLocally,
       refreshUnreadCounts,
       refreshOnAppForeground,
+      cleanup,
     ]
   );
 

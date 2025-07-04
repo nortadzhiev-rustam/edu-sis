@@ -28,6 +28,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { performLogout } from '../services/logoutService';
 
 export default function TeacherProfile({ route, navigation }) {
   const { theme } = useTheme();
@@ -70,13 +71,46 @@ export default function TeacherProfile({ route, navigation }) {
         text: t('logout'),
         onPress: async () => {
           try {
-            await AsyncStorage.removeItem('userData');
+            console.log(
+              '🚪 TEACHER PROFILE LOGOUT: Starting logout process...'
+            );
+
+            // Perform comprehensive logout cleanup
+            const result = await performLogout({
+              clearDeviceToken: false, // Keep device token for future logins
+              clearAllData: false, // Keep device-specific settings
+            });
+
+            if (result.success) {
+              console.log(
+                '✅ TEACHER PROFILE LOGOUT: Logout completed successfully'
+              );
+              // Navigate back to home screen
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Home' }],
+              });
+            } else {
+              console.error(
+                '❌ TEACHER PROFILE LOGOUT: Logout failed:',
+                result.error
+              );
+              // Still navigate even if cleanup failed
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Home' }],
+              });
+            }
+          } catch (error) {
+            console.error(
+              '❌ TEACHER PROFILE LOGOUT: Error during logout:',
+              error
+            );
+            // Fallback: still navigate to home screen
             navigation.reset({
               index: 0,
               routes: [{ name: 'Home' }],
             });
-          } catch (error) {
-            console.error('Error logging out:', error);
           }
         },
         style: 'destructive',

@@ -36,9 +36,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useNotifications } from '../contexts/NotificationContext';
+import { useMessaging } from '../contexts/MessagingContext';
 import NotificationBadge from '../components/NotificationBadge';
 import MessageBadge from '../components/MessageBadge';
 import { QuickActionTile, ComingSoonBadge } from '../components';
+import { performLogout } from '../services/logoutService';
 import DemoModeIndicator from '../components/DemoModeIndicator';
 import { isIPad, isTablet } from '../utils/deviceDetection';
 import { useFocusEffect } from '@react-navigation/native';
@@ -59,7 +61,9 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 export default function TeacherScreen({ route, navigation }) {
   const { theme } = useTheme();
   const { t, currentLanguage } = useLanguage();
-  const { refreshNotifications } = useNotifications();
+  const { refreshNotifications, clearAll: clearNotifications } =
+    useNotifications();
+  const { cleanup: cleanupMessaging } = useMessaging();
   const fontSizes = getLanguageFontSizes(currentLanguage);
 
   // Device and orientation detection
@@ -561,16 +565,38 @@ export default function TeacherScreen({ route, navigation }) {
         text: t('logout'),
         onPress: async () => {
           try {
-            // Clear user data from AsyncStorage
-            await AsyncStorage.removeItem('userData');
-            // Navigate back to home screen
+            console.log('🚪 TEACHER LOGOUT: Starting logout process...');
+
+            // Perform comprehensive logout cleanup
+            const result = await performLogout({
+              clearDeviceToken: false, // Keep device token for future logins
+              clearAllData: false, // Keep device-specific settings
+              messagingCleanup: cleanupMessaging, // Clean up messaging context
+              notificationCleanup: clearNotifications, // Clean up notification context
+            });
+
+            if (result.success) {
+              console.log('✅ TEACHER LOGOUT: Logout completed successfully');
+              // Navigate back to home screen
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Home' }],
+              });
+            } else {
+              console.error('❌ TEACHER LOGOUT: Logout failed:', result.error);
+              // Still navigate even if cleanup failed
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Home' }],
+              });
+            }
+          } catch (error) {
+            console.error('❌ TEACHER LOGOUT: Error during logout:', error);
+            // Fallback: still navigate to home screen
             navigation.reset({
               index: 0,
               routes: [{ name: 'Home' }],
             });
-          } catch (error) {
-            // Handle error silently
-            console.error('Error logging out:', error);
           }
         },
         style: 'destructive',
@@ -1133,7 +1159,6 @@ const createStyles = (theme, fontSizes) =>
       justifyContent: 'center',
       alignItems: 'center',
       position: 'relative',
-      
     },
     notificationButton: {
       // width: 40,
