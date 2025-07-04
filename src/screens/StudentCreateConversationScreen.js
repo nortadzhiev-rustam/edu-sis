@@ -444,7 +444,10 @@ const StudentCreateConversationScreen = ({ navigation, route }) => {
             .filter((group) => group.users.length > 0) // Only show groups with users
             .map((group) => ({
               title: group.type_label || group.type,
-              data: group.users,
+              data: group.users.map((user, index) => ({
+                ...user,
+                _sectionKey: `${group.type}-${user.id}-${index}`,
+              })),
               key: group.type,
             }))}
           renderItem={renderUserItem}
@@ -453,7 +456,7 @@ const StudentCreateConversationScreen = ({ navigation, route }) => {
               <Text style={styles.sectionHeaderText}>{title}</Text>
             </View>
           )}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => item._sectionKey}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={() => (

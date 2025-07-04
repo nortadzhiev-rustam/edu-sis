@@ -3279,5 +3279,296 @@ export const getDemoStudentLibraryData = () => {
   };
 };
 
+// Demo health data
+export const getDemoStudentHealthRecords = () => ({
+  success: true,
+  data: {
+    student: {
+      id: 123,
+      name: 'Demo Student',
+      branch_id: 1,
+    },
+    records: [
+      {
+        record_id: 456,
+        date: '2024-01-15',
+        time: '10:30',
+        reason: 'Headache,Fever',
+        action: 'Rest,Medication',
+        parent_contact_time: '11:00',
+        temperature: '38.5°C',
+        medication: 'Paracetamol',
+        comments: 'Student feeling better after rest',
+        time_left_nurse_clinic: '12:00',
+        created_by: 'Nurse Smith',
+        created_at: '2024-01-15T10:30:00.000000Z',
+        updated_at: '2024-01-15T12:00:00.000000Z',
+      },
+      {
+        record_id: 457,
+        date: '2024-01-10',
+        time: '14:15',
+        reason: 'Stomach ache',
+        action: 'Rest',
+        parent_contact_time: '14:30',
+        temperature: '37.2°C',
+        medication: 'Antacid',
+        comments: 'Ate too quickly at lunch',
+        time_left_nurse_clinic: '15:00',
+        created_by: 'Nurse Johnson',
+        created_at: '2024-01-10T14:15:00.000000Z',
+        updated_at: '2024-01-10T15:00:00.000000Z',
+      },
+      {
+        record_id: 458,
+        date: '2024-01-05',
+        time: '09:45',
+        reason: 'Minor cut',
+        action: 'First aid,Bandage',
+        parent_contact_time: null,
+        temperature: null,
+        medication: 'Antiseptic',
+        comments: 'Small cut on finger during art class',
+        time_left_nurse_clinic: '10:00',
+        created_by: 'Nurse Smith',
+        created_at: '2024-01-05T09:45:00.000000Z',
+        updated_at: '2024-01-05T10:00:00.000000Z',
+      },
+    ],
+    total_count: 3,
+  },
+});
+
+export const getDemoStudentHealthInfo = () => ({
+  success: true,
+  data: {
+    student: {
+      id: 123,
+      name: 'Demo Student',
+    },
+    health_info: {
+      student_id: 123,
+      medical_conditions: 'Mild asthma',
+      regularly_used_medication: 'Inhaler (Salbutamol)',
+      has_vision_problem: 'No',
+      vision_check_date: '2023-09-01',
+      hearing_issue: 'None',
+      special_food_consideration: 'No nuts, No shellfish',
+      allergies: 'Peanuts, Shellfish, Pollen',
+      allergy_symtoms: 'Swelling, difficulty breathing, skin rash',
+      allergy_first_aid: 'Use EpiPen immediately, call emergency services',
+      allowed_drugs: 'Paracetamol,Ibuprofen,Antihistamine',
+      emergency_name_1: 'Jane Doe',
+      emergency_name_2: 'Bob Doe',
+      emergency_phone_1: '+1234567890',
+      emergency_phone_2: '+0987654321',
+    },
+  },
+});
+
+export const getDemoTeacherHealthData = () => ({
+  success: true,
+  data: {
+    access_level: 'nurse',
+    teacher: {
+      id: 789,
+      name: 'Demo Teacher',
+      branch_id: 1,
+      access_description:
+        'Full access to all health records (nurse permissions)',
+    },
+    student_records: [
+      {
+        record_id: 456,
+        student_id: 123,
+        student_name: 'Demo Student',
+        date: '2024-01-15',
+        time: '10:30',
+        reason: 'Headache,Fever',
+        action: 'Rest,Medication',
+        parent_contact_time: '11:00',
+        temperature: '38.5°C',
+        medication: 'Paracetamol',
+        comments: 'Student feeling better after rest',
+        created_by: 'Nurse Smith',
+      },
+      {
+        record_id: 459,
+        student_id: 124,
+        student_name: 'Sarah Johnson',
+        date: '2024-01-14',
+        time: '13:20',
+        reason: 'Nausea',
+        action: 'Rest,Hydration',
+        parent_contact_time: '13:45',
+        temperature: '37.0°C',
+        medication: null,
+        comments: 'Feeling better after rest',
+        created_by: 'Nurse Smith',
+      },
+    ],
+    staff_records: [
+      {
+        record_id: 789,
+        user_id: 456,
+        staff_name: 'Demo Staff',
+        date: '2024-01-14',
+        time: '14:00',
+        reason: 'Back pain',
+        action: 'Rest recommended',
+        temperature: null,
+        medication: 'Pain relief',
+        comments: 'Work-related strain',
+      },
+    ],
+    guest_records: [
+      {
+        record_id: 101,
+        guest_name: 'Demo Visitor',
+        date: '2024-01-13',
+        time: '09:15',
+        reason: 'Minor cut',
+        action: 'First aid applied',
+        temperature: null,
+        medication: 'Antiseptic',
+        comments: 'Small cut on finger',
+      },
+    ],
+    students: [
+      {
+        id: 123,
+        name: 'Demo Student',
+        email: 'demo.student@school.edu',
+      },
+      {
+        id: 124,
+        name: 'Sarah Johnson',
+        email: 'sarah.johnson@school.edu',
+      },
+    ],
+    staff: [
+      {
+        id: 456,
+        name: 'Demo Staff',
+        email: 'demo.staff@school.edu',
+      },
+    ],
+    statistics: {
+      total_student_records: 2,
+      total_staff_records: 1,
+      total_guest_records: 1,
+      records_today: 0,
+      records_this_week: 4,
+    },
+  },
+});
+
+export const getDemoHealthLookupData = () => ({
+  success: true,
+  data: {
+    injuries: [
+      {
+        id: 1,
+        value: 'Headache',
+        description: 'Pain in head or neck area',
+      },
+      {
+        id: 2,
+        value: 'Fever',
+        description: 'Elevated body temperature',
+      },
+      {
+        id: 3,
+        value: 'Stomach ache',
+        description: 'Abdominal pain or discomfort',
+      },
+      {
+        id: 4,
+        value: 'Nausea',
+        description: 'Feeling of sickness',
+      },
+      {
+        id: 5,
+        value: 'Dizziness',
+        description: 'Feeling lightheaded or unsteady',
+      },
+      {
+        id: 6,
+        value: 'Minor cut',
+        description: 'Small wound or laceration',
+      },
+      {
+        id: 7,
+        value: 'Bruise',
+        description: 'Injury causing discoloration',
+      },
+      {
+        id: 8,
+        value: 'Sprain',
+        description: 'Injury to ligament',
+      },
+    ],
+    actions: [
+      {
+        id: 1,
+        value: 'Rest',
+        description: 'Allow patient to rest',
+      },
+      {
+        id: 2,
+        value: 'Medication',
+        description: 'Administer appropriate medication',
+      },
+      {
+        id: 3,
+        value: 'First aid',
+        description: 'Apply basic first aid treatment',
+      },
+      {
+        id: 4,
+        value: 'Ice pack',
+        description: 'Apply cold compress',
+      },
+      {
+        id: 5,
+        value: 'Bandage',
+        description: 'Apply protective bandaging',
+      },
+      {
+        id: 6,
+        value: 'Hydration',
+        description: 'Provide fluids',
+      },
+    ],
+    medications: [
+      {
+        id: 1,
+        value: 'Paracetamol',
+        description: 'Pain and fever relief',
+      },
+      {
+        id: 2,
+        value: 'Ibuprofen',
+        description: 'Anti-inflammatory pain relief',
+      },
+      {
+        id: 3,
+        value: 'Antiseptic',
+        description: 'Wound cleaning and disinfection',
+      },
+      {
+        id: 4,
+        value: 'Antacid',
+        description: 'Stomach acid relief',
+      },
+      {
+        id: 5,
+        value: 'Antihistamine',
+        description: 'Allergy symptom relief',
+      },
+    ],
+  },
+});
+
 // Export demo credentials for easy access
 export { getDemoCredentials };

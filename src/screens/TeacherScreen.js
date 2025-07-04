@@ -36,8 +36,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useNotifications } from '../contexts/NotificationContext';
-import { useMessaging } from '../contexts/MessagingContext';
 import NotificationBadge from '../components/NotificationBadge';
+import MessageBadge from '../components/MessageBadge';
 import { QuickActionTile, ComingSoonBadge } from '../components';
 import DemoModeIndicator from '../components/DemoModeIndicator';
 import { isIPad, isTablet } from '../utils/deviceDetection';
@@ -60,7 +60,6 @@ export default function TeacherScreen({ route, navigation }) {
   const { theme } = useTheme();
   const { t, currentLanguage } = useLanguage();
   const { refreshNotifications } = useNotifications();
-  const { totalUnreadMessages } = useMessaging();
   const fontSizes = getLanguageFontSizes(currentLanguage);
 
   // Device and orientation detection
@@ -633,7 +632,7 @@ export default function TeacherScreen({ route, navigation }) {
         title: 'Messages',
         subtitle: 'Chat & Communication',
         icon: faComments,
-        backgroundColor: '#007AFF',
+        backgroundColor: '#d90429',
         iconColor: '#fff',
         disabled: false,
         // badge: (
@@ -655,17 +654,15 @@ export default function TeacherScreen({ route, navigation }) {
         title: 'Health',
         subtitle: 'Student Well-being',
         icon: faHeartbeat,
-        backgroundColor: '#006d77',
+        backgroundColor: '#028090',
         iconColor: '#fff',
-        disabled: true,
-        badge: (
-          <ComingSoonBadge
-            text={t('comingSoon')}
-            theme={theme}
-            fontSizes={fontSizes}
-          />
-        ),
-        onPress: () => {},
+        disabled: false,
+        onPress: () => {
+          navigation.navigate('TeacherHealthScreen', {
+            authCode: userData.authCode,
+            userData: userData,
+          });
+        },
       },
       {
         id: 'materials',
@@ -749,13 +746,7 @@ export default function TeacherScreen({ route, navigation }) {
             }
           >
             <FontAwesomeIcon icon={faComments} size={20} color='#fff' />
-            {totalUnreadMessages > 0 && (
-              <View style={styles.messageBadge}>
-                <Text style={styles.messageBadgeText}>
-                  {totalUnreadMessages > 99 ? '99+' : totalUnreadMessages}
-                </Text>
-              </View>
-            )}
+            <MessageBadge userType='teacher' />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -1043,7 +1034,7 @@ export default function TeacherScreen({ route, navigation }) {
           </View>
         )}
       </View>
-
+      <Text style={styles.sectionTitle}>{t('quickActions')}</Text>
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size='large' color='#007AFF' />
@@ -1063,7 +1054,6 @@ export default function TeacherScreen({ route, navigation }) {
         >
           {/* Quick Actions */}
           <View style={styles.quickActionsContainer}>
-            <Text style={styles.sectionTitle}>{t('quickActions')}</Text>
             <View
               style={[
                 styles.actionTilesGrid,
@@ -1143,29 +1133,7 @@ const createStyles = (theme, fontSizes) =>
       justifyContent: 'center',
       alignItems: 'center',
       position: 'relative',
-      paddingHorizontal: 8,
-    },
-    messageBadge: {
-      badge: {
-        backgroundColor: '#FF3B30',
-        borderRadius: 9,
-        minWidth: 18,
-        height: 18,
-        justifyContent: 'center',
-        alignItems: 'center',
-  
-        position: 'absolute',
-        top: -10,
-        right: -10,
-        borderWidth: 2,
-        borderColor: theme.colors.background,
-      },
-    },
-    messageBadgeText: {
-      color: '#FFFFFF',
-      fontSize: 10,
-      fontWeight: 'bold',
-      textAlign: 'center',
+      
     },
     notificationButton: {
       // width: 40,
@@ -1177,7 +1145,13 @@ const createStyles = (theme, fontSizes) =>
       position: 'relative',
     },
     logoutButton: {
-      paddingHorizontal: 10,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 2,
     },
 
     // Loading
@@ -1374,6 +1348,7 @@ const createStyles = (theme, fontSizes) =>
       marginBottom: 25,
     },
     sectionTitle: {
+      marginLeft: 30,
       fontSize: 20,
       fontWeight: 'bold',
       color: theme.colors.text,

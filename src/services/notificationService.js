@@ -326,3 +326,110 @@ export const sendStaffNotification = async (staffData) => {
     throw error;
   }
 };
+
+/**
+ * Send health notification
+ * @param {Object} healthData - Health notification data
+ * @param {number} healthData.student_id - Student ID (for student health records)
+ * @param {number} healthData.staff_id - Staff ID (for staff health records)
+ * @param {string} healthData.guest_name - Guest name (for guest health records)
+ * @param {string} healthData.type - Health notification type: 'student_visit'|'staff_visit'|'guest_visit'|'health_alert'
+ * @param {string} healthData.title - Notification title
+ * @param {string} healthData.message - Notification message
+ * @param {string} healthData.priority - Priority: 'low'|'normal'|'high'|'urgent'
+ * @param {Object} healthData.data - Additional health data
+ * @returns {Promise<Object>} - Response data
+ */
+export const sendHealthNotification = async (healthData) => {
+  try {
+    const authCode = await getAuthCode();
+    if (!authCode) {
+      throw new Error('Authentication required');
+    }
+
+    const url = buildApiUrl(Config.API_ENDPOINTS.SEND_HEALTH_NOTIFICATION);
+
+    return await makeApiRequest(url, {
+      method: 'POST',
+      body: JSON.stringify({
+        authCode,
+        ...healthData,
+      }),
+    });
+  } catch (error) {
+    console.error('Error sending health notification:', error);
+    throw error;
+  }
+};
+
+/**
+ * Send emergency health alert
+ * @param {Object} emergencyData - Emergency alert data
+ * @param {number} emergencyData.student_id - Student ID
+ * @param {string} emergencyData.emergency_type - Type: 'allergy'|'injury'|'illness'|'accident'
+ * @param {string} emergencyData.severity - Severity: 'minor'|'moderate'|'severe'|'critical'
+ * @param {string} emergencyData.description - Emergency description
+ * @param {string} emergencyData.location - Location of emergency
+ * @param {Array} emergencyData.emergency_contacts - Emergency contact IDs to notify
+ * @returns {Promise<Object>} - Response data
+ */
+export const sendEmergencyHealthAlert = async (emergencyData) => {
+  try {
+    const authCode = await getAuthCode();
+    if (!authCode) {
+      throw new Error('Authentication required');
+    }
+
+    const url = buildApiUrl(Config.API_ENDPOINTS.SEND_EMERGENCY_HEALTH_ALERT);
+
+    return await makeApiRequest(url, {
+      method: 'POST',
+      body: JSON.stringify({
+        authCode,
+        ...emergencyData,
+        priority: 'urgent', // Emergency alerts are always urgent
+      }),
+    });
+  } catch (error) {
+    console.error('Error sending emergency health alert:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get health notification categories for filtering
+ * @returns {Array} - Array of health notification categories
+ */
+export const getHealthNotificationCategories = () => {
+  return [
+    {
+      id: 'health_visit',
+      name: 'Health Visits',
+      description:
+        'Notifications about student, staff, and guest health visits',
+      types: ['student_visit', 'staff_visit', 'guest_visit'],
+    },
+    {
+      id: 'health_alert',
+      name: 'Health Alerts',
+      description: 'Important health alerts and emergencies',
+      types: ['allergy_alert', 'emergency', 'injury_report'],
+    },
+    {
+      id: 'health_reminder',
+      name: 'Health Reminders',
+      description: 'Medication reminders and health checkup notifications',
+      types: [
+        'medication_reminder',
+        'checkup_reminder',
+        'vaccination_reminder',
+      ],
+    },
+    {
+      id: 'health_update',
+      name: 'Health Updates',
+      description: 'Updates to health information and records',
+      types: ['info_updated', 'record_created', 'record_updated'],
+    },
+  ];
+};

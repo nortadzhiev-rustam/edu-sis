@@ -39,6 +39,10 @@ import StudentMessagingScreen from './src/screens/StudentMessagingScreen';
 import ConversationScreen from './src/screens/ConversationScreen';
 import CreateConversationScreen from './src/screens/CreateConversationScreen';
 import StudentCreateConversationScreen from './src/screens/StudentCreateConversationScreen';
+import StudentHealthScreen from './src/screens/StudentHealthScreen';
+import TeacherHealthScreen from './src/screens/TeacherHealthScreen';
+import EditHealthInfoScreen from './src/screens/EditHealthInfoScreen';
+import CreateHealthRecordScreen from './src/screens/CreateHealthRecordScreen';
 import { ThemeProvider } from './src/contexts/ThemeContext';
 import { LanguageProvider } from './src/contexts/LanguageContext';
 import { NotificationProvider } from './src/contexts/NotificationContext';
@@ -303,6 +307,22 @@ export default function App() {
                   <Stack.Screen
                     name='StudentCreateConversationScreen'
                     component={StudentCreateConversationScreen}
+                  />
+                  <Stack.Screen
+                    name='StudentHealthScreen'
+                    component={StudentHealthScreen}
+                  />
+                  <Stack.Screen
+                    name='TeacherHealthScreen'
+                    component={TeacherHealthScreen}
+                  />
+                  <Stack.Screen
+                    name='EditHealthInfoScreen'
+                    component={EditHealthInfoScreen}
+                  />
+                  <Stack.Screen
+                    name='CreateHealthRecordScreen'
+                    component={CreateHealthRecordScreen}
                   />
                 </Stack.Navigator>
                 {/* <DevTokenDisplay /> */}

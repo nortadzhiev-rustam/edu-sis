@@ -1,0 +1,689 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  RefreshControl,
+  Alert,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import {
+  faArrowLeft,
+  faHeartbeat,
+  faCalendarAlt,
+  faClock,
+  faThermometerHalf,
+  faPills,
+  faCommentMedical,
+  faUserMd,
+  faInfoCircle,
+  faExclamationTriangle,
+  faPhone,
+  faEye,
+  faEar,
+  faUtensils,
+  faAllergies,
+  faFirstAid,
+} from '@fortawesome/free-solid-svg-icons';
+import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import {
+  getStudentHealthRecords,
+  getStudentHealthInfo,
+} from '../services/healthService';
+import { createCustomShadow } from '../utils/commonStyles';
+
+export default function StudentHealthScreen({ route, navigation }) {
+  const { theme } = useTheme();
+  const { t, currentLanguage } = useLanguage();
+  const fontSizes = getLanguageFontSizes(currentLanguage);
+  const styles = createStyles(theme, fontSizes);
+
+  const { authCode, studentName } = route.params || {};
+
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [healthRecords, setHealthRecords] = useState([]);
+  const [healthInfo, setHealthInfo] = useState(null);
+  const [activeTab, setActiveTab] = useState('records'); // 'records' or 'info'
+
+  useEffect(() => {
+    loadHealthData();
+  }, []);
+
+  const loadHealthData = async () => {
+    try {
+      setLoading(true);
+      await Promise.all([loadHealthRecords(), loadHealthInfo()]);
+    } catch (error) {
+      console.error('Error loading health data:', error);
+      Alert.alert('Error', 'Failed to load health data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadHealthRecords = async () => {
+    try {
+      const response = await getStudentHealthRecords(authCode);
+      if (response.success && response.data) {
+        setHealthRecords(response.data.records || []);
+      }
+    } catch (error) {
+      console.error('Error loading health records:', error);
+    }
+  };
+
+  const loadHealthInfo = async () => {
+    try {
+      const response = await getStudentHealthInfo(authCode);
+      if (response.success && response.data) {
+        setHealthInfo(response.data.health_info);
+      }
+    } catch (error) {
+      console.error('Error loading health info:', error);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadHealthData();
+    setRefreshing(false);
+  };
+
+  const formatDate = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+    } catch (error) {
+      return dateString;
+    }
+  };
+
+  const formatTime = (timeString) => {
+    try {
+      // Handle both HH:MM and HH:MM:SS formats
+      const timeParts = timeString.split(':');
+      const hours = parseInt(timeParts[0]);
+      const minutes = timeParts[1];
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const displayHours = hours % 12 || 12;
+      return `${displayHours}:${minutes} ${ampm}`;
+    } catch (error) {
+      return timeString;
+    }
+  };
+
+  const renderHealthRecord = (record, index) => (
+    <View key={record.record_id || index} style={styles.recordCard}>
+      <View style={styles.recordHeader}>
+        <View style={styles.recordDateTimeContainer}>
+          <View style={styles.recordDateContainer}>
+            <FontAwesomeIcon
+              icon={faCalendarAlt}
+              size={14}
+              color={theme.colors.primary}
+            />
+            <Text style={styles.recordDate}>{formatDate(record.date)}</Text>
+          </View>
+          <View style={styles.recordTimeContainer}>
+            <FontAwesomeIcon
+              icon={faClock}
+              size={14}
+              color={theme.colors.primary}
+            />
+            <Text style={styles.recordTime}>{formatTime(record.time)}</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.recordContent}>
+        <View style={styles.recordRow}>
+          <FontAwesomeIcon
+            icon={faCommentMedical}
+            size={16}
+            color={theme.colors.error}
+          />
+          <View style={styles.recordTextContainer}>
+            <Text style={styles.recordLabel}>Reason:</Text>
+            <Text style={styles.recordValue}>
+              {record.reason || 'Not specified'}
+            </Text>
+          </View>
+        </View>
+
+        {record.action && (
+          <View style={styles.recordRow}>
+            <FontAwesomeIcon
+              icon={faFirstAid}
+              size={16}
+              color={theme.colors.success}
+            />
+            <View style={styles.recordTextContainer}>
+              <Text style={styles.recordLabel}>Action Taken:</Text>
+              <Text style={styles.recordValue}>{record.action}</Text>
+            </View>
+          </View>
+        )}
+
+        {record.temperature && (
+          <View style={styles.recordRow}>
+            <FontAwesomeIcon
+              icon={faThermometerHalf}
+              size={16}
+              color={theme.colors.warning}
+            />
+            <View style={styles.recordTextContainer}>
+              <Text style={styles.recordLabel}>Temperature:</Text>
+              <Text style={styles.recordValue}>{record.temperature}</Text>
+            </View>
+          </View>
+        )}
+
+        {record.medication && (
+          <View style={styles.recordRow}>
+            <FontAwesomeIcon
+              icon={faPills}
+              size={16}
+              color={theme.colors.info}
+            />
+            <View style={styles.recordTextContainer}>
+              <Text style={styles.recordLabel}>Medication:</Text>
+              <Text style={styles.recordValue}>{record.medication}</Text>
+            </View>
+          </View>
+        )}
+
+        {record.comments && (
+          <View style={styles.recordRow}>
+            <FontAwesomeIcon
+              icon={faInfoCircle}
+              size={16}
+              color={theme.colors.text}
+            />
+            <View style={styles.recordTextContainer}>
+              <Text style={styles.recordLabel}>Comments:</Text>
+              <Text style={styles.recordValue}>{record.comments}</Text>
+            </View>
+          </View>
+        )}
+
+        {record.created_by && (
+          <View style={styles.recordFooter}>
+            <FontAwesomeIcon
+              icon={faUserMd}
+              size={12}
+              color={theme.colors.textSecondary}
+            />
+            <Text style={styles.recordCreatedBy}>
+              Recorded by: {record.created_by}
+            </Text>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+
+  const renderHealthInfoSection = (title, icon, children) => (
+    <View style={styles.infoSection}>
+      <View style={styles.infoSectionHeader}>
+        <FontAwesomeIcon icon={icon} size={18} color={theme.colors.primary} />
+        <Text style={styles.infoSectionTitle}>{title}</Text>
+      </View>
+      <View style={styles.infoSectionContent}>{children}</View>
+    </View>
+  );
+
+  const renderInfoRow = (label, value, icon) => {
+    if (!value || value === 'None' || value === 'No') return null;
+
+    return (
+      <View style={styles.infoRow}>
+        {icon && (
+          <FontAwesomeIcon
+            icon={icon}
+            size={14}
+            color={theme.colors.textSecondary}
+          />
+        )}
+        <View style={styles.infoTextContainer}>
+          <Text style={styles.infoLabel}>{label}:</Text>
+          <Text style={styles.infoValue}>{value}</Text>
+        </View>
+      </View>
+    );
+  };
+
+  const renderTabButton = (tabKey, title, icon) => (
+    <TouchableOpacity
+      style={[styles.tabButton, activeTab === tabKey && styles.activeTabButton]}
+      onPress={() => setActiveTab(tabKey)}
+    >
+      <FontAwesomeIcon
+        icon={icon}
+        size={16}
+        color={
+          activeTab === tabKey
+            ? theme.colors.primary
+            : theme.colors.textSecondary
+        }
+      />
+      <Text
+        style={[
+          styles.tabButtonText,
+          activeTab === tabKey && styles.activeTabButtonText,
+        ]}
+      >
+        {title}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Health Records</Text>
+          <View style={styles.headerRight} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size='large' color={theme.colors.primary} />
+          <Text style={styles.loadingText}>Loading health data...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Health Records</Text>
+        <View style={styles.headerRight} />
+      </View>
+
+      {/* Tab Navigation */}
+      <View style={styles.tabContainer}>
+        {renderTabButton('records', 'Visit Records', faHeartbeat)}
+        {renderTabButton('info', 'Health Info', faInfoCircle)}
+      </View>
+      <Text style={styles.sectionTitle}>
+        Health Visit Records ({healthRecords.length})
+      </Text>
+      <ScrollView
+        style={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        {activeTab === 'records' && (
+          <View style={styles.recordsContainer}>
+            {healthRecords.length > 0 ? (
+              <>{healthRecords.map(renderHealthRecord)}</>
+            ) : (
+              <View style={styles.emptyContainer}>
+                <FontAwesomeIcon
+                  icon={faHeartbeat}
+                  size={48}
+                  color={theme.colors.textSecondary}
+                />
+                <Text style={styles.emptyTitle}>No Health Records</Text>
+                <Text style={styles.emptyText}>
+                  You don't have any health visit records yet.
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {activeTab === 'info' && healthInfo && (
+          <View style={styles.infoContainer}>
+            {renderHealthInfoSection(
+              'Medical Conditions',
+              faCommentMedical,
+              <>
+                {renderInfoRow(
+                  'Medical Conditions',
+                  healthInfo.medical_conditions
+                )}
+                {renderInfoRow(
+                  'Regular Medication',
+                  healthInfo.regularly_used_medication,
+                  faPills
+                )}
+              </>
+            )}
+
+            {renderHealthInfoSection(
+              'Vision & Hearing',
+              faEye,
+              <>
+                {renderInfoRow(
+                  'Vision Problems',
+                  healthInfo.has_vision_problem,
+                  faEye
+                )}
+                {healthInfo.vision_check_date &&
+                  renderInfoRow(
+                    'Last Vision Check',
+                    formatDate(healthInfo.vision_check_date)
+                  )}
+                {renderInfoRow(
+                  'Hearing Issues',
+                  healthInfo.hearing_issue,
+                  faEar
+                )}
+              </>
+            )}
+
+            {renderHealthInfoSection(
+              'Allergies & Food',
+              faAllergies,
+              <>
+                {renderInfoRow(
+                  'Food Considerations',
+                  healthInfo.special_food_consideration,
+                  faUtensils
+                )}
+                {renderInfoRow('Allergies', healthInfo.allergies, faAllergies)}
+                {renderInfoRow('Allergy Symptoms', healthInfo.allergy_symtoms)}
+                {renderInfoRow(
+                  'First Aid Instructions',
+                  healthInfo.allergy_first_aid,
+                  faFirstAid
+                )}
+                {renderInfoRow(
+                  'Allowed Medications',
+                  healthInfo.allowed_drugs,
+                  faPills
+                )}
+              </>
+            )}
+
+            {renderHealthInfoSection(
+              'Emergency Contacts',
+              faPhone,
+              <>
+                {renderInfoRow(
+                  'Primary Contact',
+                  healthInfo.emergency_name_1,
+                  faPhone
+                )}
+                {healthInfo.emergency_phone_1 &&
+                  renderInfoRow('Primary Phone', healthInfo.emergency_phone_1)}
+                {renderInfoRow(
+                  'Secondary Contact',
+                  healthInfo.emergency_name_2,
+                  faPhone
+                )}
+                {healthInfo.emergency_phone_2 &&
+                  renderInfoRow(
+                    'Secondary Phone',
+                    healthInfo.emergency_phone_2
+                  )}
+              </>
+            )}
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const createStyles = (theme, fontSizes) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: theme.colors.headerBackground,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      ...createCustomShadow(theme, {
+        height: 2,
+        opacity: 0.1,
+        radius: 4,
+        elevation: 3,
+      }),
+    },
+    backButton: {
+      padding: 8,
+      borderRadius: 20,
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    headerTitle: {
+      fontSize: fontSizes.headerTitle,
+      fontWeight: '600',
+      color: '#fff',
+      flex: 1,
+      textAlign: 'center',
+      marginHorizontal: 16,
+    },
+    headerRight: {
+      width: 36,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+    },
+    loadingText: {
+      fontSize: fontSizes.body,
+      color: theme.colors.textSecondary,
+      marginTop: 12,
+    },
+    tabContainer: {
+      flexDirection: 'row',
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    tabButton: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 8,
+      marginHorizontal: 4,
+    },
+    activeTabButton: {
+      backgroundColor: theme.colors.primaryLight,
+    },
+    tabButtonText: {
+      fontSize: fontSizes.bodySmall,
+      color: theme.colors.textSecondary,
+      marginLeft: 8,
+      fontWeight: '500',
+    },
+    activeTabButtonText: {
+      color: theme.colors.primary,
+      fontWeight: '600',
+    },
+    content: {
+      flex: 1,
+    },
+    recordsContainer: {
+      padding: 16,
+    },
+    sectionTitle: {
+      fontSize: fontSizes.headerTitle,
+      fontWeight: '600',
+      color: theme.colors.text,
+      marginVertical: 16,
+      marginHorizontal: 20,
+    },
+    recordCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 12,
+      marginBottom: 12,
+      
+      ...theme.shadows.small
+    },
+    recordHeader: {
+      backgroundColor: theme.colors.primaryLight,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    recordDateTimeContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    recordDateContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    recordTimeContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    recordDate: {
+      fontSize: fontSizes.body,
+      fontWeight: '600',
+      color: theme.colors.primary,
+      marginLeft: 8,
+    },
+    recordTime: {
+      fontSize: fontSizes.body,
+      fontWeight: '500',
+      color: theme.colors.primary,
+      marginLeft: 8,
+    },
+    recordContent: {
+      padding: 16,
+    },
+    recordRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      marginBottom: 12,
+    },
+    recordTextContainer: {
+      flex: 1,
+      marginLeft: 12,
+    },
+    recordLabel: {
+      fontSize: fontSizes.bodySmall,
+      fontWeight: '600',
+      color: theme.colors.textSecondary,
+      marginBottom: 2,
+    },
+    recordValue: {
+      fontSize: fontSizes.body,
+      color: theme.colors.text,
+      lineHeight: 20,
+    },
+    recordFooter: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 8,
+      paddingTop: 12,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border,
+    },
+    recordCreatedBy: {
+      fontSize: fontSizes.bodySmall,
+      color: theme.colors.textSecondary,
+      marginLeft: 6,
+      fontStyle: 'italic',
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: 60,
+    },
+    emptyTitle: {
+      fontSize: fontSizes.headerTitle,
+      fontWeight: '600',
+      color: theme.colors.text,
+      marginTop: 16,
+      marginBottom: 8,
+    },
+    emptyText: {
+      fontSize: fontSizes.body,
+      color: theme.colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 22,
+      paddingHorizontal: 32,
+    },
+    infoContainer: {
+      padding: 16,
+    },
+    infoSection: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 12,
+      marginBottom: 16,
+      overflow: 'hidden',
+      ...createCustomShadow(theme, {
+        height: 1,
+        opacity: 0.08,
+        radius: 3,
+        elevation: 2,
+      }),
+    },
+    infoSectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.colors.primaryLight,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    infoSectionTitle: {
+      fontSize: fontSizes.body,
+      fontWeight: '600',
+      color: theme.colors.primary,
+      marginLeft: 12,
+    },
+    infoSectionContent: {
+      padding: 16,
+    },
+    infoRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      marginBottom: 12,
+    },
+    infoTextContainer: {
+      flex: 1,
+      marginLeft: 12,
+    },
+    infoLabel: {
+      fontSize: fontSizes.bodySmall,
+      fontWeight: '600',
+      color: theme.colors.textSecondary,
+      marginBottom: 2,
+    },
+    infoValue: {
+      fontSize: fontSizes.body,
+      color: theme.colors.text,
+      lineHeight: 20,
+    },
+  });

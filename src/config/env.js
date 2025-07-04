@@ -63,6 +63,23 @@ export const Config = {
     DELETE_CONVERSATION: '/messaging/conversation/delete',
     LEAVE_CONVERSATION: '/messaging/conversation/leave',
     DELETE_MESSAGE: '/messaging/message/delete',
+
+    // Health API Endpoints
+    GET_STUDENT_HEALTH_RECORDS: '/health/student/records',
+    GET_STUDENT_HEALTH_INFO: '/health/student/info',
+    GET_TEACHER_HEALTH_DATA: '/health/teacher/data',
+    CREATE_STUDENT_HEALTH_RECORD: '/health/student/create-record',
+    CREATE_STAFF_HEALTH_RECORD: '/health/staff/create-record',
+    CREATE_GUEST_HEALTH_RECORD: '/health/guest/create-record',
+    UPDATE_STUDENT_HEALTH_INFO: '/health/student/update-info',
+    DELETE_HEALTH_RECORD: '/health/delete-record',
+    GET_STAFF_HEALTH_RECORDS: '/health/staff/records',
+    GET_HOMEROOM_STUDENTS_HEALTH_INFO: '/health/homeroom/students-info',
+    GET_HEALTH_LOOKUP_DATA: '/health/lookup-data',
+    GET_STUDENT_HEALTH_LEGACY: '/get-student-health/',
+    SEND_HEALTH_NOTIFICATION: '/notifications/health/send',
+    SEND_EMERGENCY_HEALTH_ALERT: '/notifications/health/emergency',
+    SEND_HEALTH_REMINDER: '/notifications/health/reminder',
   },
 
   // Web Resources

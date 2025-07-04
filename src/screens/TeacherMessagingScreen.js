@@ -31,6 +31,7 @@ import {
   markConversationAsRead,
 } from '../services/messagingService';
 import { ConversationItem } from '../components/messaging';
+import { useFocusEffect } from '@react-navigation/native';
 
 const TeacherMessagingScreen = ({ navigation, route }) => {
   const { theme, fontSizes } = useTheme();
@@ -252,6 +253,26 @@ const TeacherMessagingScreen = ({ navigation, route }) => {
   useEffect(() => {
     fetchConversations();
   }, []); // Only run once on mount
+
+  // Refresh conversations when screen comes into focus (with debouncing)
+  const lastFocusRefresh = React.useRef(0);
+  useFocusEffect(
+    React.useCallback(() => {
+      const now = Date.now();
+      // Debounce: only allow refresh every 2 seconds
+      if (now - lastFocusRefresh.current < 2000) {
+        console.log('🔍 TEACHER MESSAGING: Skipping focus refresh - too soon');
+        return;
+      }
+
+      lastFocusRefresh.current = now;
+      console.log(
+        '🔍 TEACHER MESSAGING: Screen focused, refreshing conversations'
+      );
+      fetchConversations();
+      refreshUnreadCounts();
+    }, [authCode]) // Simplified dependencies
+  );
 
   useEffect(() => {
     const delayedSearch = setTimeout(() => {

@@ -29,6 +29,7 @@ import {
 } from '../services/messagingService';
 import { ConversationItem } from '../components/messaging';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 
 const StudentMessagingScreen = ({ navigation, route }) => {
   const { theme, fontSizes } = useTheme();
@@ -66,84 +67,87 @@ const StudentMessagingScreen = ({ navigation, route }) => {
   }, []);
 
   // Helper function to check if student is a member of the conversation
-  const isStudentMember = (conversation, currentUser) => {
-    if (!conversation) {
-      return false;
-    }
+  const isStudentMember = useCallback(
+    (conversation, currentUser) => {
+      if (!conversation) {
+        return false;
+      }
 
-    // Handle different conversation structures
-    let membersToCheck = [];
+      // Handle different conversation structures
+      let membersToCheck = [];
 
-    if (conversation.members && Array.isArray(conversation.members)) {
-      // New API structure with flat members array
-      membersToCheck = conversation.members;
-    } else if (
-      conversation.grouped_members &&
-      Array.isArray(conversation.grouped_members)
-    ) {
-      // New API structure with grouped members
-      conversation.grouped_members.forEach((group) => {
-        if (group.members && Array.isArray(group.members)) {
-          membersToCheck = membersToCheck.concat(group.members);
-        }
+      if (conversation.members && Array.isArray(conversation.members)) {
+        // New API structure with flat members array
+        membersToCheck = conversation.members;
+      } else if (
+        conversation.grouped_members &&
+        Array.isArray(conversation.grouped_members)
+      ) {
+        // New API structure with grouped members
+        conversation.grouped_members.forEach((group) => {
+          if (group.members && Array.isArray(group.members)) {
+            membersToCheck = membersToCheck.concat(group.members);
+          }
+        });
+      } else if (
+        conversation.members &&
+        typeof conversation.members === 'object'
+      ) {
+        // Old API structure with grouped members object
+        Object.values(conversation.members).forEach((memberGroup) => {
+          if (Array.isArray(memberGroup)) {
+            membersToCheck = membersToCheck.concat(memberGroup);
+          }
+        });
+      }
+
+      // If no members found, return false
+      if (membersToCheck.length === 0) {
+        return false;
+      }
+
+      // Check if current user is in the members array
+      const isMember = membersToCheck.some((member) => {
+        if (!member) return false;
+
+        const matches = {
+          currentUserId: currentUser && member.id === currentUser.id,
+          currentUserStudentId:
+            currentUser && member.id === currentUser.student_id,
+          currentUserName: currentUser && member.name === currentUser.name,
+          currentUserEmail: currentUser && member.email === currentUser.email,
+          studentNameParam: member.name === studentName,
+          studentTypeAndName:
+            member.user_type === 'student' && member.name === studentName,
+        };
+
+        // Check various possible ID and name matches
+        const isMatch =
+          matches.currentUserId ||
+          matches.currentUserStudentId ||
+          matches.currentUserName ||
+          matches.currentUserEmail ||
+          matches.studentNameParam ||
+          matches.studentTypeAndName;
+
+        // Additional fallback: For testing purposes, if no exact match is found
+        // and we have a student name parameter, match the first student in the conversation
+        const isMockFallback =
+          !isMatch &&
+          !currentUser &&
+          member.user_type === 'student' &&
+          studentName &&
+          membersToCheck
+            .filter((m) => m.user_type === 'student')
+            .indexOf(member) === 0;
+
+        return isMatch || isMockFallback;
       });
-    } else if (
-      conversation.members &&
-      typeof conversation.members === 'object'
-    ) {
-      // Old API structure with grouped members object
-      Object.values(conversation.members).forEach((memberGroup) => {
-        if (Array.isArray(memberGroup)) {
-          membersToCheck = membersToCheck.concat(memberGroup);
-        }
-      });
-    }
 
-    // If no members found, return false
-    if (membersToCheck.length === 0) {
-      return false;
-    }
-
-    // Check if current user is in the members array
-    const isMember = membersToCheck.some((member) => {
-      if (!member) return false;
-
-      const matches = {
-        currentUserId: currentUser && member.id === currentUser.id,
-        currentUserStudentId:
-          currentUser && member.id === currentUser.student_id,
-        currentUserName: currentUser && member.name === currentUser.name,
-        currentUserEmail: currentUser && member.email === currentUser.email,
-        studentNameParam: member.name === studentName,
-        studentTypeAndName:
-          member.user_type === 'student' && member.name === studentName,
-      };
-
-      // Check various possible ID and name matches
-      const isMatch =
-        matches.currentUserId ||
-        matches.currentUserStudentId ||
-        matches.currentUserName ||
-        matches.currentUserEmail ||
-        matches.studentNameParam ||
-        matches.studentTypeAndName;
-
-      // Additional fallback: For testing purposes, if no exact match is found
-      // and we have a student name parameter, match the first student in the conversation
-      const isMockFallback =
-        !isMatch &&
-        !currentUser &&
-        member.user_type === 'student' &&
-        studentName &&
-        membersToCheck
-          .filter((m) => m.user_type === 'student')
-          .indexOf(member) === 0;
-
-      return isMatch || isMockFallback;
-    });
-
-    return isMember;
-  };
+      return isMember;
+    },
+    [studentName]
+  );
 
   // Fetch conversations and filter for student
   const fetchConversations = useCallback(async () => {
@@ -201,7 +205,7 @@ const StudentMessagingScreen = ({ navigation, route }) => {
     } finally {
       setLoading(false);
     }
-  }, [getCurrentUserData, isStudentMember]);
+  }, [authCode, studentName]); // Removed function dependencies to prevent infinite loops
 
   // Handle refresh
   const handleRefresh = useCallback(async () => {
@@ -357,7 +361,7 @@ const StudentMessagingScreen = ({ navigation, route }) => {
         setSearchLoading(false);
       }
     },
-    [getCurrentUserData, isStudentMember]
+    [authCode, getCurrentUserData, isStudentMember]
   );
 
   // Render conversation item
@@ -400,6 +404,66 @@ const StudentMessagingScreen = ({ navigation, route }) => {
   useEffect(() => {
     fetchConversations();
   }, []); // Only run once on mount
+
+  // Refresh conversations when screen comes into focus (with debouncing)
+  const lastFocusRefresh = React.useRef(0);
+  useFocusEffect(
+    React.useCallback(() => {
+      async function refreshOnFocus() {
+        const now = Date.now();
+        // Debounce: only allow refresh every 2 seconds
+        if (now - lastFocusRefresh.current < 2000) {
+          console.log(
+            '🔍 STUDENT MESSAGING: Skipping focus refresh - too soon'
+          );
+          return;
+        }
+
+        lastFocusRefresh.current = now;
+        console.log(
+          '🔍 STUDENT MESSAGING: Screen focused, refreshing conversations'
+        );
+
+        try {
+          setLoading(true);
+          const response = await getConversations(authCode);
+          if (response.success && response.data) {
+            const allConversations = response.data.conversations || [];
+            const currentUser = await getCurrentUserData();
+
+            const studentConversations = allConversations.filter(
+              (conversation) => {
+                if (currentUser) {
+                  return isStudentMember(conversation, currentUser);
+                }
+                if (studentName) {
+                  const hasStudents =
+                    conversation.members?.some(
+                      (m) => m.user_type === 'student'
+                    ) ||
+                    conversation.grouped_members?.some(
+                      (g) => g.type === 'student' && g.count > 0
+                    );
+                  return hasStudents;
+                }
+                return true;
+              }
+            );
+
+            setConversations(studentConversations);
+          }
+        } catch (error) {
+          console.error('Error refreshing conversations on focus:', error);
+        } finally {
+          setLoading(false);
+        }
+
+        refreshUnreadCounts();
+      }
+
+      refreshOnFocus();
+    }, [authCode, studentName, refreshUnreadCounts])
+  );
 
   useEffect(() => {
     const delayedSearch = setTimeout(() => {

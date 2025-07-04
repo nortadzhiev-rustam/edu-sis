@@ -106,6 +106,14 @@ export const MessagingProvider = ({ children }) => {
     updateUnreadCounts();
   }, [updateUnreadCounts]);
 
+  // Refresh messaging data when app comes to foreground
+  const refreshOnAppForeground = useCallback(() => {
+    console.log(
+      '📱 MESSAGING: App came to foreground, refreshing messaging data'
+    );
+    updateUnreadCounts();
+  }, [updateUnreadCounts]);
+
   // Initialize polling when component mounts and handle app state changes
   useEffect(() => {
     let interval;
@@ -149,7 +157,7 @@ export const MessagingProvider = ({ children }) => {
         console.log(
           '📱 MESSAGING: App became active, refreshing unread counts'
         );
-        updateUnreadCounts();
+        refreshOnAppForeground();
       }
 
       appState = nextAppState;
@@ -204,6 +212,7 @@ export const MessagingProvider = ({ children }) => {
       markConversationAsReadLocally,
       markMessageAsReadLocally,
       refreshUnreadCounts,
+      refreshOnAppForeground,
     }),
     [
       unreadConversations,
@@ -216,6 +225,7 @@ export const MessagingProvider = ({ children }) => {
       markConversationAsReadLocally,
       markMessageAsReadLocally,
       refreshUnreadCounts,
+      refreshOnAppForeground,
     ]
   );
 

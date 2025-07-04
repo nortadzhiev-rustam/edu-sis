@@ -380,7 +380,7 @@ const createStyles = (
       borderRadius: 15,
       padding: 15,
       marginBottom: 10,
-      ...createSmallShadow(theme),
+      ...theme.shadows.small,
       marginLeft: 0,
     },
     roleButtonHorizontal: {
@@ -432,7 +432,7 @@ const createStyles = (
       width: '48%',
       flexDirection: 'row',
       alignItems: 'center',
-      ...createSmallShadow(theme),
+      ...theme.shadows.small
     },
     resourceIconContainer: {
       width: 40,
@@ -455,7 +455,7 @@ const createStyles = (
       justifyContent: 'center',
     },
     socialMediaButton: {
-      backgroundColor: '#007AFF',
+      backgroundColor: theme.colors.primary,
       borderRadius: 25,
       paddingVertical: 12,
       paddingHorizontal: 20,
@@ -464,12 +464,7 @@ const createStyles = (
       justifyContent: 'center',
       marginBottom: 15,
       alignSelf: 'center', // This should center it within the ScrollView
-      ...createCustomShadow(theme, {
-        height: 2,
-        opacity: 0.2,
-        radius: 3,
-        elevation: 3,
-      }),
+      ...theme.shadows.small
     },
     socialMediaIconContainer: {
       marginRight: 10,
@@ -488,15 +483,10 @@ const createStyles = (
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: '#f0f0f0',
+      backgroundColor: theme.colors.surface,
       justifyContent: 'center',
       alignItems: 'center',
       marginHorizontal: 10,
-      ...createCustomShadow(theme, {
-        height: 1,
-        opacity: 0.1,
-        radius: 2,
-        elevation: 2,
-      }),
+      ...theme.shadows.small
     },
   });

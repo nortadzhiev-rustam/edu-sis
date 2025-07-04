@@ -34,8 +34,8 @@ import {
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useParentNotifications } from '../hooks/useParentNotifications';
-import { useMessaging } from '../contexts/MessagingContext';
 import ParentNotificationBadge from '../components/ParentNotificationBadge';
+import MessageBadge from '../components/MessageBadge';
 import { QuickActionTile, ComingSoonBadge } from '../components';
 import { isIPad, isTablet } from '../utils/deviceDetection';
 import DemoModeIndicator from '../components/DemoModeIndicator';
@@ -99,10 +99,21 @@ const getMenuItems = (t) => [
     id: 'messages',
     title: 'Messages',
     icon: faComments,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#d90429',
     iconColor: '#fff',
     disabled: false,
     action: 'messages',
+    comingSoon: false,
+  },
+  // Health
+  {
+    id: 'health',
+    title: 'Health',
+    icon: faHeartbeat,
+    backgroundColor: '#028090',
+    iconColor: '#fff',
+    action: 'health',
+    disabled: false,
     comingSoon: false,
   },
   {
@@ -112,17 +123,6 @@ const getMenuItems = (t) => [
     backgroundColor: '#B0B0B0',
     iconColor: '#fff',
     action: 'materials',
-    disabled: true,
-    comingSoon: true,
-  },
-  // Health
-  {
-    id: 'health',
-    title: 'Health',
-    icon: faHeartbeat,
-    backgroundColor: '#FF3B30',
-    iconColor: '#fff',
-    action: 'health',
     disabled: true,
     comingSoon: true,
   },
@@ -147,9 +147,6 @@ export default function ParentScreen({ navigation }) {
 
   // Parent notifications hook
   const { selectStudent, refreshAllStudents } = useParentNotifications();
-
-  // Messaging hook for unread message counts
-  const { totalUnreadMessages } = useMessaging();
 
   const styles = createStyles(theme, fontSizes);
 
@@ -290,6 +287,12 @@ export default function ParentScreen({ navigation }) {
         break;
       case 'library':
         navigation.navigate('LibraryScreen', {
+          studentName: selectedStudent.name,
+          authCode: selectedStudent.authCode,
+        });
+        break;
+      case 'health':
+        navigation.navigate('StudentHealthScreen', {
           studentName: selectedStudent.name,
           authCode: selectedStudent.authCode,
         });
@@ -639,13 +642,7 @@ export default function ParentScreen({ navigation }) {
             }}
           >
             <FontAwesomeIcon icon={faComments} size={18} color='#fff' />
-            {totalUnreadMessages > 0 && (
-              <View style={styles.messageBadge}>
-                <Text style={styles.messageBadgeText}>
-                  {totalUnreadMessages > 99 ? '99+' : totalUnreadMessages}
-                </Text>
-              </View>
-            )}
+            <MessageBadge userType='parent' />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.notificationButton}

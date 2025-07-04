@@ -12,6 +12,7 @@ import {
   Platform,
   Modal,
   Keyboard,
+  AppState,
 } from 'react-native';
 import {
   SafeAreaView,
@@ -40,6 +41,7 @@ import {
 } from '../services/messagingService';
 import { MessageBubble, AttachmentHandler } from '../components/messaging';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 
 const ConversationScreen = ({ navigation, route }) => {
   const { theme, fontSizes } = useTheme();
@@ -65,8 +67,11 @@ const ConversationScreen = ({ navigation, route }) => {
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [hasMarkedAsRead, setHasMarkedAsRead] = useState(false);
+  const [isScreenActive, setIsScreenActive] = useState(true);
 
   const flatListRef = useRef(null);
+  const pollIntervalRef = useRef(null);
+  const lastRefreshTime = useRef(0);
 
   // Safety check for fontSizes
   const safeFontSizes = fontSizes || {
@@ -120,12 +125,14 @@ const ConversationScreen = ({ navigation, route }) => {
     }
   };
 
-  // Fetch messages
+  // Fetch messages with optional silent refresh
   const fetchMessages = useCallback(
-    async (pageNum = 1, append = false) => {
+    async (pageNum = 1, append = false, silent = false) => {
       try {
-        if (pageNum === 1) setLoading(true);
-        else setLoadingMore(true);
+        if (!silent) {
+          if (pageNum === 1) setLoading(true);
+          else setLoadingMore(true);
+        }
 
         const response = await getConversationMessages(
           conversationUuid,
@@ -158,14 +165,38 @@ const ConversationScreen = ({ navigation, route }) => {
         }
       } catch (error) {
         console.error('Error fetching messages:', error);
-        Alert.alert('Error', 'Failed to load messages');
+        if (!silent) {
+          Alert.alert('Error', 'Failed to load messages');
+        }
       } finally {
-        setLoading(false);
-        setLoadingMore(false);
+        if (!silent) {
+          setLoading(false);
+          setLoadingMore(false);
+        }
       }
     },
-    [conversationUuid, authCode]
+    [conversationUuid, authCode, userType]
   );
+
+  // Refresh messages with debouncing
+  const refreshMessages = useCallback(async () => {
+    const now = Date.now();
+    // Debounce: only allow refresh every 5 seconds
+    if (now - lastRefreshTime.current < 5000) {
+      console.log('📱 CONVERSATION: Skipping refresh - too soon');
+      return;
+    }
+
+    lastRefreshTime.current = now;
+    console.log('🔄 CONVERSATION: Refreshing messages...');
+
+    try {
+      await fetchMessages(1, false, true); // Silent refresh
+      console.log('✅ CONVERSATION: Messages refreshed successfully');
+    } catch (error) {
+      console.error('❌ CONVERSATION: Error refreshing messages:', error);
+    }
+  }, [fetchMessages]);
 
   // Send message
   const handleSendMessage = useCallback(async () => {
@@ -551,6 +582,66 @@ const ConversationScreen = ({ navigation, route }) => {
   useEffect(() => {
     fetchMessages();
   }, [fetchMessages]);
+
+  // Focus effect for real-time updates
+  useFocusEffect(
+    useCallback(() => {
+      console.log(
+        '🔍 CONVERSATION: Screen focused, setting up real-time updates'
+      );
+      setIsScreenActive(true);
+
+      // Refresh messages when screen comes into focus
+      refreshMessages();
+
+      // Set up polling for new messages every 10 seconds when screen is active
+      const startPolling = () => {
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+        }
+
+        pollIntervalRef.current = setInterval(() => {
+          if (isScreenActive) {
+            console.log('🔄 CONVERSATION: Polling for new messages...');
+            refreshMessages();
+          }
+        }, 10000); // Poll every 10 seconds
+      };
+
+      startPolling();
+
+      // App state change listener
+      const handleAppStateChange = (nextAppState) => {
+        console.log(`📱 CONVERSATION: App state changed to ${nextAppState}`);
+        if (nextAppState === 'active') {
+          setIsScreenActive(true);
+          refreshMessages();
+          startPolling();
+        } else {
+          setIsScreenActive(false);
+          if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current);
+          }
+        }
+      };
+
+      const subscription = AppState.addEventListener(
+        'change',
+        handleAppStateChange
+      );
+
+      return () => {
+        console.log('🔍 CONVERSATION: Screen unfocused, cleaning up');
+        setIsScreenActive(false);
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+        }
+        if (subscription) {
+          subscription.remove();
+        }
+      };
+    }, [refreshMessages, isScreenActive])
+  );
 
   // Mark unread messages as read when messages are loaded (only once)
   useEffect(() => {

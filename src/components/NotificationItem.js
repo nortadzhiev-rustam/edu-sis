@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import PropTypes from 'prop-types';
 import {
   faBell,
   faGraduationCap,
@@ -75,14 +76,14 @@ const NotificationItem = ({ notification, onPress }) => {
 
       case 'timetable':
         return faCalendarCheck;
-        // Messaging notifications
-        case 'message':
-        case 'messaging':
-        case 'new_message':
-        case 'message_received':
-        case 'conversation':
-        case 'chat':
-          return faComments;
+      // Messaging notifications
+      case 'message':
+      case 'messaging':
+      case 'new_message':
+      case 'message_received':
+      case 'conversation':
+      case 'chat':
+        return faComments;
       default:
         return faBell;
     }
@@ -149,6 +150,14 @@ const NotificationItem = ({ notification, onPress }) => {
 
       case 'timetable':
         return '#AF52DE'; // Purple for timetable
+      // Messaging notifications - Pink
+      case 'message':
+      case 'messaging':
+      case 'new_message':
+      case 'message_received':
+      case 'conversation':
+      case 'chat':
+        return '#FF2D55';
       default:
         return '#8E8E93'; // Gray for others
     }
@@ -227,6 +236,13 @@ const NotificationItem = ({ notification, onPress }) => {
     }
   };
 
+  const showNotificationAlert = (
+    title = notification.title,
+    body = notification.body
+  ) => {
+    Alert.alert(title, body, [{ text: 'OK', style: 'default' }]);
+  };
+
   const navigateToScreen = async (type) => {
     try {
       const navigationParams = await getNavigationParams();
@@ -271,10 +287,34 @@ const NotificationItem = ({ notification, onPress }) => {
         case 'homework_assigned':
         case 'homework_due':
         case 'homework_submitted':
-        case 'homework_graded':
-          // Navigate to Assignments screen (homework is handled by AssignmentsScreen)
-          navigation.navigate('AssignmentsScreen', navigationParams);
+        case 'homework_graded': {
+          // Navigate to appropriate homework screen based on user type
+          const homeworkUserData = await AsyncStorage.getItem('userData');
+          if (homeworkUserData) {
+            const user = JSON.parse(homeworkUserData);
+            const userType = user.userType || user.user_type || user.type;
+
+            // Check if user is a teacher/staff
+            if (
+              userType === 'teacher' ||
+              userType === 'staff' ||
+              user.is_teacher
+            ) {
+              navigation.navigate('TeacherHomework', {
+                authCode: navigationParams.authCode,
+                teacherName: navigationParams.studentName || user.name,
+                selectedBranchId: user.branches?.[0]?.branch_id || null,
+              });
+            } else {
+              // For students and parents, navigate to AssignmentsScreen
+              navigation.navigate('AssignmentsScreen', navigationParams);
+            }
+          } else {
+            // Fallback to AssignmentsScreen if user data not found
+            navigation.navigate('AssignmentsScreen', navigationParams);
+          }
           break;
+        }
 
         // Announcement notifications
         case 'announcement':
@@ -283,9 +323,7 @@ const NotificationItem = ({ notification, onPress }) => {
         case 'event':
         case 'reminder':
           // For announcements, show alert since there's no dedicated announcements screen
-          Alert.alert(notification.title, notification.body, [
-            { text: 'OK', style: 'default' },
-          ]);
+          showNotificationAlert();
           break;
 
         case 'timetable':
@@ -299,11 +337,11 @@ const NotificationItem = ({ notification, onPress }) => {
         case 'new_message':
         case 'message_received':
         case 'conversation':
-        case 'chat':
+        case 'chat': {
           // Navigate to appropriate messaging screen based on user type
-          const userData = await AsyncStorage.getItem('userData');
-          if (userData) {
-            const user = JSON.parse(userData);
+          const messagingUserData = await AsyncStorage.getItem('userData');
+          if (messagingUserData) {
+            const user = JSON.parse(messagingUserData);
             const userType = user.user_type || user.type;
 
             if (userType === 'teacher' || userType === 'staff') {
@@ -318,34 +356,29 @@ const NotificationItem = ({ notification, onPress }) => {
               });
             } else {
               // Fallback for unknown user types
-              Alert.alert(
+              showNotificationAlert(
                 'Messaging',
-                'Please check your messages in the app.',
-                [{ text: 'OK', style: 'default' }]
+                'Please check your messages in the app.'
               );
             }
           } else {
-            Alert.alert(
+            showNotificationAlert(
               'Error',
-              'Unable to determine user type for messaging navigation.',
-              [{ text: 'OK', style: 'default' }]
+              'Unable to determine user type for messaging navigation.'
             );
           }
           break;
+        }
 
         default:
           // Show notification details in alert for unknown types
-          Alert.alert(notification.title, notification.body, [
-            { text: 'OK', style: 'default' },
-          ]);
+          showNotificationAlert();
           break;
       }
     } catch (error) {
       console.log('Navigation error:', error);
       // Fallback to showing alert if navigation fails
-      Alert.alert(notification.title, notification.body, [
-        { text: 'OK', style: 'default' },
-      ]);
+      showNotificationAlert();
     }
   };
 
@@ -462,5 +495,19 @@ const createStyles = (theme) =>
       fontWeight: '500',
     },
   });
+
+NotificationItem.propTypes = {
+  notification: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    title: PropTypes.string.isRequired,
+    body: PropTypes.string.isRequired,
+    type: PropTypes.string.isRequired,
+    timestamp: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+      .isRequired,
+    read: PropTypes.bool.isRequired,
+    studentAuthCode: PropTypes.string,
+  }).isRequired,
+  onPress: PropTypes.func,
+};
 
 export default NotificationItem;
