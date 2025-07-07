@@ -126,6 +126,15 @@ export default function LoginScreen({ route, navigation }) {
 
     const userData = await handleUserLogin(username, password);
 
+    // Debug: Log what we received from login
+    console.log('🔍 LOGIN DEBUG: userData received:', userData);
+    console.log('🔍 LOGIN DEBUG: userData type:', typeof userData);
+    console.log('🔍 LOGIN DEBUG: userData is null:', userData === null);
+    console.log(
+      '🔍 LOGIN DEBUG: userData has error:',
+      userData && userData.error
+    );
+
     if (userData && !userData.error) {
       // Handle successful login
 
@@ -165,6 +174,12 @@ export default function LoginScreen({ route, navigation }) {
             JSON.stringify(existingStudents)
           );
 
+          // Note: FCM token remains active for all users on device
+          // Backend will handle user-specific notification routing
+          console.log(
+            '✅ STUDENT ADD: Student added, FCM remains active for notifications'
+          );
+
           // Navigate back to parent screen
           Alert.alert(t('success'), 'Student account added successfully');
           navigation.goBack();
@@ -174,6 +189,11 @@ export default function LoginScreen({ route, navigation }) {
       } else {
         // Normal login flow - check families policy compliance first
         await handleComplianceCheck(userData);
+
+        // Note: FCM token remains active, backend handles user-specific routing
+        console.log(
+          '✅ LOGIN: User logged in, notifications will be routed by backend'
+        );
       }
     } else {
       // Handle login failure with detailed error information

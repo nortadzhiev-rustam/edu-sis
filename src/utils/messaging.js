@@ -578,6 +578,75 @@ export async function clearNotificationHistory() {
   }
 }
 
+/**
+ * Unregister device from Firebase Cloud Messaging
+ * This prevents the device from receiving any push notifications
+ * Should be called during logout to stop notifications for logged-out users
+ */
+export async function unregisterDeviceFromFCM() {
+  try {
+    console.log(
+      '🚫 FCM: Unregistering device from Firebase Cloud Messaging...'
+    );
+
+    const messaging = getMessaging();
+
+    // Delete the FCM token to stop receiving notifications
+    await messaging.deleteToken();
+    console.log('✅ FCM: Device token deleted successfully');
+
+    // Clear cached tokens from AsyncStorage
+    await AsyncStorage.multiRemove(['deviceToken', 'fcmToken']);
+    console.log('🧹 FCM: Cleared cached device tokens from storage');
+
+    return { success: true };
+  } catch (error) {
+    console.error('❌ FCM: Error unregistering device:', error);
+    console.error('🔍 Error details:', error.message);
+
+    // Even if FCM deletion fails, clear local tokens
+    try {
+      await AsyncStorage.multiRemove(['deviceToken', 'fcmToken']);
+      console.log('🧹 FCM: Cleared cached tokens despite FCM error');
+    } catch (storageError) {
+      console.error('❌ FCM: Failed to clear cached tokens:', storageError);
+    }
+
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Re-register device with Firebase Cloud Messaging
+ * This should be called after login to re-enable push notifications
+ * Gets a fresh device token and stores it
+ */
+export async function reregisterDeviceWithFCM() {
+  try {
+    console.log(
+      '🔄 FCM: Re-registering device with Firebase Cloud Messaging...'
+    );
+
+    // Clear any existing cached tokens first
+    await AsyncStorage.multiRemove(['deviceToken', 'fcmToken']);
+
+    // Get a fresh device token
+    const newToken = await getDeviceToken();
+
+    if (newToken) {
+      console.log('✅ FCM: Device re-registered successfully');
+      console.log('🎫 FCM: New token length:', newToken.length);
+      return { success: true, token: newToken };
+    } else {
+      console.warn('⚠️ FCM: Failed to get new device token');
+      return { success: false, error: 'Failed to get new device token' };
+    }
+  } catch (error) {
+    console.error('❌ FCM: Error re-registering device:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 // Set navigation reference for programmatic navigation
 export function setNavigationRef(ref) {
   console.log('🧭 NAVIGATION: Setting navigation reference...');

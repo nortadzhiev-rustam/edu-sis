@@ -40,6 +40,7 @@ const NotificationScreen = ({ navigation, route }) => {
     studentNotifications,
     studentUnreadCounts,
     loadStudentNotifications,
+    setCurrentStudent,
   } = useNotifications();
 
   const [filter, setFilter] = useState('all'); // 'all', 'unread', 'behavior', 'attendance', 'grade', 'homework', 'announcement', 'messaging'
@@ -54,9 +55,28 @@ const NotificationScreen = ({ navigation, route }) => {
         if (route?.params?.userType) {
           setUserType(route.params.userType);
 
+          // If this is a parent viewing student notifications
+          if (route.params.userType === 'parent' && route?.params?.authCode) {
+            const studentAuthCode = route.params.authCode;
+            console.log(
+              '📱 NOTIFICATION: Parent viewing student notifications for authCode:',
+              studentAuthCode
+            );
+
+            // Set the current student context for parent view
+            setCurrentStudent(studentAuthCode);
+
+            // Load notifications for this specific student if not already loaded
+            if (!studentNotifications[studentAuthCode]) {
+              console.log(
+                '📱 NOTIFICATION: Loading notifications for student...'
+              );
+              await loadStudentNotifications(studentAuthCode);
+            }
+          }
           // If this is a student accessing directly (not through parent),
           // we need to ensure their notifications are loaded
-          if (route.params.userType === 'student') {
+          else if (route.params.userType === 'student') {
             // Check if we have student authCode from route params
             const studentAuthCode = route?.params?.authCode;
             if (studentAuthCode && !studentNotifications[studentAuthCode]) {
@@ -78,15 +98,32 @@ const NotificationScreen = ({ navigation, route }) => {
             '📱 NOTIFICATION: Detected user type from userData:',
             actualUserType
           );
+        } else {
+          // No user data found - user is not logged in
+          console.warn(
+            '⚠️ NOTIFICATION: No user data found, user not logged in'
+          );
+          console.log('🔄 NOTIFICATION: Redirecting to home screen...');
+
+          // Navigate back to home screen since no user is logged in
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Home' }],
+          });
+          return;
         }
       } catch (error) {
-        // Default to teacher if we can't determine user type
-        setUserType('teacher');
+        console.error('❌ NOTIFICATION: Error getting user type:', error);
+        // Navigate back to home screen on error
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
       }
     };
 
     getUserType();
-  }, [route?.params?.userType, route?.params?.authCode]);
+  }, [route?.params?.userType, route?.params?.authCode, navigation]);
 
   const styles = createStyles(theme);
 

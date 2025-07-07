@@ -276,11 +276,48 @@ export const teacherLogin = async (username, password, deviceToken) => {
       if (response.status === 200 || response.status === 201) {
         const data = await response.json();
 
+        // Debug: Log the actual API response
+        console.log('🔍 TEACHER LOGIN API RESPONSE:', data);
+        console.log('🔍 TEACHER LOGIN API RESPONSE TYPE:', typeof data);
+
+        // Check if the API returned an error in the response body
+        if (data === 0 || data === '0' || data === null || data === false) {
+          console.log(
+            '❌ TEACHER LOGIN: API returned invalid credentials (data is 0/null/false)'
+          );
+          return null;
+        }
+
+        // Check if the response has an error field
+        if (data && data.error) {
+          console.log(
+            '❌ TEACHER LOGIN: API returned error in response body:',
+            data.error
+          );
+          return null;
+        }
+
+        // Check if the response indicates invalid credentials
+        if (
+          data &&
+          (data.message === 'Invalid credentials' || data.status === 'error')
+        ) {
+          console.log(
+            '❌ TEACHER LOGIN: API returned invalid credentials message'
+          );
+          return null;
+        }
+
+        console.log('✅ TEACHER LOGIN: Valid credentials, returning user data');
         return {
           ...data,
           userType: 'teacher',
         };
       } else {
+        console.log(
+          '❌ TEACHER LOGIN: API returned non-200 status:',
+          response.status
+        );
         return null;
       }
     } catch (error) {
@@ -392,13 +429,49 @@ export const studentLogin = async (username, password, deviceToken) => {
       clearTimeout(timeoutId);
       if (response.status === 200 || response.status === 201) {
         const data = await response.json();
-        if (data !== 0) {
-          return {
-            ...data,
-            userType: 'student',
-          };
+
+        // Debug: Log the actual API response
+        console.log('🔍 STUDENT LOGIN API RESPONSE:', data);
+        console.log('🔍 STUDENT LOGIN API RESPONSE TYPE:', typeof data);
+
+        // Check if the API returned an error (0 means invalid credentials)
+        if (data === 0 || data === '0' || data === null || data === false) {
+          console.log(
+            '❌ STUDENT LOGIN: API returned invalid credentials (data is 0/null/false)'
+          );
+          return null;
         }
+
+        // Check if the response has an error field
+        if (data && data.error) {
+          console.log(
+            '❌ STUDENT LOGIN: API returned error in response body:',
+            data.error
+          );
+          return null;
+        }
+
+        // Check if the response indicates invalid credentials
+        if (
+          data &&
+          (data.message === 'Invalid credentials' || data.status === 'error')
+        ) {
+          console.log(
+            '❌ STUDENT LOGIN: API returned invalid credentials message'
+          );
+          return null;
+        }
+
+        console.log('✅ STUDENT LOGIN: Valid credentials, returning user data');
+        return {
+          ...data,
+          userType: 'student',
+        };
       } else {
+        console.log(
+          '❌ STUDENT LOGIN: API returned non-200 status:',
+          response.status
+        );
         return null;
       }
     } catch (error) {

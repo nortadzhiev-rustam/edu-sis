@@ -820,7 +820,7 @@ export default function AssignmentsScreen({ navigation, route }) {
         >
           <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Assignments</Text>
+        <Text style={styles.headerTitle}>Homework</Text>
         <View style={styles.headerRight} />
       </View>
 

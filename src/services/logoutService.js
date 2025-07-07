@@ -41,28 +41,83 @@ export const performLogout = async (options = {}) => {
       console.log('🔔 LOGOUT: Cleaning up notification context...');
       notificationCleanup();
     }
-    // 1. Remove user from device in database (before clearing local data)
-    console.log('🔌 LOGOUT: Removing user from device in database...');
+    // 1. Check current user type and handle device removal appropriately
+    console.log('🔌 LOGOUT: Checking user type and device removal strategy...');
     try {
-      const deviceRemovalResult = await removeCurrentUserFromDevice();
-      if (deviceRemovalResult.success) {
+      // Get current user data to determine user type
+      const userData = await AsyncStorage.getItem('userData');
+      let currentUserType = 'unknown';
+
+      if (userData) {
+        const user = JSON.parse(userData);
+        currentUserType = user.userType || user.user_type || 'unknown';
+        console.log(`👤 LOGOUT: Current user type: ${currentUserType}`);
+      }
+
+      // Check if there are student accounts on this device (parent accounts)
+      const studentAccounts = await AsyncStorage.getItem('studentAccounts');
+      const hasStudentAccounts =
+        studentAccounts && JSON.parse(studentAccounts).length > 0;
+
+      console.log(
+        `👨‍👩‍👧‍👦 LOGOUT: Student accounts on device: ${
+          hasStudentAccounts ? 'Yes' : 'No'
+        }`
+      );
+
+      // Decision logic for device removal
+      if (currentUserType === 'teacher' && hasStudentAccounts) {
+        console.log('🏫 LOGOUT: Teacher logout with student accounts present');
         console.log(
-          '✅ LOGOUT: User successfully removed from device database'
+          'ℹ️ LOGOUT: Skipping device removal to preserve student notifications'
         );
+        console.log(
+          '✅ LOGOUT: Teacher will stop receiving notifications via local data cleanup'
+        );
+      } else if (currentUserType === 'teacher' && !hasStudentAccounts) {
+        console.log('🏫 LOGOUT: Teacher logout with no student accounts');
+        console.log('🔌 LOGOUT: Removing teacher from device database...');
+        const deviceRemovalResult = await removeCurrentUserFromDevice();
+        if (deviceRemovalResult.success) {
+          console.log(
+            '✅ LOGOUT: Teacher successfully removed from device database'
+          );
+        } else {
+          console.warn(
+            '⚠️ LOGOUT: Failed to remove teacher from device database:',
+            deviceRemovalResult.error
+          );
+        }
       } else {
-        console.warn(
-          '⚠️ LOGOUT: Failed to remove user from device database:',
-          deviceRemovalResult.error
-        );
-        // Continue with logout even if device removal fails
+        console.log(`👤 LOGOUT: Non-teacher user (${currentUserType}) logout`);
+        console.log('🔌 LOGOUT: Removing user from device database...');
+        const deviceRemovalResult = await removeCurrentUserFromDevice();
+        if (deviceRemovalResult.success) {
+          console.log(
+            '✅ LOGOUT: User successfully removed from device database'
+          );
+        } else {
+          console.warn(
+            '⚠️ LOGOUT: Failed to remove user from device database:',
+            deviceRemovalResult.error
+          );
+        }
       }
     } catch (error) {
-      console.error(
-        '❌ LOGOUT: Error removing user from device database:',
-        error
-      );
-      // Continue with logout even if device removal fails
+      console.error('❌ LOGOUT: Error during device removal check:', error);
+      // Continue with logout even if device removal check fails
     }
+
+    // 1.5. Note: We don't unregister FCM completely during logout because:
+    // - It would affect all users on the device (including students in parent accounts)
+    // - The backend database removal (step 1) already prevents notifications for this user
+    // - FCM token should remain active for other users who might still be logged in
+    console.log(
+      'ℹ️ LOGOUT: Keeping FCM active for other potential users on device'
+    );
+    console.log(
+      '✅ LOGOUT: User-specific notifications stopped via backend database removal'
+    );
 
     // 2. Clear app icon badge immediately
     console.log('📱 LOGOUT: Clearing app icon badge...');
@@ -108,9 +163,16 @@ export const performLogout = async (options = {}) => {
     ];
     await AsyncStorage.multiRemove(cacheKeys);
 
-    // 8. Clear all student accounts (for parent users)
-    console.log('👨‍👩‍👧‍👦 LOGOUT: Clearing student accounts...');
-    await AsyncStorage.removeItem('studentAccounts');
+    // 8. Clear student accounts only for parent users or complete logout
+    if (clearAllData) {
+      console.log('👨‍👩‍👧‍👦 LOGOUT: Clearing student accounts (complete logout)...');
+      await AsyncStorage.removeItem('studentAccounts');
+    } else {
+      console.log('👨‍👩‍👧‍👦 LOGOUT: Preserving student accounts (normal logout)...');
+      console.log(
+        'ℹ️ LOGOUT: Student accounts remain for parent dashboard access'
+      );
+    }
 
     // 9. Optionally clear device token (usually not needed unless switching devices)
     if (clearDeviceToken) {
@@ -181,9 +243,68 @@ export const quickLogout = async () => {
 
 /**
  * Complete logout function that clears everything including device data
+ * This also unregisters FCM - use only when switching devices or complete reset
  */
 export const completeLogout = async () => {
-  return await performLogout({ clearDeviceToken: true, clearAllData: true });
+  return await performLogout({
+    clearDeviceToken: true,
+    clearAllData: true,
+    unregisterFCM: true, // This will unregister FCM completely
+  });
+};
+
+/**
+ * Complete device reset - unregisters FCM and clears all data
+ * Use this when switching devices or doing a factory reset
+ */
+export const performDeviceReset = async () => {
+  console.log('🔄 DEVICE RESET: Starting complete device reset...');
+
+  try {
+    // Import FCM unregistration function only when needed
+    const { unregisterDeviceFromFCM } = await import('../utils/messaging');
+
+    // 1. Unregister device from FCM completely
+    console.log('🚫 DEVICE RESET: Unregistering device from FCM...');
+    try {
+      const fcmResult = await unregisterDeviceFromFCM();
+      if (fcmResult.success) {
+        console.log(
+          '✅ DEVICE RESET: Device successfully unregistered from FCM'
+        );
+      } else {
+        console.warn(
+          '⚠️ DEVICE RESET: Failed to unregister device from FCM:',
+          fcmResult.error
+        );
+      }
+    } catch (error) {
+      console.error(
+        '❌ DEVICE RESET: Error unregistering device from FCM:',
+        error
+      );
+    }
+
+    // 2. Perform complete logout with all data clearing
+    const logoutResult = await performLogout({
+      clearDeviceToken: true,
+      clearAllData: true,
+    });
+
+    if (logoutResult.success) {
+      console.log('✅ DEVICE RESET: Complete device reset successful');
+      return { success: true, message: 'Device reset completed successfully' };
+    } else {
+      console.error(
+        '❌ DEVICE RESET: Logout portion failed:',
+        logoutResult.error
+      );
+      return { success: false, error: logoutResult.error };
+    }
+  } catch (error) {
+    console.error('❌ DEVICE RESET: Error during device reset:', error);
+    return { success: false, error: error.message };
+  }
 };
 
 /**

@@ -526,9 +526,32 @@ export default function ParentScreen({ navigation }) {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.notificationButton}
-            onPress={() =>
-              navigation.navigate('NotificationScreen', { userType: 'parent' })
-            }
+            onPress={() => {
+              // Navigate to notification screen with selected student context
+              if (selectedStudent) {
+                navigation.navigate('NotificationScreen', {
+                  userType: 'parent',
+                  authCode: selectedStudent.authCode,
+                  studentName: selectedStudent.name,
+                  studentId: selectedStudent.id,
+                });
+              } else {
+                // If no student selected, show alert or navigate to first student
+                if (students.length > 0) {
+                  navigation.navigate('NotificationScreen', {
+                    userType: 'parent',
+                    authCode: students[0].authCode,
+                    studentName: students[0].name,
+                    studentId: students[0].id,
+                  });
+                } else {
+                  Alert.alert(
+                    'No Students',
+                    'Please add a student account first to view notifications.'
+                  );
+                }
+              }
+            }}
           >
             <FontAwesomeIcon icon={faBell} size={18} color='#fff' />
             <ParentNotificationBadge />

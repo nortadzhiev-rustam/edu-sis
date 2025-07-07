@@ -12,11 +12,23 @@ const getAuthCode = async () => {
     const userData = await AsyncStorage.getItem('userData');
     if (userData) {
       const user = JSON.parse(userData);
-      return user.authCode || user.auth_code;
+      const authCode = user.authCode || user.auth_code;
+      if (!authCode) {
+        console.warn(
+          '⚠️ NOTIFICATION SERVICE: User data found but no authCode available'
+        );
+        console.log(
+          'ℹ️ NOTIFICATION SERVICE: This usually means user is not properly logged in'
+        );
+      }
+      return authCode;
+    } else {
+      console.warn('⚠️ NOTIFICATION SERVICE: No user data found in storage');
+      console.log('ℹ️ NOTIFICATION SERVICE: User appears to be logged out');
     }
     return null;
   } catch (error) {
-    console.error('Error getting auth code:', error);
+    console.error('❌ NOTIFICATION SERVICE: Error getting auth code:', error);
     return null;
   }
 };
@@ -56,7 +68,10 @@ export const getNotifications = async (params = {}) => {
   try {
     const authCode = await getAuthCode();
     if (!authCode) {
-      throw new Error('No authentication code found');
+      const errorMessage =
+        'No authentication code found - user may not be logged in';
+      console.error('❌ NOTIFICATION SERVICE:', errorMessage);
+      throw new Error(errorMessage);
     }
 
     const queryParams = {
