@@ -7,6 +7,153 @@ import { Config, buildApiUrl } from '../config/env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
+ * Logout user from device using authCode (NEW METHOD)
+ * Uses the new backend logout endpoint that properly removes user by authCode
+ * @param {string} authCode - The user's authentication code
+ * @returns {Promise<Object>} - Response from the API
+ */
+export const logoutUserFromDevice = async (authCode) => {
+  try {
+    console.log('🚪 DEVICE SERVICE: Logging out user from device...');
+    console.log(
+      `🔑 Auth Code: ${authCode ? authCode.substring(0, 10) + '...' : 'null'}`
+    );
+
+    if (!authCode) {
+      console.warn('⚠️ DEVICE SERVICE: No auth code provided');
+      return { success: false, error: 'No auth code provided' };
+    }
+
+    // Use POST method with JSON body (primary endpoint)
+    const url = buildApiUrl('/logout/');
+
+    console.log('🔗 DEVICE SERVICE: Logout API URL:', url);
+
+    // Add timeout for the request
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+    const response = await fetch(url, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        authCode: authCode,
+      }),
+    });
+
+    clearTimeout(timeoutId);
+
+    console.log('📡 DEVICE SERVICE: Logout response status:', response.status);
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('✅ DEVICE SERVICE: Logout successful:', data);
+
+      return {
+        success: true,
+        data: data,
+        message: data.message || 'Successfully logged out',
+      };
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      console.error(
+        '❌ DEVICE SERVICE: Logout failed with status:',
+        response.status
+      );
+      console.error('❌ DEVICE SERVICE: Error data:', errorData);
+
+      return {
+        success: false,
+        error: errorData.error || `HTTP ${response.status}`,
+        status: response.status,
+      };
+    }
+  } catch (error) {
+    console.error('❌ DEVICE SERVICE: Logout error:', error);
+
+    // Fallback to GET method if POST fails
+    try {
+      console.log('🔄 DEVICE SERVICE: Trying fallback GET method...');
+      return await logoutUserFromDeviceGET(authCode);
+    } catch (fallbackError) {
+      console.error('❌ DEVICE SERVICE: Fallback also failed:', fallbackError);
+      return {
+        success: false,
+        error: error.message || 'Network error during logout',
+        fallbackAttempted: true,
+      };
+    }
+  }
+};
+
+/**
+ * Logout user from device using GET method (FALLBACK)
+ * Uses the alternative GET endpoint for backward compatibility
+ * @param {string} authCode - The user's authentication code
+ * @returns {Promise<Object>} - Response from the API
+ */
+export const logoutUserFromDeviceGET = async (authCode) => {
+  try {
+    console.log('🚪 DEVICE SERVICE: Logging out user (GET method)...');
+
+    if (!authCode) {
+      return { success: false, error: 'No auth code provided' };
+    }
+
+    // Use GET method with query parameter (fallback endpoint)
+    const url = buildApiUrl('/mobile-api/logout-device/', {
+      authCode: authCode,
+    });
+
+    console.log('🔗 DEVICE SERVICE: Logout GET API URL:', url);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      signal: controller.signal,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+    });
+
+    clearTimeout(timeoutId);
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('✅ DEVICE SERVICE: Logout GET successful:', data);
+
+      return {
+        success: true,
+        data: data,
+        message: data.message || 'Successfully logged out',
+      };
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('❌ DEVICE SERVICE: Logout GET failed:', response.status);
+
+      return {
+        success: false,
+        error: errorData.error || `HTTP ${response.status}`,
+        status: response.status,
+      };
+    }
+  } catch (error) {
+    console.error('❌ DEVICE SERVICE: Logout GET error:', error);
+    return {
+      success: false,
+      error: error.message || 'Network error during logout',
+    };
+  }
+};
+
+/**
  * Remove user from device in the database
  * This API call tells the server that the user has logged out from this specific device
  * @param {string} userId - The user ID to remove from device
@@ -17,7 +164,11 @@ export const removeUserFromDevice = async (userId, deviceToken) => {
   try {
     console.log('🔌 DEVICE SERVICE: Removing user from device...');
     console.log(`👤 User ID: ${userId}`);
-    console.log(`📱 Device Token: ${deviceToken ? deviceToken.substring(0, 20) + '...' : 'null'}`);
+    console.log(
+      `📱 Device Token: ${
+        deviceToken ? deviceToken.substring(0, 20) + '...' : 'null'
+      }`
+    );
 
     if (!userId) {
       console.warn('⚠️ DEVICE SERVICE: No user ID provided');
@@ -58,7 +209,7 @@ export const removeUserFromDevice = async (userId, deviceToken) => {
       const data = await response.json();
       console.log('✅ DEVICE SERVICE: User successfully removed from device');
       console.log('📄 Response data:', data);
-      
+
       return {
         success: true,
         data,
@@ -68,7 +219,7 @@ export const removeUserFromDevice = async (userId, deviceToken) => {
       const errorText = await response.text();
       console.error('❌ DEVICE SERVICE: Failed to remove user from device');
       console.error(`📄 Error response: ${errorText}`);
-      
+
       return {
         success: false,
         error: `HTTP ${response.status}: ${errorText}`,
@@ -155,7 +306,10 @@ export const removeCurrentUserFromDevice = async () => {
 
     return await removeUserFromDevice(userId, deviceToken);
   } catch (error) {
-    console.error('❌ DEVICE SERVICE: Error in removeCurrentUserFromDevice:', error);
+    console.error(
+      '❌ DEVICE SERVICE: Error in removeCurrentUserFromDevice:',
+      error
+    );
     return {
       success: false,
       error: error.message || 'Unknown error occurred',
@@ -170,7 +324,9 @@ export const removeCurrentUserFromDevice = async () => {
  */
 export const removeStudentFromDevice = async (studentData) => {
   try {
-    console.log(`🔌 DEVICE SERVICE: Removing student ${studentData.name} from device...`);
+    console.log(
+      `🔌 DEVICE SERVICE: Removing student ${studentData.name} from device...`
+    );
 
     const deviceToken = await getDeviceTokenFromStorage();
     if (!deviceToken) {
@@ -179,7 +335,8 @@ export const removeStudentFromDevice = async (studentData) => {
     }
 
     // Use student's ID or authCode as user ID
-    const userId = studentData.id || studentData.authCode || studentData.user_id;
+    const userId =
+      studentData.id || studentData.authCode || studentData.user_id;
     if (!userId) {
       console.warn('⚠️ DEVICE SERVICE: No user ID found in student data');
       return { success: false, error: 'No user ID found in student data' };
@@ -187,7 +344,10 @@ export const removeStudentFromDevice = async (studentData) => {
 
     return await removeUserFromDevice(userId, deviceToken);
   } catch (error) {
-    console.error('❌ DEVICE SERVICE: Error in removeStudentFromDevice:', error);
+    console.error(
+      '❌ DEVICE SERVICE: Error in removeStudentFromDevice:',
+      error
+    );
     return {
       success: false,
       error: error.message || 'Unknown error occurred',

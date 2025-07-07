@@ -10,6 +10,7 @@ import { clearNotificationHistory } from '../utils/messaging';
 import {
   removeCurrentUserFromDevice,
   removeStudentFromDevice,
+  logoutUserFromDevice,
 } from './deviceService';
 
 /**
@@ -41,17 +42,22 @@ export const performLogout = async (options = {}) => {
       console.log('🔔 LOGOUT: Cleaning up notification context...');
       notificationCleanup();
     }
-    // 1. Check current user type and handle device removal appropriately
-    console.log('🔌 LOGOUT: Checking user type and device removal strategy...');
+    // 1. Remove user from device using new authCode-based logout method
+    console.log('� LOGOUT: Removing user from device using authCode...');
     try {
-      // Get current user data to determine user type
+      // Get current user data to get authCode
       const userData = await AsyncStorage.getItem('userData');
       let currentUserType = 'unknown';
+      let authCode = null;
 
       if (userData) {
         const user = JSON.parse(userData);
         currentUserType = user.userType || user.user_type || 'unknown';
+        authCode = user.authCode || user.auth_code;
         console.log(`👤 LOGOUT: Current user type: ${currentUserType}`);
+        console.log(
+          `🔑 LOGOUT: Auth code available: ${authCode ? 'Yes' : 'No'}`
+        );
       }
 
       // Check if there are student accounts on this device (parent accounts)
@@ -74,23 +80,36 @@ export const performLogout = async (options = {}) => {
         console.log(
           '✅ LOGOUT: Teacher will stop receiving notifications via local data cleanup'
         );
-      } else if (currentUserType === 'teacher' && !hasStudentAccounts) {
-        console.log('🏫 LOGOUT: Teacher logout with no student accounts');
-        console.log('🔌 LOGOUT: Removing teacher from device database...');
-        const deviceRemovalResult = await removeCurrentUserFromDevice();
-        if (deviceRemovalResult.success) {
-          console.log(
-            '✅ LOGOUT: Teacher successfully removed from device database'
-          );
+      } else if (authCode) {
+        // Use new authCode-based logout method
+        console.log('� LOGOUT: Using new authCode-based logout method...');
+        const logoutResult = await logoutUserFromDevice(authCode);
+        if (logoutResult.success) {
+          console.log('✅ LOGOUT: User successfully logged out from device');
+          console.log('📊 LOGOUT: Response:', logoutResult.message);
         } else {
           console.warn(
-            '⚠️ LOGOUT: Failed to remove teacher from device database:',
-            deviceRemovalResult.error
+            '⚠️ LOGOUT: Failed to logout from device:',
+            logoutResult.error
           );
+
+          // Fallback to old method if new method fails
+          console.log('🔄 LOGOUT: Falling back to old removal method...');
+          const fallbackResult = await removeCurrentUserFromDevice();
+          if (fallbackResult.success) {
+            console.log('✅ LOGOUT: Fallback removal successful');
+          } else {
+            console.warn(
+              '⚠️ LOGOUT: Fallback removal also failed:',
+              fallbackResult.error
+            );
+          }
         }
       } else {
-        console.log(`👤 LOGOUT: Non-teacher user (${currentUserType}) logout`);
-        console.log('🔌 LOGOUT: Removing user from device database...');
+        // No authCode available, use old method
+        console.log(
+          '� LOGOUT: No authCode available, using old removal method...'
+        );
         const deviceRemovalResult = await removeCurrentUserFromDevice();
         if (deviceRemovalResult.success) {
           console.log(
@@ -104,8 +123,8 @@ export const performLogout = async (options = {}) => {
         }
       }
     } catch (error) {
-      console.error('❌ LOGOUT: Error during device removal check:', error);
-      // Continue with logout even if device removal check fails
+      console.error('❌ LOGOUT: Error during device removal:', error);
+      // Continue with logout even if device removal fails
     }
 
     // 1.5. Note: We don't unregister FCM completely during logout because:

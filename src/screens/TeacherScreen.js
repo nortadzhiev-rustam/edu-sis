@@ -678,7 +678,7 @@ export default function TeacherScreen({ route, navigation }) {
       {
         id: 'health',
         title: 'Health',
-        subtitle: 'Student Well-being',
+        subtitle: 'Teacher/Student Well-being',
         icon: faHeartbeat,
         backgroundColor: '#028090',
         iconColor: '#fff',

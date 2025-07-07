@@ -231,19 +231,82 @@ export const teacherLogin = async (username, password, deviceToken) => {
       console.log('🔍 AUTH DEBUG: Raw device token:', deviceToken);
       console.log('🔍 AUTH DEBUG: Device token type:', typeof deviceToken);
       console.log(
+        '🔍 AUTH DEBUG: Device token constructor:',
+        deviceToken?.constructor?.name
+      );
+      console.log(
+        '🔍 AUTH DEBUG: Device token toString():',
+        deviceToken?.toString()
+      );
+      console.log(
         '🔍 AUTH DEBUG: Device token length:',
         deviceToken?.length || 0
       );
+
+      // Check if deviceToken is a Future or Promise
+      if (
+        deviceToken &&
+        typeof deviceToken === 'object' &&
+        deviceToken.constructor
+      ) {
+        console.error(
+          '❌ AUTH ERROR: Device token appears to be an object/Future instead of string!'
+        );
+        console.error('🔍 Constructor name:', deviceToken.constructor.name);
+        console.error('🔍 Object keys:', Object.keys(deviceToken));
+
+        // If it's a Promise/Future, try to await it
+        if (typeof deviceToken.then === 'function') {
+          console.log('🔄 AUTH: Attempting to await the device token...');
+          try {
+            deviceToken = await deviceToken;
+            console.log(
+              '✅ AUTH: Successfully awaited device token:',
+              deviceToken
+            );
+          } catch (awaitError) {
+            console.error('❌ AUTH: Failed to await device token:', awaitError);
+            deviceToken = ''; // Use empty string as fallback
+          }
+        }
+      }
+
+      // Final validation: ensure deviceToken is a string
+      if (deviceToken && typeof deviceToken !== 'string') {
+        console.error(
+          '❌ AUTH ERROR: Device token is still not a string after processing!'
+        );
+        console.error('🔍 Final type:', typeof deviceToken);
+        console.error('🔍 Final value:', deviceToken);
+        deviceToken = String(deviceToken); // Force convert to string
+        console.log('🔄 AUTH: Forced conversion to string:', deviceToken);
+      }
 
       const encodedToken = deviceToken ? encodeToBase64(deviceToken) : '';
       console.log('🔍 AUTH DEBUG: Encoded token:', encodedToken);
       console.log('🔍 AUTH DEBUG: Encoded token length:', encodedToken.length);
 
+      // Validate encoded token doesn't contain "Future" or "Instance"
+      let finalEncodedToken = encodedToken;
+      if (
+        encodedToken.includes('Future') ||
+        encodedToken.includes('Instance')
+      ) {
+        console.error(
+          '❌ AUTH ERROR: Encoded token contains Future/Instance - this indicates the original token was not a string!'
+        );
+        console.error('🔍 Problematic encoded token:', encodedToken);
+        // Use empty token as fallback and continue with login
+        console.log('🔄 AUTH: Using empty token as fallback and continuing...');
+        finalEncodedToken = '';
+        console.log('🔄 AUTH: Proceeding with empty encoded token');
+      }
+
       const apiUrl = buildApiUrl(Config.API_ENDPOINTS.CHECK_STAFF_CREDENTIALS, {
         username,
         password,
         deviceType: deviceInfo.deviceType,
-        deviceToken: encodedToken,
+        deviceToken: finalEncodedToken,
         deviceName: deviceInfo.deviceName,
         deviceModel: deviceInfo.deviceModel,
         deviceBrand: deviceInfo.deviceBrand,
@@ -380,9 +443,64 @@ export const studentLogin = async (username, password, deviceToken) => {
         typeof deviceToken
       );
       console.log(
+        '🔍 STUDENT AUTH DEBUG: Device token constructor:',
+        deviceToken?.constructor?.name
+      );
+      console.log(
+        '🔍 STUDENT AUTH DEBUG: Device token toString():',
+        deviceToken?.toString()
+      );
+      console.log(
         '🔍 STUDENT AUTH DEBUG: Device token length:',
         deviceToken?.length || 0
       );
+
+      // Check if deviceToken is a Future or Promise
+      if (
+        deviceToken &&
+        typeof deviceToken === 'object' &&
+        deviceToken.constructor
+      ) {
+        console.error(
+          '❌ STUDENT AUTH ERROR: Device token appears to be an object/Future instead of string!'
+        );
+        console.error('🔍 Constructor name:', deviceToken.constructor.name);
+        console.error('🔍 Object keys:', Object.keys(deviceToken));
+
+        // If it's a Promise/Future, try to await it
+        if (typeof deviceToken.then === 'function') {
+          console.log(
+            '🔄 STUDENT AUTH: Attempting to await the device token...'
+          );
+          try {
+            deviceToken = await deviceToken;
+            console.log(
+              '✅ STUDENT AUTH: Successfully awaited device token:',
+              deviceToken
+            );
+          } catch (awaitError) {
+            console.error(
+              '❌ STUDENT AUTH: Failed to await device token:',
+              awaitError
+            );
+            deviceToken = ''; // Use empty string as fallback
+          }
+        }
+      }
+
+      // Final validation: ensure deviceToken is a string
+      if (deviceToken && typeof deviceToken !== 'string') {
+        console.error(
+          '❌ STUDENT AUTH ERROR: Device token is still not a string after processing!'
+        );
+        console.error('🔍 Final type:', typeof deviceToken);
+        console.error('🔍 Final value:', deviceToken);
+        deviceToken = String(deviceToken); // Force convert to string
+        console.log(
+          '🔄 STUDENT AUTH: Forced conversion to string:',
+          deviceToken
+        );
+      }
 
       const encodedToken = deviceToken ? encodeToBase64(deviceToken) : '';
       console.log('🔍 STUDENT AUTH DEBUG: Encoded token:', encodedToken);
@@ -391,13 +509,30 @@ export const studentLogin = async (username, password, deviceToken) => {
         encodedToken.length
       );
 
+      // Validate encoded token doesn't contain "Future" or "Instance"
+      let finalEncodedToken = encodedToken;
+      if (
+        encodedToken.includes('Future') ||
+        encodedToken.includes('Instance')
+      ) {
+        console.error(
+          '❌ STUDENT AUTH ERROR: Encoded token contains Future/Instance - this indicates the original token was not a string!'
+        );
+        console.error('🔍 Problematic encoded token:', encodedToken);
+        console.log(
+          '🔄 STUDENT AUTH: Using empty token as fallback and continuing...'
+        );
+        finalEncodedToken = '';
+        console.log('🔄 STUDENT AUTH: Proceeding with empty encoded token');
+      }
+
       const apiUrl = buildApiUrl(
         Config.API_ENDPOINTS.CHECK_STUDENT_CREDENTIALS,
         {
           username,
           password,
           deviceType: deviceInfo.deviceType,
-          deviceToken: encodedToken,
+          deviceToken: finalEncodedToken,
           deviceName: deviceInfo.deviceName,
           deviceModel: deviceInfo.deviceModel,
           deviceBrand: deviceInfo.deviceBrand,
