@@ -52,6 +52,15 @@ const ConversationItem = ({
         Math.abs(gestureState.dx) > 5
       );
     },
+    onStartShouldSetPanResponderCapture: () => false,
+    onMoveShouldSetPanResponderCapture: (_evt, gestureState) => {
+      // Capture horizontal gestures to prevent parent ScrollView from scrolling
+      // This blocks vertical scrolling when user is swiping horizontally
+      return (
+        Math.abs(gestureState.dx) > Math.abs(gestureState.dy) &&
+        Math.abs(gestureState.dx) > 10
+      );
+    },
     onPanResponderGrant: () => {
       // Stop any ongoing animations
       translateX.stopAnimation();
@@ -488,8 +497,6 @@ const createStyles = (theme, fontSizes) => {
     },
     deleteAction: {
       backgroundColor: '#FF3B30', // Red for delete
-      borderTopRightRadius: 16, // Only right corners rounded (outer edge)
-      borderBottomRightRadius: 16,
     },
     deleteButtonContent: {
       flex: 1,
@@ -505,8 +512,7 @@ const createStyles = (theme, fontSizes) => {
       paddingHorizontal: 20,
       height: '100%',
       minWidth: 80,
-      borderTopLeftRadius: 16,
-      borderBottomLeftRadius: 16,
+      
       position: 'absolute',
       left: 0,
       top: 0,
@@ -527,7 +533,6 @@ const createStyles = (theme, fontSizes) => {
       backgroundColor: theme.colors.surface,
       borderBottomWidth: 1,
       borderBottomColor: theme.colors.border,
-      borderRadius: 16,
     },
     unreadConversation: {
       backgroundColor: theme.colors.primary + '05',
