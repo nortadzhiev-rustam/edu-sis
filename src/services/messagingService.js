@@ -1749,6 +1749,416 @@ export const markMessageAsRead = async (
   }
 };
 
+/**
+ * Clear message text (replace with "[Message Deleted]")
+ * @param {number} messageId - ID of the message to clear
+ * @param {string} userAuthCode - Optional authCode to use instead of getting from storage
+ * @returns {Promise<Object>} - Response data
+ */
+export const clearMessageText = async (messageId, userAuthCode = null) => {
+  try {
+    const authCode = userAuthCode || (await getAuthCode());
+    if (!authCode) {
+      throw new Error('No authentication code found');
+    }
+
+    if (USE_MOCK_DATA) {
+      // Mock implementation - find and clear message text
+      console.log('🧹 Mock: Clearing message text for message ID:', messageId);
+
+      // Find message in mock data and replace content
+      for (const conversationUuid in mockMessages) {
+        const messages = mockMessages[conversationUuid];
+        const messageIndex = messages.findIndex(
+          (msg) => msg.message_id === messageId
+        );
+
+        if (messageIndex !== -1) {
+          const message = messages[messageIndex];
+          const currentUserId = await getCurrentUserId();
+
+          // Check if user owns the message
+          if (message.sender_id !== currentUserId) {
+            throw new Error('You can only clear your own messages');
+          }
+
+          // Check 24-hour time limit
+          const messageAge =
+            Date.now() - new Date(message.created_at).getTime();
+          const twentyFourHours = 24 * 60 * 60 * 1000;
+
+          if (messageAge > twentyFourHours) {
+            throw new Error('Cannot clear messages older than 24 hours');
+          }
+
+          // Store original content and replace with deleted message
+          const originalContent = message.content;
+          message.content = '[Message Deleted]';
+          message.original_content = originalContent;
+          message.cleared_at = new Date().toISOString();
+
+          return {
+            success: true,
+            message: 'Message text cleared successfully',
+            data: {
+              message_id: messageId,
+              new_content: '[Message Deleted]',
+              cleared_at: message.cleared_at,
+            },
+          };
+        }
+      }
+
+      throw new Error('Message not found');
+    }
+
+    // Real API call
+    const url = buildApiUrl('/messaging/message/clear');
+    const response = await makeApiRequest(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        authCode,
+        message_id: messageId,
+      }),
+    });
+
+    return response;
+  } catch (error) {
+    console.error('❌ Error clearing message text:', error);
+    throw error;
+  }
+};
+
+/**
+ * Admin delete message (staff only)
+ * @param {number} messageId - ID of the message to delete
+ * @param {string} userAuthCode - Optional authCode to use instead of getting from storage
+ * @returns {Promise<Object>} - Response data
+ */
+export const adminDeleteMessage = async (messageId, userAuthCode = null) => {
+  try {
+    const authCode = userAuthCode || (await getAuthCode());
+    if (!authCode) {
+      throw new Error('No authentication code found');
+    }
+
+    if (USE_MOCK_DATA) {
+      // Mock implementation - admin delete any message
+      console.log('🛡️ Mock: Admin deleting message ID:', messageId);
+
+      // Find message in mock data and replace content
+      for (const conversationUuid in mockMessages) {
+        const messages = mockMessages[conversationUuid];
+        const messageIndex = messages.findIndex(
+          (msg) => msg.message_id === messageId
+        );
+
+        if (messageIndex !== -1) {
+          const message = messages[messageIndex];
+
+          // Store original content and replace with admin deleted message
+          const originalContent = message.content;
+          const originalSender = message.sender?.name || 'Unknown User';
+
+          message.content = '[Message Deleted by Admin]';
+          message.original_content = originalContent;
+          message.deleted_by_admin = 'Mock Admin';
+          message.original_sender = originalSender;
+          message.admin_deleted_at = new Date().toISOString();
+
+          return {
+            success: true,
+            message: 'Message deleted by admin successfully',
+            data: {
+              message_id: messageId,
+              new_content: '[Message Deleted by Admin]',
+              deleted_by_admin: 'Mock Admin',
+              original_sender: originalSender,
+              admin_deleted_at: message.admin_deleted_at,
+            },
+          };
+        }
+      }
+
+      throw new Error('Message not found');
+    }
+
+    // Real API call
+    const url = buildApiUrl('/messaging/message/admin-delete');
+    const response = await makeApiRequest(url, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        authCode,
+        message_id: messageId,
+      }),
+    });
+
+    return response;
+  } catch (error) {
+    console.error('❌ Error admin deleting message:', error);
+    throw error;
+  }
+};
+
+/**
+ * Bulk delete multiple messages
+ * @param {Array<number>} messageIds - Array of message IDs to delete
+ * @param {string} deleteType - Type of delete ('soft' or 'hard')
+ * @param {string} userAuthCode - Optional authCode to use instead of getting from storage
+ * @returns {Promise<Object>} - Response data
+ */
+export const bulkDeleteMessages = async (
+  messageIds,
+  deleteType = 'soft',
+  userAuthCode = null
+) => {
+  try {
+    const authCode = userAuthCode || (await getAuthCode());
+    if (!authCode) {
+      throw new Error('No authentication code found');
+    }
+
+    if (USE_MOCK_DATA) {
+      // Mock implementation - bulk delete messages
+      console.log(
+        '🗑️ Mock: Bulk deleting messages:',
+        messageIds,
+        'Type:',
+        deleteType
+      );
+
+      const results = {
+        total_requested: messageIds.length,
+        successful_deletes: 0,
+        failed_deletes: 0,
+        delete_type: deleteType,
+        deleted_by: 'Mock User',
+        results: [],
+      };
+
+      const currentUserId = await getCurrentUserId();
+
+      for (const messageId of messageIds) {
+        try {
+          // Find message in mock data
+          let messageFound = false;
+
+          for (const conversationUuid in mockMessages) {
+            const messages = mockMessages[conversationUuid];
+            const messageIndex = messages.findIndex(
+              (msg) => msg.message_id === messageId
+            );
+
+            if (messageIndex !== -1) {
+              const message = messages[messageIndex];
+              messageFound = true;
+
+              // Check permissions (user can only delete own messages unless admin)
+              if (message.sender_id !== currentUserId) {
+                results.failed_deletes++;
+                results.results.push({
+                  message_id: messageId,
+                  success: false,
+                  error: 'Permission denied - can only delete own messages',
+                });
+                continue;
+              }
+
+              // Check 24-hour time limit for regular users
+              const messageAge =
+                Date.now() - new Date(message.created_at).getTime();
+              const twentyFourHours = 24 * 60 * 60 * 1000;
+
+              if (messageAge > twentyFourHours) {
+                results.failed_deletes++;
+                results.results.push({
+                  message_id: messageId,
+                  success: false,
+                  error: 'Cannot delete messages older than 24 hours',
+                });
+                continue;
+              }
+
+              // Perform delete based on type
+              if (deleteType === 'hard') {
+                // Remove message completely
+                messages.splice(messageIndex, 1);
+              } else {
+                // Soft delete - replace content
+                message.content = '[Message Deleted]';
+                message.original_content = message.content;
+                message.deleted_at = new Date().toISOString();
+              }
+
+              results.successful_deletes++;
+              results.results.push({
+                message_id: messageId,
+                success: true,
+                delete_type: deleteType,
+              });
+
+              break;
+            }
+          }
+
+          if (!messageFound) {
+            results.failed_deletes++;
+            results.results.push({
+              message_id: messageId,
+              success: false,
+              error: 'Message not found',
+            });
+          }
+        } catch (error) {
+          results.failed_deletes++;
+          results.results.push({
+            message_id: messageId,
+            success: false,
+            error: error.message,
+          });
+        }
+      }
+
+      return {
+        success: true,
+        message: `Bulk delete completed: ${results.successful_deletes} successful, ${results.failed_deletes} failed`,
+        data: results,
+      };
+    }
+
+    // Real API call
+    const url = buildApiUrl('/messaging/messages/bulk-delete');
+    const response = await makeApiRequest(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        authCode,
+        message_ids: messageIds,
+        delete_type: deleteType,
+      }),
+    });
+
+    return response;
+  } catch (error) {
+    console.error('❌ Error bulk deleting messages:', error);
+    throw error;
+  }
+};
+
+/**
+ * Edit message (1-minute time limit)
+ * @param {number} messageId - ID of the message to edit
+ * @param {string} newContent - New message content
+ * @param {string} userAuthCode - Optional authCode to use instead of getting from storage
+ * @returns {Promise<Object>} - Response data
+ */
+export const editMessage = async (
+  messageId,
+  newContent,
+  userAuthCode = null
+) => {
+  try {
+    const authCode = userAuthCode || (await getAuthCode());
+    if (!authCode) {
+      throw new Error('No authentication code found');
+    }
+
+    if (USE_MOCK_DATA) {
+      // Mock implementation - edit message with 1-minute time limit
+      console.log(
+        '✏️ Mock: Editing message ID:',
+        messageId,
+        'New content:',
+        newContent
+      );
+
+      // Find message in mock data
+      for (const conversationUuid in mockMessages) {
+        const messages = mockMessages[conversationUuid];
+        const messageIndex = messages.findIndex(
+          (msg) => msg.message_id === messageId
+        );
+
+        if (messageIndex !== -1) {
+          const message = messages[messageIndex];
+          const currentUserId = await getCurrentUserId();
+
+          // Check if user owns the message
+          if (message.sender_id !== currentUserId) {
+            throw new Error('You can only edit your own messages');
+          }
+
+          // Check 1-minute time limit
+          const messageAge =
+            Date.now() - new Date(message.created_at).getTime();
+          const oneMinute = 60 * 1000;
+
+          if (messageAge > oneMinute) {
+            const ageInMinutes = Math.floor(messageAge / (60 * 1000));
+            return {
+              success: false,
+              error: 'Cannot edit messages older than 1 minute',
+              message_age_minutes: ageInMinutes,
+              edit_deadline_passed: true,
+            };
+          }
+
+          // Store original content and update message
+          const originalContent = message.content;
+          message.original_content = originalContent;
+          message.content = newContent;
+          message.edited_at = new Date().toISOString();
+
+          // Calculate remaining edit time
+          const remainingTime = oneMinute - messageAge;
+          const remainingSeconds = Math.floor(remainingTime / 1000);
+
+          return {
+            success: true,
+            message: 'Message edited successfully',
+            data: {
+              message_id: messageId,
+              original_content: originalContent,
+              new_content: newContent,
+              edited_at: message.edited_at,
+              edit_window_remaining_seconds: remainingSeconds,
+            },
+          };
+        }
+      }
+
+      throw new Error('Message not found');
+    }
+
+    // Real API call
+    const url = buildApiUrl('/messaging/message/edit');
+    const response = await makeApiRequest(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        authCode,
+        message_id: messageId,
+        new_content: newContent,
+      }),
+    });
+
+    return response;
+  } catch (error) {
+    console.error('❌ Error editing message:', error);
+    throw error;
+  }
+};
+
 // Get unread conversations count by fetching conversations and calculating from unread_count
 export const getUnreadConversationsCount = async (authCode) => {
   try {

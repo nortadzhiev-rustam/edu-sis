@@ -14,6 +14,7 @@ import {
   Keyboard,
   AppState,
 } from 'react-native';
+import Clipboard from '@react-native-clipboard/clipboard';
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -23,10 +24,13 @@ import {
   faArrowLeft,
   faPaperPlane,
   faPaperclip,
-  faUser,
   faEllipsisV,
   faTrash,
   faSignOutAlt,
+  faEdit,
+  faCheckCircle,
+  faCircle,
+  faCopy,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -38,6 +42,10 @@ import {
   deleteMessage,
   deleteConversation,
   leaveConversation,
+  clearMessageText,
+  adminDeleteMessage,
+  bulkDeleteMessages,
+  editMessage,
 } from '../services/messagingService';
 import { MessageBubble, AttachmentHandler } from '../components/messaging';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -69,6 +77,13 @@ const ConversationScreen = ({ navigation, route }) => {
   const [hasMarkedAsRead, setHasMarkedAsRead] = useState(false);
   const [isScreenActive, setIsScreenActive] = useState(true);
 
+  // Message management states
+  const [selectedMessage, setSelectedMessage] = useState(null);
+  const [editingMessage, setEditingMessage] = useState(null);
+  const [editText, setEditText] = useState('');
+  const [selectedMessages, setSelectedMessages] = useState([]);
+  const [selectionMode, setSelectionMode] = useState(false);
+
   const flatListRef = useRef(null);
   const pollIntervalRef = useRef(null);
   const lastRefreshTime = useRef(0);
@@ -80,7 +95,25 @@ const ConversationScreen = ({ navigation, route }) => {
     large: 20,
   };
 
-  const styles = createStyles(theme, safeFontSizes);
+  // Safety check for theme to prevent NaN values
+  const safeTheme = {
+    ...theme,
+    colors: {
+      background: '#FFFFFF',
+      surface: '#F5F5F5',
+      primary: '#007AFF',
+      text: '#000000',
+      textSecondary: '#666666',
+      headerText: '#FFFFFF',
+      headerBackground: '#007AFF',
+      border: '#E0E0E0',
+      error: '#FF3B30',
+      warning: '#FF9500',
+      ...theme?.colors,
+    },
+  };
+
+  const styles = createStyles(safeTheme, safeFontSizes);
 
   // Get current user ID from storage
   const getCurrentUserId = useCallback(async () => {
@@ -296,33 +329,152 @@ const ConversationScreen = ({ navigation, route }) => {
 
   // Render message item
   const renderMessageItem = ({ item }) => {
+    const isSelected = selectedMessages.some(
+      (msg) => msg.message_id === item.message_id
+    );
+    const showActions = selectedMessage?.message_id === item.message_id;
+
     return (
-      <MessageBubble
-        message={item}
-        isOwnMessage={item.is_own_message}
-        showSender={!item.is_own_message}
-        onAttachmentPress={(url) => {
-          // Handle attachment press - could open in browser or download
-          console.log('Attachment pressed:', url);
-        }}
-        onMessagePress={(message) => {
-          // Mark message as read locally if it's not the user's own message and it's unread
-          if (
-            currentUserId &&
-            message.sender?.id !== currentUserId &&
-            !message.is_read
-          ) {
-            markMessageAsReadHandler(message.message_id);
-          }
-          console.log('Message pressed:', message);
-        }}
-        onMessageLongPress={(message) => {
-          // Handle message long press - show delete option for own messages
-          if (message.is_own_message) {
-            handleDeleteMessage(message.message_id);
-          }
-        }}
-      />
+      <View>
+        <View style={styles.messageRow}>
+          {/* Selection Checkbox */}
+          {selectionMode && (
+            <TouchableOpacity
+              style={styles.selectionCheckbox}
+              onPress={() => handleSelectMessage(item)}
+            >
+              <FontAwesomeIcon
+                icon={isSelected ? faCheckCircle : faCircle}
+                size={20}
+                color={
+                  isSelected
+                    ? safeTheme.colors.primary
+                    : safeTheme.colors.textSecondary
+                }
+              />
+            </TouchableOpacity>
+          )}
+
+          <View style={styles.messageContent}>
+            <MessageBubble
+              message={item}
+              isOwnMessage={item.is_own_message}
+              showSender={!item.is_own_message}
+              isSelected={isSelected}
+              selectionMode={selectionMode}
+              onAttachmentPress={(url) => {
+                // Handle attachment press - could open in browser or download
+                console.log('Attachment pressed:', url);
+              }}
+              onMessagePress={(message) => {
+                if (selectionMode) {
+                  handleSelectMessage(message);
+                } else {
+                  // Mark message as read locally if it's not the user's own message and it's unread
+                  if (
+                    currentUserId &&
+                    message.sender?.id !== currentUserId &&
+                    !message.is_read
+                  ) {
+                    markMessageAsReadHandler(message.message_id);
+                  }
+                  console.log('Message pressed:', message);
+                }
+              }}
+              onMessageLongPress={(message) => {
+                // Show inline actions for own messages
+                if (message.is_own_message && !selectionMode) {
+                  setSelectedMessage(
+                    selectedMessage?.message_id === message.message_id
+                      ? null
+                      : message
+                  );
+                }
+              }}
+            />
+          </View>
+        </View>
+
+        {/* Inline Message Actions */}
+        {showActions && item.is_own_message && (
+          <View style={styles.inlineActions}>
+            {/* Edit Option */}
+            <TouchableOpacity
+              style={[
+                styles.actionOption,
+                !canEditMessage(item) && styles.disabledOption,
+              ]}
+              onPress={() =>
+                canEditMessage(item) && handleMessageAction('edit', item)
+              }
+              disabled={!canEditMessage(item)}
+            >
+              <FontAwesomeIcon
+                icon={faEdit}
+                size={16}
+                color={
+                  canEditMessage(item)
+                    ? safeTheme.colors.primary
+                    : safeTheme.colors.textSecondary
+                }
+              />
+              <Text
+                style={[
+                  styles.actionOptionText,
+                  !canEditMessage(item) && styles.disabledOptionText,
+                ]}
+              >
+                Edit Message
+              </Text>
+            </TouchableOpacity>
+
+            {/* Delete Option */}
+            <TouchableOpacity
+              style={styles.actionOption}
+              onPress={() => handleMessageAction('delete', item)}
+            >
+              <FontAwesomeIcon
+                icon={faTrash}
+                size={16}
+                color={safeTheme.colors.error}
+              />
+              <Text
+                style={[
+                  styles.actionOptionText,
+                  { color: safeTheme.colors.error },
+                ]}
+              >
+                Delete Message
+              </Text>
+            </TouchableOpacity>
+
+            {/* Select Option */}
+            <TouchableOpacity
+              style={styles.actionOption}
+              onPress={() => handleMessageAction('select', item)}
+            >
+              <FontAwesomeIcon
+                icon={faCheckCircle}
+                size={16}
+                color={safeTheme.colors.primary}
+              />
+              <Text style={styles.actionOptionText}>Select Message</Text>
+            </TouchableOpacity>
+            {/* Copy Option */}
+            <TouchableOpacity
+              style={styles.actionOption}
+              onPress={() => handleMessageAction('copy', item)}
+            >
+              <FontAwesomeIcon
+                icon={faCopy}
+                size={16}
+                color={theme.colors.primary}
+              />
+              <Text style={styles.actionOptionText}>Copy Message</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
     );
   };
 
@@ -336,6 +488,192 @@ const ConversationScreen = ({ navigation, route }) => {
       </View>
     );
   };
+
+  // Handle message actions (edit, delete, clear, select)
+  const handleMessageAction = useCallback(
+    (action, message) => {
+      setSelectedMessage(null);
+
+      switch (action) {
+        case 'edit':
+          handleEditMessage(message);
+          break;
+        case 'delete':
+          if (userType === 'student') {
+            // Students use clear text function but call it "delete"
+            handleClearMessage(message.message_id);
+          } else {
+            // Staff use actual delete
+            handleDeleteMessage(message.message_id);
+          }
+          break;
+        case 'select':
+          handleSelectMessage(message);
+          break;
+        case 'copy':
+          handleCopyMessage(message);
+          break;
+        default:
+          break;
+      }
+    },
+    [userType]
+  );
+
+  // Handle message editing (1-minute time limit)
+  const handleEditMessage = useCallback((message) => {
+    setEditingMessage(message);
+    setEditText(message.content);
+  }, []);
+
+  // Handle message selection for bulk operations
+  const handleSelectMessage = useCallback(
+    (message) => {
+      if (selectionMode) {
+        // Toggle selection
+        setSelectedMessages((prev) => {
+          const isSelected = prev.some(
+            (msg) => msg.message_id === message.message_id
+          );
+          if (isSelected) {
+            return prev.filter((msg) => msg.message_id !== message.message_id);
+          } else {
+            return [...prev, message];
+          }
+        });
+      } else {
+        // Enter selection mode
+        setSelectionMode(true);
+        setSelectedMessages([message]);
+      }
+    },
+    [selectionMode]
+  );
+
+  // Check if message can be edited (1-minute limit)
+  const canEditMessage = useCallback((message) => {
+    const messageAge = Date.now() - new Date(message.created_at).getTime();
+    const oneMinute = 60 * 1000;
+    return messageAge <= oneMinute;
+  }, []);
+
+  // Exit selection mode
+  const exitSelectionMode = useCallback(() => {
+    setSelectionMode(false);
+    setSelectedMessages([]);
+  }, []);
+
+  // Handle copy message to clipboard
+  const handleCopyMessage = useCallback((message) => {
+    try {
+      // Extract plain text from HTML content if needed
+      const textContent = message.content.replace(/<[^>]*>/g, '').trim();
+      Clipboard.setString(textContent);
+      Alert.alert('Success', 'Message copied to clipboard');
+    } catch (error) {
+      console.error('Error copying message:', error);
+      Alert.alert('Error', 'Failed to copy message');
+    }
+  }, []);
+
+  // Handle bulk delete
+  const handleBulkDelete = useCallback(async () => {
+    if (selectedMessages.length === 0) return;
+
+    const messageIds = selectedMessages.map((msg) => msg.message_id);
+    const deleteType = userType === 'student' ? 'soft' : 'hard';
+
+    Alert.alert(
+      'Delete Messages',
+      `Are you sure you want to delete ${selectedMessages.length} message${
+        selectedMessages.length !== 1 ? 's' : ''
+      }?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const response = await bulkDeleteMessages(
+                messageIds,
+                deleteType,
+                authCode
+              );
+              if (response.success) {
+                // Update messages in local state
+                if (deleteType === 'hard') {
+                  setMessages((prev) =>
+                    prev.filter((msg) => !messageIds.includes(msg.message_id))
+                  );
+                } else {
+                  setMessages((prev) =>
+                    prev.map((msg) =>
+                      messageIds.includes(msg.message_id)
+                        ? {
+                            ...msg,
+                            content: '[Message Deleted]',
+                            cleared_at: new Date().toISOString(),
+                          }
+                        : msg
+                    )
+                  );
+                }
+                exitSelectionMode();
+                Alert.alert(
+                  'Success',
+                  `${response.data.successful_deletes} message${
+                    response.data.successful_deletes !== 1 ? 's' : ''
+                  } deleted successfully`
+                );
+              } else {
+                Alert.alert('Error', 'Failed to delete messages');
+              }
+            } catch (error) {
+              console.error('Error bulk deleting messages:', error);
+              Alert.alert('Error', 'Failed to delete messages');
+            }
+          },
+        },
+      ]
+    );
+  }, [selectedMessages, userType, authCode, exitSelectionMode]);
+
+  // Save edited message
+  const saveEditedMessage = useCallback(async () => {
+    if (!editingMessage || !editText.trim()) return;
+
+    try {
+      const response = await editMessage(
+        editingMessage.message_id,
+        editText.trim(),
+        authCode
+      );
+
+      if (response.success) {
+        // Update message in local state
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.message_id === editingMessage.message_id
+              ? {
+                  ...msg,
+                  content: editText.trim(),
+                  edited_at: new Date().toISOString(),
+                }
+              : msg
+          )
+        );
+        setEditingMessage(null);
+        setEditText('');
+        Alert.alert('Success', 'Message edited successfully');
+      } else {
+        Alert.alert('Error', response.error || 'Failed to edit message');
+      }
+    } catch (error) {
+      console.error('Error editing message:', error);
+      Alert.alert('Error', 'Failed to edit message');
+    }
+  }, [editingMessage, editText, authCode]);
 
   // Handle message deletion (sender only, 24h limit)
   const handleDeleteMessage = useCallback(
@@ -381,6 +719,59 @@ const ConversationScreen = ({ navigation, route }) => {
       }
     },
     [conversationUuid, authCode]
+  );
+
+  // Handle clear message text (replace with "[Message Deleted]")
+  const handleClearMessage = useCallback(
+    async (messageId) => {
+      try {
+        Alert.alert(
+          'Clear Message',
+          'This will replace the message content with "[Message Deleted]". The message will remain visible but the content will be cleared.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Clear',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  const response = await clearMessageText(messageId, authCode);
+                  if (response.success) {
+                    // Update message in local state
+                    setMessages((prev) =>
+                      prev.map((msg) =>
+                        msg.message_id === messageId
+                          ? {
+                              ...msg,
+                              content: '[Message Deleted]',
+                              cleared_at: new Date().toISOString(),
+                            }
+                          : msg
+                      )
+                    );
+                    Alert.alert(
+                      'Success',
+                      'Message content cleared successfully'
+                    );
+                  } else {
+                    Alert.alert(
+                      'Error',
+                      response.error || 'Failed to clear message'
+                    );
+                  }
+                } catch (error) {
+                  console.error('Error clearing message:', error);
+                  Alert.alert('Error', 'Failed to clear message');
+                }
+              },
+            },
+          ]
+        );
+      } catch (error) {
+        console.error('Error in handleClearMessage:', error);
+      }
+    },
+    [authCode]
   );
 
   // Handle leaving conversation
@@ -682,33 +1073,74 @@ const ConversationScreen = ({ navigation, route }) => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <FontAwesomeIcon
-            icon={faArrowLeft}
-            size={20}
-            color={theme.colors.headerText}
-          />
-        </TouchableOpacity>
+        {selectionMode ? (
+          // Selection Mode Header
+          <>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={exitSelectionMode}
+            >
+              <FontAwesomeIcon
+                icon={faArrowLeft}
+                size={20}
+                color={theme.colors.headerText}
+              />
+            </TouchableOpacity>
 
-        <View style={styles.headerContent}>
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            {conversationTopic}
-          </Text>
-        </View>
+            <View style={styles.headerContent}>
+              <Text style={styles.headerTitle}>
+                {selectedMessages.length} selected
+              </Text>
+            </View>
 
-        <TouchableOpacity
-          style={styles.optionsButton}
-          onPress={() => setShowOptionsMenu(true)}
-        >
-          <FontAwesomeIcon
-            icon={faEllipsisV}
-            size={20}
-            color={theme.colors.headerText}
-          />
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.optionsButton}
+              onPress={handleBulkDelete}
+              disabled={selectedMessages.length === 0}
+            >
+              <FontAwesomeIcon
+                icon={faTrash}
+                size={20}
+                color={
+                  selectedMessages.length > 0
+                    ? theme.colors.error
+                    : theme.colors.textSecondary
+                }
+              />
+            </TouchableOpacity>
+          </>
+        ) : (
+          // Normal Header
+          <>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <FontAwesomeIcon
+                icon={faArrowLeft}
+                size={20}
+                color={theme.colors.headerText}
+              />
+            </TouchableOpacity>
+
+            <View style={styles.headerContent}>
+              <Text style={styles.headerTitle} numberOfLines={1}>
+                {conversationTopic}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.optionsButton}
+              onPress={() => setShowOptionsMenu(true)}
+            >
+              <FontAwesomeIcon
+                icon={faEllipsisV}
+                size={20}
+                color={theme.colors.headerText}
+              />
+            </TouchableOpacity>
+          </>
+        )}
       </View>
 
       <KeyboardAvoidingView
@@ -851,29 +1283,104 @@ const ConversationScreen = ({ navigation, route }) => {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Edit Message Modal */}
+      <Modal
+        visible={!!editingMessage}
+        transparent={true}
+        animationType='slide'
+        onRequestClose={() => {
+          setEditingMessage(null);
+          setEditText('');
+        }}
+      >
+        <View style={styles.editModalOverlay}>
+          <View style={styles.editMessageContainer}>
+            <Text style={styles.editModalTitle}>Edit Message</Text>
+
+            <TextInput
+              style={styles.editTextInput}
+              value={editText}
+              onChangeText={setEditText}
+              placeholder='Enter your message...'
+              placeholderTextColor={theme.colors.textSecondary}
+              multiline
+              autoFocus
+            />
+
+            <View style={styles.editModalButtons}>
+              <TouchableOpacity
+                style={[styles.editButton, styles.cancelEditButton]}
+                onPress={() => {
+                  setEditingMessage(null);
+                  setEditText('');
+                }}
+              >
+                <Text style={styles.cancelEditText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.editButton, styles.saveEditButton]}
+                onPress={saveEditedMessage}
+                disabled={!editText.trim()}
+              >
+                <Text style={styles.saveEditText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
 
 const createStyles = (theme, fontSizes) => {
-  // Safety check for fontSizes
-  const safeFontSizes = fontSizes || {
-    small: 12,
-    medium: 16,
-    large: 20,
+  // Safety check for fontSizes with NaN protection
+  const safeFontSizes = {
+    small: fontSizes?.small && !isNaN(fontSizes.small) ? fontSizes.small : 12,
+    medium:
+      fontSizes?.medium && !isNaN(fontSizes.medium) ? fontSizes.medium : 16,
+    large: fontSizes?.large && !isNaN(fontSizes.large) ? fontSizes.large : 20,
+  };
+
+  // Safety check for theme colors
+  const safeTheme = {
+    ...theme,
+    colors: {
+      background: '#FFFFFF',
+      surface: '#F5F5F5',
+      primary: '#007AFF',
+      text: '#000000',
+      textSecondary: '#666666',
+      headerText: '#FFFFFF',
+      headerBackground: '#007AFF',
+      border: '#E0E0E0',
+      error: '#FF3B30',
+      warning: '#FF9500',
+      ...theme?.colors,
+    },
   };
 
   return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.colors.background,
+      backgroundColor: safeTheme.colors.background,
+    },
+    overlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 1,
+      backgroundColor: 'transparent',
     },
     header: {
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: 16,
       paddingVertical: 12,
-      backgroundColor: theme.colors.headerBackground,
+      backgroundColor: safeTheme.colors.headerBackground,
     },
     backButton: {
       padding: 8,
@@ -885,9 +1392,12 @@ const createStyles = (theme, fontSizes) => {
     headerTitle: {
       fontSize: safeFontSizes.large,
       fontWeight: 'bold',
-      color: theme.colors.headerText,
+      color: safeTheme.colors.headerText,
     },
     content: {
+      flex: 1,
+    },
+    messagesContainer: {
       flex: 1,
     },
     loadingContainer: {
@@ -898,7 +1408,7 @@ const createStyles = (theme, fontSizes) => {
     loadingText: {
       marginTop: 12,
       fontSize: safeFontSizes.medium,
-      color: theme.colors.textSecondary,
+      color: safeTheme.colors.textSecondary,
     },
     messagesList: {
       paddingHorizontal: 2,
@@ -927,14 +1437,14 @@ const createStyles = (theme, fontSizes) => {
       width: 20,
       height: 20,
       borderRadius: 10,
-      backgroundColor: theme.colors.surface,
+      backgroundColor: safeTheme.colors.surface,
       justifyContent: 'center',
       alignItems: 'center',
       marginRight: 6,
     },
     senderName: {
       fontSize: safeFontSizes.small,
-      color: theme.colors.textSecondary,
+      color: safeTheme.colors.textSecondary,
       fontWeight: '500',
     },
     messageBubble: {
@@ -953,7 +1463,7 @@ const createStyles = (theme, fontSizes) => {
     },
     messageText: {
       fontSize: safeFontSizes.medium,
-      lineHeight: 20,
+      lineHeight: safeFontSizes.medium * 1.25, // Dynamic line height based on font size
     },
     ownMessageText: {
       color: theme.colors.headerText,
@@ -1070,6 +1580,132 @@ const createStyles = (theme, fontSizes) => {
     cancelText: {
       fontSize: safeFontSizes.medium,
       color: theme.colors.text,
+      fontWeight: '500',
+    },
+    // Message Row and Selection Styles
+    messageRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      paddingHorizontal: 8,
+    },
+    selectionCheckbox: {
+      paddingTop: 8,
+      paddingRight: 8,
+      paddingLeft: 4,
+    },
+    messageContent: {
+      flex: 1,
+    },
+    // Inline Message Actions Styles
+    inlineActions: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 8,
+      marginHorizontal: 16,
+      marginVertical: 4,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+      elevation: 2,
+      maxWidth: 200,
+      alignSelf: 'flex-end',
+      zIndex: 2,
+    },
+    actionOption: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    actionOptionText: {
+      fontSize: safeFontSizes.medium,
+      color: theme.colors.text,
+      marginLeft: 12,
+      fontWeight: '500',
+    },
+    disabledOption: {
+      opacity: 0.5,
+    },
+    disabledOptionText: {
+      color: theme.colors.textSecondary,
+    },
+    actionButton: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      marginHorizontal: 4,
+      backgroundColor: theme.colors.primary,
+      borderRadius: 6,
+      minWidth: 60,
+      alignItems: 'center',
+    },
+    actionButtonText: {
+      fontSize: safeFontSizes.small,
+      color: theme.colors.headerText,
+      fontWeight: '500',
+    },
+    // Edit Message Modal Styles
+    editModalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+    },
+    editMessageContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 12,
+      padding: 20,
+      width: '100%',
+      maxWidth: 400,
+    },
+    editModalTitle: {
+      fontSize: safeFontSizes.large,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 16,
+      textAlign: 'center',
+    },
+    editTextInput: {
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: 8,
+      padding: 12,
+      fontSize: safeFontSizes.medium,
+      color: theme.colors.text,
+      backgroundColor: theme.colors.background,
+      minHeight: 100,
+      maxHeight: 200,
+      textAlignVertical: 'top',
+      marginBottom: 16,
+    },
+    editModalButtons: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      gap: 12,
+    },
+    editButton: {
+      flex: 1,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 8,
+      alignItems: 'center',
+    },
+    cancelEditButton: {
+      backgroundColor: theme.colors.border,
+    },
+    saveEditButton: {
+      backgroundColor: theme.colors.primary,
+    },
+    cancelEditText: {
+      fontSize: safeFontSizes.medium,
+      color: theme.colors.text,
+      fontWeight: '500',
+    },
+    saveEditText: {
+      fontSize: safeFontSizes.medium,
+      color: theme.colors.headerText,
       fontWeight: '500',
     },
   });

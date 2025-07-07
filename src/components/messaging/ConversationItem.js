@@ -182,6 +182,73 @@ const ConversationItem = ({
     return memberCount > 2 ? faUsers : faUser;
   };
 
+  // Get all member photos for composite avatar
+  const getAllMemberPhotos = () => {
+    let allMembers = [];
+
+    // Handle grouped members structure (staff/students)
+    if (conversation.members?.staff || conversation.members?.students) {
+      allMembers = [
+        ...(conversation.members.staff || []),
+        ...(conversation.members.students || []),
+      ];
+    }
+    // Handle flat members array
+    else if (Array.isArray(conversation.members)) {
+      allMembers = conversation.members;
+    }
+
+    // Filter members with photos and limit to first 4 for display
+    const membersWithPhotos = allMembers
+      .filter((member) => member.photo)
+      .slice(0, 4);
+
+    return membersWithPhotos;
+  };
+
+  // Get positioning for composite avatar images
+  const getCompositeAvatarPosition = (index, totalCount) => {
+    const size = 24; // Half of the container size (48/2)
+
+    if (totalCount === 2) {
+      return {
+        width: size,
+        height: size,
+        position: 'absolute',
+        top: index === 0 ? 0 : size,
+        left: size / 2,
+      };
+    } else if (totalCount === 3) {
+      if (index === 0) {
+        return {
+          width: size,
+          height: size,
+          position: 'absolute',
+          top: 0,
+          left: size / 2,
+        };
+      } else {
+        return {
+          width: size,
+          height: size,
+          position: 'absolute',
+          top: size,
+          left: index === 1 ? 0 : size,
+        };
+      }
+    } else if (totalCount >= 4) {
+      return {
+        width: size,
+        height: size,
+        position: 'absolute',
+        top: index < 2 ? 0 : size,
+        left: index % 2 === 0 ? 0 : size,
+      };
+    }
+
+    return {};
+  };
+
   // Get last message preview
   const getLastMessagePreview = () => {
     if (!conversation.last_message) {
@@ -378,19 +445,62 @@ const ConversationItem = ({
         >
           {/* Conversation Icon/Avatar */}
           <View style={styles.conversationIcon}>
-            {conversation.creator?.photo ? (
-              <Image
-                source={{ uri: conversation.creator.photo }}
-                style={styles.avatarImage}
-                resizeMode='cover'
-              />
-            ) : (
-              <FontAwesomeIcon
-                icon={getConversationIcon()}
-                size={20}
-                color={theme.colors.primary}
-              />
-            )}
+            {(() => {
+              const membersWithPhotos = getAllMemberPhotos();
+
+              // Show composite avatar if multiple photos available
+              if (membersWithPhotos.length > 1) {
+                return (
+                  <View style={styles.compositeAvatar}>
+                    {membersWithPhotos.map((member, index) => (
+                      <Image
+                        key={member.id}
+                        source={{ uri: member.photo }}
+                        style={[
+                          styles.compositeAvatarImage,
+                          getCompositeAvatarPosition(
+                            index,
+                            membersWithPhotos.length
+                          ),
+                        ]}
+                        resizeMode='cover'
+                      />
+                    ))}
+                  </View>
+                );
+              }
+
+              // Show single photo if available
+              if (membersWithPhotos.length === 1) {
+                return (
+                  <Image
+                    source={{ uri: membersWithPhotos[0].photo }}
+                    style={styles.avatarImage}
+                    resizeMode='cover'
+                  />
+                );
+              }
+
+              // Show creator photo if no member photos
+              if (conversation.creator?.photo) {
+                return (
+                  <Image
+                    source={{ uri: conversation.creator.photo }}
+                    style={styles.avatarImage}
+                    resizeMode='cover'
+                  />
+                );
+              }
+
+              // Default icon
+              return (
+                <FontAwesomeIcon
+                  icon={getConversationIcon()}
+                  size={20}
+                  color={theme.colors.primary}
+                />
+              );
+            })()}
           </View>
 
           {/* Conversation Content */}
@@ -512,7 +622,7 @@ const createStyles = (theme, fontSizes) => {
       paddingHorizontal: 20,
       height: '100%',
       minWidth: 80,
-      
+
       position: 'absolute',
       left: 0,
       top: 0,
@@ -551,6 +661,16 @@ const createStyles = (theme, fontSizes) => {
       width: 48,
       height: 48,
       borderRadius: 24,
+    },
+    compositeAvatar: {
+      width: 48,
+      height: 48,
+      position: 'relative',
+    },
+    compositeAvatarImage: {
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.colors.surface,
     },
     conversationContent: {
       flex: 1,
