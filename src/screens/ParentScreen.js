@@ -40,6 +40,7 @@ import { QuickActionTile, ComingSoonBadge } from '../components';
 import { cleanupStudentData } from '../services/logoutService';
 import { isIPad, isTablet } from '../utils/deviceDetection';
 import DemoModeIndicator from '../components/DemoModeIndicator';
+import { updateLastLogin } from '../services/deviceService';
 
 import { useFocusEffect } from '@react-navigation/native';
 import { createCustomShadow, createMediumShadow } from '../utils/commonStyles';
@@ -232,6 +233,38 @@ export default function ParentScreen({ navigation }) {
       console.error('Error saving selected student:', error);
     }
 
+    // Update last login timestamp when student is selected/starts using the app
+    console.log('⏰ PARENT: Updating last login for selected student...');
+    try {
+      const authCode = student.authCode || student.auth_code;
+      if (authCode) {
+        const updateResult = await updateLastLogin(authCode);
+        if (updateResult.success) {
+          console.log(
+            '✅ PARENT: Last login updated successfully for student:',
+            student.name
+          );
+        } else {
+          console.warn(
+            '⚠️ PARENT: Failed to update last login for student:',
+            updateResult.error
+          );
+          // Continue with selection even if update fails
+        }
+      } else {
+        console.warn(
+          '⚠️ PARENT: No auth code found for student:',
+          student.name
+        );
+      }
+    } catch (updateError) {
+      console.error(
+        '❌ PARENT: Error updating last login for student:',
+        updateError
+      );
+      // Continue with selection even if update fails
+    }
+
     // Also select student for notifications
     selectStudent(student);
   };
@@ -314,6 +347,29 @@ export default function ParentScreen({ navigation }) {
 
         if (parsedUserData.demo_mode && parsedUserData.userType === 'student') {
           console.log('🎭 DEMO MODE: Loading demo parent children data');
+
+          // Update last login timestamp for demo student user
+          console.log(
+            '⏰ PARENT: Updating last login for existing demo student user...'
+          );
+          try {
+            const updateResult = await updateLastLogin(
+              parsedUserData.authCode || parsedUserData.auth_code
+            );
+            if (updateResult.success) {
+              console.log('✅ PARENT: Last login updated successfully');
+            } else {
+              console.warn(
+                '⚠️ PARENT: Failed to update last login:',
+                updateResult.error
+              );
+              // Continue with loading even if update fails
+            }
+          } catch (updateError) {
+            console.error('❌ PARENT: Error updating last login:', updateError);
+            // Continue with loading even if update fails
+          }
+
           // Load demo children data
           setStudents(parsedUserData.children || []);
           setLoading(false);

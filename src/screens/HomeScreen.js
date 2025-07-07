@@ -42,6 +42,7 @@ import {
 } from '../utils/deviceDetection';
 import { lockOrientationForDevice } from '../utils/orientationLock';
 import { createSmallShadow, createCustomShadow } from '../utils/commonStyles';
+import { updateCurrentUserLastLogin } from '../services/deviceService';
 
 const { width, height } = Dimensions.get('window');
 
@@ -76,6 +77,26 @@ export default function HomeScreen({ navigation }) {
         const parsedUserData = JSON.parse(userData);
         // Only navigate to teacher screen if the logged in user is a teacher
         if (parsedUserData.userType === 'teacher') {
+          // Update last login timestamp when user opens the app
+          console.log(
+            '⏰ HOME: Updating last login for existing teacher user...'
+          );
+          try {
+            const updateResult = await updateCurrentUserLastLogin();
+            if (updateResult.success) {
+              console.log('✅ HOME: Last login updated successfully');
+            } else {
+              console.warn(
+                '⚠️ HOME: Failed to update last login:',
+                updateResult.error
+              );
+              // Continue with navigation even if update fails
+            }
+          } catch (updateError) {
+            console.error('❌ HOME: Error updating last login:', updateError);
+            // Continue with navigation even if update fails
+          }
+
           navigation.navigate('TeacherScreen', { userData: parsedUserData });
           return;
         }
@@ -432,7 +453,7 @@ const createStyles = (
       width: '48%',
       flexDirection: 'row',
       alignItems: 'center',
-      ...theme.shadows.small
+      ...theme.shadows.small,
     },
     resourceIconContainer: {
       width: 40,
@@ -464,7 +485,7 @@ const createStyles = (
       justifyContent: 'center',
       marginBottom: 15,
       alignSelf: 'center', // This should center it within the ScrollView
-      ...theme.shadows.small
+      ...theme.shadows.small,
     },
     socialMediaIconContainer: {
       marginRight: 10,
@@ -487,6 +508,6 @@ const createStyles = (
       justifyContent: 'center',
       alignItems: 'center',
       marginHorizontal: 10,
-      ...theme.shadows.small
+      ...theme.shadows.small,
     },
   });

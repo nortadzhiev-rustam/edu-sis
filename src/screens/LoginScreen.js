@@ -34,6 +34,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { createSmallShadow } from '../utils/commonStyles';
 import AgeVerification from '../components/AgeVerification';
 import ParentalConsent from '../components/ParentalConsent';
+import { updateLastLogin } from '../services/deviceService';
 
 const { width, height } = Dimensions.get('window');
 
@@ -174,6 +175,36 @@ export default function LoginScreen({ route, navigation }) {
             JSON.stringify(existingStudents)
           );
 
+          // Update last login timestamp for the newly added student
+          console.log(
+            '⏰ LOGIN: Updating last login for newly added student...'
+          );
+          try {
+            const authCode = userData.authCode || userData.auth_code;
+            if (authCode) {
+              const updateResult = await updateLastLogin(authCode);
+              if (updateResult.success) {
+                console.log(
+                  '✅ LOGIN: Last login updated successfully for new student'
+                );
+              } else {
+                console.warn(
+                  '⚠️ LOGIN: Failed to update last login for new student:',
+                  updateResult.error
+                );
+                // Continue with navigation even if update fails
+              }
+            } else {
+              console.warn('⚠️ LOGIN: No auth code found for new student');
+            }
+          } catch (updateError) {
+            console.error(
+              '❌ LOGIN: Error updating last login for new student:',
+              updateError
+            );
+            // Continue with navigation even if update fails
+          }
+
           // Note: FCM token remains active for all users on device
           // Backend will handle user-specific notification routing
           console.log(
@@ -278,6 +309,33 @@ export default function LoginScreen({ route, navigation }) {
     try {
       // Save user data to AsyncStorage
       await saveUserData(userData, AsyncStorage);
+
+      // Update last login timestamp after successful login
+      console.log(
+        '⏰ LOGIN: Updating last login timestamp after successful login...'
+      );
+      try {
+        const authCode = userData.authCode || userData.auth_code;
+        if (authCode) {
+          const updateResult = await updateLastLogin(authCode);
+          if (updateResult.success) {
+            console.log('✅ LOGIN: Last login updated successfully');
+          } else {
+            console.warn(
+              '⚠️ LOGIN: Failed to update last login:',
+              updateResult.error
+            );
+            // Continue with navigation even if update fails
+          }
+        } else {
+          console.warn(
+            '⚠️ LOGIN: No auth code found in user data for last login update'
+          );
+        }
+      } catch (updateError) {
+        console.error('❌ LOGIN: Error updating last login:', updateError);
+        // Continue with navigation even if update fails
+      }
 
       // Navigate to appropriate screen based on user type
       if (userData.userType === 'teacher') {

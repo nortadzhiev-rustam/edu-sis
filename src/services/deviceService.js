@@ -354,3 +354,125 @@ export const removeStudentFromDevice = async (studentData) => {
     };
   }
 };
+
+/**
+ * Update last login timestamp for the user
+ * This API call tells the server that the user has opened and started using the app
+ * @param {string} authCode - The user's authentication code
+ * @returns {Promise<Object>} - Response from the API
+ */
+export const updateLastLogin = async (authCode) => {
+  try {
+    console.log('⏰ DEVICE SERVICE: Updating last login timestamp...');
+    console.log(
+      `🔑 Auth Code: ${authCode ? authCode.substring(0, 10) + '...' : 'null'}`
+    );
+
+    if (!authCode) {
+      console.warn('⚠️ DEVICE SERVICE: No auth code provided');
+      return { success: false, error: 'No auth code provided' };
+    }
+
+    // Build the API URL for update last login
+    const url = buildApiUrl('/update-last-login/');
+
+    console.log('🔗 DEVICE SERVICE: Update last login API URL:', url);
+
+    // Add timeout for the request
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+    const response = await fetch(url, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        authCode: authCode,
+      }),
+    });
+
+    clearTimeout(timeoutId);
+
+    console.log(
+      '📡 DEVICE SERVICE: Update last login response status:',
+      response.status
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('✅ DEVICE SERVICE: Last login updated successfully:', data);
+
+      return {
+        success: true,
+        data: data,
+        message: data.message || 'Last login updated successfully',
+      };
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      console.error(
+        '❌ DEVICE SERVICE: Update last login failed with status:',
+        response.status
+      );
+      console.error('❌ DEVICE SERVICE: Error data:', errorData);
+
+      return {
+        success: false,
+        error: errorData.error || `HTTP ${response.status}`,
+        status: response.status,
+      };
+    }
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      console.error('⏰ DEVICE SERVICE: Update last login request timeout');
+      return {
+        success: false,
+        error: 'Request timeout - server did not respond within 10 seconds',
+      };
+    }
+
+    console.error('❌ DEVICE SERVICE: Update last login error:', error);
+    return {
+      success: false,
+      error: error.message || 'Network error during last login update',
+    };
+  }
+};
+
+/**
+ * Update last login for current user (convenience function)
+ * Gets auth code from storage and calls the API
+ * @returns {Promise<Object>} - Response from the API
+ */
+export const updateCurrentUserLastLogin = async () => {
+  try {
+    console.log('⏰ DEVICE SERVICE: Updating current user last login...');
+
+    const userData = await AsyncStorage.getItem('userData');
+    if (!userData) {
+      console.warn('⚠️ DEVICE SERVICE: No user data found in storage');
+      return { success: false, error: 'No user data found in storage' };
+    }
+
+    const user = JSON.parse(userData);
+    const authCode = user.authCode || user.auth_code;
+
+    if (!authCode) {
+      console.warn('⚠️ DEVICE SERVICE: No auth code found in user data');
+      return { success: false, error: 'No auth code found in user data' };
+    }
+
+    return await updateLastLogin(authCode);
+  } catch (error) {
+    console.error(
+      '❌ DEVICE SERVICE: Error in updateCurrentUserLastLogin:',
+      error
+    );
+    return {
+      success: false,
+      error: error.message || 'Unknown error occurred',
+    };
+  }
+};
