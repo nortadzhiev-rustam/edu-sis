@@ -5,6 +5,7 @@ import { StyleSheet, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import SplashScreen from './src/screens/SplashScreen';
 import HomeScreen from './src/screens/HomeScreen';
@@ -43,6 +44,10 @@ import StudentHealthScreen from './src/screens/StudentHealthScreen';
 import TeacherHealthScreen from './src/screens/TeacherHealthScreen';
 import EditHealthInfoScreen from './src/screens/EditHealthInfoScreen';
 import CreateHealthRecordScreen from './src/screens/CreateHealthRecordScreen';
+import CalendarScreen from './src/screens/CalendarScreen';
+import AboutUsScreen from './src/screens/AboutUsScreen';
+import ContactsScreen from './src/screens/ContactsScreen';
+import FAQScreen from './src/screens/FAQScreen';
 import { ThemeProvider } from './src/contexts/ThemeContext';
 import { LanguageProvider } from './src/contexts/LanguageContext';
 import { NotificationProvider } from './src/contexts/NotificationContext';
@@ -167,171 +172,185 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <SafeAreaProvider>
-        <ThemeProvider>
-          <SplashScreen onAnimationComplete={handleAnimationComplete} />
-        </ThemeProvider>
-      </SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <ThemeProvider>
+            <SplashScreen onAnimationComplete={handleAnimationComplete} />
+          </ThemeProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
     );
   }
 
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <LanguageProvider>
-          <NotificationProvider>
-            <MessagingProvider>
-              <NavigationContainer
-                ref={navigationRef}
-                onReady={() => {
-                  console.log(
-                    '🧭 NAVIGATION: NavigationContainer is ready, setting reference...'
-                  );
-                  // Add a small delay to ensure navigation is fully initialized
-                  setTimeout(() => {
-                    setNavigationRef(navigationRef.current);
-                  }, 100);
-                }}
-              >
-                <StatusBar style='auto' />
-                <Stack.Navigator
-                  initialRouteName='Home'
-                  screenOptions={{ headerShown: false }}
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <LanguageProvider>
+            <NotificationProvider>
+              <MessagingProvider>
+                <NavigationContainer
+                  ref={navigationRef}
+                  onReady={() => {
+                    console.log(
+                      '🧭 NAVIGATION: NavigationContainer is ready, setting reference...'
+                    );
+                    // Add a small delay to ensure navigation is fully initialized
+                    setTimeout(() => {
+                      setNavigationRef(navigationRef.current);
+                    }, 100);
+                  }}
                 >
-                  <Stack.Screen name='Home' component={HomeScreen} />
-                  <Stack.Screen name='Login' component={LoginScreen} />
-                  <Stack.Screen
-                    name='TeacherScreen'
-                    component={TeacherScreen}
-                  />
-                  <Stack.Screen
-                    name='TeacherProfile'
-                    component={TeacherProfile}
-                  />
-                  <Stack.Screen
-                    name='TeacherTimetable'
-                    component={TeacherTimetable}
-                  />
-                  <Stack.Screen
-                    name='TeacherAttendance'
-                    component={TeacherAttendanceScreen}
-                  />
-                  <Stack.Screen name='TeacherBPS' component={TeacherBPS} />
-                  <Stack.Screen
-                    name='TeacherHomework'
-                    component={TeacherHomeworkScreen}
-                  />
-                  <Stack.Screen
-                    name='TeacherHomeworkDetail'
-                    component={TeacherHomeworkDetailScreen}
-                  />
-                  <Stack.Screen
-                    name='TeacherHomeworkCreate'
-                    component={TeacherHomeworkCreateScreen}
-                  />
-                  <Stack.Screen
-                    name='StudentHomeworkDetail'
-                    component={StudentHomeworkDetailScreen}
-                  />
-                  <Stack.Screen
-                    name='HomeroomScreen'
-                    component={HomeroomScreen}
-                  />
-                  <Stack.Screen
-                    name='HomeroomStudentsScreen'
-                    component={HomeroomStudentsScreen}
-                  />
-                  <Stack.Screen
-                    name='HomeroomStudentProfile'
-                    component={HomeroomStudentProfile}
-                  />
-                  <Stack.Screen
-                    name='HomeroomDisciplineScreen'
-                    component={HomeroomDisciplineScreen}
-                  />
-                  <Stack.Screen name='ParentScreen' component={ParentScreen} />
-                  <Stack.Screen
-                    name='TimetableScreen'
-                    component={TimetableScreen}
-                  />
-                  <Stack.Screen name='GradesScreen' component={GradesScreen} />
-                  <Stack.Screen
-                    name='AttendanceScreen'
-                    component={AttendanceScreen}
-                  />
-                  <Stack.Screen
-                    name='AssignmentsScreen'
-                    component={AssignmentsScreen}
-                  />
-                  <Stack.Screen
-                    name='AssignmentDetail'
-                    component={AssignmentDetailScreen}
-                  />
-                  <Stack.Screen
-                    name='BehaviorScreen'
-                    component={BehaviorScreen}
-                  />
-                  <Stack.Screen
-                    name='SettingsScreen'
-                    component={SettingsScreen}
-                  />
-                  <Stack.Screen name='WebView' component={WebViewScreen} />
-                  <Stack.Screen
-                    name='WebViewWithAuth'
-                    component={WebViewWithAuth}
-                  />
-                  <Stack.Screen
-                    name='NotificationScreen'
-                    component={NotificationScreen}
-                  />
-                  <Stack.Screen
-                    name='LibraryScreen'
-                    component={LibraryScreen}
-                  />
-                  <Stack.Screen
-                    name='TeacherMessagingScreen'
-                    component={TeacherMessagingScreen}
-                  />
-                  <Stack.Screen
-                    name='StudentMessagingScreen'
-                    component={StudentMessagingScreen}
-                  />
-                  <Stack.Screen
-                    name='ConversationScreen'
-                    component={ConversationScreen}
-                  />
-                  <Stack.Screen
-                    name='CreateConversationScreen'
-                    component={CreateConversationScreen}
-                  />
-                  <Stack.Screen
-                    name='StudentCreateConversationScreen'
-                    component={StudentCreateConversationScreen}
-                  />
-                  <Stack.Screen
-                    name='StudentHealthScreen'
-                    component={StudentHealthScreen}
-                  />
-                  <Stack.Screen
-                    name='TeacherHealthScreen'
-                    component={TeacherHealthScreen}
-                  />
-                  <Stack.Screen
-                    name='EditHealthInfoScreen'
-                    component={EditHealthInfoScreen}
-                  />
-                  <Stack.Screen
-                    name='CreateHealthRecordScreen'
-                    component={CreateHealthRecordScreen}
-                  />
-                </Stack.Navigator>
-                {/* <DevTokenDisplay /> */}
-              </NavigationContainer>
-            </MessagingProvider>
-          </NotificationProvider>
-        </LanguageProvider>
-      </ThemeProvider>
-    </SafeAreaProvider>
+                  <StatusBar style='auto' />
+                  <Stack.Navigator
+                    initialRouteName='Home'
+                    screenOptions={{ headerShown: false }}
+                  >
+                    <Stack.Screen name='Home' component={HomeScreen} />
+                    <Stack.Screen name='Login' component={LoginScreen} />
+                    <Stack.Screen
+                      name='TeacherScreen'
+                      component={TeacherScreen}
+                    />
+                    <Stack.Screen
+                      name='TeacherProfile'
+                      component={TeacherProfile}
+                    />
+                    <Stack.Screen
+                      name='TeacherTimetable'
+                      component={TeacherTimetable}
+                    />
+                    <Stack.Screen
+                      name='TeacherAttendance'
+                      component={TeacherAttendanceScreen}
+                    />
+                    <Stack.Screen name='TeacherBPS' component={TeacherBPS} />
+                    <Stack.Screen
+                      name='TeacherHomework'
+                      component={TeacherHomeworkScreen}
+                    />
+                    <Stack.Screen
+                      name='TeacherHomeworkDetail'
+                      component={TeacherHomeworkDetailScreen}
+                    />
+                    <Stack.Screen
+                      name='TeacherHomeworkCreate'
+                      component={TeacherHomeworkCreateScreen}
+                    />
+                    <Stack.Screen
+                      name='StudentHomeworkDetail'
+                      component={StudentHomeworkDetailScreen}
+                    />
+                    <Stack.Screen
+                      name='HomeroomScreen'
+                      component={HomeroomScreen}
+                    />
+                    <Stack.Screen
+                      name='HomeroomStudentsScreen'
+                      component={HomeroomStudentsScreen}
+                    />
+                    <Stack.Screen
+                      name='HomeroomStudentProfile'
+                      component={HomeroomStudentProfile}
+                    />
+                    <Stack.Screen
+                      name='HomeroomDisciplineScreen'
+                      component={HomeroomDisciplineScreen}
+                    />
+                    <Stack.Screen
+                      name='ParentScreen'
+                      component={ParentScreen}
+                    />
+                    <Stack.Screen
+                      name='TimetableScreen'
+                      component={TimetableScreen}
+                    />
+                    <Stack.Screen
+                      name='GradesScreen'
+                      component={GradesScreen}
+                    />
+                    <Stack.Screen
+                      name='AttendanceScreen'
+                      component={AttendanceScreen}
+                    />
+                    <Stack.Screen
+                      name='AssignmentsScreen'
+                      component={AssignmentsScreen}
+                    />
+                    <Stack.Screen
+                      name='AssignmentDetail'
+                      component={AssignmentDetailScreen}
+                    />
+                    <Stack.Screen
+                      name='BehaviorScreen'
+                      component={BehaviorScreen}
+                    />
+                    <Stack.Screen
+                      name='SettingsScreen'
+                      component={SettingsScreen}
+                    />
+                    <Stack.Screen name='WebView' component={WebViewScreen} />
+                    <Stack.Screen
+                      name='WebViewWithAuth'
+                      component={WebViewWithAuth}
+                    />
+                    <Stack.Screen
+                      name='NotificationScreen'
+                      component={NotificationScreen}
+                    />
+                    <Stack.Screen
+                      name='LibraryScreen'
+                      component={LibraryScreen}
+                    />
+                    <Stack.Screen
+                      name='TeacherMessagingScreen'
+                      component={TeacherMessagingScreen}
+                    />
+                    <Stack.Screen
+                      name='StudentMessagingScreen'
+                      component={StudentMessagingScreen}
+                    />
+                    <Stack.Screen
+                      name='ConversationScreen'
+                      component={ConversationScreen}
+                    />
+                    <Stack.Screen
+                      name='CreateConversationScreen'
+                      component={CreateConversationScreen}
+                    />
+                    <Stack.Screen
+                      name='StudentCreateConversationScreen'
+                      component={StudentCreateConversationScreen}
+                    />
+                    <Stack.Screen
+                      name='StudentHealthScreen'
+                      component={StudentHealthScreen}
+                    />
+                    <Stack.Screen
+                      name='TeacherHealthScreen'
+                      component={TeacherHealthScreen}
+                    />
+                    <Stack.Screen
+                      name='EditHealthInfoScreen'
+                      component={EditHealthInfoScreen}
+                    />
+                    <Stack.Screen
+                      name='CreateHealthRecordScreen'
+                      component={CreateHealthRecordScreen}
+                    />
+                    <Stack.Screen name='Calendar' component={CalendarScreen} />
+                    <Stack.Screen name='AboutUs' component={AboutUsScreen} />
+                    <Stack.Screen name='Contacts' component={ContactsScreen} />
+                    <Stack.Screen name='FAQ' component={FAQScreen} />
+                  </Stack.Navigator>
+                  {/* <DevTokenDisplay /> */}
+                </NavigationContainer>
+              </MessagingProvider>
+            </NotificationProvider>
+          </LanguageProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 

@@ -1,25 +1,52 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useMessaging } from '../contexts/MessagingContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { getUnreadConversationsCount } from '../services/messagingService';
 
 /**
  * MessageBadge Component
  * Displays unread message count badge for messaging
  * Uses MessagingContext for accurate message counts
  */
-const MessageBadge = ({ 
-  style, 
-  textStyle, 
+const MessageBadge = ({
+  style,
+  textStyle,
   showZero = false,
-  userType = 'teacher' // 'teacher', 'student', 'parent'
+  userType = 'teacher', // 'teacher', 'student', 'parent'
+  selectedStudent = null, // For parent view - show specific student's count
+  showAllStudents = false, // For parent view - show all students' count
 }) => {
   const { totalUnreadMessages } = useMessaging();
   const { theme } = useTheme();
+  const [studentUnreadCount, setStudentUnreadCount] = useState(0);
 
-  // For now, all user types use the same messaging context
-  // In the future, this could be extended to handle different contexts
-  const unreadCount = totalUnreadMessages;
+  // Load unread count for specific student (parent view)
+  useEffect(() => {
+    if (selectedStudent && !showAllStudents) {
+      const loadStudentUnreadCount = async () => {
+        try {
+          const response = await getUnreadConversationsCount(
+            selectedStudent.authCode
+          );
+          if (response.success && response.data) {
+            setStudentUnreadCount(response.data.total_unread_messages || 0);
+          }
+        } catch (error) {
+          console.error('Error loading student unread count:', error);
+          setStudentUnreadCount(0);
+        }
+      };
+
+      loadStudentUnreadCount();
+    }
+  }, [selectedStudent, showAllStudents]);
+
+  // Determine which count to show
+  const unreadCount =
+    selectedStudent && !showAllStudents
+      ? studentUnreadCount
+      : totalUnreadMessages;
 
   if (!showZero && unreadCount === 0) {
     return null;

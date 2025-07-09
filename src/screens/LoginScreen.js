@@ -341,12 +341,20 @@ export default function LoginScreen({ route, navigation }) {
       if (userData.userType === 'teacher') {
         navigation.replace('TeacherScreen', { userData });
       } else if (userData.userType === 'student') {
-        // For direct student login (not through parent)
-        Alert.alert(
-          'Student Login',
-          'Student direct login is not supported in this version'
+        // For direct student login, navigate to home screen
+        console.log(
+          '✅ STUDENT LOGIN: Student logged in successfully, navigating to home'
         );
-        // You could implement a student screen here if needed
+        Alert.alert(
+          'Login Successful',
+          `Welcome ${userData.name}! You can now access the calendar and other school resources.`,
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.replace('Home'),
+            },
+          ]
+        );
       }
     } catch (error) {
       console.error('Login completion error:', error);

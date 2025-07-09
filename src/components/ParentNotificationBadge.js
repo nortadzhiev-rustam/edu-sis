@@ -3,13 +3,25 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useParentNotifications } from '../hooks/useParentNotifications';
 import { useTheme } from '../contexts/ThemeContext';
 
-const ParentNotificationBadge = ({ style, textStyle, showZero = false }) => {
-  const { getTotalUnreadCount } = useParentNotifications();
+const ParentNotificationBadge = ({
+  style,
+  textStyle,
+  showZero = false,
+  selectedStudent = null,
+  showAllStudents = false,
+}) => {
+  const { getTotalUnreadCount, getStudentUnreadCount } =
+    useParentNotifications();
   const { theme } = useTheme();
 
-  const totalUnreadCount = getTotalUnreadCount();
+  // If selectedStudent is provided, show only that student's count
+  // Otherwise, show total count across all students (default behavior)
+  const unreadCount =
+    selectedStudent && !showAllStudents
+      ? getStudentUnreadCount(selectedStudent.authCode) || 0
+      : getTotalUnreadCount();
 
-  if (!showZero && totalUnreadCount === 0) {
+  if (!showZero && unreadCount === 0) {
     return null;
   }
 
@@ -18,7 +30,7 @@ const ParentNotificationBadge = ({ style, textStyle, showZero = false }) => {
   return (
     <View style={[styles.badge, style]}>
       <Text style={[styles.badgeText, textStyle]}>
-        {totalUnreadCount > 99 ? '99+' : totalUnreadCount.toString()}
+        {unreadCount > 99 ? '99+' : unreadCount.toString()}
       </Text>
     </View>
   );

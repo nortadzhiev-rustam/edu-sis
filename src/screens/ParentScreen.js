@@ -82,6 +82,14 @@ const getMenuItems = (t) => [
     action: 'schedule',
   },
   {
+    id: 'calendar',
+    title: 'Calendar',
+    icon: faCalendarAlt,
+    backgroundColor: '#5856D6',
+    iconColor: '#fff',
+    action: 'calendar',
+  },
+  {
     id: 'discipline',
     title: t('behavior'),
     icon: faGavel,
@@ -331,6 +339,19 @@ export default function ParentScreen({ navigation }) {
           authCode: selectedStudent.authCode,
         });
         break;
+      case 'calendar':
+        // Save selected student as userData for calendar access
+        try {
+          await AsyncStorage.setItem(
+            'userData',
+            JSON.stringify(selectedStudent)
+          );
+          navigation.navigate('Calendar');
+        } catch (error) {
+          console.error('Error saving student data for calendar:', error);
+          Alert.alert('Error', 'Failed to access calendar');
+        }
+        break;
       default:
         break;
     }
@@ -390,21 +411,47 @@ export default function ParentScreen({ navigation }) {
     }
   }, []);
 
-  // Restore the previously selected student
+  // Restore the previously selected student or select first student automatically
   const restoreSelectedStudent = React.useCallback(async () => {
     try {
+      if (students.length === 0) return;
+
       const savedSelectedStudentId = await AsyncStorage.getItem(
         'selectedStudentId'
       );
-      if (savedSelectedStudentId && students.length > 0) {
-        const student = students.find(
+
+      let studentToSelect = null;
+
+      // Try to restore previously selected student
+      if (savedSelectedStudentId) {
+        studentToSelect = students.find(
           (s) => s.id.toString() === savedSelectedStudentId
         );
-        if (student) {
-          setSelectedStudent(student);
-          // Don't call selectStudent here to avoid triggering notifications loading
-          // selectStudent(student);
-        }
+      }
+
+      // If no previously selected student found, automatically select the first one
+      if (!studentToSelect) {
+        studentToSelect = students[0];
+        console.log(
+          '📋 PARENT: Auto-selecting first student:',
+          studentToSelect.name
+        );
+      } else {
+        console.log(
+          '📋 PARENT: Restored previously selected student:',
+          studentToSelect.name
+        );
+      }
+
+      if (studentToSelect) {
+        setSelectedStudent(studentToSelect);
+        // Save the selection for next time
+        await AsyncStorage.setItem(
+          'selectedStudentId',
+          studentToSelect.id.toString()
+        );
+        // Also select student for notifications to ensure badges show correct counts
+        selectStudent(studentToSelect);
       }
     } catch (error) {
       console.error('Error restoring selected student:', error);
@@ -578,7 +625,11 @@ export default function ParentScreen({ navigation }) {
             }}
           >
             <FontAwesomeIcon icon={faComments} size={18} color='#fff' />
-            <MessageBadge userType='parent' />
+            <MessageBadge
+              userType='parent'
+              selectedStudent={selectedStudent}
+              showAllStudents={false}
+            />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.notificationButton}
@@ -610,7 +661,10 @@ export default function ParentScreen({ navigation }) {
             }}
           >
             <FontAwesomeIcon icon={faBell} size={18} color='#fff' />
-            <ParentNotificationBadge />
+            <ParentNotificationBadge
+              selectedStudent={selectedStudent}
+              showAllStudents={false}
+            />
           </TouchableOpacity>
           <TouchableOpacity style={styles.addButton} onPress={handleAddStudent}>
             <FontAwesomeIcon icon={faPlus} size={18} color='#fff' />

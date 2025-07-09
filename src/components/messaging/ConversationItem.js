@@ -5,10 +5,16 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
-  Animated,
   Alert,
-  PanResponder,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  runOnJS,
+  interpolate,
+} from 'react-native-reanimated';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
   faUser,
@@ -28,12 +34,13 @@ const ConversationItem = ({
   onMarkAsRead,
   showUnreadBadge = true,
   showMemberCount = true,
+  scrollViewRef, // Reference to parent ScrollView for scroll locking
 }) => {
   const { theme, fontSizes } = useTheme();
   const styles = createStyles(theme, fontSizes);
 
   // Animation values for swipe gestures
-  const [translateX] = useState(new Animated.Value(0));
+  const translateX = useSharedValue(0);
   const [isRevealed, setIsRevealed] = useState(false);
 
   // Swipe thresholds
@@ -42,115 +49,181 @@ const ConversationItem = ({
   const MARK_READ_BUTTON_WIDTH = 80;
   const FORCE_DELETE_THRESHOLD = 200; // Force delete when swiped this far
 
-  // Create PanResponder for swipe gestures
-  const panResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: (_evt, gestureState) => {
-      // Only respond to horizontal swipes
-      return (
-        Math.abs(gestureState.dx) > Math.abs(gestureState.dy) &&
-        Math.abs(gestureState.dx) > 5
-      );
-    },
-    onStartShouldSetPanResponderCapture: () => false,
-    onMoveShouldSetPanResponderCapture: (_evt, gestureState) => {
-      // Capture horizontal gestures to prevent parent ScrollView from scrolling
-      // This blocks vertical scrolling when user is swiping horizontally
-      return (
-        Math.abs(gestureState.dx) > Math.abs(gestureState.dy) &&
-        Math.abs(gestureState.dx) > 10
-      );
-    },
-    onPanResponderGrant: () => {
-      // Stop any ongoing animations
-      translateX.stopAnimation();
-      translateX.setOffset(translateX._value);
-      translateX.setValue(0);
-    },
-    onPanResponderMove: (_evt, gestureState) => {
+  // Helper functions that can be called from gesture handlers
+  const lockScroll = () => {
+    if (scrollViewRef?.current) {
+      scrollViewRef.current.setNativeProps({ scrollEnabled: false });
+    }
+  };
+
+  const unlockScroll = () => {
+    if (scrollViewRef?.current) {
+      scrollViewRef.current.setNativeProps({ scrollEnabled: true });
+    }
+  };
+
+  const handleForceDelete = () => {
+    Alert.alert(
+      'Delete Conversation',
+      'Are you sure you want to delete this conversation?',
+      [
+        { text: 'Cancel', style: 'cancel', onPress: resetPosition },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            onDelete(conversation);
+            resetPosition();
+          },
+        },
+      ]
+    );
+  };
+
+  const handleMarkAsRead = () => {
+    onMarkAsRead(conversation);
+    resetPosition();
+  };
+
+  // Create pan gesture for swipe actions
+  const panGesture = Gesture.Pan()
+    .onStart(() => {
+      runOnJS(lockScroll)();
+    })
+    .onUpdate((event) => {
+      const { translationX } = event;
+
       // Left swipe to reveal action buttons
-      if (gestureState.dx < 0) {
-        const newValue = Math.max(gestureState.dx, -TOTAL_BUTTON_WIDTH);
-        translateX.setValue(newValue);
+      if (translationX < 0) {
+        translateX.value = Math.max(translationX, -TOTAL_BUTTON_WIDTH);
       } else if (
-        gestureState.dx > 0 &&
+        translationX > 0 &&
         onMarkAsRead &&
         conversation.unread_count > 0
       ) {
         // Right swipe for mark as read (only if unread)
-        const newValue = Math.min(gestureState.dx, MARK_READ_BUTTON_WIDTH);
-        translateX.setValue(newValue);
-      } else if (gestureState.dx > 0 && isRevealed) {
+        translateX.value = Math.min(translationX, MARK_READ_BUTTON_WIDTH);
+      } else if (translationX > 0 && isRevealed) {
         // Allow right swipe to hide buttons when revealed
         const currentOffset = isRevealed ? -TOTAL_BUTTON_WIDTH : 0;
-        const newValue = Math.min(currentOffset + gestureState.dx, 0);
-        translateX.setValue(newValue);
+        translateX.value = Math.min(currentOffset + translationX, 0);
       }
-    },
-    onPanResponderRelease: (_evt, gestureState) => {
-      translateX.flattenOffset();
+    })
+    .onEnd((event) => {
+      const { translationX } = event;
+
+      runOnJS(unlockScroll)();
 
       // Check for force delete (very long left swipe)
-      if (gestureState.dx < -FORCE_DELETE_THRESHOLD && onDelete) {
-        Alert.alert(
-          'Delete Conversation',
-          'Are you sure you want to delete this conversation?',
-          [
-            { text: 'Cancel', style: 'cancel', onPress: resetPosition },
-            {
-              text: 'Delete',
-              style: 'destructive',
-              onPress: () => {
-                onDelete(conversation);
-                resetPosition();
-              },
-            },
-          ]
-        );
-      } else if (gestureState.dx < -TOTAL_BUTTON_WIDTH / 2 && !isRevealed) {
+      if (translationX < -FORCE_DELETE_THRESHOLD && onDelete) {
+        runOnJS(handleForceDelete)();
+      } else if (translationX < -TOTAL_BUTTON_WIDTH / 2 && !isRevealed) {
         // Swipe left enough to reveal action buttons
-        Animated.spring(translateX, {
-          toValue: -TOTAL_BUTTON_WIDTH,
-          useNativeDriver: false,
-          tension: 100,
-          friction: 8,
-        }).start();
-        setIsRevealed(true);
-      } else if (gestureState.dx > TOTAL_BUTTON_WIDTH / 2 && isRevealed) {
+        translateX.value = withSpring(-TOTAL_BUTTON_WIDTH);
+        runOnJS(setIsRevealed)(true);
+      } else if (translationX > TOTAL_BUTTON_WIDTH / 2 && isRevealed) {
         // Swipe right enough to hide action buttons
-        resetPosition();
+        translateX.value = withSpring(0);
+        runOnJS(setIsRevealed)(false);
       } else if (
-        gestureState.dx > MARK_READ_BUTTON_WIDTH / 2 &&
+        translationX > MARK_READ_BUTTON_WIDTH / 2 &&
         onMarkAsRead &&
         conversation.unread_count > 0 &&
         !isRevealed
       ) {
         // Swipe right enough to trigger mark as read (only when not revealed)
-        onMarkAsRead(conversation);
-        resetPosition();
+        runOnJS(handleMarkAsRead)();
       } else {
         // Snap to appropriate position based on current state
         const targetValue = isRevealed ? -TOTAL_BUTTON_WIDTH : 0;
-        Animated.spring(translateX, {
-          toValue: targetValue,
-          useNativeDriver: false,
-          tension: 100,
-          friction: 8,
-        }).start();
+        translateX.value = withSpring(targetValue);
       }
-    },
-  });
+    })
+    .activeOffsetX([-10, 10]) // Only activate when horizontal movement is significant
+    .failOffsetY([-20, 20]); // Fail if vertical movement is too large
 
   // Reset position animation
   const resetPosition = () => {
-    Animated.spring(translateX, {
-      toValue: 0,
-      useNativeDriver: false,
-      tension: 100,
-      friction: 8,
-    }).start();
+    translateX.value = withSpring(0);
     setIsRevealed(false);
   };
+
+  // Animated style for the conversation item
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateX: translateX.value }],
+      // Dynamic rounded corners for the conversation item
+      borderTopRightRadius: interpolate(
+        translateX.value,
+        [-TOTAL_BUTTON_WIDTH, 0],
+        [0, 16]
+      ),
+      borderBottomRightRadius: interpolate(
+        translateX.value,
+        [-TOTAL_BUTTON_WIDTH, 0],
+        [0, 16]
+      ),
+      borderTopLeftRadius: interpolate(
+        translateX.value,
+        [0, MARK_READ_BUTTON_WIDTH],
+        [16, 0]
+      ),
+      borderBottomLeftRadius: interpolate(
+        translateX.value,
+        [0, MARK_READ_BUTTON_WIDTH],
+        [16, 0]
+      ),
+    };
+  });
+
+  // Animated style for delete button
+  const deleteButtonStyle = useAnimatedStyle(() => {
+    const flex = interpolate(
+      translateX.value,
+      [-FORCE_DELETE_THRESHOLD, -TOTAL_BUTTON_WIDTH, 0],
+      [2.5, 1, 1]
+    );
+
+    // Use string interpolation for backgroundColor
+    const redValue = Math.round(
+      interpolate(
+        translateX.value,
+        [-FORCE_DELETE_THRESHOLD, -TOTAL_BUTTON_WIDTH, 0],
+        [26, 59, 59] // RGB values for red component
+      )
+    );
+
+    return {
+      flex,
+      backgroundColor: `rgb(255, ${redValue}, ${redValue})`,
+    };
+  });
+
+  // Animated style for delete icon
+  const deleteIconStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        {
+          scale: interpolate(
+            translateX.value,
+            [-FORCE_DELETE_THRESHOLD, -TOTAL_BUTTON_WIDTH, 0],
+            [1.2, 1, 1]
+          ),
+        },
+      ],
+    };
+  });
+
+  // Animated style for mark as read button
+  const markReadStyle = useAnimatedStyle(() => {
+    return {
+      opacity: interpolate(
+        translateX.value,
+        [0, MARK_READ_BUTTON_WIDTH / 2, MARK_READ_BUTTON_WIDTH],
+        [0, 0.7, 1]
+      ),
+    };
+  });
 
   // Format timestamp
   const formatTimestamp = (timestamp) => {
@@ -334,41 +407,14 @@ const ConversationItem = ({
             style={[
               styles.actionButton,
               styles.deleteAction,
-              {
-                flex: translateX.interpolate({
-                  inputRange: [-FORCE_DELETE_THRESHOLD, -TOTAL_BUTTON_WIDTH, 0],
-                  outputRange: [2.5, 1, 1], // Expands using flex instead of width
-                  extrapolate: 'clamp',
-                }),
-                backgroundColor: translateX.interpolate({
-                  inputRange: [-FORCE_DELETE_THRESHOLD, -TOTAL_BUTTON_WIDTH, 0],
-                  outputRange: ['#FF1A1A', '#FF3B30', '#FF3B30'], // Darker red when force swiping
-                  extrapolate: 'clamp',
-                }),
-              },
+              deleteButtonStyle,
             ]}
           >
             <TouchableOpacity
               style={styles.deleteButtonContent}
               onPress={handleDelete}
             >
-              <Animated.View
-                style={{
-                  transform: [
-                    {
-                      scale: translateX.interpolate({
-                        inputRange: [
-                          -FORCE_DELETE_THRESHOLD,
-                          -TOTAL_BUTTON_WIDTH,
-                          0,
-                        ],
-                        outputRange: [1.2, 1, 1], // Scale up icon when force swiping
-                        extrapolate: 'clamp',
-                      }),
-                    },
-                  ],
-                }}
-              >
+              <Animated.View style={deleteIconStyle}>
                 <FontAwesomeIcon icon={faTrash} size={18} color='#FFFFFF' />
               </Animated.View>
               <Text style={styles.actionText}>Delete</Text>
@@ -379,22 +425,7 @@ const ConversationItem = ({
 
       {/* Mark as read action (right swipe) */}
       {conversation.unread_count > 0 && (
-        <Animated.View
-          style={[
-            styles.markReadAction,
-            {
-              opacity: translateX.interpolate({
-                inputRange: [
-                  0,
-                  MARK_READ_BUTTON_WIDTH / 2,
-                  MARK_READ_BUTTON_WIDTH,
-                ],
-                outputRange: [0, 0.7, 1],
-                extrapolate: 'clamp',
-              }),
-            },
-          ]}
-        >
+        <Animated.View style={[styles.markReadAction, markReadStyle]}>
           <FontAwesomeIcon icon={faCheckCircle} size={20} color='#FFFFFF' />
           <Text style={styles.actionText}>Mark Read</Text>
         </Animated.View>
@@ -405,161 +436,134 @@ const ConversationItem = ({
   return (
     <View style={styles.container}>
       {renderSwipeActions()}
-      <Animated.View
-        style={[
-          styles.animatedContainer,
-          {
-            transform: [{ translateX }],
-            // Dynamic rounded corners for the conversation item
-            borderTopRightRadius: translateX.interpolate({
-              inputRange: [-TOTAL_BUTTON_WIDTH, 0],
-              outputRange: [0, 16], // Remove right radius when swiped left
-              extrapolate: 'clamp',
-            }),
-            borderBottomRightRadius: translateX.interpolate({
-              inputRange: [-TOTAL_BUTTON_WIDTH, 0],
-              outputRange: [0, 16], // Remove right radius when swiped left
-              extrapolate: 'clamp',
-            }),
-            borderTopLeftRadius: translateX.interpolate({
-              inputRange: [0, MARK_READ_BUTTON_WIDTH],
-              outputRange: [16, 0], // Remove left radius when swiped right
-              extrapolate: 'clamp',
-            }),
-            borderBottomLeftRadius: translateX.interpolate({
-              inputRange: [0, MARK_READ_BUTTON_WIDTH],
-              outputRange: [16, 0], // Remove left radius when swiped right
-              extrapolate: 'clamp',
-            }),
-          },
-        ]}
-        {...panResponder.panHandlers}
-      >
-        <TouchableOpacity
-          style={[
-            styles.conversationItem,
-            conversation.unread_count > 0 && styles.unreadConversation,
-          ]}
-          onPress={() => onPress(conversation)}
-          activeOpacity={0.7}
-        >
-          {/* Conversation Icon/Avatar */}
-          <View style={styles.conversationIcon}>
-            {(() => {
-              const membersWithPhotos = getAllMemberPhotos();
+      <GestureDetector gesture={panGesture}>
+        <Animated.View style={[styles.animatedContainer, animatedStyle]}>
+          <TouchableOpacity
+            style={[
+              styles.conversationItem,
+              conversation.unread_count > 0 && styles.unreadConversation,
+            ]}
+            onPress={() => onPress(conversation)}
+            activeOpacity={0.7}
+          >
+            {/* Conversation Icon/Avatar */}
+            <View style={styles.conversationIcon}>
+              {(() => {
+                const membersWithPhotos = getAllMemberPhotos();
 
-              // Show composite avatar if multiple photos available
-              if (membersWithPhotos.length > 1) {
-                return (
-                  <View style={styles.compositeAvatar}>
-                    {membersWithPhotos.map((member, index) => (
-                      <Image
-                        key={member.id}
-                        source={{ uri: member.photo }}
-                        style={[
-                          styles.compositeAvatarImage,
-                          getCompositeAvatarPosition(
-                            index,
-                            membersWithPhotos.length
-                          ),
-                        ]}
-                        resizeMode='cover'
-                      />
-                    ))}
-                  </View>
-                );
-              }
+                // Show composite avatar if multiple photos available
+                if (membersWithPhotos.length > 1) {
+                  return (
+                    <View style={styles.compositeAvatar}>
+                      {membersWithPhotos.map((member, index) => (
+                        <Image
+                          key={member.id}
+                          source={{ uri: member.photo }}
+                          style={[
+                            styles.compositeAvatarImage,
+                            getCompositeAvatarPosition(
+                              index,
+                              membersWithPhotos.length
+                            ),
+                          ]}
+                          resizeMode='cover'
+                        />
+                      ))}
+                    </View>
+                  );
+                }
 
-              // Show single photo if available
-              if (membersWithPhotos.length === 1) {
+                // Show single photo if available
+                if (membersWithPhotos.length === 1) {
+                  return (
+                    <Image
+                      source={{ uri: membersWithPhotos[0].photo }}
+                      style={styles.avatarImage}
+                      resizeMode='cover'
+                    />
+                  );
+                }
+
+                // Show creator photo if no member photos
+                if (conversation.creator?.photo) {
+                  return (
+                    <Image
+                      source={{ uri: conversation.creator.photo }}
+                      style={styles.avatarImage}
+                      resizeMode='cover'
+                    />
+                  );
+                }
+
+                // Default icon
                 return (
-                  <Image
-                    source={{ uri: membersWithPhotos[0].photo }}
-                    style={styles.avatarImage}
-                    resizeMode='cover'
+                  <FontAwesomeIcon
+                    icon={getConversationIcon()}
+                    size={20}
+                    color={theme.colors.primary}
                   />
                 );
-              }
+              })()}
+            </View>
 
-              // Show creator photo if no member photos
-              if (conversation.creator?.photo) {
-                return (
-                  <Image
-                    source={{ uri: conversation.creator.photo }}
-                    style={styles.avatarImage}
-                    resizeMode='cover'
-                  />
-                );
-              }
+            {/* Conversation Content */}
+            <View style={styles.conversationContent}>
+              <View style={styles.conversationHeader}>
+                <Text
+                  style={[
+                    styles.conversationTopic,
+                    conversation.unread_count > 0 && styles.unreadTopic,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {conversation.topic}
+                </Text>
+                <Text style={styles.conversationTime}>
+                  {formatTimestamp(conversation.updated_at)}
+                </Text>
+              </View>
 
-              // Default icon
-              return (
-                <FontAwesomeIcon
-                  icon={getConversationIcon()}
-                  size={20}
-                  color={theme.colors.primary}
-                />
-              );
-            })()}
-          </View>
-
-          {/* Conversation Content */}
-          <View style={styles.conversationContent}>
-            <View style={styles.conversationHeader}>
               <Text
                 style={[
-                  styles.conversationTopic,
-                  conversation.unread_count > 0 && styles.unreadTopic,
+                  styles.lastMessage,
+                  conversation.unread_count > 0 && styles.unreadLastMessage,
                 ]}
-                numberOfLines={1}
+                numberOfLines={2}
               >
-                {conversation.topic}
+                {getLastMessagePreview()}
               </Text>
-              <Text style={styles.conversationTime}>
-                {formatTimestamp(conversation.updated_at)}
-              </Text>
-            </View>
 
-            <Text
-              style={[
-                styles.lastMessage,
-                conversation.unread_count > 0 && styles.unreadLastMessage,
-              ]}
-              numberOfLines={2}
-            >
-              {getLastMessagePreview()}
-            </Text>
-
-            <View style={styles.conversationFooter}>
-              {showMemberCount && (
-                <Text style={styles.memberCount}>
-                  {(() => {
-                    // Handle new grouped members structure
-                    const memberCount =
-                      conversation.members?.staff?.length +
-                        conversation.members?.students?.length ||
-                      conversation.members?.length ||
-                      0;
-                    return `${memberCount} member${
-                      memberCount !== 1 ? 's' : ''
-                    }`;
-                  })()}
-                </Text>
-              )}
-
-              {showUnreadBadge && conversation.unread_count > 0 && (
-                <View style={styles.unreadBadge}>
-                  <Text style={styles.unreadText}>
-                    {conversation.unread_count > 99
-                      ? '99+'
-                      : conversation.unread_count}
+              <View style={styles.conversationFooter}>
+                {showMemberCount && (
+                  <Text style={styles.memberCount}>
+                    {(() => {
+                      // Handle new grouped members structure
+                      const memberCount =
+                        conversation.members?.staff?.length +
+                          conversation.members?.students?.length ||
+                        conversation.members?.length ||
+                        0;
+                      return `${memberCount} member${
+                        memberCount !== 1 ? 's' : ''
+                      }`;
+                    })()}
                   </Text>
-                </View>
-              )}
+                )}
+
+                {showUnreadBadge && conversation.unread_count > 0 && (
+                  <View style={styles.unreadBadge}>
+                    <Text style={styles.unreadText}>
+                      {conversation.unread_count > 99
+                        ? '99+'
+                        : conversation.unread_count}
+                    </Text>
+                  </View>
+                )}
+              </View>
             </View>
-          </View>
-        </TouchableOpacity>
-      </Animated.View>
+          </TouchableOpacity>
+        </Animated.View>
+      </GestureDetector>
     </View>
   );
 };

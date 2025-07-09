@@ -7,10 +7,10 @@ import {
   Image,
   Dimensions,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { Config, buildWebUrl } from '../config/env';
 import {
   faChalkboardTeacher,
   faUserGraduate,
@@ -23,7 +23,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import {
   faFacebookF,
-  faTwitter,
+  faXTwitter,
   faInstagram,
   faYoutube,
 } from '@fortawesome/free-brands-svg-icons';
@@ -50,7 +50,6 @@ export default function HomeScreen({ navigation }) {
   const { theme } = useTheme();
   const { t, currentLanguage } = useLanguage();
   const fontSizes = getLanguageFontSizes(currentLanguage);
-
   // Lock orientation based on device type
   React.useEffect(() => {
     lockOrientationForDevice();
@@ -111,6 +110,145 @@ export default function HomeScreen({ navigation }) {
   const handleParentPress = async () => {
     // Navigate to parent screen - no login check needed as parents can add students later
     navigation.navigate('ParentScreen');
+  };
+
+  const handleCalendarPress = async () => {
+    try {
+      // Check for direct login userData first
+      const userData = await AsyncStorage.getItem('userData');
+
+      // Check for student accounts in parent system
+      const studentAccountsStr = await AsyncStorage.getItem('studentAccounts');
+      const selectedStudentStr = await AsyncStorage.getItem('selectedStudent');
+
+      console.log('🏠 HOME: Calendar access check:', {
+        hasUserData: !!userData,
+        hasStudentAccounts: !!studentAccountsStr,
+        hasSelectedStudent: !!selectedStudentStr,
+      });
+
+      // If there's direct login data, use it
+      if (userData) {
+        try {
+          const userToUse = JSON.parse(userData);
+          console.log('✅ HOME: Using direct login userData:', {
+            userType: userToUse.userType,
+            username: userToUse.username,
+          });
+          navigation.navigate('Calendar');
+          return;
+        } catch (parseError) {
+          console.error('❌ HOME: Error parsing userData:', parseError);
+        }
+      }
+
+      // If no direct login, check for student accounts
+      if (studentAccountsStr) {
+        try {
+          const studentAccounts = JSON.parse(studentAccountsStr);
+
+          if (studentAccounts.length === 1) {
+            // Only one student - use it directly
+            const student = studentAccounts[0];
+            console.log('✅ HOME: Using single student account:', student.name);
+            await AsyncStorage.setItem('userData', JSON.stringify(student));
+            await AsyncStorage.setItem(
+              'selectedStudent',
+              JSON.stringify(student)
+            );
+            navigation.navigate('Calendar');
+            return;
+          } else if (studentAccounts.length > 1) {
+            // Multiple students - show picker
+            const studentNames = studentAccounts.map((s) => s.name);
+            Alert.alert(
+              'Select Student',
+              "Which student's calendar would you like to view?",
+              [
+                { text: 'Cancel', style: 'cancel' },
+                ...studentAccounts.map((student, index) => ({
+                  text: student.name,
+                  onPress: async () => {
+                    console.log(
+                      '✅ HOME: Selected student for calendar:',
+                      student.name
+                    );
+                    await AsyncStorage.setItem(
+                      'userData',
+                      JSON.stringify(student)
+                    );
+                    await AsyncStorage.setItem(
+                      'selectedStudent',
+                      JSON.stringify(student)
+                    );
+                    navigation.navigate('Calendar');
+                  },
+                })),
+              ]
+            );
+            return;
+          }
+        } catch (parseError) {
+          console.error('❌ HOME: Error parsing studentAccounts:', parseError);
+        }
+      }
+
+      // If there's a previously selected student, use it
+      if (selectedStudentStr) {
+        try {
+          const selectedStudent = JSON.parse(selectedStudentStr);
+          console.log(
+            '✅ HOME: Using previously selected student:',
+            selectedStudent.name
+          );
+          await AsyncStorage.setItem('userData', selectedStudentStr);
+          navigation.navigate('Calendar');
+          return;
+        } catch (parseError) {
+          console.error('❌ HOME: Error parsing selectedStudent:', parseError);
+        }
+      }
+
+      // No user data found - show options
+      console.log(
+        '❌ HOME: No user data found, showing login/add student options'
+      );
+      Alert.alert(
+        'Access Calendar',
+        'To view the calendar, you can either login directly or add a student account.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Add Student',
+            onPress: () => navigation.navigate('ParentScreen'),
+          },
+          {
+            text: 'Login as Teacher',
+            onPress: () =>
+              navigation.navigate('Login', { loginType: 'teacher' }),
+          },
+          {
+            text: 'Login as Student',
+            onPress: () =>
+              navigation.navigate('Login', { loginType: 'student' }),
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('❌ HOME: Error checking user data for calendar:', error);
+      // Show login options on error
+      Alert.alert('Login Required', 'Please log in to access the calendar.', [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Login as Teacher',
+          onPress: () => navigation.navigate('Login', { loginType: 'teacher' }),
+        },
+        {
+          text: 'Login as Student',
+          onPress: () => navigation.navigate('Login', { loginType: 'student' }),
+        },
+      ]);
+    }
   };
 
   return (
@@ -184,12 +322,7 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.resourcesContainer}>
             <TouchableOpacity
               style={styles.resourceButton}
-              onPress={() =>
-                navigation.navigate('WebView', {
-                  url: buildWebUrl(Config.WEB_ENDPOINTS.CALENDAR),
-                  title: 'School Calendar',
-                })
-              }
+              onPress={handleCalendarPress}
             >
               <View
                 style={[
@@ -208,12 +341,7 @@ export default function HomeScreen({ navigation }) {
 
             <TouchableOpacity
               style={styles.resourceButton}
-              onPress={() =>
-                navigation.navigate('WebView', {
-                  url: buildWebUrl(Config.WEB_ENDPOINTS.ABOUT),
-                  title: 'About Us',
-                })
-              }
+              onPress={() => navigation.navigate('AboutUs')}
             >
               <View
                 style={[
@@ -232,12 +360,7 @@ export default function HomeScreen({ navigation }) {
 
             <TouchableOpacity
               style={styles.resourceButton}
-              onPress={() =>
-                navigation.navigate('WebView', {
-                  url: buildWebUrl(Config.WEB_ENDPOINTS.CONTACTS),
-                  title: 'Contact Us',
-                })
-              }
+              onPress={() => navigation.navigate('Contacts')}
             >
               <View
                 style={[
@@ -252,12 +375,7 @@ export default function HomeScreen({ navigation }) {
 
             <TouchableOpacity
               style={styles.resourceButton}
-              onPress={() =>
-                navigation.navigate('WebView', {
-                  url: buildWebUrl(Config.WEB_ENDPOINTS.FAQ),
-                  title: 'FAQ',
-                })
-              }
+              onPress={() => navigation.navigate('FAQ')}
             >
               <View
                 style={[
@@ -299,7 +417,7 @@ export default function HomeScreen({ navigation }) {
                 style={styles.socialIcon}
                 onPress={() => alert('Twitter page coming soon!')}
               >
-                <FontAwesomeIcon icon={faTwitter} size={18} color='#1DA1F2' />
+                <FontAwesomeIcon icon={faXTwitter} size={18} color='#000000' />
               </TouchableOpacity>
 
               <TouchableOpacity

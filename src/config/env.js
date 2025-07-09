@@ -83,6 +83,11 @@ export const Config = {
 
     // Logout API Endpoints
     REMOVE_USER_FROM_DEVICE: '/remove-user-from-device/',
+
+    // Information Data API Endpoints
+    GET_ABOUT_DATA: '/about-data/',
+    GET_CONTACTS_DATA: '/contacts-data/',
+    GET_FAQ_DATA: '/faq-data/',
   },
 
   // Web Resources

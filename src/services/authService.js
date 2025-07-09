@@ -5,6 +5,7 @@
 
 import { Config, buildApiUrl } from '../config/env';
 import { getLoginDeviceInfo } from '../utils/deviceInfo';
+import SchoolConfigService from './schoolConfigService';
 
 // Flag to toggle between dummy data and real API
 const USE_DUMMY_DATA = Config.DEV.USE_DUMMY_DATA;
@@ -209,6 +210,22 @@ export const teacherLogin = async (username, password, deviceToken) => {
   // Check for demo mode credentials first
   if (isDemoCredentials(username, password, 'teacher')) {
     console.log('🎭 DEMO MODE: Teacher login detected');
+
+    // Set up demo school configuration
+    try {
+      const schoolConfig = await SchoolConfigService.detectSchoolFromLogin(
+        username,
+        'teacher'
+      );
+      await SchoolConfigService.saveCurrentSchoolConfig(schoolConfig);
+      console.log(
+        '🏫 DEMO MODE: School configuration saved:',
+        schoolConfig.name
+      );
+    } catch (schoolError) {
+      console.error('❌ DEMO MODE: School detection error:', schoolError);
+    }
+
     const demoData = getDemoUserData('teacher');
     return demoData;
   }
@@ -371,7 +388,27 @@ export const teacherLogin = async (username, password, deviceToken) => {
           return null;
         }
 
-        console.log('✅ TEACHER LOGIN: Valid credentials, returning user data');
+        console.log('✅ TEACHER LOGIN: Valid credentials, detecting school...');
+
+        // Detect and save school configuration
+        try {
+          const schoolConfig = await SchoolConfigService.detectSchoolFromLogin(
+            username,
+            'teacher'
+          );
+          await SchoolConfigService.saveCurrentSchoolConfig(schoolConfig);
+          console.log(
+            '🏫 TEACHER LOGIN: School configuration saved:',
+            schoolConfig.name
+          );
+        } catch (schoolError) {
+          console.error(
+            '❌ TEACHER LOGIN: School detection error:',
+            schoolError
+          );
+          // Continue with login even if school detection fails
+        }
+
         return {
           ...data,
           userType: 'teacher',
@@ -418,6 +455,22 @@ export const studentLogin = async (username, password, deviceToken) => {
   // Check for demo mode credentials first
   if (isDemoCredentials(username, password, 'student')) {
     console.log('🎭 DEMO MODE: Student login detected');
+
+    // Set up demo school configuration
+    try {
+      const schoolConfig = await SchoolConfigService.detectSchoolFromLogin(
+        username,
+        'student'
+      );
+      await SchoolConfigService.saveCurrentSchoolConfig(schoolConfig);
+      console.log(
+        '🏫 DEMO MODE: School configuration saved:',
+        schoolConfig.name
+      );
+    } catch (schoolError) {
+      console.error('❌ DEMO MODE: School detection error:', schoolError);
+    }
+
     const demoData = getDemoUserData('student');
     return demoData;
   }
@@ -597,7 +650,27 @@ export const studentLogin = async (username, password, deviceToken) => {
           return null;
         }
 
-        console.log('✅ STUDENT LOGIN: Valid credentials, returning user data');
+        console.log('✅ STUDENT LOGIN: Valid credentials, detecting school...');
+
+        // Detect and save school configuration
+        try {
+          const schoolConfig = await SchoolConfigService.detectSchoolFromLogin(
+            username,
+            'student'
+          );
+          await SchoolConfigService.saveCurrentSchoolConfig(schoolConfig);
+          console.log(
+            '🏫 STUDENT LOGIN: School configuration saved:',
+            schoolConfig.name
+          );
+        } catch (schoolError) {
+          console.error(
+            '❌ STUDENT LOGIN: School detection error:',
+            schoolError
+          );
+          // Continue with login even if school detection fails
+        }
+
         return {
           ...data,
           userType: 'student',
@@ -637,9 +710,17 @@ export const studentLogin = async (username, password, deviceToken) => {
  */
 export const saveUserData = async (userData, AsyncStorage) => {
   try {
-    await AsyncStorage.setItem('userData', JSON.stringify(userData));
+    const userDataString = JSON.stringify(userData);
+    await AsyncStorage.setItem('userData', userDataString);
+    console.log('✅ AUTH: userData saved to AsyncStorage:', {
+      userType: userData.userType,
+      username: userData.username,
+      hasAuthCode: !!userData.authCode,
+      dataLength: userDataString.length,
+    });
     return true;
   } catch (error) {
+    console.error('❌ AUTH: Failed to save userData:', error);
     return false;
   }
 };

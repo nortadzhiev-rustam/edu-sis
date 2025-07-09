@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -41,6 +41,7 @@ const StudentMessagingScreen = ({ navigation, route }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
+  const flatListRef = useRef(null);
 
   // Safety check for fontSizes
   const safeFontSizes = fontSizes || {
@@ -381,6 +382,7 @@ const StudentMessagingScreen = ({ navigation, route }) => {
       onMarkAsRead={handleMarkAsRead}
       showUnreadBadge={true}
       showMemberCount={true}
+      scrollViewRef={flatListRef}
     />
   );
 
@@ -501,6 +503,7 @@ const StudentMessagingScreen = ({ navigation, route }) => {
         </View>
       ) : (
         <FlatList
+          ref={flatListRef}
           data={searchResults ? searchResults.conversations : conversations}
           renderItem={renderConversationItem}
           keyExtractor={(item, index) =>
