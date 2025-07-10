@@ -102,7 +102,7 @@ export const Config = {
   // App Configuration
   APP: {
     NAME: 'EduSIS',
-    VERSION: '1.0.0',
+    VERSION: '1.0.1',
     BUNDLE_ID: 'com.edunovaasia.edusis',
   },
 
