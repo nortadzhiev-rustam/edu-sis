@@ -5,7 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
-  Alert,
+  Vibration,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -13,7 +13,6 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   runOnJS,
-  interpolate,
 } from 'react-native-reanimated';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
@@ -22,6 +21,7 @@ import {
   faTrash,
   faCheckCircle,
   faSignOutAlt,
+  faCheck,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { processHtmlContent } from '../../utils/htmlUtils';
@@ -42,12 +42,25 @@ const ConversationItem = ({
   // Animation values for swipe gestures
   const translateX = useSharedValue(0);
   const [isRevealed, setIsRevealed] = useState(false);
+  const [isConfirmDeleteMode, setIsConfirmDeleteMode] = useState(false);
+  const [isConfirmLeaveMode, setIsConfirmLeaveMode] = useState(false);
 
   // Swipe thresholds
   const BUTTON_WIDTH = 80;
-  const TOTAL_BUTTON_WIDTH = BUTTON_WIDTH * 2; // Delete + Leave buttons
-  const MARK_READ_BUTTON_WIDTH = 80;
-  const FORCE_DELETE_THRESHOLD = 200; // Force delete when swiped this far
+  const TOTAL_BUTTON_WIDTH =
+    conversation.unread_count > 0 && onMarkAsRead
+      ? BUTTON_WIDTH * 3 // Delete + Leave + Mark Read buttons
+      : BUTTON_WIDTH * 2; // Delete + Leave buttons
+
+  // Optimized spring configuration for smooth animations
+  const springConfig = {
+    damping: 20,
+    mass: 0.8,
+    stiffness: 150,
+    overshootClamping: false,
+    restDisplacementThreshold: 0.01,
+    restSpeedThreshold: 0.01,
+  };
 
   // Helper functions that can be called from gesture handlers
   const lockScroll = () => {
@@ -62,22 +75,32 @@ const ConversationItem = ({
     }
   };
 
-  const handleForceDelete = () => {
-    Alert.alert(
-      'Delete Conversation',
-      'Are you sure you want to delete this conversation?',
-      [
-        { text: 'Cancel', style: 'cancel', onPress: resetPosition },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            onDelete(conversation);
-            resetPosition();
-          },
-        },
-      ]
-    );
+  const handleDeletePress = () => {
+    // Light haptic feedback
+    Vibration.vibrate(10);
+    setIsConfirmDeleteMode(true);
+  };
+
+  const handleConfirmDelete = () => {
+    // Stronger haptic feedback for confirmation
+    Vibration.vibrate(50);
+    onDelete(conversation);
+    resetPosition();
+    setIsConfirmDeleteMode(false);
+  };
+
+  const handleLeavePress = () => {
+    // Light haptic feedback
+    Vibration.vibrate(10);
+    setIsConfirmLeaveMode(true);
+  };
+
+  const handleConfirmLeave = () => {
+    // Stronger haptic feedback for confirmation
+    Vibration.vibrate(50);
+    onLeave(conversation);
+    resetPosition();
+    setIsConfirmLeaveMode(false);
   };
 
   const handleMarkAsRead = () => {
@@ -96,13 +119,6 @@ const ConversationItem = ({
       // Left swipe to reveal action buttons
       if (translationX < 0) {
         translateX.value = Math.max(translationX, -TOTAL_BUTTON_WIDTH);
-      } else if (
-        translationX > 0 &&
-        onMarkAsRead &&
-        conversation.unread_count > 0
-      ) {
-        // Right swipe for mark as read (only if unread)
-        translateX.value = Math.min(translationX, MARK_READ_BUTTON_WIDTH);
       } else if (translationX > 0 && isRevealed) {
         // Allow right swipe to hide buttons when revealed
         const currentOffset = isRevealed ? -TOTAL_BUTTON_WIDTH : 0;
@@ -114,29 +130,20 @@ const ConversationItem = ({
 
       runOnJS(unlockScroll)();
 
-      // Check for force delete (very long left swipe)
-      if (translationX < -FORCE_DELETE_THRESHOLD && onDelete) {
-        runOnJS(handleForceDelete)();
-      } else if (translationX < -TOTAL_BUTTON_WIDTH / 2 && !isRevealed) {
+      if (translationX < -TOTAL_BUTTON_WIDTH / 2 && !isRevealed) {
         // Swipe left enough to reveal action buttons
-        translateX.value = withSpring(-TOTAL_BUTTON_WIDTH);
+        translateX.value = withSpring(-TOTAL_BUTTON_WIDTH, springConfig);
         runOnJS(setIsRevealed)(true);
       } else if (translationX > TOTAL_BUTTON_WIDTH / 2 && isRevealed) {
         // Swipe right enough to hide action buttons
-        translateX.value = withSpring(0);
+        translateX.value = withSpring(0, springConfig);
         runOnJS(setIsRevealed)(false);
-      } else if (
-        translationX > MARK_READ_BUTTON_WIDTH / 2 &&
-        onMarkAsRead &&
-        conversation.unread_count > 0 &&
-        !isRevealed
-      ) {
-        // Swipe right enough to trigger mark as read (only when not revealed)
-        runOnJS(handleMarkAsRead)();
+        runOnJS(setIsConfirmDeleteMode)(false); // Reset confirm modes when hiding buttons
+        runOnJS(setIsConfirmLeaveMode)(false);
       } else {
         // Snap to appropriate position based on current state
         const targetValue = isRevealed ? -TOTAL_BUTTON_WIDTH : 0;
-        translateX.value = withSpring(targetValue);
+        translateX.value = withSpring(targetValue, springConfig);
       }
     })
     .activeOffsetX([-10, 10]) // Only activate when horizontal movement is significant
@@ -144,84 +151,70 @@ const ConversationItem = ({
 
   // Reset position animation
   const resetPosition = () => {
-    translateX.value = withSpring(0);
+    translateX.value = withSpring(0, springConfig);
     setIsRevealed(false);
+    setIsConfirmDeleteMode(false); // Reset confirm modes when hiding buttons
+    setIsConfirmLeaveMode(false);
   };
 
   // Animated style for the conversation item
   const animatedStyle = useAnimatedStyle(() => {
     return {
       transform: [{ translateX: translateX.value }],
-      // Dynamic rounded corners for the conversation item
-      borderTopRightRadius: interpolate(
-        translateX.value,
-        [-TOTAL_BUTTON_WIDTH, 0],
-        [0, 16]
-      ),
-      borderBottomRightRadius: interpolate(
-        translateX.value,
-        [-TOTAL_BUTTON_WIDTH, 0],
-        [0, 16]
-      ),
-      borderTopLeftRadius: interpolate(
-        translateX.value,
-        [0, MARK_READ_BUTTON_WIDTH],
-        [16, 0]
-      ),
-      borderBottomLeftRadius: interpolate(
-        translateX.value,
-        [0, MARK_READ_BUTTON_WIDTH],
-        [16, 0]
-      ),
+      // No border radius for any conversation items
+      borderTopRightRadius: 0,
+      borderBottomRightRadius: 0,
+      borderTopLeftRadius: 0,
+      borderBottomLeftRadius: 0,
     };
   });
 
   // Animated style for delete button
   const deleteButtonStyle = useAnimatedStyle(() => {
-    const flex = interpolate(
-      translateX.value,
-      [-FORCE_DELETE_THRESHOLD, -TOTAL_BUTTON_WIDTH, 0],
-      [2.5, 1, 1]
-    );
-
-    // Use string interpolation for backgroundColor
-    const redValue = Math.round(
-      interpolate(
-        translateX.value,
-        [-FORCE_DELETE_THRESHOLD, -TOTAL_BUTTON_WIDTH, 0],
-        [26, 59, 59] // RGB values for red component
-      )
-    );
+    'worklet';
 
     return {
-      flex,
-      backgroundColor: `rgb(255, ${redValue}, ${redValue})`,
+      width: isConfirmDeleteMode
+        ? TOTAL_BUTTON_WIDTH
+        : isConfirmLeaveMode
+        ? 0
+        : BUTTON_WIDTH, // Fill space in delete confirm mode, hide in leave confirm mode
+      opacity: isConfirmLeaveMode ? 0 : 1, // Hide when leave is in confirm mode
+      overflow: 'hidden', // Hide content when width becomes 0
+      backgroundColor: isConfirmDeleteMode ? '#FF1744' : '#FF3B30', // More intense red in confirm mode
     };
   });
 
   // Animated style for delete icon
   const deleteIconStyle = useAnimatedStyle(() => {
+    'worklet';
     return {
       transform: [
         {
-          scale: interpolate(
-            translateX.value,
-            [-FORCE_DELETE_THRESHOLD, -TOTAL_BUTTON_WIDTH, 0],
-            [1.2, 1, 1]
-          ),
+          scale: isConfirmDeleteMode ? 1.1 : 1, // Slightly larger in confirm mode
         },
       ],
     };
   });
 
-  // Animated style for mark as read button
-  const markReadStyle = useAnimatedStyle(() => {
+  // Animated style for leave button - disappears in delete confirm mode, expands in leave confirm mode
+  const leaveButtonStyle = useAnimatedStyle(() => {
+    'worklet';
+
     return {
-      opacity: interpolate(
-        translateX.value,
-        [0, MARK_READ_BUTTON_WIDTH / 2, MARK_READ_BUTTON_WIDTH],
-        [0, 0.7, 1]
-      ),
+      width: isConfirmLeaveMode
+        ? TOTAL_BUTTON_WIDTH
+        : isConfirmDeleteMode
+        ? 0
+        : BUTTON_WIDTH, // Fill space in leave confirm mode, hide in delete confirm mode
+      opacity: isConfirmDeleteMode ? 0 : 1, // Hide when delete is in confirm mode
+      overflow: 'hidden', // Hide content when width becomes 0
+      backgroundColor: isConfirmLeaveMode ? '#FF8C00' : '#FF9500', // More intense orange in confirm mode
+      transform: [
+        {
+          scale: isConfirmDeleteMode ? 0.1 : 1, // Scale down when delete is in confirm mode
+        },
+      ],
     };
   });
 
@@ -347,58 +340,45 @@ const ConversationItem = ({
     }
   };
 
-  // Handle delete button press
-  const handleDelete = () => {
-    Alert.alert(
-      'Delete Conversation',
-      'Are you sure you want to delete this conversation?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            onDelete(conversation);
-            resetPosition();
-          },
-        },
-      ]
-    );
-  };
-
-  // Handle leave button press
-  const handleLeave = () => {
-    Alert.alert(
-      'Leave Conversation',
-      'Are you sure you want to leave this conversation?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Leave',
-          style: 'destructive',
-          onPress: () => {
-            onLeave(conversation);
-            resetPosition();
-          },
-        },
-      ]
-    );
-  };
-
   // Render swipe action backgrounds
   const renderSwipeActions = () => (
     <View style={styles.swipeActionsContainer}>
       {/* Action buttons behind (left swipe) */}
       <View style={styles.leftActions}>
-        {/* Leave button */}
+        {/* Mark as read button - only show if unread */}
+        {conversation.unread_count > 0 && onMarkAsRead && (
+          <View style={[styles.actionButton, styles.markReadAction]}>
+            <TouchableOpacity
+              style={styles.markReadButtonContent}
+              onPress={handleMarkAsRead}
+            >
+              <FontAwesomeIcon icon={faCheckCircle} size={18} color='#FFFFFF' />
+              <Text style={styles.actionText}>Mark Read</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Leave button - fades out during force swipe */}
         {onLeave && (
-          <TouchableOpacity
-            style={[styles.actionButton, styles.leaveAction]}
-            onPress={handleLeave}
+          <Animated.View
+            style={[styles.actionButton, styles.leaveAction, leaveButtonStyle]}
           >
-            <FontAwesomeIcon icon={faSignOutAlt} size={18} color='#FFFFFF' />
-            <Text style={styles.actionText}>Leave</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.leaveButtonContent}
+              onPress={
+                isConfirmLeaveMode ? handleConfirmLeave : handleLeavePress
+              }
+            >
+              <FontAwesomeIcon
+                icon={isConfirmLeaveMode ? faCheck : faSignOutAlt}
+                size={18}
+                color='#FFFFFF'
+              />
+              <Text style={styles.actionText}>
+                {isConfirmLeaveMode ? 'Confirm' : 'Leave'}
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
         )}
 
         {/* Delete button - expands when force swiping */}
@@ -412,24 +392,24 @@ const ConversationItem = ({
           >
             <TouchableOpacity
               style={styles.deleteButtonContent}
-              onPress={handleDelete}
+              onPress={
+                isConfirmDeleteMode ? handleConfirmDelete : handleDeletePress
+              }
             >
               <Animated.View style={deleteIconStyle}>
-                <FontAwesomeIcon icon={faTrash} size={18} color='#FFFFFF' />
+                <FontAwesomeIcon
+                  icon={isConfirmDeleteMode ? faCheck : faTrash}
+                  size={18}
+                  color='#FFFFFF'
+                />
               </Animated.View>
-              <Text style={styles.actionText}>Delete</Text>
+              <Text style={styles.actionText}>
+                {isConfirmDeleteMode ? 'Confirm' : 'Delete'}
+              </Text>
             </TouchableOpacity>
           </Animated.View>
         )}
       </View>
-
-      {/* Mark as read action (right swipe) */}
-      {conversation.unread_count > 0 && (
-        <Animated.View style={[styles.markReadAction, markReadStyle]}>
-          <FontAwesomeIcon icon={faCheckCircle} size={20} color='#FFFFFF' />
-          <Text style={styles.actionText}>Mark Read</Text>
-        </Animated.View>
-      )}
     </View>
   );
 
@@ -443,7 +423,15 @@ const ConversationItem = ({
               styles.conversationItem,
               conversation.unread_count > 0 && styles.unreadConversation,
             ]}
-            onPress={() => onPress(conversation)}
+            onPress={() => {
+              if (isRevealed || isConfirmDeleteMode || isConfirmLeaveMode) {
+                // If buttons are revealed or in any confirm mode, close them first
+                resetPosition();
+              } else {
+                // Otherwise, handle normal press
+                onPress(conversation);
+              }
+            }}
             activeOpacity={0.7}
           >
             {/* Conversation Icon/Avatar */}
@@ -601,9 +589,11 @@ const createStyles = (theme, fontSizes) => {
     actionButton: {
       justifyContent: 'center',
       alignItems: 'center',
-      flex: 1, // Use flex instead of fixed width
       height: '100%',
-      minWidth: 80, // Minimum width
+      width: 80, // Default width, will be overridden by animated styles
+    },
+    markReadAction: {
+      backgroundColor: '#34C759', // Green for mark as read
     },
     leaveAction: {
       backgroundColor: '#FF9500', // Orange for leave
@@ -612,6 +602,13 @@ const createStyles = (theme, fontSizes) => {
     deleteAction: {
       backgroundColor: '#FF3B30', // Red for delete
     },
+    markReadButtonContent: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: '100%',
+      height: '100%',
+    },
     deleteButtonContent: {
       flex: 1,
       justifyContent: 'center',
@@ -619,19 +616,14 @@ const createStyles = (theme, fontSizes) => {
       width: '100%',
       height: '100%',
     },
-    markReadAction: {
-      backgroundColor: '#34C759',
+    leaveButtonContent: {
+      flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      paddingHorizontal: 20,
+      width: '100%',
       height: '100%',
-      minWidth: 80,
-
-      position: 'absolute',
-      left: 0,
-      top: 0,
-      bottom: 0,
     },
+
     actionText: {
       color: '#FFFFFF',
       fontSize: safeFontSizes.small,
@@ -640,6 +632,7 @@ const createStyles = (theme, fontSizes) => {
     },
     animatedContainer: {
       backgroundColor: theme.colors.surface,
+      borderRadius: 0, // No border radius for any conversation items
     },
     conversationItem: {
       flexDirection: 'row',

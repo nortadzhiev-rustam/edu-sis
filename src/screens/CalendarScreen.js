@@ -64,21 +64,28 @@ export default function CalendarScreen({ navigation }) {
 
       // Get user data - check both direct login and parent/student system
       let userDataStr = await AsyncStorage.getItem('userData');
+      const calendarUserDataStr = await AsyncStorage.getItem(
+        'calendarUserData'
+      );
       const selectedStudentStr = await AsyncStorage.getItem('selectedStudent');
 
       console.log('🔍 CALENDAR: User data check:', {
         hasUserData: !!userDataStr,
+        hasCalendarUserData: !!calendarUserDataStr,
         hasSelectedStudent: !!selectedStudentStr,
       });
 
-      // If no direct login userData, try selected student
-      if (!userDataStr && selectedStudentStr) {
+      // Priority order: direct login userData > calendarUserData > selectedStudent
+      if (!userDataStr && calendarUserDataStr) {
+        console.log(
+          '📅 CALENDAR: Using calendar user data for calendar access'
+        );
+        userDataStr = calendarUserDataStr;
+      } else if (!userDataStr && !calendarUserDataStr && selectedStudentStr) {
         console.log(
           '📅 CALENDAR: Using selected student data for calendar access'
         );
         userDataStr = selectedStudentStr;
-        // Temporarily save as userData for calendar service
-        await AsyncStorage.setItem('userData', selectedStudentStr);
       }
 
       if (!userDataStr) {

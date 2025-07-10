@@ -145,6 +145,7 @@ export const performLogout = async (options = {}) => {
     // 3. Clear user data
     console.log('👤 LOGOUT: Clearing user data...');
     await AsyncStorage.removeItem('userData');
+    await AsyncStorage.removeItem('calendarUserData'); // Clear temporary calendar user data
 
     // 4. Clear notification history and related data
     console.log('🔔 LOGOUT: Clearing notification data...');

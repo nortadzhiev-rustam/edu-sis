@@ -14,6 +14,15 @@ import {
   Keyboard,
   AppState,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  runOnJS,
+  interpolate,
+  Easing,
+} from 'react-native-reanimated';
 import Clipboard from '@react-native-clipboard/clipboard';
 import {
   SafeAreaView,
@@ -73,6 +82,10 @@ const ConversationScreen = ({ navigation, route }) => {
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({
+    top: 0,
+    right: 0,
+  });
   const [currentUserId, setCurrentUserId] = useState(null);
   const [hasMarkedAsRead, setHasMarkedAsRead] = useState(false);
   const [isScreenActive, setIsScreenActive] = useState(true);
@@ -84,9 +97,169 @@ const ConversationScreen = ({ navigation, route }) => {
   const [selectedMessages, setSelectedMessages] = useState([]);
   const [selectionMode, setSelectionMode] = useState(false);
 
+  // Animation values for menu options
+  const menuOpacity = useSharedValue(0);
+  const menuScale = useSharedValue(0.8);
+  const menuTranslateY = useSharedValue(10);
+
+  // Individual button animations for staggered effect
+  const editOpacity = useSharedValue(0);
+  const deleteOpacity = useSharedValue(0);
+  const selectOpacity = useSharedValue(0);
+  const copyOpacity = useSharedValue(0);
+
+  // Animated style for menu options
+  const menuAnimatedStyle = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      opacity: menuOpacity.value,
+      transform: [
+        { scale: menuScale.value },
+        { translateY: menuTranslateY.value },
+      ],
+    };
+  });
+
+  // Individual button animated styles
+  const editAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: editOpacity.value,
+    transform: [
+      { translateX: interpolate(editOpacity.value, [0, 1], [-20, 0]) },
+    ],
+  }));
+
+  const deleteAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: deleteOpacity.value,
+    transform: [
+      { translateX: interpolate(deleteOpacity.value, [0, 1], [-20, 0]) },
+    ],
+  }));
+
+  const selectAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: selectOpacity.value,
+    transform: [
+      { translateX: interpolate(selectOpacity.value, [0, 1], [-20, 0]) },
+    ],
+  }));
+
+  const copyAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: copyOpacity.value,
+    transform: [
+      { translateX: interpolate(copyOpacity.value, [0, 1], [-20, 0]) },
+    ],
+  }));
+
+  // Animation functions
+  const showMenuAnimation = () => {
+    // Main container animation
+    menuOpacity.value = withSpring(1, {
+      damping: 20,
+      stiffness: 300,
+    });
+    menuScale.value = withSpring(1, {
+      damping: 20,
+      stiffness: 300,
+    });
+    menuTranslateY.value = withSpring(0, {
+      damping: 20,
+      stiffness: 300,
+    });
+
+    // Staggered button animations
+    editOpacity.value = withSpring(1, {
+      damping: 25,
+      stiffness: 400,
+    });
+
+    setTimeout(() => {
+      deleteOpacity.value = withSpring(1, {
+        damping: 25,
+        stiffness: 400,
+      });
+    }, 50);
+
+    setTimeout(() => {
+      selectOpacity.value = withSpring(1, {
+        damping: 25,
+        stiffness: 400,
+      });
+    }, 100);
+
+    setTimeout(() => {
+      copyOpacity.value = withSpring(1, {
+        damping: 25,
+        stiffness: 400,
+      });
+    }, 150);
+  };
+
+  const hideMenuAnimation = () => {
+    // Hide all buttons immediately
+    editOpacity.value = withTiming(0, { duration: 150 });
+    deleteOpacity.value = withTiming(0, { duration: 150 });
+    selectOpacity.value = withTiming(0, { duration: 150 });
+    copyOpacity.value = withTiming(0, { duration: 150 });
+
+    // Main container animation
+    menuOpacity.value = withTiming(0, {
+      duration: 200,
+      easing: Easing.out(Easing.quad),
+    });
+    menuScale.value = withTiming(0.8, {
+      duration: 200,
+      easing: Easing.out(Easing.quad),
+    });
+    menuTranslateY.value = withTiming(10, {
+      duration: 200,
+      easing: Easing.out(Easing.quad),
+    });
+  };
+
+  // Function to clear selected message (dismiss menu)
+  const clearSelectedMessage = () => {
+    console.log('Clearing selected message');
+    setSelectedMessage(null);
+  };
+
+  // Handle options button press and position dropdown
+  const handleOptionsPress = () => {
+    if (optionsButtonRef.current) {
+      optionsButtonRef.current.measure(
+        (_x, _y, _width, height, _pageX, pageY) => {
+          setDropdownPosition({
+            top: pageY + height + 5, // Position below the button with 5px gap
+            right: 16, // Align with right edge of screen with padding
+          });
+          setShowOptionsMenu(true);
+        }
+      );
+    } else {
+      // Fallback if ref is not available
+      setShowOptionsMenu(true);
+    }
+  };
+
   const flatListRef = useRef(null);
   const pollIntervalRef = useRef(null);
   const lastRefreshTime = useRef(0);
+  const optionsButtonRef = useRef(null);
+
+  // Animate menu when selectedMessage changes
+  useEffect(() => {
+    if (selectedMessage) {
+      showMenuAnimation();
+
+      // Auto-dismiss menu after 10 seconds
+      const timeout = setTimeout(() => {
+        console.log('Auto-dismissing menu after timeout');
+        clearSelectedMessage();
+      }, 10000);
+
+      return () => clearTimeout(timeout);
+    } else {
+      hideMenuAnimation();
+    }
+  }, [selectedMessage]);
 
   // Safety check for fontSizes
   const safeFontSizes = fontSizes || {
@@ -328,11 +501,23 @@ const ConversationScreen = ({ navigation, route }) => {
   }, [hasMore, loadingMore, page, fetchMessages]);
 
   // Render message item
-  const renderMessageItem = ({ item }) => {
+  const renderMessageItem = ({ item, index }) => {
     const isSelected = selectedMessages.some(
       (msg) => msg.message_id === item.message_id
     );
     const showActions = selectedMessage?.message_id === item.message_id;
+
+    // Check if we should show sender info
+    // For own messages, never show sender
+    // For other messages, show sender only if:
+    // 1. It's the first message (index 0 - newest message)
+    // 2. OR the previous message (chronologically) is from a different sender
+    // Since messages are in reverse chronological order, we check the next item in array
+    const previousMessage = messages[index + 1];
+    const shouldShowSender =
+      !item.is_own_message &&
+      (!previousMessage || // No previous message (first message in conversation)
+        previousMessage.sender?.id !== item.sender?.id); // Different sender than previous
 
     return (
       <View>
@@ -359,7 +544,7 @@ const ConversationScreen = ({ navigation, route }) => {
             <MessageBubble
               message={item}
               isOwnMessage={item.is_own_message}
-              showSender={!item.is_own_message}
+              showSender={shouldShowSender}
               isSelected={isSelected}
               selectionMode={selectionMode}
               onAttachmentPress={(url) => {
@@ -370,6 +555,12 @@ const ConversationScreen = ({ navigation, route }) => {
                 if (selectionMode) {
                   handleSelectMessage(message);
                 } else {
+                  // Clear selected message if any menu is open
+                  if (selectedMessage) {
+                    clearSelectedMessage();
+                    return;
+                  }
+
                   // Mark message as read locally if it's not the user's own message and it's unread
                   if (
                     currentUserId &&
@@ -397,82 +588,93 @@ const ConversationScreen = ({ navigation, route }) => {
 
         {/* Inline Message Actions */}
         {showActions && item.is_own_message && (
-          <View style={styles.inlineActions}>
+          <Animated.View
+            style={[styles.inlineActions, menuAnimatedStyle]}
+            pointerEvents='auto'
+          >
             {/* Edit Option */}
-            <TouchableOpacity
-              style={[
-                styles.actionOption,
-                !canEditMessage(item) && styles.disabledOption,
-              ]}
-              onPress={() =>
-                canEditMessage(item) && handleMessageAction('edit', item)
-              }
-              disabled={!canEditMessage(item)}
-            >
-              <FontAwesomeIcon
-                icon={faEdit}
-                size={16}
-                color={
-                  canEditMessage(item)
-                    ? safeTheme.colors.primary
-                    : safeTheme.colors.textSecondary
-                }
-              />
-              <Text
+            <Animated.View style={editAnimatedStyle}>
+              <TouchableOpacity
                 style={[
-                  styles.actionOptionText,
-                  !canEditMessage(item) && styles.disabledOptionText,
+                  styles.actionOption,
+                  !canEditMessage(item) && styles.disabledOption,
                 ]}
+                onPress={() =>
+                  canEditMessage(item) && handleMessageAction('edit', item)
+                }
+                disabled={!canEditMessage(item)}
               >
-                Edit Message
-              </Text>
-            </TouchableOpacity>
+                <FontAwesomeIcon
+                  icon={faEdit}
+                  size={16}
+                  color={
+                    canEditMessage(item)
+                      ? safeTheme.colors.primary
+                      : safeTheme.colors.textSecondary
+                  }
+                />
+                <Text
+                  style={[
+                    styles.actionOptionText,
+                    !canEditMessage(item) && styles.disabledOptionText,
+                  ]}
+                >
+                  Edit Message
+                </Text>
+              </TouchableOpacity>
+            </Animated.View>
 
             {/* Delete Option */}
-            <TouchableOpacity
-              style={styles.actionOption}
-              onPress={() => handleMessageAction('delete', item)}
-            >
-              <FontAwesomeIcon
-                icon={faTrash}
-                size={16}
-                color={safeTheme.colors.error}
-              />
-              <Text
-                style={[
-                  styles.actionOptionText,
-                  { color: safeTheme.colors.error },
-                ]}
+            <Animated.View style={deleteAnimatedStyle}>
+              <TouchableOpacity
+                style={styles.actionOption}
+                onPress={() => handleMessageAction('delete', item)}
               >
-                Delete Message
-              </Text>
-            </TouchableOpacity>
+                <FontAwesomeIcon
+                  icon={faTrash}
+                  size={16}
+                  color={safeTheme.colors.error}
+                />
+                <Text
+                  style={[
+                    styles.actionOptionText,
+                    { color: safeTheme.colors.error },
+                  ]}
+                >
+                  Delete Message
+                </Text>
+              </TouchableOpacity>
+            </Animated.View>
 
             {/* Select Option */}
-            <TouchableOpacity
-              style={styles.actionOption}
-              onPress={() => handleMessageAction('select', item)}
-            >
-              <FontAwesomeIcon
-                icon={faCheckCircle}
-                size={16}
-                color={safeTheme.colors.primary}
-              />
-              <Text style={styles.actionOptionText}>Select Message</Text>
-            </TouchableOpacity>
+            <Animated.View style={selectAnimatedStyle}>
+              <TouchableOpacity
+                style={styles.actionOption}
+                onPress={() => handleMessageAction('select', item)}
+              >
+                <FontAwesomeIcon
+                  icon={faCheckCircle}
+                  size={16}
+                  color={safeTheme.colors.primary}
+                />
+                <Text style={styles.actionOptionText}>Select Message</Text>
+              </TouchableOpacity>
+            </Animated.View>
             {/* Copy Option */}
-            <TouchableOpacity
-              style={styles.actionOption}
-              onPress={() => handleMessageAction('copy', item)}
-            >
-              <FontAwesomeIcon
-                icon={faCopy}
-                size={16}
-                color={theme.colors.primary}
-              />
-              <Text style={styles.actionOptionText}>Copy Message</Text>
-            </TouchableOpacity>
-          </View>
+            <Animated.View style={copyAnimatedStyle}>
+              <TouchableOpacity
+                style={styles.actionOption}
+                onPress={() => handleMessageAction('copy', item)}
+              >
+                <FontAwesomeIcon
+                  icon={faCopy}
+                  size={16}
+                  color={theme.colors.primary}
+                />
+                <Text style={styles.actionOptionText}>Copy Message</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </Animated.View>
         )}
       </View>
     );
@@ -1130,8 +1332,9 @@ const ConversationScreen = ({ navigation, route }) => {
             </View>
 
             <TouchableOpacity
+              ref={optionsButtonRef}
               style={styles.optionsButton}
-              onPress={() => setShowOptionsMenu(true)}
+              onPress={handleOptionsPress}
             >
               <FontAwesomeIcon
                 icon={faEllipsisV}
@@ -1149,32 +1352,41 @@ const ConversationScreen = ({ navigation, route }) => {
         keyboardVerticalOffset={0}
       >
         {/* Messages List */}
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size='large' color={theme.colors.primary} />
-            <Text style={styles.loadingText}>Loading messages...</Text>
-          </View>
-        ) : (
-          <FlatList
-            ref={flatListRef}
-            data={messages}
-            renderItem={renderMessageItem}
-            keyExtractor={(item) =>
-              item.message_id?.toString() ||
-              `temp-${Date.now()}-${Math.random()}`
-            }
-            contentContainerStyle={styles.messagesList}
-            inverted
-            onEndReached={loadMoreMessages}
-            onEndReachedThreshold={0.1}
-            ListFooterComponent={renderLoadingFooter}
-            showsVerticalScrollIndicator={false}
-          />
-        )}
+        <View style={{ flex: 1, position: 'relative' }}>
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size='large' color={theme.colors.primary} />
+              <Text style={styles.loadingText}>Loading messages...</Text>
+            </View>
+          ) : (
+            <FlatList
+              ref={flatListRef}
+              data={messages}
+              renderItem={renderMessageItem}
+              keyExtractor={(item) =>
+                item.message_id?.toString() ||
+                `temp-${Date.now()}-${Math.random()}`
+              }
+              contentContainerStyle={styles.messagesList}
+              inverted
+              onEndReached={loadMoreMessages}
+              onEndReachedThreshold={0.1}
+              ListFooterComponent={renderLoadingFooter}
+              showsVerticalScrollIndicator={false}
+            />
+          )}
+        </View>
 
         {/* Message Input */}
-        <View
+        <TouchableOpacity
           style={[styles.inputContainer, { paddingBottom: 8, marginBottom: 0 }]}
+          activeOpacity={1}
+          onPress={() => {
+            if (selectedMessage) {
+              console.log('Input area tapped, dismissing menu');
+              clearSelectedMessage();
+            }
+          }}
         >
           <View style={styles.inputWrapper}>
             <TextInput
@@ -1222,24 +1434,28 @@ const ConversationScreen = ({ navigation, route }) => {
               />
             )}
           </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
       </KeyboardAvoidingView>
 
-      {/* Options Menu Modal */}
-      <Modal
-        visible={showOptionsMenu}
-        transparent={true}
-        animationType='fade'
-        onRequestClose={() => setShowOptionsMenu(false)}
-      >
+      {/* Options Dropdown Menu */}
+      {showOptionsMenu && (
         <TouchableOpacity
-          style={styles.modalOverlay}
+          style={styles.dropdownOverlay}
           activeOpacity={1}
           onPress={() => setShowOptionsMenu(false)}
         >
-          <View style={styles.optionsMenu}>
+          <View
+            style={[
+              styles.dropdownMenu,
+              {
+                position: 'absolute',
+                top: dropdownPosition.top,
+                right: dropdownPosition.right,
+              },
+            ]}
+          >
             <TouchableOpacity
-              style={styles.optionItem}
+              style={styles.dropdownItem}
               onPress={() => {
                 setShowOptionsMenu(false);
                 handleLeaveConversation();
@@ -1251,14 +1467,14 @@ const ConversationScreen = ({ navigation, route }) => {
                 color={theme.colors.warning}
               />
               <Text
-                style={[styles.optionText, { color: theme.colors.warning }]}
+                style={[styles.dropdownText, { color: theme.colors.warning }]}
               >
                 Leave Conversation
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.optionItem}
+              style={styles.dropdownItem}
               onPress={() => {
                 setShowOptionsMenu(false);
                 handleDeleteConversation();
@@ -1269,20 +1485,15 @@ const ConversationScreen = ({ navigation, route }) => {
                 size={16}
                 color={theme.colors.error}
               />
-              <Text style={[styles.optionText, { color: theme.colors.error }]}>
+              <Text
+                style={[styles.dropdownText, { color: theme.colors.error }]}
+              >
                 Delete Conversation
               </Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.optionItem, styles.cancelOption]}
-              onPress={() => setShowOptionsMenu(false)}
-            >
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
           </View>
         </TouchableOpacity>
-      </Modal>
+      )}
 
       {/* Edit Message Modal */}
       <Modal
@@ -1535,52 +1746,44 @@ const createStyles = (theme, fontSizes) => {
     optionsButton: {
       padding: 8,
     },
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'center',
-      alignItems: 'center',
+    dropdownOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'transparent',
+      zIndex: 1000,
     },
-    optionsMenu: {
-      backgroundColor: theme.colors.surface,
-      borderRadius: 12,
-      paddingVertical: 8,
-      minWidth: 200,
-      maxWidth: 280,
-      marginHorizontal: 20,
+    dropdownMenu: {
+      backgroundColor: safeTheme.colors.surface,
+      borderRadius: 8,
+      paddingVertical: 4,
+      minWidth: 180,
+      maxWidth: 220,
       ...Platform.select({
         ios: {
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.25,
-          shadowRadius: 8,
+          shadowRadius: 4,
         },
         android: {
-          elevation: 8,
+          elevation: 6,
         },
       }),
     },
-    optionItem: {
+    dropdownItem: {
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: 16,
       paddingVertical: 12,
     },
-    optionText: {
+    dropdownText: {
       fontSize: safeFontSizes.medium,
       marginLeft: 12,
       fontWeight: '500',
-    },
-    cancelOption: {
-      borderTopWidth: 1,
-      borderTopColor: theme.colors.border,
-      marginTop: 8,
-      justifyContent: 'center',
-    },
-    cancelText: {
-      fontSize: safeFontSizes.medium,
-      color: theme.colors.text,
-      fontWeight: '500',
+      color: safeTheme.colors.text,
     },
     // Message Row and Selection Styles
     messageRow: {
@@ -1606,10 +1809,11 @@ const createStyles = (theme, fontSizes) => {
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.1,
       shadowRadius: 2,
-      elevation: 2,
+      elevation: 10,
       maxWidth: 200,
       alignSelf: 'flex-end',
-      zIndex: 2,
+      zIndex: 100,
+      position: 'relative',
     },
     actionOption: {
       flexDirection: 'row',
@@ -1707,6 +1911,15 @@ const createStyles = (theme, fontSizes) => {
       fontSize: safeFontSizes.medium,
       color: theme.colors.headerText,
       fontWeight: '500',
+    },
+    dismissOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'transparent',
+      zIndex: 50,
     },
   });
 };

@@ -105,16 +105,6 @@ const getMenuItems = (t) => [
     iconColor: '#fff',
     action: 'library',
   },
-  {
-    id: 'messages',
-    title: 'Messages',
-    icon: faComments,
-    backgroundColor: '#d90429',
-    iconColor: '#fff',
-    disabled: false,
-    action: 'messages',
-    comingSoon: false,
-  },
   // Health
   {
     id: 'health',
@@ -126,6 +116,18 @@ const getMenuItems = (t) => [
     disabled: false,
     comingSoon: false,
   },
+  // Messaging
+  {
+    id: 'messages',
+    title: 'Messages',
+    icon: faComments,
+    backgroundColor: '#d90429',
+    iconColor: '#fff',
+    disabled: false,
+    action: 'messages',
+    comingSoon: false,
+  },
+  // Coming soon
   {
     id: 'materials',
     title: 'Materials',
@@ -340,10 +342,10 @@ export default function ParentScreen({ navigation }) {
         });
         break;
       case 'calendar':
-        // Save selected student as userData for calendar access
+        // Save selected student as temporary calendar user data (don't overwrite main userData)
         try {
           await AsyncStorage.setItem(
-            'userData',
+            'calendarUserData',
             JSON.stringify(selectedStudent)
           );
           navigation.navigate('Calendar');
@@ -883,7 +885,7 @@ const createStyles = (theme, fontSizes) =>
     // No longer needed with FontAwesome icon
     content: {
       flex: 1,
-      padding: 20,
+      padding: 15,
     },
     childrenSection: {
       marginBottom: 5,
@@ -1085,35 +1087,31 @@ const createStyles = (theme, fontSizes) =>
       flexDirection: 'row',
       flexWrap: 'wrap',
       justifyContent: 'space-between', // Better distribution for 3 tiles per row
-      gap: 8, // Smaller gap for 3-per-row layout
-      paddingBottom: 30, // Add padding for scrollable content
+      paddingBottom: 50, // Add padding for scrollable content
+      paddingHorizontal: 5, // Add padding for scrollable content
     },
     // iPad-specific grid layout - 4 tiles per row, wraps to next row for additional tiles
     iPadActionTilesGrid: {
       flexWrap: 'wrap',
       justifyContent: 'flex-start',
-      gap: 8,
     },
     // Tablet-specific grid layout - 4 tiles per row, wraps to next row for additional tiles
     tabletActionTilesGrid: {
       flexWrap: 'wrap',
       justifyContent: 'flex-start',
-      gap: 10,
     },
     // iPad landscape-specific grid layout - 6 tiles per row, wraps for additional tiles
     iPadLandscapeActionTilesGrid: {
       flexWrap: 'wrap',
       justifyContent: 'space-between',
-      gap: 6,
     },
     // Tablet landscape-specific grid layout - 6 tiles per row, wraps for additional tiles
     tabletLandscapeActionTilesGrid: {
       flexWrap: 'wrap',
       justifyContent: 'space-between',
-      gap: 8,
     },
     actionTile: {
-      width: (screenWidth - 56) / 3, // 3 tiles per row: screen width - margins (32*2) - gaps (8*2) / 3
+      width: (screenWidth - 48) / 3 - 8, // 3 tiles per row: screen width - padding (24*2) - margins (8*3) / 3
       aspectRatio: 1, // Square tiles
       borderRadius: 20, // Slightly smaller border radius for smaller tiles
       padding: 14, // Reduced padding for smaller tiles
@@ -1122,15 +1120,19 @@ const createStyles = (theme, fontSizes) =>
       position: 'relative',
       borderWidth: 1,
       borderColor: 'rgba(255, 255, 255, 0.1)',
+      marginHorizontal: 4, // Add horizontal margin for spacing
+      marginBottom: 8, // Add bottom margin for vertical spacing
       ...createMediumShadow(theme),
     },
     // iPad-specific action tile - optimized for 4 per row, wraps for additional tiles
     iPadActionTile: {
-      width: (screenWidth - 80) / 4 - 2, // Optimized for 4 tiles per row with wrapping support
+      width: (screenWidth - 80) / 4 - 8, // Optimized for 4 tiles per row with wrapping support
       minWidth: 160, // Minimum width to ensure tiles don't get too small
       aspectRatio: 1, // Square tiles
       borderRadius: 16,
       padding: 12,
+      marginHorizontal: 4,
+      marginBottom: 8,
       ...createCustomShadow(theme, {
         height: 3,
         opacity: 0.15,
@@ -1140,11 +1142,13 @@ const createStyles = (theme, fontSizes) =>
     },
     // Tablet-specific action tile - optimized for 4 per row, wraps for additional tiles
     tabletActionTile: {
-      width: (screenWidth - 70) / 4 - 2, // Optimized for 4 tiles per row with wrapping support
+      width: (screenWidth - 70) / 4 - 10, // Optimized for 4 tiles per row with wrapping support
       minWidth: 150, // Minimum width to ensure tiles don't get too small
       aspectRatio: 1, // Square tiles
       borderRadius: 18,
       padding: 14,
+      marginHorizontal: 5,
+      marginBottom: 10,
       ...createCustomShadow(theme, {
         height: 4,
         opacity: 0.18,
@@ -1154,11 +1158,13 @@ const createStyles = (theme, fontSizes) =>
     },
     // iPad landscape-specific action tile - optimized for 6 per row
     iPadLandscapeActionTile: {
-      width: (screenWidth - 100) / 6 - 2, // 6 tiles per row in landscape with wrapping support
+      width: (screenWidth - 100) / 6 - 6, // 6 tiles per row in landscape with wrapping support
       minWidth: 120, // Minimum width for landscape tiles
       aspectRatio: 1, // Square tiles
       borderRadius: 14,
       padding: 10,
+      marginHorizontal: 3,
+      marginBottom: 6,
       ...createCustomShadow(theme, {
         height: 2,
         opacity: 0.12,
@@ -1168,11 +1174,13 @@ const createStyles = (theme, fontSizes) =>
     },
     // Tablet landscape-specific action tile - optimized for 6 per row
     tabletLandscapeActionTile: {
-      width: (screenWidth - 90) / 6 - 2, // 6 tiles per row in landscape with wrapping support
+      width: (screenWidth - 90) / 6 - 8, // 6 tiles per row in landscape with wrapping support
       minWidth: 110, // Minimum width for landscape tiles
       aspectRatio: 1, // Square tiles
       borderRadius: 16,
       padding: 12,
+      marginHorizontal: 4,
+      marginBottom: 8,
       ...createCustomShadow(theme, {
         height: 3,
         opacity: 0.15,
@@ -1278,11 +1286,12 @@ const createStyles = (theme, fontSizes) =>
       backgroundColor: theme.colors.surface,
       borderRadius: 12,
       padding: 12,
-      marginBottom: 15,
-      width: '48%',
+      width: (screenWidth - 48) / 3 - 8, // 3 tiles per row: screen width - padding (24*2) - margins (8*3) / 3
       aspectRatio: 1, // Square items
       alignItems: 'center',
       justifyContent: 'center', // Center content vertically
+      marginHorizontal: 4, // Add horizontal margin for spacing
+      marginBottom: 8, // Add bottom margin for vertical spacing
       // Platform-specific shadow
       ...createCustomShadow(theme, {
         height: 1,
@@ -1293,12 +1302,13 @@ const createStyles = (theme, fontSizes) =>
     },
     // iPad-specific menu item - optimized for 4 per row, wraps for additional items
     iPadMenuItem: {
-      width: (screenWidth - 80) / 4 - 2, // Optimized for 4 items per row with wrapping support
+      width: (screenWidth - 80) / 4 - 8, // Optimized for 4 items per row with wrapping support
       minWidth: 160, // Minimum width to ensure items don't get too small
       aspectRatio: 1, // Square items
       borderRadius: 10,
       padding: 12,
-      marginBottom: 12,
+      marginHorizontal: 4,
+      marginBottom: 8,
       ...createCustomShadow(theme, {
         height: 2,
         opacity: 0.06,
@@ -1308,12 +1318,13 @@ const createStyles = (theme, fontSizes) =>
     },
     // Tablet-specific menu item - optimized for 4 per row, wraps for additional items
     tabletMenuItem: {
-      width: (screenWidth - 70) / 4 - 2, // Optimized for 4 items per row with wrapping support
+      width: (screenWidth - 70) / 4 - 10, // Optimized for 4 items per row with wrapping support
       minWidth: 150, // Minimum width to ensure items don't get too small
       aspectRatio: 1, // Square items
       borderRadius: 11,
       padding: 13,
-      marginBottom: 13,
+      marginHorizontal: 5,
+      marginBottom: 10,
       ...createCustomShadow(theme, {
         height: 1.5,
         opacity: 0.07,
@@ -1323,12 +1334,13 @@ const createStyles = (theme, fontSizes) =>
     },
     // iPad landscape-specific menu item - optimized for 6 per row
     iPadLandscapeMenuItem: {
-      width: (screenWidth - 100) / 6 - 2, // 6 items per row in landscape with wrapping support
+      width: (screenWidth - 100) / 6 - 6, // 6 items per row in landscape with wrapping support
       minWidth: 120, // Minimum width for landscape items
       aspectRatio: 1, // Square items
       borderRadius: 8,
       padding: 10,
-      marginBottom: 10,
+      marginHorizontal: 3,
+      marginBottom: 6,
       ...createCustomShadow(theme, {
         height: 1,
         opacity: 0.05,
@@ -1338,12 +1350,13 @@ const createStyles = (theme, fontSizes) =>
     },
     // Tablet landscape-specific menu item - optimized for 6 per row
     tabletLandscapeMenuItem: {
-      width: (screenWidth - 90) / 6 - 2, // 6 items per row in landscape with wrapping support
+      width: (screenWidth - 90) / 6 - 8, // 6 items per row in landscape with wrapping support
       minWidth: 110, // Minimum width for landscape items
       aspectRatio: 1, // Square items
       borderRadius: 9,
       padding: 11,
-      marginBottom: 11,
+      marginHorizontal: 4,
+      marginBottom: 8,
       ...createCustomShadow(theme, {
         height: 1.2,
         opacity: 0.06,

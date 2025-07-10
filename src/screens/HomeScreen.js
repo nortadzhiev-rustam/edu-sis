@@ -10,6 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
   faChalkboardTeacher,
@@ -148,10 +149,13 @@ export default function HomeScreen({ navigation }) {
           const studentAccounts = JSON.parse(studentAccountsStr);
 
           if (studentAccounts.length === 1) {
-            // Only one student - use it directly
+            // Only one student - use it directly (don't overwrite main userData)
             const student = studentAccounts[0];
             console.log('✅ HOME: Using single student account:', student.name);
-            await AsyncStorage.setItem('userData', JSON.stringify(student));
+            await AsyncStorage.setItem(
+              'calendarUserData',
+              JSON.stringify(student)
+            );
             await AsyncStorage.setItem(
               'selectedStudent',
               JSON.stringify(student)
@@ -193,7 +197,7 @@ export default function HomeScreen({ navigation }) {
         }
       }
 
-      // If there's a previously selected student, use it
+      // If there's a previously selected student, use it (don't overwrite main userData)
       if (selectedStudentStr) {
         try {
           const selectedStudent = JSON.parse(selectedStudentStr);
@@ -201,7 +205,7 @@ export default function HomeScreen({ navigation }) {
             '✅ HOME: Using previously selected student:',
             selectedStudent.name
           );
-          await AsyncStorage.setItem('userData', selectedStudentStr);
+          await AsyncStorage.setItem('calendarUserData', selectedStudentStr);
           navigation.navigate('Calendar');
           return;
         } catch (parseError) {
@@ -253,6 +257,13 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      {/* Hide status bar on Android in dark mode to match other screens */}
+      <StatusBar
+        style={
+          Platform.OS === 'android' && theme.mode === 'dark' ? 'light' : 'auto'
+        }
+        hidden={Platform.OS === 'android' && theme.mode === 'dark'}
+      />
       {/* Absolute positioned Settings Button */}
       <TouchableOpacity
         style={styles.settingsButton}
@@ -452,7 +463,6 @@ const createStyles = (
     container: {
       flex: 1,
       backgroundColor: theme.colors.background,
-      marginTop: Platform.OS === 'android' ? 40 : 0,
     },
     settingsButton: {
       position: 'absolute',
@@ -521,6 +531,7 @@ const createStyles = (
       marginBottom: 10,
       ...theme.shadows.small,
       marginLeft: 0,
+      elevation: 5,
     },
     roleButtonHorizontal: {
       width: '48%',
@@ -572,6 +583,7 @@ const createStyles = (
       flexDirection: 'row',
       alignItems: 'center',
       ...theme.shadows.small,
+      elevation: 5,
     },
     resourceIconContainer: {
       width: 40,

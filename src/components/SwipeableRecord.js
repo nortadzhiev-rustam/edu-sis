@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  PanResponder,
-  Animated,
-} from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import { createCustomShadow } from '../utils/commonStyles';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  runOnJS,
+} from 'react-native-reanimated';
 
 /**
  * SwipeableRecord Component
@@ -37,91 +38,79 @@ const SwipeableRecord = ({
   containerStyle = {},
   deleteButtonStyle = {},
 }) => {
-  const [translateX] = useState(new Animated.Value(0));
+  const translateX = useSharedValue(0);
   const [isRevealed, setIsRevealed] = useState(false);
 
-  const panResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => canDelete,
-    onMoveShouldSetPanResponder: (_evt, gestureState) => {
-      // Only respond to horizontal swipes and only if delete is allowed
-      return (
-        canDelete &&
-        Math.abs(gestureState.dx) > Math.abs(gestureState.dy) &&
-        Math.abs(gestureState.dx) > 5
-      );
-    },
-    onPanResponderGrant: () => {
-      // Stop any ongoing animations
-      translateX.stopAnimation();
-      translateX.setOffset(translateX._value);
-      translateX.setValue(0);
-    },
-    onPanResponderMove: (_evt, gestureState) => {
-      // Only allow left swipe (negative dx) to reveal delete button
-      if (gestureState.dx < 0) {
-        const newValue = Math.max(gestureState.dx, -deleteButtonWidth);
-        translateX.setValue(newValue);
-      } else if (isRevealed && gestureState.dx > 0) {
+  const updateIsRevealed = (revealed) => {
+    setIsRevealed(revealed);
+  };
+
+  const handleDeleteAction = () => {
+    onDelete(record);
+  };
+
+  const panGesture = Gesture.Pan()
+    .enabled(canDelete)
+    .onUpdate((event) => {
+      // Only allow left swipe (negative translationX) to reveal delete button
+      if (event.translationX < 0) {
+        translateX.value = Math.max(event.translationX, -deleteButtonWidth);
+      } else if (isRevealed && event.translationX > 0) {
         // Allow right swipe to hide delete button when it's revealed
         const currentOffset = isRevealed ? -deleteButtonWidth : 0;
-        const newValue = Math.min(currentOffset + gestureState.dx, 0);
-        translateX.setValue(newValue);
+        translateX.value = Math.min(currentOffset + event.translationX, 0);
       }
-    },
-    onPanResponderRelease: (_evt, gestureState) => {
-      translateX.flattenOffset();
-
-      if (gestureState.dx < -deleteButtonWidth / 2 && !isRevealed) {
+    })
+    .onEnd((event) => {
+      if (event.translationX < -deleteButtonWidth / 2 && !isRevealed) {
         // Swipe left enough to reveal delete button
-        Animated.spring(translateX, {
-          toValue: -deleteButtonWidth,
-          useNativeDriver: false,
-          tension: 100,
-          friction: 8,
-        }).start();
-        setIsRevealed(true);
-      } else if (gestureState.dx > deleteButtonWidth / 2 && isRevealed) {
+        translateX.value = withSpring(-deleteButtonWidth, {
+          damping: 15,
+          stiffness: 150,
+        });
+        runOnJS(updateIsRevealed)(true);
+      } else if (event.translationX > deleteButtonWidth / 2 && isRevealed) {
         // Swipe right enough to hide delete button
-        Animated.spring(translateX, {
-          toValue: 0,
-          useNativeDriver: false,
-          tension: 100,
-          friction: 8,
-        }).start();
-        setIsRevealed(false);
+        translateX.value = withSpring(0, {
+          damping: 15,
+          stiffness: 150,
+        });
+        runOnJS(updateIsRevealed)(false);
       } else {
         // Snap to appropriate position based on current state
         const targetValue = isRevealed ? -deleteButtonWidth : 0;
-        Animated.spring(translateX, {
-          toValue: targetValue,
-          useNativeDriver: false,
-          tension: 100,
-          friction: 8,
-        }).start();
+        translateX.value = withSpring(targetValue, {
+          damping: 15,
+          stiffness: 150,
+        });
       }
-    },
-  });
+    });
 
   const handleDelete = () => {
     // Animate back to original position first
-    Animated.spring(translateX, {
-      toValue: 0,
-      useNativeDriver: false,
-    }).start(() => {
-      setIsRevealed(false);
-      onDelete(record);
+    translateX.value = withSpring(0, {
+      damping: 15,
+      stiffness: 150,
     });
+    runOnJS(updateIsRevealed)(false);
+    runOnJS(handleDeleteAction)();
   };
 
   const handleTapOutside = () => {
     if (isRevealed) {
-      Animated.spring(translateX, {
-        toValue: 0,
-        useNativeDriver: false,
-      }).start();
-      setIsRevealed(false);
+      translateX.value = withSpring(0, {
+        damping: 15,
+        stiffness: 150,
+      });
+      runOnJS(updateIsRevealed)(false);
     }
   };
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateX: translateX.value }],
+    };
+  });
 
   if (!canDelete) {
     // If delete is not allowed, return the record without swipe functionality
@@ -130,7 +119,7 @@ const SwipeableRecord = ({
 
   const defaultContainerStyle = {
     position: 'relative',
-    overflow: 'hidden',
+    
     borderRadius: 16,
     marginBottom: 15,
     marginHorizontal: 5,
@@ -156,7 +145,6 @@ const SwipeableRecord = ({
   };
 
   const defaultSwipeableStyle = {
-    transform: [{ translateX }],
     backgroundColor: theme.colors.surface,
     borderRadius: 16,
     zIndex: 1,
@@ -200,12 +188,11 @@ const SwipeableRecord = ({
       </View>
 
       {/* Swipeable Record */}
-      <Animated.View
-        style={defaultSwipeableStyle}
-        {...panResponder.panHandlers}
-      >
-        <View onTouchStart={handleTapOutside}>{children}</View>
-      </Animated.View>
+      <GestureDetector gesture={panGesture}>
+        <Animated.View style={[defaultSwipeableStyle, animatedStyle]}>
+          <View onTouchStart={handleTapOutside}>{children}</View>
+        </Animated.View>
+      </GestureDetector>
     </View>
   );
 };
