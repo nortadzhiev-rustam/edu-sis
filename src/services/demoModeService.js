@@ -3279,6 +3279,181 @@ export const getDemoStudentLibraryData = () => {
   };
 };
 
+// Demo personal calendar data
+export const getDemoPersonalCalendarData = (userType = 'student') => {
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  const nextWeek = new Date(today);
+  nextWeek.setDate(today.getDate() + 7);
+  const nextMonth = new Date(today);
+  nextMonth.setMonth(today.getMonth() + 1);
+
+  const formatDate = (date) => date.toISOString().split('T')[0];
+
+  if (userType === 'student') {
+    return {
+      success: true,
+      user_id: 123,
+      user_type: 'student',
+      personal_events: [
+        {
+          id: 'homework_123',
+          title: 'Math Assignment - Due',
+          description: 'Complete exercises 1-10\nSubject: Mathematics',
+          start_date: formatDate(tomorrow),
+          end_date: formatDate(tomorrow),
+          start_time: null,
+          end_time: null,
+          is_all_day: true,
+          location: '',
+          status: 'pending',
+          source: 'homework_due',
+          category: 'homework',
+          priority: 'high',
+          metadata: {
+            homework_id: 123,
+            subject_name: 'Mathematics',
+            is_completed: false,
+          },
+        },
+        {
+          id: 'exam_789',
+          title: 'Science Test',
+          description: 'Chapter 5-7 Test\nSubject: Biology\nType: Summative',
+          start_date: formatDate(nextWeek),
+          end_date: formatDate(nextWeek),
+          start_time: '09:00:00',
+          end_time: '11:00:00',
+          is_all_day: false,
+          location: 'Room 201',
+          status: 'scheduled',
+          source: 'exam_schedule',
+          category: 'exam',
+          priority: 'high',
+          metadata: {
+            exam_id: 789,
+            subject_name: 'Biology',
+            exam_type: 'Summative',
+          },
+        },
+        {
+          id: 'homework_456',
+          title: 'English Essay - Due',
+          description:
+            'Write a 500-word essay on Shakespeare\nSubject: English Literature',
+          start_date: formatDate(nextWeek),
+          end_date: formatDate(nextWeek),
+          start_time: null,
+          end_time: null,
+          is_all_day: true,
+          location: '',
+          status: 'pending',
+          source: 'homework_due',
+          category: 'homework',
+          priority: 'medium',
+          metadata: {
+            homework_id: 456,
+            subject_name: 'English Literature',
+            is_completed: false,
+          },
+        },
+      ],
+      total_events: 3,
+      date_range: {
+        start_date: formatDate(today),
+        end_date: formatDate(nextMonth),
+      },
+      generated_at: new Date().toISOString(),
+    };
+  } else if (userType === 'teacher') {
+    return {
+      success: true,
+      user_id: 456,
+      user_type: 'teacher',
+      personal_events: [
+        {
+          id: 'homework_review_123',
+          title: 'Math Assignment - Review Due',
+          description:
+            'Review homework submissions\nSubject: Mathematics\nSubmissions: 18/25',
+          start_date: formatDate(tomorrow),
+          end_date: formatDate(tomorrow),
+          start_time: null,
+          end_time: null,
+          is_all_day: true,
+          location: '',
+          status: 'pending_review',
+          source: 'homework_review',
+          category: 'homework',
+          priority: 'medium',
+          metadata: {
+            homework_id: 123,
+            subject_name: 'Mathematics',
+            submission_count: 18,
+            total_students: 25,
+          },
+        },
+        {
+          id: 'exam_conduct_789',
+          title: 'Science Test - Conduct',
+          description:
+            'Conduct Biology test\nSubject: Biology\nClass: Grade 10A',
+          start_date: formatDate(nextWeek),
+          end_date: formatDate(nextWeek),
+          start_time: '09:00:00',
+          end_time: '11:00:00',
+          is_all_day: false,
+          location: 'Room 201',
+          status: 'scheduled',
+          source: 'exam_conduct',
+          category: 'exam',
+          priority: 'high',
+          metadata: {
+            exam_id: 789,
+            subject_name: 'Biology',
+            class_name: 'Grade 10A',
+            student_count: 25,
+          },
+        },
+        {
+          id: 'birthday_321',
+          title: "John Smith's Birthday",
+          description:
+            'Student birthday\nClass: Grade 10A\nTurning: 16 years old',
+          start_date: formatDate(nextWeek),
+          end_date: formatDate(nextWeek),
+          start_time: null,
+          end_time: null,
+          is_all_day: true,
+          location: '',
+          status: 'scheduled',
+          source: 'student_birthday',
+          category: 'birthday',
+          priority: 'low',
+          metadata: {
+            student_id: 321,
+            student_name: 'John Smith',
+            class_name: 'Grade 10A',
+            age_turning: 16,
+          },
+        },
+      ],
+      total_events: 3,
+      date_range: {
+        start_date: formatDate(today),
+        end_date: formatDate(nextMonth),
+      },
+      generated_at: new Date().toISOString(),
+    };
+  }
+
+  return {
+    success: false,
+    message: 'Invalid user type',
+  };
+};
+
 // Demo health data
 export const getDemoStudentHealthRecords = () => ({
   success: true,

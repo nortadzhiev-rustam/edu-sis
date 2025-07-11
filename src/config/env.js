@@ -88,6 +88,12 @@ export const Config = {
     GET_ABOUT_DATA: '/about-data/',
     GET_CONTACTS_DATA: '/contacts-data/',
     GET_FAQ_DATA: '/faq-data/',
+
+    // Calendar API Endpoints
+    GET_CALENDAR_DATA: '/calendar/data',
+    GET_CALENDAR_PERSONAL: '/calendar/personal',
+    GET_CALENDAR_UPCOMING: '/calendar/upcoming',
+    GET_CALENDAR_MONTHLY: '/calendar/monthly',
   },
 
   // Web Resources

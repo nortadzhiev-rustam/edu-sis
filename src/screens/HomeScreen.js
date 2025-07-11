@@ -136,7 +136,8 @@ export default function HomeScreen({ navigation }) {
             userType: userToUse.userType,
             username: userToUse.username,
           });
-          navigation.navigate('Calendar');
+          // Navigate to branch-only calendar from home screen
+          navigation.navigate('Calendar', { mode: 'branch-only' });
           return;
         } catch (parseError) {
           console.error('❌ HOME: Error parsing userData:', parseError);
@@ -160,7 +161,8 @@ export default function HomeScreen({ navigation }) {
               'selectedStudent',
               JSON.stringify(student)
             );
-            navigation.navigate('Calendar');
+            // Navigate to branch-only calendar from home screen
+            navigation.navigate('Calendar', { mode: 'branch-only' });
             return;
           } else if (studentAccounts.length > 1) {
             // Multiple students - show picker
@@ -185,7 +187,8 @@ export default function HomeScreen({ navigation }) {
                       'selectedStudent',
                       JSON.stringify(student)
                     );
-                    navigation.navigate('Calendar');
+                    // Navigate to branch-only calendar from home screen
+                    navigation.navigate('Calendar', { mode: 'branch-only' });
                   },
                 })),
               ]
@@ -206,7 +209,8 @@ export default function HomeScreen({ navigation }) {
             selectedStudent.name
           );
           await AsyncStorage.setItem('calendarUserData', selectedStudentStr);
-          navigation.navigate('Calendar');
+          // Navigate to branch-only calendar from home screen
+          navigation.navigate('Calendar', { mode: 'branch-only' });
           return;
         } catch (parseError) {
           console.error('❌ HOME: Error parsing selectedStudent:', parseError);

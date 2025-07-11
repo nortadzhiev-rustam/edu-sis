@@ -38,10 +38,14 @@ import SchoolConfigService from '../services/schoolConfigService';
 import CalendarView from '../components/CalendarView';
 import { showCalendarDiagnostics } from '../utils/calendarDiagnostics';
 
-export default function CalendarScreen({ navigation }) {
+export default function CalendarScreen({ navigation, route }) {
   const { theme } = useTheme();
   const { t, currentLanguage } = useLanguage();
   const fontSizes = getLanguageFontSizes(currentLanguage);
+
+  // Get calendar mode from route params (default to 'combined' for backward compatibility)
+  const calendarMode = route?.params?.mode || 'combined';
+  const isPersonalCalendarEnabled = calendarMode === 'combined';
 
   // State
   const [loading, setLoading] = useState(true);
@@ -56,36 +60,64 @@ export default function CalendarScreen({ navigation }) {
   // Initialize screen
   useEffect(() => {
     initializeCalendar();
-  }, []);
+
+    // Cleanup function to clear temporary calendar data when component unmounts
+    return () => {
+      // Clear teacher calendar data when leaving the screen to prevent data persistence
+      if (route?.params?.userType === 'teacher') {
+        AsyncStorage.removeItem('teacherCalendarData').catch((error) => {
+          console.warn('Failed to clear teacher calendar data:', error);
+        });
+      }
+    };
+  }, [route?.params?.userType]);
 
   const initializeCalendar = async () => {
     try {
       setLoading(true);
 
-      // Get user data - check both direct login and parent/student system
+      // Get user data - check multiple sources with proper priority
       let userDataStr = await AsyncStorage.getItem('userData');
       const calendarUserDataStr = await AsyncStorage.getItem(
         'calendarUserData'
+      );
+      const teacherCalendarDataStr = await AsyncStorage.getItem(
+        'teacherCalendarData'
       );
       const selectedStudentStr = await AsyncStorage.getItem('selectedStudent');
 
       console.log('🔍 CALENDAR: User data check:', {
         hasUserData: !!userDataStr,
         hasCalendarUserData: !!calendarUserDataStr,
+        hasTeacherCalendarData: !!teacherCalendarDataStr,
         hasSelectedStudent: !!selectedStudentStr,
+        routeUserType: route?.params?.userType,
       });
 
-      // Priority order: direct login userData > calendarUserData > selectedStudent
-      if (!userDataStr && calendarUserDataStr) {
+      // Priority order based on navigation source:
+      // 1. teacherCalendarData (from teacher dashboard) - highest priority for teacher navigation
+      // 2. calendarUserData (from parent screen) - for student-specific access
+      // 3. selectedStudent - fallback for student selection
+      // 4. direct login userData - fallback for direct access
+
+      if (teacherCalendarDataStr && route?.params?.userType === 'teacher') {
         console.log(
-          '📅 CALENDAR: Using calendar user data for calendar access'
+          '📅 CALENDAR: Using teacher calendar data (from teacher dashboard)'
+        );
+        userDataStr = teacherCalendarDataStr;
+      } else if (calendarUserDataStr) {
+        console.log(
+          '📅 CALENDAR: Using calendar user data (from parent screen navigation)'
         );
         userDataStr = calendarUserDataStr;
-      } else if (!userDataStr && !calendarUserDataStr && selectedStudentStr) {
+      } else if (selectedStudentStr) {
         console.log(
           '📅 CALENDAR: Using selected student data for calendar access'
         );
         userDataStr = selectedStudentStr;
+      } else if (userDataStr) {
+        console.log('📅 CALENDAR: Using direct login user data');
+        // userDataStr is already set, no need to change it
       }
 
       if (!userDataStr) {
@@ -116,8 +148,16 @@ export default function CalendarScreen({ navigation }) {
       console.log('📅 CALENDAR: Initializing calendar for user:', {
         userType: user.userType,
         userId: user.id,
-        username: user.username,
+        username: user.username || user.name,
         hasAuthCode: !!user.authCode,
+        authCodePreview: user.authCode
+          ? `${user.authCode.substring(0, 8)}...`
+          : 'none',
+        dataSource: calendarUserDataStr
+          ? 'parent_screen'
+          : selectedStudentStr
+          ? 'selected_student'
+          : 'direct_login',
       });
 
       // Get school configuration
@@ -135,8 +175,13 @@ export default function CalendarScreen({ navigation }) {
         config.hasGoogleWorkspace
       );
 
-      // Initialize calendar service
-      const service = await CalendarService.initialize(user);
+      // Initialize calendar service with mode
+      console.log(
+        `📅 CALENDAR: Initializing calendar service in ${calendarMode} mode`
+      );
+      const service = await CalendarService.initialize(user, {
+        mode: calendarMode,
+      });
       setCalendarService(service);
 
       // Load initial events

@@ -45,6 +45,7 @@ import TeacherHealthScreen from './src/screens/TeacherHealthScreen';
 import EditHealthInfoScreen from './src/screens/EditHealthInfoScreen';
 import CreateHealthRecordScreen from './src/screens/CreateHealthRecordScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
+import UserCalendarScreen from './src/screens/UserCalendarScreen';
 import AboutUsScreen from './src/screens/AboutUsScreen';
 import ContactsScreen from './src/screens/ContactsScreen';
 import FAQScreen from './src/screens/FAQScreen';
@@ -339,6 +340,10 @@ export default function App() {
                       component={CreateHealthRecordScreen}
                     />
                     <Stack.Screen name='Calendar' component={CalendarScreen} />
+                    <Stack.Screen
+                      name='UserCalendar'
+                      component={UserCalendarScreen}
+                    />
                     <Stack.Screen name='AboutUs' component={AboutUsScreen} />
                     <Stack.Screen name='Contacts' component={ContactsScreen} />
                     <Stack.Screen name='FAQ' component={FAQScreen} />

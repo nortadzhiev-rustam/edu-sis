@@ -674,6 +674,36 @@ export default function TeacherScreen({ route, navigation }) {
             teacherName: userData.name,
           }),
       },
+      {
+        id: 'calendar',
+        title: 'My Calendar',
+        subtitle: 'Personal & School Events',
+        icon: faCalendarAlt,
+        backgroundColor: '#5856D6',
+        iconColor: '#fff',
+        disabled: false,
+        onPress: async () => {
+          try {
+            // Clear any previous calendar user data to ensure teacher's own data is used
+            await AsyncStorage.removeItem('calendarUserData');
+            // Set teacher's own data as calendar user data
+            await AsyncStorage.setItem(
+              'teacherCalendarData',
+              JSON.stringify(userData)
+            );
+            navigation.navigate('UserCalendar', {
+              mode: 'combined',
+              userType: 'teacher',
+            });
+          } catch (error) {
+            console.error('Error setting teacher calendar data:', error);
+            navigation.navigate('UserCalendar', {
+              mode: 'combined',
+              userType: 'teacher',
+            });
+          }
+        },
+      },
       // Health quick action
       {
         id: 'health',

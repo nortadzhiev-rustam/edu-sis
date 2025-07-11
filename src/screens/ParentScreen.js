@@ -348,7 +348,8 @@ export default function ParentScreen({ navigation }) {
             'calendarUserData',
             JSON.stringify(selectedStudent)
           );
-          navigation.navigate('Calendar');
+          // Navigate to combined calendar from parent screen (includes personal events)
+          navigation.navigate('UserCalendar', { mode: 'combined' });
         } catch (error) {
           console.error('Error saving student data for calendar:', error);
           Alert.alert('Error', 'Failed to access calendar');

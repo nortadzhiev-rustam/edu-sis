@@ -13,7 +13,7 @@ import { Config, buildApiUrl } from '../config/env';
  * Unified Calendar Service Class
  */
 class CalendarService {
-  constructor(schoolConfig, userData) {
+  constructor(schoolConfig, userData, options = {}) {
     this.schoolConfig = schoolConfig;
     this.userData = userData;
     this.googleCalendarService = null;
@@ -21,14 +21,28 @@ class CalendarService {
     this.eventCache = new Map(); // In-memory cache for better performance
     this.lastFetchTime = null;
     this.cacheDuration = 5 * 60 * 1000; // 5 minutes cache
+
+    // Calendar mode configuration
+    this.calendarMode = options.mode || 'combined'; // 'branch-only' or 'combined'
+    this.includePersonalEvents = this.calendarMode === 'combined';
+
+    console.log(
+      `📅 CALENDAR SERVICE: Initialized in ${this.calendarMode} mode`
+    );
+    console.log(
+      `📅 CALENDAR SERVICE: Personal events ${
+        this.includePersonalEvents ? 'enabled' : 'disabled'
+      }`
+    );
   }
 
   /**
    * Initialize calendar service for a user
    * @param {Object} userData - User data from login
+   * @param {Object} options - Service options (mode: 'branch-only' or 'combined')
    * @returns {Promise<CalendarService>} Configured service instance
    */
-  static async initialize(userData) {
+  static async initialize(userData, options = {}) {
     try {
       // Get school configuration
       const schoolConfig = await SchoolConfigService.getCurrentSchoolConfig();
@@ -36,7 +50,7 @@ class CalendarService {
         throw new Error('School configuration not found');
       }
 
-      const service = new CalendarService(schoolConfig, userData);
+      const service = new CalendarService(schoolConfig, userData, options);
 
       // Initialize Google Calendar services if available
       console.log(
@@ -249,6 +263,26 @@ class CalendarService {
           return []; // Return empty array on error
         })
       );
+
+      // Personal events (homework, exams, birthdays) - only if enabled
+      if (this.includePersonalEvents) {
+        console.log(
+          '📅 CALENDAR SERVICE: Including personal events in calendar data'
+        );
+        promises.push(
+          this.getPersonalEvents(
+            startDate.toISOString().split('T')[0],
+            endDate.toISOString().split('T')[0]
+          ).catch((error) => {
+            console.error('❌ CALENDAR SERVICE: Personal events error:', error);
+            return []; // Return empty array on error
+          })
+        );
+      } else {
+        console.log(
+          '📅 CALENDAR SERVICE: Skipping personal events (branch-only mode)'
+        );
+      }
 
       // Skip timetable events for now - causing network errors
       // TODO: Enable when timetable API is fixed
@@ -842,7 +876,7 @@ class CalendarService {
   }
 
   /**
-   * Get upcoming calendar events from backend API
+   * Get upcoming calendar events from backend API (includes personal events)
    * @param {number} days - Number of days to look ahead (default: 30)
    * @returns {Promise<Array>} Upcoming calendar events
    */
@@ -853,12 +887,141 @@ class CalendarService {
         throw new Error('No authentication code available');
       }
 
-      const url = buildApiUrl(
+      // Fetch both regular calendar events and personal events
+      const promises = [];
+
+      // Regular upcoming events
+      const upcomingUrl = buildApiUrl(
         `/mobile-api/calendar/upcoming?authCode=${authCode}&days=${days}`
       );
 
+      promises.push(
+        fetch(upcomingUrl, {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+        })
+          .then(async (response) => {
+            if (!response.ok) {
+              throw new Error(
+                `Upcoming calendar API error: ${response.status} ${response.statusText}`
+              );
+            }
+            const data = await response.json();
+            if (!data.success) {
+              throw new Error(
+                data.message || 'Failed to fetch upcoming calendar events'
+              );
+            }
+            return this.transformAPIResponseToEvents(data);
+          })
+          .catch((error) => {
+            console.error(
+              '❌ CALENDAR SERVICE: Upcoming events API error:',
+              error
+            );
+            return [];
+          })
+      );
+
+      // Personal events for the same period - only if enabled
+      let personalEventsPromise = Promise.resolve([]);
+      if (this.includePersonalEvents) {
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + days);
+
+        personalEventsPromise = this.getPersonalEvents(
+          new Date().toISOString().split('T')[0],
+          endDate.toISOString().split('T')[0]
+        ).catch((error) => {
+          console.error(
+            '❌ CALENDAR SERVICE: Personal upcoming events error:',
+            error
+          );
+          return [];
+        });
+
+        promises.push(personalEventsPromise);
+      }
+
       console.log(
-        `📅 CALENDAR SERVICE: Fetching upcoming events for ${days} days...`
+        `📅 CALENDAR SERVICE: Fetching upcoming events for ${days} days ${
+          this.includePersonalEvents
+            ? '(including personal events)'
+            : '(branch events only)'
+        }...`
+      );
+
+      const results = await Promise.all(promises);
+      const regularEvents = results[0] || [];
+      const personalEvents = this.includePersonalEvents ? results[1] || [] : [];
+      const allEvents = [...regularEvents, ...personalEvents];
+
+      // Sort by date
+      allEvents.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+
+      console.log(
+        `✅ CALENDAR SERVICE: Retrieved ${regularEvents.length} regular + ${personalEvents.length} personal upcoming events`
+      );
+
+      return allEvents;
+    } catch (error) {
+      console.error('❌ CALENDAR SERVICE: Upcoming events error:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get personal calendar events from backend API
+   * Includes homework due dates, exam schedules, and student birthdays
+   * @param {string} startDate - Start date in YYYY-MM-DD format (optional)
+   * @param {string} endDate - End date in YYYY-MM-DD format (optional)
+   * @returns {Promise<Array>} Personal calendar events
+   */
+  async getPersonalEvents(startDate = null, endDate = null) {
+    try {
+      // Check if demo mode is enabled
+      if (Config.DEV.USE_DUMMY_DATA) {
+        console.log('🎭 CALENDAR SERVICE: Using demo personal events data');
+        const { getDemoPersonalCalendarData } = await import(
+          './demoModeService'
+        );
+        const demoData = getDemoPersonalCalendarData(this.userData.userType);
+        return this.transformPersonalEvents(demoData.personal_events || []);
+      }
+
+      const authCode = this.userData.authCode;
+      if (!authCode) {
+        throw new Error('No authentication code available');
+      }
+
+      // Build URL with parameters using buildApiUrl helper
+      const params = { authCode };
+      if (startDate) {
+        params.start_date = startDate;
+      }
+      if (endDate) {
+        params.end_date = endDate;
+      }
+
+      const url = buildApiUrl(
+        Config.API_ENDPOINTS.GET_CALENDAR_PERSONAL,
+        params
+      );
+
+      console.log(
+        `📅 CALENDAR SERVICE: Fetching personal events${
+          startDate && endDate ? ` from ${startDate} to ${endDate}` : ''
+        }...`
+      );
+      console.log(`🔗 CALENDAR SERVICE: Request URL: ${url}`);
+      console.log(
+        `🔑 CALENDAR SERVICE: Using auth code: ${authCode.substring(
+          0,
+          8
+        )}... (${this.userData.userType || 'unknown'} user)`
       );
 
       const response = await fetch(url, {
@@ -867,35 +1030,352 @@ class CalendarService {
           Accept: 'application/json',
           'Content-Type': 'application/json',
         },
+        timeout: Config.NETWORK.TIMEOUT,
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error(
+          `❌ CALENDAR SERVICE: Personal calendar API error: ${response.status} ${response.statusText}`,
+          errorText
+        );
         throw new Error(
-          `Upcoming calendar API error: ${response.status} ${response.statusText}`
+          `Personal calendar API error: ${response.status} ${response.statusText}`
         );
       }
 
       const data = await response.json();
+      console.log('📊 CALENDAR SERVICE: Personal events API response:', {
+        success: data.success,
+        user_type: data.user_type,
+        total_events: data.total_events,
+        events_count: data.personal_events?.length || 0,
+      });
 
       if (!data.success) {
-        throw new Error(
-          data.message || 'Failed to fetch upcoming calendar events'
-        );
+        throw new Error(data.message || 'Failed to fetch personal events');
       }
 
       console.log(
-        `✅ CALENDAR SERVICE: Retrieved upcoming events for ${data.total_branches} branch(es)`
+        `✅ CALENDAR SERVICE: Fetched ${
+          data.personal_events?.length || 0
+        } personal events for ${data.user_type || 'unknown'} user`
       );
 
-      return this.transformAPIResponseToEvents(data);
+      // Transform personal events to calendar format
+      return this.transformPersonalEvents(data.personal_events || []);
     } catch (error) {
-      console.error('❌ CALENDAR SERVICE: Upcoming events API error:', error);
+      console.error('❌ CALENDAR SERVICE: Personal events error:', error);
+
+      // Fallback to demo data if API fails and demo mode is available
+      if (!Config.DEV.USE_DUMMY_DATA) {
+        console.log(
+          '🔄 CALENDAR SERVICE: Falling back to demo data due to API error'
+        );
+        try {
+          const { getDemoPersonalCalendarData } = await import(
+            './demoModeService'
+          );
+          const demoData = getDemoPersonalCalendarData(this.userData.userType);
+          return this.transformPersonalEvents(demoData.personal_events || []);
+        } catch (demoError) {
+          console.error(
+            '❌ CALENDAR SERVICE: Demo data fallback failed:',
+            demoError
+          );
+        }
+      }
+
+      // Return empty array if all else fails
       return [];
     }
   }
 
   /**
-   * Get monthly calendar events from backend API
+   * Transform personal events from API format to calendar format
+   * @param {Array} personalEvents - Personal events from API
+   * @returns {Array} Transformed calendar events
+   */
+  transformPersonalEvents(personalEvents) {
+    return personalEvents.map((event) => {
+      const startTime =
+        event.start_date +
+        (event.start_time ? `T${event.start_time}` : 'T00:00:00');
+      const endTime =
+        event.end_date + (event.end_time ? `T${event.end_time}` : 'T23:59:59');
+
+      return {
+        id: event.id,
+        title: this.getPersonalEventTitle(event),
+        description: event.description || '',
+        startTime: new Date(startTime).toISOString(),
+        endTime: new Date(endTime).toISOString(),
+        isAllDay: event.is_all_day || true,
+        location: event.location || '',
+        type: event.category || 'personal',
+        subType: event.source || event.category,
+        source: this.getPersonalEventSource(event.category),
+        color: this.getPersonalEventColor(event.category, event.priority),
+        canEdit: false,
+        priority: event.priority || 'medium',
+        status: event.status || 'scheduled',
+        originalData: event,
+      };
+    });
+  }
+
+  /**
+   * Get formatted title for personal events
+   * @param {Object} event - Personal event
+   * @returns {string} Formatted title
+   */
+  getPersonalEventTitle(event) {
+    switch (event.category) {
+      case 'homework':
+        return `📚 ${event.title}`;
+      case 'exam':
+        return `📝 ${event.title}`;
+      case 'birthday':
+        return `🎂 ${event.title}`;
+      default:
+        return event.title;
+    }
+  }
+
+  /**
+   * Get source label for personal events
+   * @param {string} category - Event category
+   * @returns {string} Source label
+   */
+  getPersonalEventSource(category) {
+    switch (category) {
+      case 'homework':
+        return 'Homework';
+      case 'exam':
+        return 'Exams';
+      case 'birthday':
+        return 'Birthdays';
+      default:
+        return 'Personal';
+    }
+  }
+
+  /**
+   * Get color for personal events based on category and priority
+   * @param {string} category - Event category
+   * @param {string} priority - Event priority
+   * @returns {string} Color code
+   */
+  getPersonalEventColor(category, priority) {
+    // High priority events get more urgent colors
+    if (priority === 'high') {
+      switch (category) {
+        case 'homework':
+          return '#FF3B30'; // Red for urgent homework
+        case 'exam':
+          return '#FF9500'; // Orange for urgent exams
+        default:
+          return '#FF3B30';
+      }
+    }
+
+    // Default colors by category
+    switch (category) {
+      case 'homework':
+        return '#007AFF'; // Blue for homework
+      case 'exam':
+        return '#FF9500'; // Orange for exams
+      case 'birthday':
+        return '#34C759'; // Green for birthdays
+      default:
+        return '#8E8E93'; // Gray for other events
+    }
+  }
+
+  /**
+   * Debug auth code usage - helps identify if correct auth code is being used
+   * @returns {Object} Auth code debug information
+   */
+  debugAuthCode() {
+    const authCode = this.userData.authCode;
+    return {
+      hasAuthCode: !!authCode,
+      authCodePreview: authCode ? `${authCode.substring(0, 8)}...` : 'none',
+      userType: this.userData.userType || 'unknown',
+      userId: this.userData.id,
+      username: this.userData.username || this.userData.name || 'unknown',
+      fullUserData: {
+        id: this.userData.id,
+        userType: this.userData.userType,
+        name: this.userData.name,
+        username: this.userData.username,
+        authCode: authCode ? `${authCode.substring(0, 8)}...` : 'none',
+      },
+    };
+  }
+
+  /**
+   * Test personal calendar API connectivity
+   * @param {boolean} useDemoMode - Whether to use demo mode for testing
+   * @returns {Promise<Object>} Test results
+   */
+  async testPersonalCalendarAPI(useDemoMode = false) {
+    const originalDemoMode = Config.DEV.USE_DUMMY_DATA;
+
+    try {
+      // Temporarily set demo mode for testing
+      Config.DEV.USE_DUMMY_DATA = useDemoMode;
+
+      console.log(
+        `🧪 CALENDAR SERVICE: Testing personal calendar API (Demo: ${useDemoMode})`
+      );
+
+      const testResults = {
+        success: true,
+        demoMode: useDemoMode,
+        tests: [],
+        errors: [],
+        apiEndpoint: buildApiUrl(Config.API_ENDPOINTS.GET_CALENDAR_PERSONAL, {
+          authCode: this.userData.authCode,
+        }),
+      };
+
+      // Test 1: Basic personal events fetch
+      try {
+        const startTime = Date.now();
+        const events = await this.getPersonalEvents();
+        const endTime = Date.now();
+
+        testResults.tests.push({
+          name: 'Basic Personal Events Fetch',
+          success: true,
+          eventCount: events.length,
+          responseTime: endTime - startTime,
+          sampleEvent: events[0] || null,
+        });
+
+        console.log(
+          `✅ Test 1 passed: Fetched ${events.length} events in ${
+            endTime - startTime
+          }ms`
+        );
+      } catch (error) {
+        testResults.tests.push({
+          name: 'Basic Personal Events Fetch',
+          success: false,
+          error: error.message,
+        });
+        testResults.errors.push(error.message);
+        console.error('❌ Test 1 failed:', error.message);
+      }
+
+      // Test 2: Date range filtering
+      try {
+        const today = new Date();
+        const nextWeek = new Date();
+        nextWeek.setDate(today.getDate() + 7);
+
+        const startTime = Date.now();
+        const events = await this.getPersonalEvents(
+          today.toISOString().split('T')[0],
+          nextWeek.toISOString().split('T')[0]
+        );
+        const endTime = Date.now();
+
+        testResults.tests.push({
+          name: 'Date Range Filtering',
+          success: true,
+          eventCount: events.length,
+          responseTime: endTime - startTime,
+          dateRange: {
+            start: today.toISOString().split('T')[0],
+            end: nextWeek.toISOString().split('T')[0],
+          },
+        });
+
+        console.log(
+          `✅ Test 2 passed: Fetched ${
+            events.length
+          } events for date range in ${endTime - startTime}ms`
+        );
+      } catch (error) {
+        testResults.tests.push({
+          name: 'Date Range Filtering',
+          success: false,
+          error: error.message,
+        });
+        testResults.errors.push(error.message);
+        console.error('❌ Test 2 failed:', error.message);
+      }
+
+      // Test 3: Event structure validation
+      try {
+        const events = await this.getPersonalEvents();
+        if (events.length > 0) {
+          const event = events[0];
+          const requiredFields = [
+            'id',
+            'title',
+            'description',
+            'startTime',
+            'endTime',
+            'type',
+            'source',
+            'color',
+          ];
+          const missingFields = requiredFields.filter(
+            (field) => !(field in event)
+          );
+
+          if (missingFields.length === 0) {
+            testResults.tests.push({
+              name: 'Event Structure Validation',
+              success: true,
+              validatedFields: requiredFields,
+              sampleEvent: event,
+            });
+            console.log('✅ Test 3 passed: Event structure is valid');
+          } else {
+            throw new Error(
+              `Missing required fields: ${missingFields.join(', ')}`
+            );
+          }
+        } else {
+          testResults.tests.push({
+            name: 'Event Structure Validation',
+            success: true,
+            note: 'No events to validate',
+          });
+          console.log('⚠️ Test 3 skipped: No events to validate');
+        }
+      } catch (error) {
+        testResults.tests.push({
+          name: 'Event Structure Validation',
+          success: false,
+          error: error.message,
+        });
+        testResults.errors.push(error.message);
+        console.error('❌ Test 3 failed:', error.message);
+      }
+
+      // Determine overall success
+      testResults.success = testResults.errors.length === 0;
+
+      console.log(
+        `🏁 CALENDAR SERVICE: Personal calendar API test completed (${
+          testResults.success ? 'PASSED' : 'FAILED'
+        })`
+      );
+
+      return testResults;
+    } finally {
+      // Restore original demo mode setting
+      Config.DEV.USE_DUMMY_DATA = originalDemoMode;
+    }
+  }
+
+  /**
+   * Get monthly calendar events from backend API (includes personal events)
    * @param {number} year - Year (2020-2030)
    * @param {number} month - Month (1-12)
    * @returns {Promise<Array>} Monthly calendar events
@@ -913,43 +1393,89 @@ class CalendarService {
       const targetYear = year || currentYear;
       const targetMonth = month || currentMonth;
 
-      const url = buildApiUrl(
+      // Calculate start and end dates for the month
+      const startDate = new Date(targetYear, targetMonth - 1, 1);
+      const endDate = new Date(targetYear, targetMonth, 0); // Last day of month
+
+      // Fetch both regular calendar events and personal events
+      const promises = [];
+
+      // Regular monthly events
+      const monthlyUrl = buildApiUrl(
         `/mobile-api/calendar/monthly?authCode=${authCode}&year=${targetYear}&month=${targetMonth}`
       );
 
-      console.log(
-        `📅 CALENDAR SERVICE: Fetching monthly events for ${targetYear}-${targetMonth}...`
+      promises.push(
+        fetch(monthlyUrl, {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+        })
+          .then(async (response) => {
+            if (!response.ok) {
+              throw new Error(
+                `Monthly calendar API error: ${response.status} ${response.statusText}`
+              );
+            }
+            const data = await response.json();
+            if (!data.success) {
+              throw new Error(
+                data.message || 'Failed to fetch monthly calendar events'
+              );
+            }
+            return this.transformAPIResponseToEvents(data);
+          })
+          .catch((error) => {
+            console.error(
+              '❌ CALENDAR SERVICE: Monthly events API error:',
+              error
+            );
+            return [];
+          })
       );
 
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-      });
+      // Personal events for the same month - only if enabled
+      let personalEventsPromise = Promise.resolve([]);
+      if (this.includePersonalEvents) {
+        personalEventsPromise = this.getPersonalEvents(
+          startDate.toISOString().split('T')[0],
+          endDate.toISOString().split('T')[0]
+        ).catch((error) => {
+          console.error(
+            '❌ CALENDAR SERVICE: Personal monthly events error:',
+            error
+          );
+          return [];
+        });
 
-      if (!response.ok) {
-        throw new Error(
-          `Monthly calendar API error: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(
-          data.message || 'Failed to fetch monthly calendar events'
-        );
+        promises.push(personalEventsPromise);
       }
 
       console.log(
-        `✅ CALENDAR SERVICE: Retrieved monthly events for ${data.total_branches} branch(es)`
+        `📅 CALENDAR SERVICE: Fetching monthly events for ${targetYear}-${targetMonth} ${
+          this.includePersonalEvents
+            ? '(including personal events)'
+            : '(branch events only)'
+        }...`
       );
 
-      return this.transformAPIResponseToEvents(data);
+      const results = await Promise.all(promises);
+      const regularEvents = results[0] || [];
+      const personalEvents = this.includePersonalEvents ? results[1] || [] : [];
+      const allEvents = [...regularEvents, ...personalEvents];
+
+      // Sort by date
+      allEvents.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+
+      console.log(
+        `✅ CALENDAR SERVICE: Retrieved ${regularEvents.length} regular + ${personalEvents.length} personal monthly events`
+      );
+
+      return allEvents;
     } catch (error) {
-      console.error('❌ CALENDAR SERVICE: Monthly events API error:', error);
+      console.error('❌ CALENDAR SERVICE: Monthly events error:', error);
       return [];
     }
   }
