@@ -23,9 +23,8 @@ import { createCustomShadow } from '../utils/commonStyles';
 
 import {
   faArrowLeft,
-  faGavel,
+  faScaleBalanced,
   faPlus,
-  faRefresh,
   faThumbsUp,
   faThumbsDown,
   faCalendarAlt,
@@ -68,7 +67,7 @@ export default function TeacherBPS({ route, navigation }) {
 
     return null;
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(!initialData); // Start loading if no initial data
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [selectedStudents, setSelectedStudents] = useState([]);
@@ -84,18 +83,23 @@ export default function TeacherBPS({ route, navigation }) {
   const [selectedBehaviorType, setSelectedBehaviorType] = useState(null);
 
   const fetchBPSData = async () => {
-    if (!authCode) return;
+    if (!authCode) {
+      setLoading(false);
+      return;
+    }
 
     // Check if this is a demo authCode
     if (authCode.startsWith('DEMO_AUTH_')) {
       console.log('🎭 DEMO MODE: Using demo BPS data in TeacherBPS');
       const demoData = getDemoBPSData('teacher');
       setBpsData(demoData);
+      setLoading(false);
       setRefreshing(false);
       return;
     }
 
     try {
+      setLoading(true);
       setRefreshing(true);
       const url = buildApiUrl(Config.API_ENDPOINTS.GET_TEACHER_BPS, {
         authCode,
@@ -118,6 +122,7 @@ export default function TeacherBPS({ route, navigation }) {
       console.error('Error fetching BPS data:', error);
       Alert.alert('Error', 'Network error occurred');
     } finally {
+      setLoading(false);
       setRefreshing(false);
     }
   };
@@ -901,6 +906,33 @@ export default function TeacherBPS({ route, navigation }) {
   const currentBranch = getCurrentBranch();
   const filteredRecords = getFilteredRecords();
 
+  // Show loading indicator while data is being fetched
+  if (loading && !bpsData) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <TouchableOpacity
+              style={styles.headerButton}
+              onPress={() => navigation.goBack()}
+            >
+              <FontAwesomeIcon
+                icon={faArrowLeft}
+                size={20}
+                color={theme.colors.headerText}
+              />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>BPS Management</Text>
+          </View>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size='large' color={theme.colors.primary} />
+          <Text style={styles.loadingText}>Loading BPS data...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -918,13 +950,6 @@ export default function TeacherBPS({ route, navigation }) {
           <Text style={styles.headerTitle}>BPS Management</Text>
         </View>
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.headerButton} onPress={fetchBPSData}>
-            <FontAwesomeIcon
-              icon={faRefresh}
-              size={20}
-              color={theme.colors.headerText}
-            />
-          </TouchableOpacity>
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => {
@@ -1114,7 +1139,7 @@ export default function TeacherBPS({ route, navigation }) {
         ) : (
           <View style={styles.emptyState}>
             <FontAwesomeIcon
-              icon={faGavel}
+              icon={faScaleBalanced}
               size={48}
               color={theme.colors.textLight}
             />
@@ -1514,7 +1539,7 @@ export default function TeacherBPS({ route, navigation }) {
               <View style={styles.stepContainer}>
                 <View style={styles.stepHeader}>
                   <FontAwesomeIcon
-                    icon={faGavel}
+                    icon={faScaleBalanced}
                     size={24}
                     color={theme.colors.secondary}
                   />
@@ -2953,6 +2978,13 @@ const getStyles = (theme) =>
       textAlign: 'center',
     },
 
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: theme.colors.background,
+      paddingHorizontal: 20,
+    },
     loadingOverlay: {
       position: 'absolute',
       top: 0,
@@ -2964,9 +2996,10 @@ const getStyles = (theme) =>
       alignItems: 'center',
     },
     loadingText: {
-      color: theme.colors.headerText,
+      color: theme.colors.text,
       fontSize: 16,
-      marginTop: 10,
+      marginTop: 15,
       fontWeight: '500',
+      textAlign: 'center',
     },
   });

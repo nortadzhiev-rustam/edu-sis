@@ -25,7 +25,7 @@ import {
   faChartLine,
   faClipboardCheck,
   faComments,
-  faGavel,
+  faScaleBalanced,
   faBell,
   faBookOpen,
   faFileAlt,
@@ -92,7 +92,7 @@ const getMenuItems = (t) => [
   {
     id: 'discipline',
     title: t('behavior'),
-    icon: faGavel,
+    icon: faScaleBalanced,
     backgroundColor: '#5856D6',
     iconColor: '#fff',
     action: 'discipline',

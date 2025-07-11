@@ -14,7 +14,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { Config, buildApiUrl } from '../config/env';
 import {
   faArrowLeft,
-  faGavel,
+  faScaleBalanced,
   faClipboardList,
   faStar,
   faThumbsUp,
@@ -355,7 +355,7 @@ export default function BehaviorScreen({ navigation, route }) {
           <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <FontAwesomeIcon icon={faGavel} size={20} color='#fff' />
+          <FontAwesomeIcon icon={faScaleBalanced} size={20} color='#fff' />
           <Text style={styles.headerTitle}>{t('behaviorPoints')}</Text>
         </View>
         <View style={styles.headerRight} />
@@ -575,7 +575,10 @@ export default function BehaviorScreen({ navigation, route }) {
             </View>
 
             {/* Behavior Details List */}
-            <ScrollView style={styles.behaviorDetailScroll}>
+            <ScrollView
+              style={styles.behaviorDetailScroll}
+              showsVerticalScrollIndicator={false}
+            >
               {getFilteredBehaviorData().length === 0 ? (
                 <View style={styles.emptyContainer}>
                   <FontAwesomeIcon
@@ -692,7 +695,11 @@ export default function BehaviorScreen({ navigation, route }) {
             <ScrollView style={styles.detentionDetailScroll}>
               {getFilteredDetentionData().length === 0 ? (
                 <View style={styles.emptyContainer}>
-                  <FontAwesomeIcon icon={faGavel} size={48} color='#8E8E93' />
+                  <FontAwesomeIcon
+                    icon={faScaleBalanced}
+                    size={48}
+                    color='#8E8E93'
+                  />
                   <Text style={styles.emptyText}>No detentions found</Text>
                   <Text style={styles.emptySubtext}>
                     {selectedDetentionType === 'served'
