@@ -315,6 +315,7 @@ const NotificationScreen = ({ navigation, route }) => {
   const renderNotificationItem = ({ item }) => (
     <NotificationItem
       notification={item}
+      userType={userType}
       // NotificationItem will handle navigation automatically
     />
   );

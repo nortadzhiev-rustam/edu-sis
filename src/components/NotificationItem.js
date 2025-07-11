@@ -19,7 +19,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import { createCustomShadow } from '../utils/commonStyles';
 
-const NotificationItem = ({ notification, onPress }) => {
+const NotificationItem = ({ notification, onPress, userType }) => {
   const { theme } = useTheme();
   const { markAsRead } = useNotifications();
   const navigation = useNavigation();
@@ -288,29 +288,69 @@ const NotificationItem = ({ notification, onPress }) => {
         case 'homework_due':
         case 'homework_submitted':
         case 'homework_graded': {
-          // Navigate to appropriate homework screen based on user type
+          // Navigate to appropriate homework screen based on user context
           const homeworkUserData = await AsyncStorage.getItem('userData');
-          if (homeworkUserData) {
-            const user = JSON.parse(homeworkUserData);
-            const userType = user.userType || user.user_type || user.type;
 
-            // Check if user is a teacher/staff
-            if (
-              userType === 'teacher' ||
-              userType === 'staff' ||
-              user.is_teacher
-            ) {
-              navigation.navigate('TeacherHomework', {
-                authCode: navigationParams.authCode,
-                teacherName: navigationParams.studentName || user.name,
-                selectedBranchId: user.branches?.[0]?.branch_id || null,
-              });
-            } else {
-              // For students and parents, navigate to AssignmentsScreen
-              navigation.navigate('AssignmentsScreen', navigationParams);
+          // Check if this notification has a specific student auth code (from parent context)
+          const isStudentNotification = notification.studentAuthCode;
+
+          // Determine the effective user type (prioritize passed userType prop)
+          let effectiveUserType = userType;
+          if (!effectiveUserType && homeworkUserData) {
+            const user = JSON.parse(homeworkUserData);
+            effectiveUserType = user.userType || user.user_type || user.type;
+          }
+
+          console.log('📚 NOTIFICATION: Homework navigation context:', {
+            effectiveUserType,
+            isStudentNotification,
+            hasStudentAuthCode: !!notification.studentAuthCode,
+            passedUserType: userType,
+          });
+
+          // If this is a student-specific notification (from parent screen) or user is a student,
+          // always navigate to AssignmentsScreen
+          if (
+            isStudentNotification ||
+            effectiveUserType === 'student' ||
+            effectiveUserType === 'parent'
+          ) {
+            console.log(
+              '📚 NOTIFICATION: Navigating to student assignments screen'
+            );
+            navigation.navigate('AssignmentsScreen', navigationParams);
+          }
+          // Only navigate to teacher homework screen if user is actually a teacher AND
+          // this is not a student-specific notification
+          else if (
+            (effectiveUserType === 'teacher' ||
+              effectiveUserType === 'staff') &&
+            !isStudentNotification
+          ) {
+            console.log(
+              '📚 NOTIFICATION: Navigating to teacher homework screen'
+            );
+
+            // Get additional teacher data if available
+            let teacherName = navigationParams.studentName;
+            let selectedBranchId = null;
+
+            if (homeworkUserData) {
+              const user = JSON.parse(homeworkUserData);
+              teacherName = teacherName || user.name;
+              selectedBranchId = user.branches?.[0]?.branch_id || null;
             }
+
+            navigation.navigate('TeacherHomework', {
+              authCode: navigationParams.authCode,
+              teacherName,
+              selectedBranchId,
+            });
           } else {
-            // Fallback to AssignmentsScreen if user data not found
+            // Default to student assignments screen for any other case
+            console.log(
+              '📚 NOTIFICATION: Defaulting to student assignments screen'
+            );
             navigation.navigate('AssignmentsScreen', navigationParams);
           }
           break;
@@ -508,6 +548,7 @@ NotificationItem.propTypes = {
     studentAuthCode: PropTypes.string,
   }).isRequired,
   onPress: PropTypes.func,
+  userType: PropTypes.string,
 };
 
 export default NotificationItem;

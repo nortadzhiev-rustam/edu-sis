@@ -429,10 +429,13 @@ export default function BehaviorScreen({ navigation, route }) {
                       color='#999'
                     />
                   </View>
-                  <Text style={styles.behaviorCardTitle}>PRS</Text>
-                  <Text style={styles.behaviorCardNumber}>
-                    +{getBehaviorStats().positive}
-                  </Text>
+                  <View style={styles.behaviorCardBody}>
+                    <Text style={styles.behaviorCardTitle}>PRS</Text>
+                    <Text style={styles.behaviorCardNumber}>
+                      +{getBehaviorStats().positive}
+                    </Text>
+                  </View>
+
                   <Text style={styles.behaviorCardSubtext}>
                     Positive Reinforcement System
                   </Text>
@@ -461,10 +464,13 @@ export default function BehaviorScreen({ navigation, route }) {
                       color='#999'
                     />
                   </View>
-                  <Text style={styles.behaviorCardTitle}>DPS</Text>
-                  <Text style={styles.behaviorCardNumber}>
-                    -{getBehaviorStats().negative}
-                  </Text>
+                  <View style={styles.behaviorCardBody}>
+                    <Text style={styles.behaviorCardTitle}>DPS</Text>
+                    <Text style={styles.behaviorCardNumber}>
+                      -{getBehaviorStats().negative}
+                    </Text>
+                  </View>
+
                   <Text style={styles.behaviorCardSubtext}>
                     Disciplinary Points System
                   </Text>
@@ -499,10 +505,13 @@ export default function BehaviorScreen({ navigation, route }) {
                       color='#999'
                     />
                   </View>
-                  <Text style={styles.detentionCardTitle}>Served</Text>
-                  <Text style={styles.detentionCardNumber}>
-                    {getDetentionStats().served}
-                  </Text>
+                  <View style={styles.behaviorCardBody}>
+                    <Text style={styles.detentionCardTitle}>Served</Text>
+                    <Text style={styles.detentionCardNumber}>
+                      {getDetentionStats().served}
+                    </Text>
+                  </View>
+
                   <Text style={styles.detentionCardSubtext}>
                     Detentions completed
                   </Text>
@@ -531,10 +540,13 @@ export default function BehaviorScreen({ navigation, route }) {
                       color='#999'
                     />
                   </View>
-                  <Text style={styles.detentionCardTitle}>Not Served</Text>
-                  <Text style={styles.detentionCardNumber}>
-                    {getDetentionStats().notServed}
-                  </Text>
+                  <View style={styles.behaviorCardBody}>
+                    <Text style={styles.detentionCardTitle}>Not Served</Text>
+                    <Text style={styles.detentionCardNumber}>
+                      {getDetentionStats().notServed}
+                    </Text>
+                  </View>
+
                   <Text style={styles.detentionCardSubtext}>
                     Pending detentions
                   </Text>
@@ -558,9 +570,7 @@ export default function BehaviorScreen({ navigation, route }) {
                 <Text style={styles.behaviorBackText}>Back</Text>
               </TouchableOpacity>
               <Text style={styles.behaviorDetailTitle}>
-                {selectedBehaviorType === 'PRS'
-                  ? 'Positive Reinforcement System (PRS)'
-                  : 'Disciplinary Point System (DPS)'}
+                {selectedBehaviorType === 'PRS' ? 'PRS' : 'DPS'}
               </Text>
             </View>
 
@@ -832,7 +842,8 @@ const createStyles = (theme) =>
     summaryContainer: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      marginBottom: 20,
+      marginVertical: 30,
+      marginHorizontal: 10,
     },
     summaryCard: {
       backgroundColor: theme.colors.surface,
@@ -866,6 +877,7 @@ const createStyles = (theme) =>
     // Statistics
     statsContainer: {
       marginBottom: 20,
+      marginHorizontal: 5,
     },
     sectionTitle: {
       fontSize: 22,
@@ -1051,6 +1063,7 @@ const createStyles = (theme) =>
     // Behavior Styles
     behaviorContainer: {
       marginBottom: 20,
+      marginHorizontal: 10,
     },
     behaviorGrid: {
       flexDirection: 'row',
@@ -1069,6 +1082,13 @@ const createStyles = (theme) =>
       alignItems: 'center',
       marginBottom: 15,
     },
+
+    behaviorCardBody: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'baseline',
+    },
+
     behaviorIconContainer: {
       width: 50,
       height: 50,
@@ -1104,6 +1124,7 @@ const createStyles = (theme) =>
       borderBottomWidth: 1,
       borderBottomColor: theme.colors.border,
       marginBottom: 15,
+      justifyContent: 'space-between',
     },
     behaviorBackButton: {
       flexDirection: 'row',
@@ -1128,6 +1149,7 @@ const createStyles = (theme) =>
       borderRadius: 16,
       padding: 20,
       marginBottom: 15,
+      marginHorizontal: 10,
       ...theme.shadows.medium,
     },
     behaviorDetailCardHeader: {
@@ -1186,6 +1208,7 @@ const createStyles = (theme) =>
     // Detention Styles
     detentionContainer: {
       marginBottom: 20,
+      marginHorizontal: 10,
     },
     detentionGrid: {
       flexDirection: 'row',

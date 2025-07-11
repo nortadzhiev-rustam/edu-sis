@@ -1969,7 +1969,7 @@ const getStyles = (theme) =>
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: theme.colors.success,
+      backgroundColor: `${theme.colors.headerText}33`,
       justifyContent: 'center',
       alignItems: 'center',
     },
@@ -1993,10 +1993,10 @@ const getStyles = (theme) =>
       marginVertical: 10,
       borderRadius: 12,
       ...createCustomShadow(theme, {
-        height: 2,
+        height: 10,
         opacity: 0.1,
-        radius: 4,
-        elevation: 3,
+        radius: 10,
+        elevation: 4,
       }),
     },
     compactBranchHeader: {
@@ -2058,6 +2058,7 @@ const getStyles = (theme) =>
     recordsScrollView: {
       flex: 1,
       backgroundColor: theme.colors.background,
+      marginTop: 15,
     },
     recordsList: {
       padding: 15,
