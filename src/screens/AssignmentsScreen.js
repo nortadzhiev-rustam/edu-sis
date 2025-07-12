@@ -896,7 +896,7 @@ const createStyles = (theme) =>
     },
     content: {
       flex: 1,
-      padding: 20,
+      paddingVertical: 20,
     },
     scrollContainer: {
       flex: 1,
@@ -1117,12 +1117,14 @@ const createStyles = (theme) =>
     // Assignments view styles
     assignmentsContainer: {
       flex: 1,
+      
     },
     assignmentsHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
       marginBottom: 20,
+      paddingHorizontal: 10,
     },
     backToSubjectsButton: {
       flexDirection: 'row',
@@ -1175,6 +1177,7 @@ const createStyles = (theme) =>
     },
     assignmentsList: {
       flex: 1,
+      paddingHorizontal: 10,
     },
 
     // Modern Assignment Card Styles
@@ -1182,7 +1185,7 @@ const createStyles = (theme) =>
       backgroundColor: theme.colors.surface,
       borderRadius: 16,
       padding: 20,
-      marginBottom: 15,
+      marginTop: 15,
       ...createMediumShadow(theme),
     },
     assignmentCardHeader: {

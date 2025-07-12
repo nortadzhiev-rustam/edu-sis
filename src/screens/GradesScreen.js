@@ -1410,7 +1410,8 @@ const createStyles = (theme) =>
     },
     content: {
       flex: 1,
-      padding: 15,
+      paddingHorizontal: 5,
+      paddingVertical: 10,
     },
     landscapeContent: {
       paddingHorizontal: 20, // More padding in landscape for better use of space
@@ -1424,7 +1425,7 @@ const createStyles = (theme) =>
     // Enhanced Header Section
     headerSection: {
       alignItems: 'center',
-      marginBottom: 40,
+      marginBottom: 20,
       paddingHorizontal: 20,
     },
     headerIconContainer: {
@@ -1483,8 +1484,6 @@ const createStyles = (theme) =>
       }),
       // Enhanced shadow with border fallback for Android (no elevation to prevent clipping)
       ...createCardShadow(theme),
-
-      
     },
     subjectCardHeader: {
       flexDirection: 'row',
@@ -1730,7 +1729,7 @@ const createStyles = (theme) =>
       flex: 1,
     },
     subjectHeader: {
-      marginBottom: 15,
+      margin: 10,
     },
     backToSubjectsButton: {
       alignSelf: 'flex-start',
@@ -1755,8 +1754,9 @@ const createStyles = (theme) =>
       flexDirection: 'row',
       backgroundColor: theme.colors.card,
       borderRadius: 25,
-      padding: 4,
+      padding: 5,
       marginBottom: 15,
+      marginHorizontal: 10,
       ...createSmallShadow(theme),
     },
     tabButton: {
@@ -1787,7 +1787,7 @@ const createStyles = (theme) =>
     },
     gradesList: {
       paddingBottom: 20,
-      paddingHorizontal: 2, // Minimal horizontal padding to maximize width usage
+      paddingHorizontal: 5, // Minimal horizontal padding to maximize width usage
     },
     gradeSeparator: {
       height: 12,
@@ -1967,14 +1967,15 @@ const createStyles = (theme) =>
       justifyContent: 'space-between',
       alignItems: 'center',
       paddingHorizontal: 15,
-      paddingVertical: 12,
+      paddingVertical: 5,
       backgroundColor: theme.colors.card,
       // Only show top border on iOS - Android elevation provides sufficient visual separation
       ...(Platform.OS === 'ios' && {
         borderTopWidth: 1,
         borderTopColor: theme.colors.border,
       }),
-      marginTop: 20,
+      
+      margin: 10,
       borderRadius: 30,
       ...createSmallShadow(theme),
       minHeight: 60, // Ensure minimum height for pagination

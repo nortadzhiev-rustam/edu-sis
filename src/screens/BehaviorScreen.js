@@ -826,7 +826,8 @@ const createStyles = (theme) =>
     },
     content: {
       flex: 1,
-      padding: 15,
+      paddingTop: 30,
+      paddingHorizontal: 5,
     },
     landscapeContent: {
       paddingHorizontal: 20,
@@ -855,13 +856,14 @@ const createStyles = (theme) =>
     summaryCard: {
       backgroundColor: theme.colors.surface,
       borderRadius: 16,
-      padding: 20,
+      paddingVertical: 15,
       width: '48%',
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.1,
       shadowRadius: 8,
       elevation: 4,
+      alignItems: 'center',
     },
     summaryHeader: {
       flexDirection: 'row',
@@ -1131,6 +1133,7 @@ const createStyles = (theme) =>
       borderBottomWidth: 1,
       borderBottomColor: theme.colors.border,
       marginBottom: 15,
+      marginHorizontal: 15,
       justifyContent: 'space-between',
     },
     behaviorBackButton: {
@@ -1147,6 +1150,7 @@ const createStyles = (theme) =>
       fontSize: 16,
       fontWeight: 'bold',
       color: theme.colors.text,
+      
     },
     behaviorDetailScroll: {
       flex: 1,

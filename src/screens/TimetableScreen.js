@@ -664,7 +664,8 @@ const createStyles = (theme, fontSizes) =>
     },
     content: {
       flex: 1,
-      padding: 20,
+      paddingTop: 20,
+      paddingHorizontal: 10,
     },
 
     // Modern Day Header
@@ -672,7 +673,7 @@ const createStyles = (theme, fontSizes) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 25,
+      marginBottom: 15,
       paddingHorizontal: 5,
     },
     dayHeaderLeft: {
