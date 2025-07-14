@@ -6,9 +6,9 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 /**
  * ResponsiveLayout Component
- * 
+ *
  * A layout component that adapts to different screen sizes and orientations.
- * 
+ *
  * @param {Object} props
  * @param {React.ReactNode} props.children - Child components
  * @param {Object} props.theme - Theme object containing colors and styles
@@ -30,7 +30,7 @@ const ResponsiveLayout = ({
   responsive = true,
 }) => {
   const styles = createStyles(theme);
-  
+
   const isIPadDevice = isIPad();
   const isTabletDevice = isTablet();
   const isLandscape = screenWidth > screenHeight;
@@ -75,7 +75,7 @@ const ResponsiveLayout = ({
 
 /**
  * ResponsiveGrid Component
- * 
+ *
  * A grid component that adapts column count based on screen size.
  */
 const ResponsiveGrid = ({
@@ -89,13 +89,13 @@ const ResponsiveGrid = ({
   const styles = createStyles(theme);
 
   const getColumns = () => {
-    const availableWidth = screenWidth - (spacing * 2);
+    const availableWidth = screenWidth - spacing * 2;
     const itemsPerRow = Math.floor(availableWidth / (minItemWidth + spacing));
     return Math.min(Math.max(itemsPerRow, 1), maxColumns);
   };
 
   const columns = getColumns();
-  const itemWidth = (screenWidth - (spacing * (columns + 1))) / columns;
+  const itemWidth = (screenWidth - spacing * (columns + 1)) / columns;
 
   const renderItems = () => {
     const items = React.Children.toArray(children);
@@ -103,7 +103,7 @@ const ResponsiveGrid = ({
 
     for (let i = 0; i < items.length; i += columns) {
       const rowItems = items.slice(i, i + columns);
-      
+
       rows.push(
         <View key={i} style={styles.gridRow}>
           {rowItems.map((item, index) => (
@@ -111,21 +111,30 @@ const ResponsiveGrid = ({
               key={index}
               style={[
                 styles.gridItem,
-                { width: itemWidth, marginRight: index < rowItems.length - 1 ? spacing : 0 },
+                {
+                  width: itemWidth,
+                  marginRight: index < rowItems.length - 1 ? spacing : 0,
+                },
               ]}
             >
               {item}
             </View>
           ))}
-          
+
           {/* Fill remaining space if last row is incomplete */}
           {rowItems.length < columns &&
-            Array.from({ length: columns - rowItems.length }).map((_, index) => (
-              <View
-                key={`empty-${index}`}
-                style={{ width: itemWidth, marginRight: index < columns - rowItems.length - 1 ? spacing : 0 }}
-              />
-            ))}
+            Array.from({ length: columns - rowItems.length }).map(
+              (_, index) => (
+                <View
+                  key={`empty-${index}`}
+                  style={{
+                    width: itemWidth,
+                    marginRight:
+                      index < columns - rowItems.length - 1 ? spacing : 0,
+                  }}
+                />
+              )
+            )}
         </View>
       );
     }
@@ -142,7 +151,7 @@ const ResponsiveGrid = ({
 
 /**
  * ResponsiveRow Component
- * 
+ *
  * A row component that stacks items vertically on small screens.
  */
 const ResponsiveRow = ({
@@ -169,8 +178,14 @@ const ResponsiveRow = ({
         style={[
           shouldStack ? styles.stackedItem : styles.horizontalItem,
           {
-            marginBottom: shouldStack && index < React.Children.count(children) - 1 ? spacing : 0,
-            marginRight: !shouldStack && index < React.Children.count(children) - 1 ? spacing : 0,
+            marginBottom:
+              shouldStack && index < React.Children.count(children) - 1
+                ? spacing
+                : 0,
+            marginRight:
+              !shouldStack && index < React.Children.count(children) - 1
+                ? spacing
+                : 0,
           },
         ]}
       >
@@ -184,18 +199,24 @@ const ResponsiveRow = ({
 
 /**
  * SafeAreaLayout Component
- * 
- * A layout component that provides consistent safe area handling.
+ *
+ * A layout component that provides consistent safe area handling with edge-to-edge support.
+ * Default edges configuration is optimized for Android 15+ edge-to-edge display.
  */
 const SafeAreaLayout = ({
   children,
   theme,
   style = {},
-  edges = ['top', 'left', 'right'],
+  edges = ['top', 'left', 'right'], // Default excludes bottom for edge-to-edge
   backgroundColor,
+  edgeToEdge = true, // Enable edge-to-edge by default
 }) => {
   const SafeAreaView = require('react-native-safe-area-context').SafeAreaView;
   const styles = createStyles(theme);
+
+  // For edge-to-edge display, we typically want to exclude bottom edge
+  // to allow content to extend behind navigation bar
+  const safeAreaEdges = edgeToEdge ? edges : ['top', 'left', 'right', 'bottom'];
 
   return (
     <SafeAreaView
@@ -204,7 +225,7 @@ const SafeAreaLayout = ({
         backgroundColor && { backgroundColor },
         style,
       ]}
-      edges={edges}
+      edges={safeAreaEdges}
     >
       {children}
     </SafeAreaView>
