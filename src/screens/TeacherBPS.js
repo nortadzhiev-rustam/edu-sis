@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Config, buildApiUrl } from '../config/env';
 import { useTheme } from '../contexts/ThemeContext';
 import { getDemoBPSData } from '../services/demoModeService';
@@ -51,6 +52,7 @@ export default function TeacherBPS({ route, navigation }) {
 
   const [bpsData, setBpsData] = useState(initialData);
   const [refreshing, setRefreshing] = useState(false);
+  const [userData, setUserData] = useState({});
 
   // Initialize selectedBranchId - prioritize new parameter, fallback to index-based
   const [selectedBranchId, setSelectedBranchId] = useState(() => {
@@ -285,9 +287,16 @@ export default function TeacherBPS({ route, navigation }) {
     }
   };
 
-  // Check if the teacher has permission to delete BPS records
+  // Check if the user has permission to delete BPS records
   const canDeleteBPS = () => {
-    return bpsData?.permissions?.can_delete_bps === true;
+    // Check if user is admin
+    const isAdmin = userData?.role === 'admin' || userData?.admin === true;
+
+    // Check if user has explicit BPS delete permission
+    const hasDeletePermission = bpsData?.permissions?.can_delete_bps === true;
+
+    // Allow deletion if user is admin OR has explicit delete permission
+    return isAdmin || hasDeletePermission;
   };
 
   // Delete a BPS record
@@ -295,7 +304,7 @@ export default function TeacherBPS({ route, navigation }) {
     if (!canDeleteBPS()) {
       Alert.alert(
         'Permission Denied',
-        'You do not have permission to delete BPS records.'
+        'You do not have permission to delete BPS records. Only users with admin privileges or explicit delete permissions can delete BPS records.'
       );
       return;
     }
@@ -870,6 +879,23 @@ export default function TeacherBPS({ route, navigation }) {
     if (!initialData) {
       fetchBPSData();
     }
+  }, []);
+
+  // Load user data from AsyncStorage to check admin permissions
+  useEffect(() => {
+    const getUserData = async () => {
+      try {
+        const storedUserData = await AsyncStorage.getItem('userData');
+        if (storedUserData) {
+          const parsedData = JSON.parse(storedUserData);
+          setUserData(parsedData);
+        }
+      } catch (error) {
+        console.error('Error loading user data for BPS permissions:', error);
+      }
+    };
+
+    getUserData();
   }, []);
 
   // Initialize selectedBranchId when bpsData changes
