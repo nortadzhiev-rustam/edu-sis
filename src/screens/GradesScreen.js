@@ -915,7 +915,7 @@ export default function GradesScreen({ navigation, route }) {
           item.marks_obtained ||
           item.student_marks;
         const maxMarks =
-          item.max_marks ||
+          item.max_score ||
           item.total_marks ||
           item.maximum_marks ||
           item.full_marks ||
@@ -1974,7 +1974,7 @@ const createStyles = (theme) =>
         borderTopWidth: 1,
         borderTopColor: theme.colors.border,
       }),
-      
+
       margin: 10,
       borderRadius: 30,
       ...createSmallShadow(theme),
