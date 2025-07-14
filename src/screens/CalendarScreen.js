@@ -491,7 +491,7 @@ export default function CalendarScreen({ navigation, route }) {
       justifyContent: 'space-between',
       paddingHorizontal: 20,
       paddingVertical: 15,
-      backgroundColor: theme.colors.primary,
+      backgroundColor: theme.colors.headerBackground,
       ...createSmallShadow(theme),
     },
     headerLeft: {

@@ -30,6 +30,7 @@ import {
   faBookOpen,
   faFileAlt,
   faHeartbeat,
+  faClock
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -76,7 +77,7 @@ const getMenuItems = (t) => [
   {
     id: 'schedule',
     title: t('timetable'),
-    icon: faCalendarAlt,
+    icon: faClock,
     backgroundColor: '#AF52DE',
     iconColor: '#fff',
     action: 'schedule',

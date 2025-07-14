@@ -31,6 +31,7 @@ import {
   faComments,
   faHeartbeat,
   faDoorOpen,
+  faClock,
 } from '@fortawesome/free-solid-svg-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
@@ -611,7 +612,7 @@ export default function TeacherScreen({ route, navigation }) {
         id: 'timetable',
         title: t('viewTimetable'),
         subtitle: 'Schedule & Attendance',
-        icon: faCalendarAlt,
+        icon: faClock,
         backgroundColor: theme.colors.primary,
         iconColor: theme.colors.headerText,
         disabled: false,
