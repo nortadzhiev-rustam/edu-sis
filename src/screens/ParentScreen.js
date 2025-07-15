@@ -14,6 +14,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { getResponsiveHeaderFontSize } from '../utils/commonStyles';
 
 import {
   faPlus,
@@ -607,7 +608,16 @@ export default function ParentScreen({ navigation }) {
             <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
           </TouchableOpacity>
 
-          <Text style={styles.headerTitle}>{t('parentDashboard')}</Text>
+          <Text
+            style={[
+              styles.headerTitle,
+              {
+                fontSize: getResponsiveHeaderFontSize(2, t('parentDashboard')),
+              },
+            ]}
+          >
+            {t('parentDashboard')}
+          </Text>
 
           <View style={styles.headerActions}>
             <TouchableOpacity
@@ -864,7 +874,7 @@ const createStyles = (theme, fontSizes) =>
     headerActions: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
+      gap: 2,
     },
     headerActionButton: {
       width: 36,

@@ -26,6 +26,7 @@ import {
 import { useTheme } from '../contexts/ThemeContext';
 import { buildApiUrl } from '../config/env';
 import { getDemoTeacherHomeworkData } from '../services/demoModeService';
+import { getResponsiveHeaderFontSize } from '../utils/commonStyles';
 
 export default function TeacherHomeworkScreen({ navigation, route }) {
   const { theme } = useTheme();
@@ -337,7 +338,14 @@ export default function TeacherHomeworkScreen({ navigation, route }) {
             <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
           </TouchableOpacity>
 
-          <Text style={styles.headerTitle}>Homework</Text>
+          <Text
+            style={[
+              styles.headerTitle,
+              { fontSize: getResponsiveHeaderFontSize(2, 'Homework') },
+            ]}
+          >
+            Homework
+          </Text>
 
           <TouchableOpacity
             style={styles.addButton}

@@ -20,7 +20,10 @@ import { getDemoBPSData } from '../services/demoModeService';
 
 // Import reusable components
 import { SwipeableRecord } from '../components';
-import { createCustomShadow } from '../utils/commonStyles';
+import {
+  createCustomShadow,
+  getResponsiveHeaderFontSize,
+} from '../utils/commonStyles';
 
 import {
   faArrowLeft,
@@ -972,7 +975,14 @@ export default function TeacherBPS({ route, navigation }) {
             <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
           </TouchableOpacity>
 
-          <Text style={styles.headerTitle}>BPS Management</Text>
+          <Text
+            style={[
+              styles.headerTitle,
+              { fontSize: getResponsiveHeaderFontSize(2, 'BPS Management') },
+            ]}
+          >
+            BPS Management
+          </Text>
 
           <TouchableOpacity
             style={styles.addButton}

@@ -19,9 +19,13 @@ import {
   faStar,
   faChevronDown,
   faChevronUp,
+  faFilter,
+  faRefresh,
+  faPlus,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { Config, buildApiUrl } from '../config/env';
+import { CommonHeader } from '../components';
 
 export default function HomeroomDisciplineScreen({ route, navigation }) {
   const { theme } = useTheme();
@@ -271,22 +275,29 @@ export default function HomeroomDisciplineScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      {/* Compact Header */}
-      <View style={styles.compactHeaderContainer}>
-        {/* Navigation Header */}
-        <View style={styles.navigationHeader}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
-          </TouchableOpacity>
-
-          <Text style={styles.headerTitle}>Discipline Records</Text>
-
-          <View style={styles.headerRight} />
-        </View>
-      </View>
+      {/* CommonHeader with responsive font size */}
+      <CommonHeader
+        title='Discipline Records'
+        onBackPress={() => navigation.goBack()}
+        theme={theme}
+        rightActions={[
+          {
+            icon: faFilter,
+            onPress: () => console.log('Filter pressed'),
+            iconColor: theme.colors.headerText,
+          },
+          {
+            icon: faRefresh,
+            onPress: () => fetchDisciplineData(),
+            iconColor: theme.colors.headerText,
+          },
+          {
+            icon: faPlus,
+            onPress: () => console.log('Add pressed'),
+            iconColor: theme.colors.headerText,
+          },
+        ]}
+      />
 
       {/* Fixed Compact Summary Card */}
       {disciplineData && (

@@ -3,13 +3,18 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   RefreshControl,
   Alert,
   TextInput,
   ActivityIndicator,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  interpolate,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
@@ -29,6 +34,7 @@ import {
 } from '../services/messagingService';
 import { ConversationItem } from '../components/messaging';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getResponsiveHeaderFontSize } from '../utils/commonStyles';
 
 const StudentMessagingScreen = ({ navigation, route }) => {
   const { theme, fontSizes } = useTheme();
@@ -41,6 +47,30 @@ const StudentMessagingScreen = ({ navigation, route }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
+
+  // Animation values for collapsible search bar
+  const searchBarHeight = useSharedValue(0);
+
+
+  // Animated style for search bar
+  const searchBarAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      height: searchBarHeight.value,
+      opacity: interpolate(searchBarHeight.value, [0, 60], [0, 1], 'clamp'),
+      paddingVertical: interpolate(
+        searchBarHeight.value,
+        [0, 60],
+        [0, 8],
+        'clamp'
+      ),
+      borderTopWidth: interpolate(
+        searchBarHeight.value,
+        [0, 60],
+        [0, 1],
+        'clamp'
+      ),
+    };
+  });
   const flatListRef = useRef(null);
 
   // Safety check for fontSizes
@@ -454,43 +484,78 @@ const StudentMessagingScreen = ({ navigation, route }) => {
 
           <View style={styles.headerCenter}>
             <FontAwesomeIcon icon={faComments} size={18} color='#fff' />
-            <Text style={styles.headerTitle}>Messages</Text>
+            <Text
+              style={[
+                styles.headerTitle,
+                { fontSize: getResponsiveHeaderFontSize(2, 'Messages') },
+              ]}
+            >
+              Messages
+            </Text>
           </View>
 
-          <TouchableOpacity
-            style={styles.headerActionButton}
-            onPress={() =>
-              navigation.navigate('StudentCreateConversationScreen', {
-                authCode,
-                studentName,
-                userType: 'student',
-              })
-            }
-          >
-            <FontAwesomeIcon icon={faPlus} size={18} color='#fff' />
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              style={styles.searchToggleButton}
+              onPress={() => {
+                if (searchBarHeight.value === 0) {
+                  searchBarHeight.value = withTiming(60, { duration: 300 });
+                } else {
+                  searchBarHeight.value = withTiming(0, { duration: 300 });
+                  setSearchQuery('');
+                }
+              }}
+            >
+              <FontAwesomeIcon icon={faSearch} size={18} color='#fff' />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.headerActionButton}
+              onPress={() =>
+                navigation.navigate('StudentCreateConversationScreen', {
+                  authCode,
+                  studentName,
+                  userType: 'student',
+                })
+              }
+            >
+              <FontAwesomeIcon icon={faPlus} size={18} color='#fff' />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Search Bar Subheader */}
-        <View style={styles.subHeader}>
-          <View style={styles.searchBar}>
+        {/* Collapsible Search Bar */}
+        <Animated.View style={[styles.searchSection, searchBarAnimatedStyle]}>
+          <View
+            style={[
+              styles.searchBar,
+              searchQuery.length > 0 && styles.searchBarActive,
+            ]}
+          >
             <FontAwesomeIcon
               icon={faSearch}
               size={16}
-              color={theme.colors.textSecondary}
+              color={
+                searchQuery.length > 0 ? '#fff' : 'rgba(255, 255, 255, 0.7)'
+              }
             />
             <TextInput
               style={styles.searchInput}
               placeholder='Search conversations and messages...'
-              placeholderTextColor={theme.colors.textSecondary}
+              placeholderTextColor='rgba(255, 255, 255, 0.7)'
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
-            {searchLoading && (
-              <ActivityIndicator size='small' color={theme.colors.primary} />
+            {searchLoading && <ActivityIndicator size='small' color='#fff' />}
+            {searchResults && searchResults.conversations && (
+              <View style={styles.searchResultsIndicator}>
+                <Text style={styles.searchResultsText}>
+                  {searchResults.conversations.length}
+                </Text>
+              </View>
             )}
           </View>
-        </View>
+        </Animated.View>
       </View>
 
       {/* Content */}
@@ -500,7 +565,7 @@ const StudentMessagingScreen = ({ navigation, route }) => {
           <Text style={styles.loadingText}>Loading conversations...</Text>
         </View>
       ) : (
-        <FlatList
+        <Animated.FlatList
           ref={flatListRef}
           data={searchResults ? searchResults.conversations : conversations}
           renderItem={renderConversationItem}
@@ -509,7 +574,8 @@ const StudentMessagingScreen = ({ navigation, route }) => {
             item.id?.toString() ||
             `conversation-${index}`
           }
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={styles.listContainer}         
+          scrollEventThrottle={16}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -561,10 +627,12 @@ const createStyles = (theme, fontSizes) => {
       justifyContent: 'space-between',
       alignItems: 'center',
     },
-    subHeader: {
-      backgroundColor: theme.colors.surface,
-      paddingHorizontal: 16,
-      paddingVertical: 16,
+    // Collapsible Search Section
+    searchSection: {
+      backgroundColor: theme.colors.headerBackground,
+      paddingHorizontal: 15,
+      borderTopColor: 'rgba(255, 255, 255, 0.1)',
+      overflow: 'hidden',
     },
     headerCenter: {
       flexDirection: 'row',
@@ -595,6 +663,19 @@ const createStyles = (theme, fontSizes) => {
       fontWeight: 'bold',
       marginLeft: 8,
     },
+    headerRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    searchToggleButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
     headerActionButton: {
       width: 36,
       height: 36,
@@ -615,23 +696,42 @@ const createStyles = (theme, fontSizes) => {
     searchBar: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: theme.colors.background,
-      borderRadius: 12,
-      paddingHorizontal: 14,
+      backgroundColor: 'rgba(255, 255, 255, 0.15)',
+      borderRadius: 10,
+      paddingHorizontal: 12,
       paddingVertical: 10,
       borderWidth: 1,
-      borderColor: theme.colors.border,
-      elevation: 1,
+      borderColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    searchBarActive: {
+      backgroundColor: 'rgba(255, 255, 255, 0.25)',
+      borderColor: 'rgba(255, 255, 255, 0.4)',
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.05,
       shadowRadius: 2,
+      elevation: 2,
     },
     searchInput: {
       flex: 1,
       marginLeft: 8,
       fontSize: safeFontSizes.medium,
-      color: theme.colors.text,
+      color: '#fff',
+      placeholderTextColor: 'rgba(255, 255, 255, 0.7)',
+    },
+    searchResultsIndicator: {
+      backgroundColor: 'rgba(255, 255, 255, 0.3)',
+      borderRadius: 12,
+      minWidth: 24,
+      height: 24,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginLeft: 8,
+    },
+    searchResultsText: {
+      color: '#fff',
+      fontSize: 12,
+      fontWeight: 'bold',
     },
     loadingContainer: {
       flex: 1,

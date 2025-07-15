@@ -486,8 +486,8 @@ const createStyles = (theme) =>
     },
     subHeader: {
       backgroundColor: theme.colors.surface,
-      paddingHorizontal: 16,
-      paddingBottom: 16,
+      paddingHorizontal: 5,
+      paddingBottom: 5,
     },
     backButton: {
       width: 36,

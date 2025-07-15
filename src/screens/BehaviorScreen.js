@@ -680,8 +680,6 @@ export default function BehaviorScreen({ navigation, route }) {
           </View>
         ) : selectedView === 'detention' ? (
           <View style={styles.detentionDetailContainer}>
-           
-
             {/* Detention Details List */}
             <ScrollView style={styles.detentionDetailScroll}>
               {getFilteredDetentionData().length === 0 ? (
@@ -1295,6 +1293,7 @@ const createStyles = (theme) =>
     // Detention Detail Styles
     detentionDetailContainer: {
       flex: 1,
+      paddingHorizontal: 10,
     },
     detentionDetailHeader: {
       flexDirection: 'row',

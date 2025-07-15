@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { Config, buildApiUrl } from '../config/env';
+import { getResponsiveHeaderFontSize } from '../utils/commonStyles';
 import {
   faUser,
   faSignOutAlt,
@@ -792,7 +793,16 @@ export default function TeacherScreen({ route, navigation }) {
             <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
           </TouchableOpacity>
 
-          <Text style={styles.headerTitle}>{t('teacherDashboard')}</Text>
+          <Text
+            style={[
+              styles.headerTitle,
+              {
+                fontSize: getResponsiveHeaderFontSize(3, t('teacherDashboard')),
+              },
+            ]}
+          >
+            {t('teacherDashboard')}
+          </Text>
 
           <View style={styles.headerActions}>
             <TouchableOpacity

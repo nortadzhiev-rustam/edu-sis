@@ -1,13 +1,20 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+} from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
+import { isIPad, isTablet } from '../utils/deviceDetection';
 
 /**
  * CommonHeader Component
- * 
+ *
  * A reusable header component with back button, title, and action buttons.
- * 
+ *
  * @param {Object} props
  * @param {string} props.title - The title to display in the header
  * @param {Function} props.onBackPress - Callback function when back button is pressed
@@ -31,6 +38,47 @@ const CommonHeader = ({
   rightComponent,
 }) => {
   const styles = createStyles(theme);
+
+  // Calculate responsive font size based on device width and number of buttons
+  const getResponsiveTitleFontSize = () => {
+    const { width } = Dimensions.get('window');
+    const buttonCount = rightActions.length + (showBackButton ? 1 : 0);
+
+    // Base font sizes for different device types
+    let baseFontSize = 18; // Default phone size
+
+    if (isIPad()) {
+      baseFontSize = 22; // iPad base size
+    } else if (isTablet()) {
+      baseFontSize = 20; // Tablet base size
+    }
+
+    // Adjust font size based on screen width
+    if (width < 375) {
+      // Small phones (iPhone SE, etc.)
+      baseFontSize = Math.max(baseFontSize - 2, 14);
+    } else if (width >= 768) {
+      // Large tablets/iPads
+      baseFontSize = Math.min(baseFontSize + 2, 24);
+    }
+
+    // Reduce font size based on number of buttons to prevent overflow
+    if (buttonCount > 2) {
+      baseFontSize = Math.max(baseFontSize - 2, 14);
+    } else if (buttonCount > 1) {
+      baseFontSize = Math.max(baseFontSize - 1, 15);
+    }
+
+    // Additional reduction for very long titles
+    if (title && title.length > 20) {
+      baseFontSize = Math.max(baseFontSize - 1, 14);
+    } else if (title && title.length > 15) {
+      baseFontSize = Math.max(baseFontSize - 0.5, 14);
+    }
+
+    // Ensure minimum readable size
+    return Math.max(baseFontSize, 12);
+  };
 
   const renderLeftComponent = () => {
     if (leftComponent) {
@@ -108,7 +156,16 @@ const CommonHeader = ({
       <View style={styles.headerLeft}>{renderLeftComponent()}</View>
 
       <View style={styles.headerCenter}>
-        <Text style={[styles.headerTitle, titleStyle]} numberOfLines={1}>
+        <Text
+          style={[
+            styles.headerTitle,
+            { fontSize: getResponsiveTitleFontSize() },
+            titleStyle,
+          ]}
+          numberOfLines={1}
+          adjustsFontSizeToFit={true}
+          minimumFontScale={0.8}
+        >
           {title}
         </Text>
       </View>
@@ -138,6 +195,7 @@ const createStyles = (theme) =>
     headerCenter: {
       flex: 2,
       alignItems: 'center',
+      paddingHorizontal: 8, // Add padding to prevent text overflow
     },
     headerRight: {
       flex: 1,

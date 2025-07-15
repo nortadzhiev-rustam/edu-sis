@@ -1,4 +1,5 @@
-import { StyleSheet, Platform } from 'react-native';
+import { StyleSheet, Platform, Dimensions } from 'react-native';
+import { isIPad, isTablet } from './deviceDetection';
 
 /**
  * Common Styles Utility
@@ -6,6 +7,50 @@ import { StyleSheet, Platform } from 'react-native';
  * Provides reusable style objects and functions to reduce code duplication
  * and maintain consistency across the application.
  */
+
+/**
+ * Calculate responsive header title font size
+ * @param {number} buttonCount - Number of buttons in header
+ * @param {string} title - Title text
+ * @returns {number} Responsive font size
+ */
+export const getResponsiveHeaderFontSize = (buttonCount = 0, title = '') => {
+  const { width } = Dimensions.get('window');
+
+  // Base font sizes for different device types
+  let baseFontSize = 18; // Default phone size
+
+  if (isIPad()) {
+    baseFontSize = 22; // iPad base size
+  } else if (isTablet()) {
+    baseFontSize = 20; // Tablet base size
+  }
+
+  // Adjust font size based on screen width
+  if (width < 375) {
+    // Small phones (iPhone SE, etc.)
+    baseFontSize = Math.max(baseFontSize - 2, 14);
+  } else if (width >= 768) {
+    // Large tablets/iPads
+    baseFontSize = Math.min(baseFontSize + 2, 24);
+  }
+
+  // Reduce font size based on number of buttons to prevent overflow
+  if (buttonCount > 2) {
+    baseFontSize = Math.max(baseFontSize - 2, 14);
+  } else if (buttonCount > 1) {
+    baseFontSize = Math.max(baseFontSize - 1, 15);
+  }
+
+  // Additional reduction for very long titles
+  if (title && title.length > 20) {
+    baseFontSize = Math.max(baseFontSize - 1, 14);
+  } else if (title && title.length > 15) {
+    baseFontSize = Math.max(baseFontSize - 0.5, 14);
+  }
+
+  return baseFontSize;
+};
 
 /**
  * Creates common layout styles based on theme

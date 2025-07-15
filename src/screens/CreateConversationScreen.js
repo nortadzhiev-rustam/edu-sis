@@ -9,6 +9,12 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  interpolate,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
@@ -17,6 +23,7 @@ import {
   faUsers,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import { getResponsiveHeaderFontSize } from '../utils/commonStyles';
 import {
   getAvailableUsersForStaff,
   createConversation,
