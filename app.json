@@ -51,6 +51,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.edunovaasia.edusis",
       "buildNumber": "30",
+      "runtimeVersion": "1.0.0",
       "googleServicesFile": "./GoogleService-Info.plist",
       "config": {
         "usesNonExemptEncryption": false
@@ -64,7 +65,6 @@
           "UIInterfaceOrientationLandscapeLeft",
           "UIInterfaceOrientationLandscapeRight"
         ],
-        "NSUserTrackingUsageDescription": "This app does not track users across apps or websites.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -74,6 +74,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.edunovaasia.edusis",
+      "runtimeVersion": "1.0.1",
       "googleServicesFile": "./google-services.json",
       "screenOrientation": "portrait",
       "compileSdkVersion": 35,
@@ -89,7 +90,6 @@
         "projectId": "5c37501a-d3f1-49d2-bf38-28446fc1b0bb"
       }
     },
-    "runtimeVersion": "1.0.0",
     "updates": {
       "url": "https://u.expo.dev/5c37501a-d3f1-49d2-bf38-28446fc1b0bb"
     }
