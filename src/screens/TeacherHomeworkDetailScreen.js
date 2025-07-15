@@ -310,15 +310,21 @@ export default function TeacherHomeworkDetailScreen({ navigation, route }) {
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Homework Details</Text>
-          <View style={styles.headerRight} />
+        {/* Compact Header */}
+        <View style={styles.compactHeaderContainer}>
+          {/* Navigation Header */}
+          <View style={styles.navigationHeader}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+            </TouchableOpacity>
+
+            <Text style={styles.headerTitle}>Homework Details</Text>
+
+            <View style={styles.headerRight} />
+          </View>
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size='large' color='#007AFF' />
@@ -331,15 +337,21 @@ export default function TeacherHomeworkDetailScreen({ navigation, route }) {
   if (!homeworkDetail) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Homework Details</Text>
-          <View style={styles.headerRight} />
+        {/* Compact Header */}
+        <View style={styles.compactHeaderContainer}>
+          {/* Navigation Header */}
+          <View style={styles.navigationHeader}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+            </TouchableOpacity>
+
+            <Text style={styles.headerTitle}>Homework Details</Text>
+
+            <View style={styles.headerRight} />
+          </View>
         </View>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Failed to load homework details</Text>
@@ -352,16 +364,21 @@ export default function TeacherHomeworkDetailScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Homework Details</Text>
-        <View style={styles.headerRight} />
+      {/* Compact Header */}
+      <View style={styles.compactHeaderContainer}>
+        {/* Navigation Header */}
+        <View style={styles.navigationHeader}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+          </TouchableOpacity>
+
+          <Text style={styles.headerTitle}>Homework Details</Text>
+
+          <View style={styles.headerRight} />
+        </View>
       </View>
 
       <ScrollView
@@ -473,7 +490,22 @@ const createStyles = (theme) =>
       flex: 1,
       backgroundColor: theme.colors.background,
     },
-    header: {
+    // Compact Header Styles
+    compactHeaderContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 8,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      overflow: 'hidden',
+      zIndex: 1,
+    },
+    navigationHeader: {
       backgroundColor: theme.colors.headerBackground,
       padding: 15,
       flexDirection: 'row',

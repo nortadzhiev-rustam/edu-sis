@@ -275,8 +275,7 @@ const CalendarView = ({ events = [], onEventPress, onDatePress }) => {
       paddingHorizontal: 16,
       paddingVertical: 12,
       backgroundColor: theme.colors.surface,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
+      borderRadius: 10
     },
     monthText: {
       fontSize: fontSizes.title,
@@ -303,6 +302,8 @@ const CalendarView = ({ events = [], onEventPress, onDatePress }) => {
       flexDirection: 'row',
       backgroundColor: theme.colors.surface,
       paddingVertical: 8,
+      borderTopRightRadius: 10,
+      borderTopLeftRadius: 10,
     },
     weekDay: {
       flex: 1,
@@ -317,6 +318,7 @@ const CalendarView = ({ events = [], onEventPress, onDatePress }) => {
       backgroundColor: theme.colors.background,
       marginBottom: 0,
       paddingBottom: 0,
+      
     },
     week: {
       flexDirection: 'row',
@@ -369,25 +371,23 @@ const CalendarView = ({ events = [], onEventPress, onDatePress }) => {
       height: 4,
       borderRadius: 1,
     },
-    eventDotMultiDay: {
-      width: 6,
-      height: 4,
-      borderRadius: 1,
-    },
+    
     eventsSection: {
       flex: 1,
       backgroundColor: theme.colors.background,
       marginTop: 0,
       paddingTop: 0,
+      
     },
     eventsSectionHeader: {
       padding: 16,
       backgroundColor: theme.colors.surface,
       borderTopWidth: 1,
       borderTopColor: theme.colors.border,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
+      
       marginTop: 0,
+      borderBottomLeftRadius: 10,
+      borderBottomRightRadius: 10,
     },
     selectedDateText: {
       fontSize: fontSizes.subtitle,
@@ -401,6 +401,7 @@ const CalendarView = ({ events = [], onEventPress, onDatePress }) => {
     },
     eventsList: {
       flex: 1,
+      
     },
     eventItem: {
       flexDirection: 'row',

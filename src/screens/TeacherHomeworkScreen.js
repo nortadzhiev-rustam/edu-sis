@@ -353,9 +353,9 @@ export default function TeacherHomeworkScreen({ navigation, route }) {
           </TouchableOpacity>
         </View>
 
-        {/* Homework Overview */}
+        {/* Homework Overview Subheader */}
         {!loading && homeworkList.length > 0 && (
-          <View style={styles.homeworkOverview}>
+          <View style={styles.subHeader}>
             <View style={styles.overviewItem}>
               <FontAwesomeIcon
                 icon={faClipboardList}
@@ -465,12 +465,12 @@ const createStyles = (theme) =>
       justifyContent: 'space-between',
       alignItems: 'center',
     },
-    homeworkOverview: {
-      flexDirection: 'row',
-      alignItems: 'center',
+    subHeader: {
+      backgroundColor: theme.colors.surface,
       paddingHorizontal: 20,
       paddingVertical: 16,
-      backgroundColor: theme.colors.surface,
+      flexDirection: 'row',
+      alignItems: 'center',
     },
     overviewItem: {
       flex: 1,

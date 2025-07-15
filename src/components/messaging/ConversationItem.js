@@ -162,10 +162,10 @@ const ConversationItem = ({
     return {
       transform: [{ translateX: translateX.value }],
       // No border radius for any conversation items
-      borderTopRightRadius: 0,
-      borderBottomRightRadius: 0,
-      borderTopLeftRadius: 0,
-      borderBottomLeftRadius: 0,
+      // borderTopRightRadius: 0,
+      // borderBottomRightRadius: 0,
+      // borderTopLeftRadius: 0,
+      // borderBottomLeftRadius: 0,
     };
   });
 
@@ -567,6 +567,7 @@ const createStyles = (theme, fontSizes) => {
   return StyleSheet.create({
     container: {
       position: 'relative',
+      marginHorizontal: 16
     },
     swipeActionsContainer: {
       position: 'absolute',
@@ -577,6 +578,9 @@ const createStyles = (theme, fontSizes) => {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
+      borderRadius: 12,
+      marginVertical: 5,
+      overflow: 'hidden',
     },
     leftActions: {
       flexDirection: 'row',
@@ -632,14 +636,16 @@ const createStyles = (theme, fontSizes) => {
     },
     animatedContainer: {
       backgroundColor: theme.colors.surface,
-      borderRadius: 0, // No border radius for any conversation items
+      borderRadius: 12, // Rounded conversation items
+      overflow: 'hidden', // Ensure children respect border radius
+      marginVertical: 4, // Add spacing between items
     },
     conversationItem: {
       flexDirection: 'row',
       padding: 16,
       backgroundColor: theme.colors.surface,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
+      
+      borderRadius: 20, // Rounded conversation items
     },
     unreadConversation: {
       backgroundColor: theme.colors.primary + '05',

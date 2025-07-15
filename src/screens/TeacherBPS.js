@@ -961,21 +961,19 @@ export default function TeacherBPS({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
+      {/* Compact Header */}
+      <View style={styles.compactHeaderContainer}>
+        {/* Navigation Header */}
+        <View style={styles.navigationHeader}>
           <TouchableOpacity
-            style={styles.headerButton}
+            style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <FontAwesomeIcon
-              icon={faArrowLeft}
-              size={20}
-              color={theme.colors.headerText}
-            />
+            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
           </TouchableOpacity>
+
           <Text style={styles.headerTitle}>BPS Management</Text>
-        </View>
-        <View style={styles.headerRight}>
+
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => {
@@ -983,83 +981,88 @@ export default function TeacherBPS({ route, navigation }) {
               setShowAddModal(true);
             }}
           >
-            <FontAwesomeIcon
-              icon={faPlus}
-              size={20}
-              color={theme.colors.headerText}
-            />
+            <FontAwesomeIcon icon={faPlus} size={18} color='#fff' />
           </TouchableOpacity>
         </View>
-      </View>
 
-      {/* Compact Branch Info Header */}
-      {currentBranch && (
-        <View style={styles.compactBranchInfo}>
-          <View style={styles.compactBranchHeader}>
-            <View style={styles.compactBranchDetails}>
-              <Text style={styles.compactBranchName}>
-                {currentBranch.branch_name}
-              </Text>
-              <Text style={styles.compactBranchSubtitle}>
-                {getTotalClassesCount()} Classes
+        {/* Branch Info & Filter Tabs Subheader */}
+        <View style={styles.subHeader}>
+          {currentBranch ? (
+            <>
+              <View style={styles.compactBranchHeader}>
+                <View style={styles.compactBranchDetails}>
+                  <Text style={styles.compactBranchName}>
+                    {currentBranch.branch_name}
+                  </Text>
+                  <Text style={styles.compactBranchSubtitle}>
+                    {getTotalClassesCount()} Classes
+                  </Text>
+                </View>
+              </View>
+
+              {/* Filter Tabs */}
+              <View style={styles.compactFilterTabs}>
+                {[
+                  {
+                    key: 'all',
+                    label: 'All',
+                    count: currentBranch.total_bps_records,
+                  },
+                  {
+                    key: 'prs',
+                    label: 'Positive',
+                    count: (currentBranch.bps_records || []).filter(
+                      (r) => r.item_type === 'prs'
+                    ).length,
+                  },
+                  {
+                    key: 'dps',
+                    label: 'Negative',
+                    count: (currentBranch.bps_records || []).filter(
+                      (r) => r.item_type === 'dps'
+                    ).length,
+                  },
+                ].map((filter) => (
+                  <TouchableOpacity
+                    key={filter.key}
+                    style={[
+                      styles.compactFilterTab,
+                      filterType === filter.key &&
+                        styles.compactFilterTabSelected,
+                    ]}
+                    onPress={() => setFilterType(filter.key)}
+                  >
+                    <Text
+                      style={[
+                        styles.compactFilterTabText,
+                        filterType === filter.key &&
+                          styles.compactFilterTabTextSelected,
+                      ]}
+                    >
+                      {filter.label}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.compactFilterTabCount,
+                        filterType === filter.key &&
+                          styles.compactFilterTabCountSelected,
+                      ]}
+                    >
+                      {filter.count}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          ) : (
+            <View style={styles.loadingSubheader}>
+              <Text style={styles.loadingSubheaderText}>
+                Loading branch data...
               </Text>
             </View>
-          </View>
-
-          {/* Filter Tabs */}
-          <View style={styles.compactFilterTabs}>
-            {[
-              {
-                key: 'all',
-                label: 'All',
-                count: currentBranch.total_bps_records,
-              },
-              {
-                key: 'prs',
-                label: 'Positive',
-                count: (currentBranch.bps_records || []).filter(
-                  (r) => r.item_type === 'prs'
-                ).length,
-              },
-              {
-                key: 'dps',
-                label: 'Negative',
-                count: (currentBranch.bps_records || []).filter(
-                  (r) => r.item_type === 'dps'
-                ).length,
-              },
-            ].map((filter) => (
-              <TouchableOpacity
-                key={filter.key}
-                style={[
-                  styles.compactFilterTab,
-                  filterType === filter.key && styles.compactFilterTabSelected,
-                ]}
-                onPress={() => setFilterType(filter.key)}
-              >
-                <Text
-                  style={[
-                    styles.compactFilterTabText,
-                    filterType === filter.key &&
-                      styles.compactFilterTabTextSelected,
-                  ]}
-                >
-                  {filter.label}
-                </Text>
-                <Text
-                  style={[
-                    styles.compactFilterTabCount,
-                    filterType === filter.key &&
-                      styles.compactFilterTabCountSelected,
-                  ]}
-                >
-                  {filter.count}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          )}
         </View>
-      )}
+      </View>
 
       {/* Scrollable BPS Records */}
       <ScrollView
@@ -1267,13 +1270,16 @@ export default function TeacherBPS({ route, navigation }) {
           </View>
 
           {modalStep > 1 && (
-            <TouchableOpacity style={styles.backButton} onPress={previousStep}>
+            <TouchableOpacity
+              style={styles.modalBackButton}
+              onPress={previousStep}
+            >
               <FontAwesomeIcon
                 icon={faArrowLeft}
                 size={16}
                 color={theme.colors.secondary}
               />
-              <Text style={styles.backButtonText}>Back</Text>
+              <Text style={styles.modalBackButtonText}>Back</Text>
             </TouchableOpacity>
           )}
 
@@ -1985,49 +1991,63 @@ const getStyles = (theme) =>
       flex: 1,
       backgroundColor: theme.colors.background,
     },
-    header: {
+    // Compact Header Styles
+    compactHeaderContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 8,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      overflow: 'hidden',
+      zIndex: 1,
+    },
+    navigationHeader: {
       backgroundColor: theme.colors.headerBackground,
       padding: 15,
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      ...createCustomShadow(theme, {
-        height: 2,
-        opacity: 0.1,
-        radius: 4,
-        elevation: 5,
-      }),
     },
-    headerLeft: {
-      flexDirection: 'row',
+    subHeader: {
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 16,
+      paddingVertical: 16,
+    },
+    loadingSubheader: {
+      paddingVertical: 20,
       alignItems: 'center',
-      flex: 1,
-    },
-    headerRight: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    headerButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: `${theme.colors.headerText}33`,
       justifyContent: 'center',
-      alignItems: 'center',
-      marginRight: 12,
     },
-    addButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: `${theme.colors.headerText}33`,
+    loadingSubheaderText: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      fontStyle: 'italic',
+    },
+    backButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
       justifyContent: 'center',
       alignItems: 'center',
     },
     headerTitle: {
-      color: theme.colors.headerText,
-      fontSize: 22,
+      color: '#fff',
+      fontSize: 20,
       fontWeight: 'bold',
+    },
+    addButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
     },
 
     sectionTitle: {
@@ -2321,7 +2341,7 @@ const getStyles = (theme) =>
       backgroundColor: theme.colors.secondary,
     },
 
-    backButton: {
+    modalBackButton: {
       flexDirection: 'row',
       alignItems: 'center',
       padding: 15,
@@ -2329,7 +2349,7 @@ const getStyles = (theme) =>
       borderBottomWidth: 1,
       borderBottomColor: theme.colors.border,
     },
-    backButtonText: {
+    modalBackButtonText: {
       color: theme.colors.secondary,
       fontSize: 16,
       fontWeight: '500',

@@ -290,36 +290,31 @@ const TeacherMessagingScreen = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <FontAwesomeIcon
-            icon={faArrowLeft}
-            size={20}
-            color={theme.colors.headerText}
-          />
-        </TouchableOpacity>
+      {/* Compact Header */}
+      <View style={styles.compactHeaderContainer}>
+        {/* Navigation Header */}
+        <View style={styles.navigationHeader}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+          </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Messages</Text>
+          <Text style={styles.headerTitle}>Messages</Text>
 
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() =>
-            navigation.navigate('CreateConversationScreen', {
-              authCode,
-              teacherName,
-            })
-          }
-        >
-          <FontAwesomeIcon
-            icon={faPlus}
-            size={20}
-            color={theme.colors.headerText}
-          />
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() =>
+              navigation.navigate('CreateConversationScreen', {
+                authCode,
+                teacherName,
+              })
+            }
+          >
+            <FontAwesomeIcon icon={faPlus} size={18} color='#fff' />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Search Bar */}
@@ -385,24 +380,48 @@ const createStyles = (theme, fontSizes) => {
       flex: 1,
       backgroundColor: theme.colors.background,
     },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
+    // Compact Header Styles
+    compactHeaderContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 8,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      overflow: 'hidden',
+      zIndex: 1,
+    },
+    navigationHeader: {
       backgroundColor: theme.colors.headerBackground,
+      padding: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
     },
     backButton: {
-      padding: 8,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     headerTitle: {
-      fontSize: safeFontSizes.large,
+      color: '#fff',
+      fontSize: 20,
       fontWeight: 'bold',
-      color: theme.colors.headerText,
     },
     addButton: {
-      padding: 8,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     searchContainer: {
       paddingHorizontal: 16,

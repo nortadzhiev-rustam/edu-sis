@@ -30,8 +30,6 @@ import AttendanceScreen from './src/screens/AttendanceScreen';
 import AssignmentsScreen from './src/screens/AssignmentsScreen';
 import AssignmentDetailScreen from './src/screens/AssignmentDetailScreen';
 import BehaviorScreen from './src/screens/BehaviorScreen';
-import WebViewScreen from './src/screens/WebViewScreen';
-import WebViewWithAuth from './src/screens/WebViewWithAuth';
 import SettingsScreen from './src/screens/SettingsScreen';
 import NotificationScreen from './src/screens/NotificationScreen';
 import LibraryScreen from './src/screens/LibraryScreen';
@@ -290,11 +288,7 @@ export default function App() {
                       name='SettingsScreen'
                       component={SettingsScreen}
                     />
-                    <Stack.Screen name='WebView' component={WebViewScreen} />
-                    <Stack.Screen
-                      name='WebViewWithAuth'
-                      component={WebViewWithAuth}
-                    />
+                    
                     <Stack.Screen
                       name='NotificationScreen'
                       component={NotificationScreen}

@@ -440,21 +440,23 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => navigation.goBack()}
-          >
-            <FontAwesomeIcon
-              icon={faArrowLeft}
-              size={20}
-              color={theme.colors.headerText}
-            />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>
-            {isUpdate ? 'Update Attendance' : 'Take Attendance'}
-          </Text>
-          <View style={styles.headerRight} />
+        {/* Compact Header */}
+        <View style={styles.compactHeaderContainer}>
+          {/* Navigation Header */}
+          <View style={styles.navigationHeader}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+            </TouchableOpacity>
+
+            <Text style={styles.headerTitle}>
+              {isUpdate ? 'Update Attendance' : 'Take Attendance'}
+            </Text>
+
+            <View style={styles.headerRight} />
+          </View>
         </View>
 
         <View style={styles.loadingContainer}>
@@ -467,86 +469,88 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={() => navigation.goBack()}
-        >
-          <FontAwesomeIcon
-            icon={faArrowLeft}
-            size={20}
-            color={theme.colors.headerText}
-          />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {isUpdate ? 'Update Attendance' : 'Take Attendance'}
-        </Text>
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={handleSubmitAttendance}
-          disabled={submitting || !hasChanges}
-        >
-          <FontAwesomeIcon
-            icon={isUpdate ? faEdit : faSave}
-            size={20}
-            color={
-              hasChanges ? theme.colors.headerText : theme.colors.textLight
-            }
-          />
-        </TouchableOpacity>
-      </View>
+      {/* Compact Header */}
+      <View style={styles.compactHeaderContainer}>
+        {/* Navigation Header */}
+        <View style={styles.navigationHeader}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+          </TouchableOpacity>
 
-      {/* Fixed Compact Class Info & Attendance Summary */}
-      <View style={styles.compactInfoContainer}>
-        <View style={styles.classInfoSection}>
-          <Text style={styles.compactSubjectName}>{gradeName}</Text>
-          <Text style={styles.compactDateText}>
-            {new Date().toLocaleDateString('en-US', {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-            })}
+          <Text style={styles.headerTitle}>
+            {isUpdate ? 'Update Attendance' : 'Take Attendance'}
           </Text>
+
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={handleSubmitAttendance}
+            disabled={submitting || !hasChanges}
+          >
+            <FontAwesomeIcon
+              icon={isUpdate ? faEdit : faSave}
+              size={18}
+              color={hasChanges ? '#fff' : 'rgba(255, 255, 255, 0.5)'}
+            />
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.compactSummarySection}>
-          <View style={styles.compactStatItem}>
-            <Text style={styles.compactStatNumber}>{summary.total}</Text>
-            <Text style={styles.compactStatLabel}>Total</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.compactStatItem}>
-            <Text
-              style={[
-                styles.compactStatNumber,
-                { color: theme.colors.success },
-              ]}
-            >
-              {summary.present}
+        {/* Class Info & Attendance Summary Subheader */}
+        <View style={styles.subHeader}>
+          <View style={styles.classInfoSection}>
+            <Text style={styles.compactSubjectName}>{gradeName}</Text>
+            <Text style={styles.compactDateText}>
+              {new Date().toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+              })}
             </Text>
-            <Text style={styles.compactStatLabel}>Present</Text>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.compactStatItem}>
-            <Text
-              style={[
-                styles.compactStatNumber,
-                { color: theme.colors.warning },
-              ]}
-            >
-              {summary.late}
-            </Text>
-            <Text style={styles.compactStatLabel}>Late</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.compactStatItem}>
-            <Text
-              style={[styles.compactStatNumber, { color: theme.colors.error }]}
-            >
-              {summary.absent}
-            </Text>
-            <Text style={styles.compactStatLabel}>Absent</Text>
+
+          <View style={styles.compactSummarySection}>
+            <View style={styles.compactStatItem}>
+              <Text style={styles.compactStatNumber}>{summary.total}</Text>
+              <Text style={styles.compactStatLabel}>Total</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.compactStatItem}>
+              <Text
+                style={[
+                  styles.compactStatNumber,
+                  { color: theme.colors.success },
+                ]}
+              >
+                {summary.present}
+              </Text>
+              <Text style={styles.compactStatLabel}>Present</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.compactStatItem}>
+              <Text
+                style={[
+                  styles.compactStatNumber,
+                  { color: theme.colors.warning },
+                ]}
+              >
+                {summary.late}
+              </Text>
+              <Text style={styles.compactStatLabel}>Late</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.compactStatItem}>
+              <Text
+                style={[
+                  styles.compactStatNumber,
+                  { color: theme.colors.error },
+                ]}
+              >
+                {summary.absent}
+              </Text>
+              <Text style={styles.compactStatLabel}>Absent</Text>
+            </View>
           </View>
         </View>
       </View>
@@ -718,35 +722,58 @@ const createStyles = (theme) =>
       flex: 1,
       backgroundColor: theme.colors.background,
     },
-    header: {
+    // Compact Header Styles
+    compactHeaderContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 8,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      overflow: 'hidden',
+      zIndex: 1,
+    },
+    navigationHeader: {
       backgroundColor: theme.colors.headerBackground,
       padding: 15,
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      shadowColor: theme.colors.shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 5,
     },
-    headerButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+    subHeader: {
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 16,
+      paddingVertical: 16,
+    },
+    backButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
       backgroundColor: 'rgba(255, 255, 255, 0.2)',
       justifyContent: 'center',
       alignItems: 'center',
     },
     headerTitle: {
-      color: theme.colors.headerText,
-      fontSize: 18,
+      color: '#fff',
+      fontSize: 20,
       fontWeight: 'bold',
       flex: 1,
       textAlign: 'center',
     },
     headerRight: {
-      width: 40,
+      width: 36,
+    },
+    saveButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     scrollView: {
       flex: 1,

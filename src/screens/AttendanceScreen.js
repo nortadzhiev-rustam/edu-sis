@@ -502,14 +502,7 @@ export default function AttendanceScreen({ navigation, route }) {
 
   const renderDailyView = () => (
     <View style={styles.tableWithPagination}>
-      {/* Back to Summary Button */}
-      <TouchableOpacity
-        style={styles.backToSummaryButton}
-        onPress={() => setSelectedView('summary')}
-      >
-        <FontAwesomeIcon icon={faArrowLeft} size={16} color='#34C759' />
-        <Text style={styles.backToSummaryText}>Back to Summary</Text>
-      </TouchableOpacity>
+      
 
       <View style={styles.tableSection}>
         <View
@@ -546,14 +539,7 @@ export default function AttendanceScreen({ navigation, route }) {
 
   const renderDetailView = () => (
     <View style={styles.tableWithPagination}>
-      {/* Back to Summary Button */}
-      <TouchableOpacity
-        style={styles.backToSummaryButton}
-        onPress={() => setSelectedView('summary')}
-      >
-        <FontAwesomeIcon icon={faArrowLeft} size={16} color='#34C759' />
-        <Text style={styles.backToSummaryText}>Back to Summary</Text>
-      </TouchableOpacity>
+     
 
       <View style={styles.tableSection}>
         <View
@@ -625,31 +611,44 @@ export default function AttendanceScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('attendance')}</Text>
-      </View>
+      {/* Compact Header */}
+      <View style={styles.compactHeaderContainer}>
+        {/* Navigation Header */}
+        <View style={styles.navigationHeader}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => {
+              if (selectedView === 'summary') {
+                navigation.goBack();
+              } else {
+                setSelectedView('summary');
+              }
+            }}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+          </TouchableOpacity>
 
-      {/* Student Name Section - Hidden in landscape mode */}
-      {!isLandscape && (
-        <View style={styles.studentSection}>
-          <Text style={styles.studentName}>{studentName || 'Student'}</Text>
-          <Text style={styles.sectionSubtitle}>
-            {selectedView === 'summary'
-              ? 'Attendance Summary'
-              : selectedView === 'daily'
-              ? 'Daily Statistics'
-              : selectedView === 'absent'
-              ? 'Absent Records'
-              : 'Late Records'}
-          </Text>
+          <Text style={styles.headerTitle}>{t('attendance')}</Text>
+
+          <View style={styles.headerRight} />
         </View>
-      )}
+
+        {/* Student Info Subheader - Hidden in landscape mode */}
+        {!isLandscape && (
+          <View style={styles.subHeader}>
+            <Text style={styles.studentName}>{studentName || 'Student'}</Text>
+            <Text style={styles.sectionSubtitle}>
+              {selectedView === 'summary'
+                ? 'Attendance Summary'
+                : selectedView === 'daily'
+                ? 'Daily Statistics'
+                : selectedView === 'absent'
+                ? 'Absent Records'
+                : 'Late Records'}
+            </Text>
+          </View>
+        )}
+      </View>
 
       <View style={styles.content}>
         {isLandscape ? (
@@ -674,11 +673,38 @@ const createStyles = (theme) =>
       flex: 1,
       backgroundColor: theme.colors.background,
     },
+    // Compact Header Styles
+    compactHeaderContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 8,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      overflow: 'hidden',
+      zIndex: 1,
+    },
+    navigationHeader: {
+      backgroundColor: theme.colors.headerBackground,
+      padding: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    subHeader: {
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 16,
+      paddingVertical: 16,
+    },
+    // Legacy header style (keeping for compatibility)
     header: {
       backgroundColor: theme.colors.headerBackground,
       padding: 15,
       flexDirection: 'row',
-
       alignItems: 'center',
     },
     backButton: {

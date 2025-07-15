@@ -312,15 +312,21 @@ export default function TeacherHealthScreen({ route, navigation }) {
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Health Management</Text>
-          <View style={styles.headerRight} />
+        {/* Compact Header */}
+        <View style={styles.compactHeaderContainer}>
+          {/* Navigation Header */}
+          <View style={styles.navigationHeader}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+            </TouchableOpacity>
+
+            <Text style={styles.headerTitle}>Health Management</Text>
+
+            <View style={styles.headerRight} />
+          </View>
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size='large' color={theme.colors.primary} />
@@ -333,15 +339,21 @@ export default function TeacherHealthScreen({ route, navigation }) {
   if (!healthData) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Health Management</Text>
-          <View style={styles.headerRight} />
+        {/* Compact Header */}
+        <View style={styles.compactHeaderContainer}>
+          {/* Navigation Header */}
+          <View style={styles.navigationHeader}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+            </TouchableOpacity>
+
+            <Text style={styles.headerTitle}>Health Management</Text>
+
+            <View style={styles.headerRight} />
+          </View>
         </View>
         <View style={styles.errorContainer}>
           <FontAwesomeIcon
@@ -360,57 +372,53 @@ export default function TeacherHealthScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Health Management</Text>
-        <View style={styles.headerRight} />
-      </View>
+      {/* Compact Header */}
+      <View style={styles.compactHeaderContainer}>
+        {/* Navigation Header */}
+        <View style={styles.navigationHeader}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+          </TouchableOpacity>
 
-      {/* Access Level Info */}
-      <View style={styles.accessInfoContainer}>
-        <FontAwesomeIcon
-          icon={faInfoCircle}
-          size={16}
-          color={theme.colors.info}
-        />
-        <Text style={styles.accessInfoText}>
-          {permissions.accessDescription}
-        </Text>
-      </View>
+          <Text style={styles.headerTitle}>Health Management</Text>
 
-      {/* Tab Navigation */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.tabScrollContainer}
-      >
-        <View style={styles.tabContainer}>
-          {renderTabButton(
-            'students',
-            'Students',
-            faUsers,
-            healthData.student_records?.length
-          )}
-          {renderTabButton(
-            'staff',
-            'Staff',
-            faUserMd,
-            healthData.staff_records?.length
-          )}
-          {renderTabButton(
-            'guests',
-            'Guests',
-            faUserFriends,
-            healthData.guest_records?.length
-          )}
-          {renderTabButton('stats', 'Statistics', faChartBar)}
+          <View style={styles.headerRight} />
         </View>
-      </ScrollView>
+
+        {/* Tab Navigation Subheader */}
+        <View style={styles.subHeader}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.tabScrollContainer}
+          >
+            <View style={styles.tabContainer}>
+              {renderTabButton(
+                'students',
+                'Students',
+                faUsers,
+                healthData?.student_records?.length
+              )}
+              {renderTabButton(
+                'staff',
+                'Staff',
+                faUserMd,
+                healthData?.staff_records?.length
+              )}
+              {renderTabButton(
+                'guests',
+                'Guests',
+                faUserFriends,
+                healthData?.guest_records?.length
+              )}
+              {renderTabButton('stats', 'Statistics', faChartBar)}
+            </View>
+          </ScrollView>
+        </View>
+      </View>
 
       <ScrollView
         style={styles.content}
@@ -529,32 +537,45 @@ const createStyles = (theme, fontSizes) =>
       flex: 1,
       backgroundColor: theme.colors.background,
     },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+    // Compact Header Styles
+    compactHeaderContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 8,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      overflow: 'hidden',
+      zIndex: 1,
+    },
+    navigationHeader: {
       backgroundColor: theme.colors.headerBackground,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      ...createCustomShadow(theme, {
-        height: 2,
-        opacity: 0.1,
-        radius: 4,
-        elevation: 3,
-      }),
+      padding: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    subHeader: {
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 0,
+      paddingVertical: 0,
     },
     backButton: {
-      padding: 8,
-      borderRadius: 20,
-      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     headerTitle: {
-      fontSize: fontSizes.headerTitle,
-      fontWeight: '600',
       color: '#fff',
-      flex: 1,
-      textAlign: 'center',
-      marginHorizontal: 16,
+      fontSize: 20,
+      fontWeight: 'bold',
     },
     headerRight: {
       width: 36,
@@ -611,14 +632,12 @@ const createStyles = (theme, fontSizes) =>
     },
     tabScrollContainer: {
       maxHeight: 60,
-      backgroundColor: theme.colors.surface,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
+      backgroundColor: 'transparent',
     },
     tabContainer: {
       flexDirection: 'row',
       paddingHorizontal: 16,
-      paddingVertical: 8,
+      paddingVertical: 12,
     },
     tabButton: {
       flexDirection: 'row',

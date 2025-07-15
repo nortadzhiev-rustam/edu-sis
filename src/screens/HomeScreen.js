@@ -113,6 +113,100 @@ export default function HomeScreen({ navigation }) {
     navigation.navigate('ParentScreen');
   };
 
+  // Helper function to get all available user data for school resources
+  const getAllUserData = async () => {
+    const allUsers = [];
+
+    try {
+      // Check for direct login userData (teacher or student)
+      const userData = await AsyncStorage.getItem('userData');
+      if (userData) {
+        const user = JSON.parse(userData);
+        allUsers.push(user);
+      }
+
+      // Check for student accounts in parent system
+      const studentAccountsStr = await AsyncStorage.getItem('studentAccounts');
+      if (studentAccountsStr) {
+        const studentAccounts = JSON.parse(studentAccountsStr);
+        allUsers.push(...studentAccounts);
+      }
+    } catch (error) {
+      console.error('❌ HOME: Error getting user data:', error);
+    }
+
+    return allUsers;
+  };
+
+  // Helper function to determine which branches to show for school resources
+  const getUniqueBranches = (users) => {
+    const branchMap = new Map();
+
+    users.forEach((user) => {
+      const branchId =
+        user.branch_id || user.branchId || user.branch?.branch_id;
+      const branchName =
+        user.branch_name || user.branchName || user.branch?.branch_name;
+
+      if (branchId && branchName) {
+        branchMap.set(branchId, {
+          branchId,
+          branchName,
+          userType: user.userType,
+          userName: user.name,
+        });
+      }
+    });
+
+    return Array.from(branchMap.values());
+  };
+
+  // Generic handler for school resources (About Us, Contacts, FAQ)
+  const handleSchoolResourcePress = async (screenName) => {
+    try {
+      const allUsers = await getAllUserData();
+
+      if (allUsers.length === 0) {
+        // No user data found - show options
+        Alert.alert(
+          `Access ${screenName}`,
+          'To view school information, you can either login directly or add a student account.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Add Student',
+              onPress: () => navigation.navigate('ParentScreen'),
+            },
+            {
+              text: 'Login as Teacher',
+              onPress: () =>
+                navigation.navigate('Login', { loginType: 'teacher' }),
+            },
+            {
+              text: 'Login as Student',
+              onPress: () =>
+                navigation.navigate('Login', { loginType: 'student' }),
+            },
+          ]
+        );
+        return;
+      }
+
+      const uniqueBranches = getUniqueBranches(allUsers);
+
+      console.log(
+        `🏠 HOME: ${screenName} access - found ${uniqueBranches.length} unique branches:`,
+        uniqueBranches.map((b) => `${b.branchName} (${b.userType})`)
+      );
+
+      // Navigate to the screen - the screen will handle showing data for all unique branches
+      navigation.navigate(screenName);
+    } catch (error) {
+      console.error(`❌ HOME: Error accessing ${screenName}:`, error);
+      Alert.alert('Error', `Unable to access ${screenName}. Please try again.`);
+    }
+  };
+
   const handleCalendarPress = async () => {
     try {
       // Check for direct login userData first
@@ -166,13 +260,12 @@ export default function HomeScreen({ navigation }) {
             return;
           } else if (studentAccounts.length > 1) {
             // Multiple students - show picker
-            const studentNames = studentAccounts.map((s) => s.name);
             Alert.alert(
               'Select Student',
               "Which student's calendar would you like to view?",
               [
                 { text: 'Cancel', style: 'cancel' },
-                ...studentAccounts.map((student, index) => ({
+                ...studentAccounts.map((student) => ({
                   text: student.name,
                   onPress: async () => {
                     console.log(
@@ -356,7 +449,7 @@ export default function HomeScreen({ navigation }) {
 
             <TouchableOpacity
               style={styles.resourceButton}
-              onPress={() => navigation.navigate('AboutUs')}
+              onPress={() => handleSchoolResourcePress('AboutUs')}
             >
               <View
                 style={[
@@ -375,7 +468,7 @@ export default function HomeScreen({ navigation }) {
 
             <TouchableOpacity
               style={styles.resourceButton}
-              onPress={() => navigation.navigate('Contacts')}
+              onPress={() => handleSchoolResourcePress('Contacts')}
             >
               <View
                 style={[
@@ -390,7 +483,7 @@ export default function HomeScreen({ navigation }) {
 
             <TouchableOpacity
               style={styles.resourceButton}
-              onPress={() => navigation.navigate('FAQ')}
+              onPress={() => handleSchoolResourcePress('FAQ')}
             >
               <View
                 style={[
@@ -575,7 +668,7 @@ const createStyles = (
     resourcesContainer: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      justifyContent: 'space-between',
+      justifyContent: 'space-between', // Works well for 4 items (2x2 grid)
       width: '100%',
     },
     resourceButton: {

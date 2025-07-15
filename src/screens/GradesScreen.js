@@ -1238,41 +1238,63 @@ export default function GradesScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <FontAwesomeIcon icon={faArrowLeft} size={20} color='#fff' />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <FontAwesomeIcon icon={faChartLine} size={20} color='#fff' />
-          <Text style={styles.headerTitle}>
-            {showSubjectList
-              ? `${t('grades')} - Select Subject`
-              : isLandscape
-              ? `${selectedSubject} - ${
-                  activeTab === 'summative' ? 'Summative' : 'Life Skills'
-                }`
-              : selectedSubject.substring(0, 16) || t('grades')}
-          </Text>
-        </View>
-        <View style={styles.headerRight}>
-          {isLandscape && (
-            <TouchableOpacity
-              style={styles.switchButton}
-              onPress={() =>
-                setActiveTab(
-                  activeTab === 'summative' ? 'formative' : 'summative'
-                )
+      {/* Compact Header */}
+      <View style={styles.compactHeaderContainer}>
+        {/* Navigation Header */}
+        <View style={styles.navigationHeader}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => {
+              if (showSubjectList) {
+                navigation.goBack();
+              } else {
+                setShowSubjectList(true);
               }
-            >
-              <Text style={styles.switchButtonText}>
-                {activeTab === 'summative' ? 'F' : 'S'}
-              </Text>
-            </TouchableOpacity>
-          )}
+            }}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+          </TouchableOpacity>
+
+          <View style={styles.headerCenter}>
+            <FontAwesomeIcon icon={faChartLine} size={18} color='#fff' />
+            <Text style={styles.headerTitle}>
+              {showSubjectList
+                ? `${t('grades')} - Select Subject`
+                : isLandscape
+                ? `${selectedSubject} - ${
+                    activeTab === 'summative' ? 'Summative' : 'Life Skills'
+                  }`
+                : selectedSubject.substring(0, 16) || t('grades')}
+            </Text>
+          </View>
+
+          <View style={styles.headerRight}>
+            {isLandscape && (
+              <TouchableOpacity
+                style={styles.switchButton}
+                onPress={() =>
+                  setActiveTab(
+                    activeTab === 'summative' ? 'formative' : 'summative'
+                  )
+                }
+              >
+                <Text style={styles.switchButtonText}>
+                  {activeTab === 'summative' ? 'F' : 'S'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
+
+        {/* Tab Navigation Subheader - Only show when not in subject list and not landscape */}
+        {!showSubjectList && !isLandscape && (
+          <View style={styles.subHeader}>
+            <View style={styles.tabContainer}>
+              {renderTabButton('summative', 'Summative')}
+              {renderTabButton('formative', 'Life Skills')}
+            </View>
+          </View>
+        )}
       </View>
 
       <View style={[styles.content, isLandscape && styles.landscapeContent]}>
@@ -1303,25 +1325,7 @@ export default function GradesScreen({ navigation, route }) {
         ) : (
           // Show grades table for selected subject
           <View style={styles.gradesContainer}>
-            {/* Back button and subject info */}
-            <View style={styles.subjectHeader}>
-              <TouchableOpacity
-                style={styles.backToSubjectsButton}
-                onPress={handleBackToSubjects}
-              >
-                <Text style={styles.backToSubjectsText}>
-                  ← Back to Subjects
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Tab Buttons - Hidden in landscape mode */}
-            {!isLandscape && (
-              <View style={styles.tabContainer}>
-                {renderTabButton('summative', 'Summative')}
-                {renderTabButton('formative', 'Life Skills')}
-              </View>
-            )}
+           
 
             {/* Tab Content */}
             <View style={styles.scrollContainer}>
@@ -1342,6 +1346,34 @@ const createStyles = (theme) =>
       flex: 1,
       backgroundColor: theme.colors.background,
     },
+    // Compact Header Styles
+    compactHeaderContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 8,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      overflow: 'hidden',
+      zIndex: 1,
+    },
+    navigationHeader: {
+      backgroundColor: theme.colors.headerBackground,
+      padding: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    subHeader: {
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 16,
+      paddingVertical: 16,
+    },
+    // Legacy header style (keeping for compatibility)
     header: {
       backgroundColor: theme.colors.headerBackground,
       padding: 15,
@@ -1731,54 +1763,42 @@ const createStyles = (theme) =>
     subjectHeader: {
       margin: 10,
     },
-    backToSubjectsButton: {
-      alignSelf: 'flex-start',
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-      backgroundColor: theme.colors.card,
-      borderRadius: 20,
-      ...createSmallShadow(theme),
-    },
-    backToSubjectsText: {
-      fontSize: 14,
-      color: '#FF9500',
-      fontWeight: '600',
-    },
-    selectedSubjectTitle: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      color: theme.colors.text,
-      textAlign: 'center',
-    },
+   
     tabContainer: {
       flexDirection: 'row',
-      backgroundColor: theme.colors.card,
-      borderRadius: 25,
-      padding: 5,
-      marginBottom: 15,
-      marginHorizontal: 10,
-      ...createSmallShadow(theme),
+      backgroundColor: theme.colors.background,
+      borderRadius: 12,
+      padding: 4,
+      marginHorizontal: 0,
     },
     tabButton: {
       flex: 1,
-      paddingVertical: 12,
-      paddingHorizontal: 20,
-      borderRadius: 20,
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      borderRadius: 8,
       alignItems: 'center',
+      marginHorizontal: 2,
     },
     activeTabButton: {
-      backgroundColor: '#FF9500',
+      backgroundColor: theme.colors.primary,
+      elevation: 2,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
     },
     tabButtonText: {
-      fontSize: 14,
-      fontWeight: '600',
+      fontSize: 13,
+      fontWeight: '500',
       color: theme.colors.textSecondary,
     },
     activeTabButtonText: {
       color: '#fff',
+      fontWeight: '600',
     },
     scrollContainer: {
       flex: 1,
+      paddingHorizontal: 5,
     },
     // Modern Grades Container Styles
     modernGradesContainer: {

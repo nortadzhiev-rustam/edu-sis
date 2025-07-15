@@ -347,18 +347,45 @@ export default function BehaviorScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <FontAwesomeIcon icon={faScaleBalanced} size={20} color='#fff' />
-          <Text style={styles.headerTitle}>{t('behaviorPoints')}</Text>
+      {/* Compact Header */}
+      <View style={styles.compactHeaderContainer}>
+        {/* Navigation Header */}
+        <View style={styles.navigationHeader}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => {
+              if (selectedView === 'summary') {
+                navigation.goBack();
+              } else {
+                setSelectedView('summary');
+              }
+            }}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+          </TouchableOpacity>
+
+          <View style={styles.headerCenter}>
+            <FontAwesomeIcon icon={faScaleBalanced} size={18} color='#fff' />
+            <Text style={styles.headerTitle}>{t('behaviorPoints')}</Text>
+          </View>
+
+          <View style={styles.headerRight} />
         </View>
-        <View style={styles.headerRight} />
+
+        {/* View Context Subheader */}
+        <View style={styles.subHeader}>
+          <Text style={styles.viewContextText}>
+            {selectedView === 'summary'
+              ? 'Overview & Statistics'
+              : selectedView === 'behavior'
+              ? `${selectedBehaviorType} Records`
+              : selectedView === 'detention'
+              ? `${
+                  selectedDetentionType === 'served' ? 'Served' : 'Not Served'
+                } Detentions`
+              : 'Behavior Points'}
+          </Text>
+        </View>
       </View>
 
       <View style={[styles.content, isLandscape && styles.landscapeContent]}>
@@ -556,24 +583,6 @@ export default function BehaviorScreen({ navigation, route }) {
           </ScrollView>
         ) : selectedView === 'behavior' ? (
           <View style={styles.behaviorDetailContainer}>
-            {/* Header with back button */}
-            <View style={styles.behaviorDetailHeader}>
-              <TouchableOpacity
-                style={styles.behaviorBackButton}
-                onPress={() => setSelectedView('summary')}
-              >
-                <FontAwesomeIcon
-                  icon={faChevronLeft}
-                  size={16}
-                  color='#5856D6'
-                />
-                <Text style={styles.behaviorBackText}>Back</Text>
-              </TouchableOpacity>
-              <Text style={styles.behaviorDetailTitle}>
-                {selectedBehaviorType === 'PRS' ? 'PRS' : 'DPS'}
-              </Text>
-            </View>
-
             {/* Behavior Details List */}
             <ScrollView
               style={styles.behaviorDetailScroll}
@@ -671,25 +680,7 @@ export default function BehaviorScreen({ navigation, route }) {
           </View>
         ) : selectedView === 'detention' ? (
           <View style={styles.detentionDetailContainer}>
-            {/* Header with back button */}
-            <View style={styles.detentionDetailHeader}>
-              <TouchableOpacity
-                style={styles.detentionBackButton}
-                onPress={() => setSelectedView('summary')}
-              >
-                <FontAwesomeIcon
-                  icon={faChevronLeft}
-                  size={16}
-                  color='#5856D6'
-                />
-                <Text style={styles.detentionBackText}>Back</Text>
-              </TouchableOpacity>
-              <Text style={styles.detentionDetailTitle}>
-                {selectedDetentionType === 'served'
-                  ? 'Served Detentions'
-                  : 'Pending Detentions'}
-              </Text>
-            </View>
+           
 
             {/* Detention Details List */}
             <ScrollView style={styles.detentionDetailScroll}>
@@ -792,6 +783,39 @@ const createStyles = (theme) =>
       flex: 1,
       backgroundColor: theme.colors.background,
     },
+    // Compact Header Styles
+    compactHeaderContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 8,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      overflow: 'hidden',
+      zIndex: 1,
+    },
+    navigationHeader: {
+      backgroundColor: theme.colors.headerBackground,
+      padding: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    subHeader: {
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border,
+    },
+    // Legacy header style (keeping for compatibility)
     header: {
       backgroundColor: theme.colors.headerBackground,
       padding: 15,
@@ -824,9 +848,16 @@ const createStyles = (theme) =>
       justifyContent: 'center',
       alignItems: 'center',
     },
+    // Subheader styles
+    viewContextText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.colors.text,
+    },
+
     content: {
       flex: 1,
-      paddingTop: 30,
+      paddingTop: 10,
       paddingHorizontal: 5,
     },
     landscapeContent: {
@@ -850,7 +881,7 @@ const createStyles = (theme) =>
     summaryContainer: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      marginVertical: 30,
+      marginVertical: 20,
       marginHorizontal: 10,
     },
     summaryCard: {
@@ -1150,7 +1181,6 @@ const createStyles = (theme) =>
       fontSize: 16,
       fontWeight: 'bold',
       color: theme.colors.text,
-      
     },
     behaviorDetailScroll: {
       flex: 1,

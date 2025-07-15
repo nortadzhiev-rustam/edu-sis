@@ -471,9 +471,9 @@ export default function AssignmentDetailScreen({ navigation, route }) {
                 ? processHtmlContent(assignmentData.homework_data)
                 : 'No description provided'}
             </Text>
-            {containsHtml(assignmentData.homework_data) && (
+            {/* {containsHtml(assignmentData.homework_data) && (
               <Text style={styles.htmlIndicator}>📄 Formatted content</Text>
-            )}
+            )} */}
           </View>
 
           {/* Teacher Files */}

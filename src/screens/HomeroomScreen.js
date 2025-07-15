@@ -248,19 +248,31 @@ export default function HomeroomScreen({ route, navigation }) {
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Homeroom</Text>
-          <View style={styles.headerRight} />
-        </View>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size='large' color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading homeroom data...</Text>
+        {/* Compact Header */}
+        <View style={styles.compactHeaderContainer}>
+          {/* Navigation Header */}
+          <View style={styles.navigationHeader}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+            </TouchableOpacity>
+
+            <Text style={styles.headerTitle}>Homeroom</Text>
+
+            <View style={styles.headerRight} />
+          </View>
+
+          {/* Loading Subheader */}
+          <View style={styles.subHeader}>
+            <View style={styles.loadingSubheader}>
+              <ActivityIndicator size='small' color={theme.colors.primary} />
+              <Text style={styles.loadingSubheaderText}>
+                Loading homeroom data...
+              </Text>
+            </View>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -269,24 +281,34 @@ export default function HomeroomScreen({ route, navigation }) {
   if (error) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Homeroom</Text>
-          <View style={styles.headerRight} />
-        </View>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={loadHomeroomData}
-          >
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
+        {/* Compact Header */}
+        <View style={styles.compactHeaderContainer}>
+          {/* Navigation Header */}
+          <View style={styles.navigationHeader}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+            </TouchableOpacity>
+
+            <Text style={styles.headerTitle}>Homeroom</Text>
+
+            <View style={styles.headerRight} />
+          </View>
+
+          {/* Error Subheader */}
+          <View style={styles.subHeader}>
+            <View style={styles.errorSubheader}>
+              <Text style={styles.errorSubheaderText}>{error}</Text>
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={loadHomeroomData}
+              >
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -294,32 +316,26 @@ export default function HomeroomScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Homeroom</Text>
-        <View style={styles.headerRight} />
-      </View>
+      {/* Compact Header */}
+      <View style={styles.compactHeaderContainer}>
+        {/* Navigation Header */}
+        <View style={styles.navigationHeader}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+          </TouchableOpacity>
 
-      <ScrollView
-        style={styles.content}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[theme.colors.primary]}
-            tintColor={theme.colors.primary}
-          />
-        }
-      >
-        {/* Compact Classroom Overview */}
+          <Text style={styles.headerTitle}>Homeroom</Text>
+
+          <View style={styles.headerRight} />
+        </View>
+
+        {/* Classroom Overview Subheader */}
         {classroomData && (
-          <View style={styles.compactOverviewCard}>
-            <View style={styles.compactHeader}>
+          <View style={styles.subHeader}>
+            <View style={styles.classroomInfoSection}>
               <View style={styles.compactIconContainer}>
                 <FontAwesomeIcon icon={faUserGraduate} size={20} color='#fff' />
               </View>
@@ -364,7 +380,19 @@ export default function HomeroomScreen({ route, navigation }) {
             </View>
           </View>
         )}
+      </View>
 
+      <ScrollView
+        style={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[theme.colors.primary]}
+            tintColor={theme.colors.primary}
+          />
+        }
+      >
         {/* Today's Attendance Summary */}
         {attendanceData && (
           <View style={styles.summaryCard}>
@@ -461,13 +489,32 @@ const createStyles = (theme) =>
       flex: 1,
       backgroundColor: theme.colors.background,
     },
-    header: {
+    // Compact Header Styles
+    compactHeaderContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 8,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      overflow: 'hidden',
+      zIndex: 1,
+    },
+    navigationHeader: {
       backgroundColor: theme.colors.headerBackground,
       padding: 15,
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      ...theme.shadows.medium,
+    },
+    subHeader: {
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 16,
+      paddingVertical: 16,
     },
     backButton: {
       width: 36,
@@ -478,12 +525,42 @@ const createStyles = (theme) =>
       alignItems: 'center',
     },
     headerTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
       color: '#fff',
+      fontSize: 20,
+      fontWeight: 'bold',
     },
     headerRight: {
-      width: 34,
+      width: 36,
+    },
+    // Loading and Error Subheader Styles
+    loadingSubheader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 20,
+    },
+    loadingSubheaderText: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      marginLeft: 8,
+      fontStyle: 'italic',
+    },
+    errorSubheader: {
+      alignItems: 'center',
+      paddingVertical: 20,
+    },
+    errorSubheaderText: {
+      fontSize: 14,
+      color: theme.colors.error,
+      marginBottom: 12,
+      textAlign: 'center',
+    },
+    // Classroom Info Section
+    classroomInfoSection: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+      paddingHorizontal: 4,
     },
     loadingContainer: {
       flex: 1,

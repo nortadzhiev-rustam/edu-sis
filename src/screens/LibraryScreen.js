@@ -579,28 +579,35 @@ export default function LibraryScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <FontAwesomeIcon icon={faArrowLeft} size={20} color='#fff' />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Library</Text>
-      </View>
+      {/* Compact Header */}
+      <View style={styles.compactHeaderContainer}>
+        {/* Navigation Header */}
+        <View style={styles.navigationHeader}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+          </TouchableOpacity>
 
-      {/* Tab Navigation */}
-      <View style={styles.tabContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabScrollContent}
-        >
-          {renderTabButton('overview', 'Overview', faBook)}
-          {renderTabButton('borrowed', 'Borrowed', faBookOpen)}
-          {renderTabButton('history', 'History', faClock)}
-          {renderTabButton('available', 'Available', faCheckCircle)}
-        </ScrollView>
+          <Text style={styles.headerTitle}>Library</Text>
+
+          <View style={styles.headerRight} />
+        </View>
+
+        {/* Tab Navigation Subheader */}
+        <View style={styles.subHeader}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.tabScrollContent}
+          >
+            {renderTabButton('overview', 'Overview', faBook)}
+            {renderTabButton('borrowed', 'Borrowed', faBookOpen)}
+            {renderTabButton('history', 'History', faClock)}
+            {renderTabButton('available', 'Available', faCheckCircle)}
+          </ScrollView>
+        </View>
       </View>
 
       {/* Content */}
@@ -628,21 +635,46 @@ const createStyles = (theme) =>
       flex: 1,
       backgroundColor: theme.colors.background,
     },
+    // Compact Header Styles
+    compactHeaderContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 8,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      overflow: 'hidden',
+      zIndex: 1,
+    },
+    navigationHeader: {
+      backgroundColor: theme.colors.headerBackground,
+      padding: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    // Legacy header style (keeping for compatibility)
     header: {
       backgroundColor: theme.colors.headerBackground,
       padding: 15,
       flexDirection: 'row',
-
       alignItems: 'center',
       ...theme.shadows.small,
     },
     backButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
       backgroundColor: 'rgba(255, 255, 255, 0.2)',
       justifyContent: 'center',
       alignItems: 'center',
+    },
+    headerRight: {
+      width: 36,
     },
     headerTitle: {
       color: '#fff',
@@ -670,39 +702,45 @@ const createStyles = (theme) =>
       marginTop: 10,
     },
 
-    // Tab Navigation
+    // Tab Navigation (now integrated in subheader)
     tabContainer: {
       backgroundColor: theme.colors.surface,
       borderBottomWidth: 1,
       borderBottomColor: theme.colors.border,
     },
     tabScrollContent: {
-      paddingHorizontal: 20,
-      paddingVertical: 15,
+      paddingHorizontal: 8,
+      paddingVertical: 12,
     },
     tabButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      marginRight: 12,
-      borderRadius: 20,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      marginHorizontal: 4,
+      borderRadius: 12,
       backgroundColor: theme.colors.background,
       borderWidth: 1,
       borderColor: theme.colors.border,
     },
     activeTabButton: {
-      backgroundColor: '#007AFF',
-      borderColor: '#007AFF',
+      backgroundColor: theme.colors.primary,
+      borderColor: theme.colors.primary,
+      elevation: 2,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
     },
     tabButtonText: {
-      fontSize: 14,
-      fontWeight: '600',
+      fontSize: 13,
+      fontWeight: '500',
       color: theme.colors.textSecondary,
       marginLeft: 6,
     },
     activeTabButtonText: {
       color: '#fff',
+      fontWeight: '600',
     },
 
     // Content

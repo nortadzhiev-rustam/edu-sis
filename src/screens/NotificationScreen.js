@@ -361,58 +361,64 @@ const NotificationScreen = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
+      {/* Compact Header */}
+      <View style={styles.compactHeaderContainer}>
+        {/* Navigation Header */}
+        <View style={styles.navigationHeader}>
           <TouchableOpacity
-            style={styles.headerButton}
+            style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <FontAwesomeIcon icon={faArrowLeft} size={20} color='#fff' />
+            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Notifications</Text>
-          {getActiveUnreadCount() > 0 && (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadBadgeText}>
-                {getActiveUnreadCount()}
-              </Text>
-            </View>
-          )}
-        </View>
 
-        <View style={styles.headerActions}>
-          {getActiveUnreadCount() > 0 && (
+          <View style={styles.headerTitleContainer}>
+            <Text style={styles.headerTitle}>Notifications</Text>
+            {getActiveUnreadCount() > 0 && (
+              <View style={styles.unreadBadge}>
+                <Text style={styles.unreadBadgeText}>
+                  {getActiveUnreadCount()}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.headerActions}>
+            {getActiveUnreadCount() > 0 && (
+              <TouchableOpacity
+                style={styles.headerActionButton}
+                onPress={handleMarkAllAsRead}
+              >
+                <FontAwesomeIcon icon={faCheckDouble} size={18} color='#fff' />
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
               style={styles.headerActionButton}
-              onPress={handleMarkAllAsRead}
+              onPress={handleClearAll}
             >
-              <FontAwesomeIcon icon={faCheckDouble} size={18} color='#fff' />
+              <FontAwesomeIcon icon={faTrash} size={18} color='#fff' />
             </TouchableOpacity>
-          )}
-          <TouchableOpacity
-            style={styles.headerActionButton}
-            onPress={handleClearAll}
+          </View>
+        </View>
+
+        {/* Filter Buttons Subheader */}
+        <View style={styles.subHeader}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.filterContainer}
           >
-            <FontAwesomeIcon icon={faTrash} size={18} color='#fff' />
-          </TouchableOpacity>
+            {renderFilterButton('all', 'All')}
+            {renderFilterButton('unread', 'Unread')}
+            {renderFilterButton('behavior', 'Behavior')}
+            {renderFilterButton('attendance', 'Attendance')}
+            {renderFilterButton('grade', 'Grades')}
+            {renderFilterButton('homework', 'Homework')}
+            {renderFilterButton('messaging', 'Messages')}
+            {renderFilterButton('announcement', 'Announcements')}
+          </ScrollView>
         </View>
       </View>
-
-      {/* Filter Buttons */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filterContainer}
-      >
-        {renderFilterButton('all', 'All')}
-        {renderFilterButton('unread', 'Unread')}
-        {renderFilterButton('behavior', 'Behavior')}
-        {renderFilterButton('attendance', 'Attendance')}
-        {renderFilterButton('grade', 'Grades')}
-        {renderFilterButton('homework', 'Homework')}
-        {renderFilterButton('messaging', 'Messages')}
-        {renderFilterButton('announcement', 'Announcements')}
-      </ScrollView>
 
       {/* Notifications List */}
       <View style={styles.contentContainer}>
@@ -450,6 +456,48 @@ const createStyles = (theme) =>
       flex: 1,
       backgroundColor: theme.colors.background,
     },
+    // Compact Header Styles
+    compactHeaderContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 8,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      overflow: 'hidden',
+      zIndex: 1,
+    },
+    navigationHeader: {
+      backgroundColor: theme.colors.headerBackground,
+      padding: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    headerTitleContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      justifyContent: 'center',
+    },
+    subHeader: {
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 16,
+      paddingBottom: 16,
+    },
+    backButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    // Legacy header style (keeping for compatibility)
     header: {
       backgroundColor: theme.colors.headerBackground,
       padding: 15,
@@ -497,26 +545,23 @@ const createStyles = (theme) =>
       gap: 10,
     },
     headerActionButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
       backgroundColor: 'rgba(255, 255, 255, 0.2)',
       justifyContent: 'center',
       alignItems: 'center',
     },
     filterContainer: {
-      paddingHorizontal: 16,
+      paddingHorizontal: 8,
       paddingVertical: 12,
-      backgroundColor: theme.colors.surface,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
-      maxHeight: 60,
+      backgroundColor: 'transparent',
     },
     filterButton: {
-      paddingHorizontal: 16,
+      paddingHorizontal: 14,
       paddingVertical: 8,
-      borderRadius: 20,
-      marginRight: 8,
+      borderRadius: 12,
+      marginHorizontal: 4,
       backgroundColor: theme.colors.background,
       borderWidth: 1,
       borderColor: theme.colors.border,
@@ -524,14 +569,20 @@ const createStyles = (theme) =>
     activeFilterButton: {
       backgroundColor: theme.colors.primary,
       borderColor: theme.colors.primary,
+      elevation: 2,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
     },
     filterButtonText: {
-      fontSize: 14,
+      fontSize: 13,
       fontWeight: '500',
       color: theme.colors.text,
     },
     activeFilterButtonText: {
       color: '#FFFFFF',
+      fontWeight: '600',
     },
     contentContainer: {
       flex: 1,

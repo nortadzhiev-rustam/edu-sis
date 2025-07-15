@@ -541,46 +541,55 @@ export default function TimetableScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <FontAwesomeIcon icon={faArrowLeft} size={20} color='#fff' />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <FontAwesomeIcon icon={faCalendarAlt} size={20} color='#fff' />
-          <Text style={styles.headerTitle}>{t('timetable')}</Text>
+      {/* Compact Header */}
+      <View style={styles.compactHeaderContainer}>
+        {/* Navigation Header */}
+        <View style={styles.navigationHeader}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+          </TouchableOpacity>
+
+          <View style={styles.headerCenter}>
+            <FontAwesomeIcon icon={faCalendarAlt} size={18} color='#fff' />
+            <Text style={styles.headerTitle}>{t('timetable')}</Text>
+          </View>
+
+          <View style={styles.headerRight} />
+        </View>
+
+        {/* Day Info Subheader */}
+        <View style={styles.subHeader}>
+          <View style={styles.modernDayHeader}>
+            <View style={styles.dayHeaderLeft}>
+              <Text style={styles.modernDayTitle}>{selectedDay}</Text>
+              <Text style={styles.daySubtitle}>
+                {new Date().toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </Text>
+            </View>
+            <View style={styles.dayHeaderRight}>
+              <View style={styles.scheduleIndicator}>
+                <FontAwesomeIcon icon={faCircle} size={8} color='#34C759' />
+                <Text style={styles.scheduleIndicatorText}>
+                  {(timetable
+                    ? timetable[selectedDay]
+                    : timetableData[selectedDay]
+                  )?.length || 0}{' '}
+                  periods
+                </Text>
+              </View>
+            </View>
+          </View>
         </View>
       </View>
 
       <View style={styles.content}>
-        {/* Modern Day Header */}
-        <View style={styles.modernDayHeader}>
-          <View style={styles.dayHeaderLeft}>
-            <Text style={styles.modernDayTitle}>{selectedDay}</Text>
-            <Text style={styles.daySubtitle}>
-              {new Date().toLocaleDateString('en-US', {
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric',
-              })}
-            </Text>
-          </View>
-          <View style={styles.dayHeaderRight}>
-            <View style={styles.scheduleIndicator}>
-              <FontAwesomeIcon icon={faCircle} size={8} color='#34C759' />
-              <Text style={styles.scheduleIndicatorText}>
-                {(timetable
-                  ? timetable[selectedDay]
-                  : timetableData[selectedDay]
-                )?.length || 0}{' '}
-                periods
-              </Text>
-            </View>
-          </View>
-        </View>
-
         {/* Timeline Schedule */}
         <ScrollView
           style={styles.modernScheduleContainer}
@@ -625,6 +634,29 @@ const createStyles = (theme, fontSizes) =>
       flex: 1,
       backgroundColor: theme.colors.background,
     },
+    // Compact Header Styles
+    compactHeaderContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 8,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      overflow: 'hidden',
+      zIndex: 1,
+    },
+    navigationHeader: {
+      backgroundColor: theme.colors.headerBackground,
+      padding: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    // Legacy header style (keeping for compatibility)
     header: {
       backgroundColor: theme.colors.headerBackground,
       padding: 15,
@@ -634,12 +666,20 @@ const createStyles = (theme, fontSizes) =>
       ...theme.shadows.small,
     },
     backButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
       backgroundColor: 'rgba(255, 255, 255, 0.2)',
       justifyContent: 'center',
       alignItems: 'center',
+    },
+    headerRight: {
+      width: 36,
+    },
+    subHeader: {
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 16,
+      paddingBottom: 16,
     },
     headerCenter: {
       flexDirection: 'row',
@@ -673,7 +713,7 @@ const createStyles = (theme, fontSizes) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 15,
+      paddingVertical: 5,
       paddingHorizontal: 5,
     },
     dayHeaderLeft: {

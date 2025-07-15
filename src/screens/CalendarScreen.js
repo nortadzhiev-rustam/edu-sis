@@ -47,6 +47,31 @@ export default function CalendarScreen({ navigation, route }) {
   const calendarMode = route?.params?.mode || 'combined';
   const isPersonalCalendarEnabled = calendarMode === 'combined';
 
+  // Utility function to strip HTML tags from text
+  const stripHtmlTags = (html) => {
+    if (!html || typeof html !== 'string') return '';
+
+    // Remove HTML tags
+    let text = html.replace(/<[^>]*>/g, '');
+
+    // Decode common HTML entities
+    text = text
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&hellip;/g, '...')
+      .replace(/&mdash;/g, '—')
+      .replace(/&ndash;/g, '–');
+
+    // Clean up extra whitespace
+    text = text.replace(/\s+/g, ' ').trim();
+
+    return text;
+  };
+
   // State
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -218,9 +243,11 @@ export default function CalendarScreen({ navigation, route }) {
   };
 
   const handleEventPress = (event) => {
+    const cleanDescription =
+      stripHtmlTags(event.description) || 'No description';
     Alert.alert(
       event.title,
-      `${event.description || 'No description'}\n\nTime: ${new Date(
+      `${cleanDescription}\n\nTime: ${new Date(
         event.startTime
       ).toLocaleString()}\nType: ${event.calendarType}${
         event.location ? `\nLocation: ${event.location}` : ''
@@ -349,7 +376,7 @@ export default function CalendarScreen({ navigation, route }) {
             ]}
             numberOfLines={2}
           >
-            {event.description}
+            {stripHtmlTags(event.description)}
           </Text>
         )}
 
@@ -365,11 +392,13 @@ export default function CalendarScreen({ navigation, route }) {
   };
 
   const showEventDetails = (event) => {
+    const cleanDescription =
+      stripHtmlTags(event.description) || 'No description';
     Alert.alert(
       event.title,
-      `${formatEventTime(event)}\n\n${
-        event.description || 'No description'
-      }\n\nType: ${getEventType(event)}`,
+      `${formatEventTime(event)}\n\n${cleanDescription}\n\nType: ${getEventType(
+        event
+      )}`,
       [{ text: 'OK' }]
     );
   };
@@ -397,9 +426,11 @@ export default function CalendarScreen({ navigation, route }) {
 
   // Determine event type based on description and title
   const getEventType = (event) => {
-    const description = (event.description || '').toLowerCase();
+    const cleanDescription = stripHtmlTags(
+      event.description || ''
+    ).toLowerCase();
     const title = (event.title || '').toLowerCase();
-    const combined = `${title} ${description}`;
+    const combined = `${title} ${cleanDescription}`;
 
     // Academic/Class related
     if (
@@ -484,7 +515,42 @@ export default function CalendarScreen({ navigation, route }) {
     container: {
       flex: 1,
       backgroundColor: theme.colors.background,
+      paddingHorizontal: 16,
     },
+    // Compact Header Styles
+    compactHeaderContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      marginHorizontal: 0,
+      marginTop: 8,
+      marginBottom: 8,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      overflow: 'hidden',
+      zIndex: 1,
+    },
+    navigationHeader: {
+      backgroundColor: theme.colors.headerBackground,
+      padding: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    subHeader: {
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 16,
+      paddingVertical: 16,
+    },
+    headerCenter: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      justifyContent: 'center',
+    },
+    // Legacy header style (keeping for compatibility)
     header: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -499,18 +565,59 @@ export default function CalendarScreen({ navigation, route }) {
       alignItems: 'center',
     },
     backButton: {
-      marginRight: 15,
-    },
-    headerTitle: {
-      fontSize: fontSizes.title,
-      fontWeight: '600',
-      color: '#fff',
-      marginLeft: 5,
-    },
-    headerRight: {
-      flexDirection: 'row',
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
       alignItems: 'center',
     },
+    headerTitle: {
+      color: '#fff',
+      fontSize: 20,
+      fontWeight: 'bold',
+      marginLeft: 8,
+    },
+    headerRight: {
+      width: 36,
+    },
+    // View Mode Styles
+    viewModeContainer: {
+      flexDirection: 'row',
+      backgroundColor: theme.colors.background,
+      borderRadius: 12,
+      padding: 4,
+    },
+    viewModeButton: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+      borderRadius: 8,
+      marginHorizontal: 2,
+      backgroundColor: 'transparent',
+    },
+    activeViewModeButton: {
+      backgroundColor: theme.colors.primary,
+      elevation: 2,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+    },
+    viewModeButtonText: {
+      fontSize: 13,
+      fontWeight: '500',
+      color: theme.colors.textSecondary,
+      marginLeft: 6,
+    },
+    activeViewModeButtonText: {
+      color: '#fff',
+      fontWeight: '600',
+    },
+    // Legacy header button styles (keeping for compatibility)
     headerButton: {
       marginLeft: 15,
       padding: 8,
@@ -552,8 +659,7 @@ export default function CalendarScreen({ navigation, route }) {
     googleSection: {
       padding: 20,
       backgroundColor: theme.colors.surface,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
+      borderRadius: 16,
     },
     googleButton: {
       flexDirection: 'row',
@@ -704,6 +810,25 @@ export default function CalendarScreen({ navigation, route }) {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
+        {/* Compact Header */}
+        <View style={styles.compactHeaderContainer}>
+          {/* Navigation Header */}
+          <View style={styles.navigationHeader}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+            </TouchableOpacity>
+
+            <View style={styles.headerCenter}>
+              <FontAwesomeIcon icon={faCalendarAlt} size={18} color='#fff' />
+              <Text style={styles.headerTitle}>Calendar</Text>
+            </View>
+
+            <View style={styles.headerRight} />
+          </View>
+        </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size='large' color={theme.colors.primary} />
           <Text style={[styles.emptyText, { marginTop: 20 }]}>
@@ -716,38 +841,75 @@ export default function CalendarScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
+      {/* Compact Header */}
+      <View style={styles.compactHeaderContainer}>
+        {/* Navigation Header */}
+        <View style={styles.navigationHeader}>
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <FontAwesomeIcon icon={faArrowLeft} size={20} color='#fff' />
+            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
           </TouchableOpacity>
-          <FontAwesomeIcon icon={faCalendarAlt} size={20} color='#fff' />
-          <Text style={styles.headerTitle}>Calendar</Text>
+
+          <View style={styles.headerCenter}>
+            <FontAwesomeIcon icon={faCalendarAlt} size={18} color='#fff' />
+            <Text style={styles.headerTitle}>Calendar</Text>
+          </View>
+
+          <View style={styles.headerRight} />
         </View>
 
-        <View style={styles.headerRight}>
-          <TouchableOpacity
-            style={[
-              styles.headerButton,
-              viewMode === 'calendar' && styles.headerButtonActive,
-            ]}
-            onPress={() => setViewMode('calendar')}
-          >
-            <FontAwesomeIcon icon={faCalendarDay} size={16} color='#fff' />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.headerButton,
-              viewMode === 'list' && styles.headerButtonActive,
-            ]}
-            onPress={() => setViewMode('list')}
-          >
-            <FontAwesomeIcon icon={faList} size={16} color='#fff' />
-          </TouchableOpacity>
+        {/* View Mode Subheader */}
+        <View style={styles.subHeader}>
+          <View style={styles.viewModeContainer}>
+            <TouchableOpacity
+              style={[
+                styles.viewModeButton,
+                viewMode === 'calendar' && styles.activeViewModeButton,
+              ]}
+              onPress={() => setViewMode('calendar')}
+            >
+              <FontAwesomeIcon
+                icon={faCalendarDay}
+                size={14}
+                color={
+                  viewMode === 'calendar' ? '#fff' : theme.colors.textSecondary
+                }
+              />
+              <Text
+                style={[
+                  styles.viewModeButtonText,
+                  viewMode === 'calendar' && styles.activeViewModeButtonText,
+                ]}
+              >
+                Calendar
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.viewModeButton,
+                viewMode === 'list' && styles.activeViewModeButton,
+              ]}
+              onPress={() => setViewMode('list')}
+            >
+              <FontAwesomeIcon
+                icon={faList}
+                size={14}
+                color={
+                  viewMode === 'list' ? '#fff' : theme.colors.textSecondary
+                }
+              />
+              <Text
+                style={[
+                  styles.viewModeButtonText,
+                  viewMode === 'list' && styles.activeViewModeButtonText,
+                ]}
+              >
+                List
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 

@@ -643,16 +643,8 @@ export default function AssignmentsScreen({ navigation, route }) {
 
     return (
       <View style={styles.assignmentsContainer}>
-        {/* Header with back button and filter */}
+        {/* Header with filter */}
         <View style={styles.assignmentsHeader}>
-          <TouchableOpacity
-            style={styles.backToSubjectsButton}
-            onPress={() => setSelectedSubject(null)}
-          >
-            <FontAwesomeIcon icon={faArrowLeft} size={16} color='#007AFF' />
-            <Text style={styles.backToSubjectsText}>Back to Subjects</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity
             style={[
               styles.filterButton,
@@ -813,24 +805,36 @@ export default function AssignmentsScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Homework</Text>
-        <View style={styles.headerRight} />
-      </View>
+      {/* Compact Header */}
+      <View style={styles.compactHeaderContainer}>
+        {/* Navigation Header */}
+        <View style={styles.navigationHeader}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => {
+              if (!selectedSubject) {
+                navigation.goBack();
+              } else {
+                setSelectedSubject(null);
+              }
+            }}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+          </TouchableOpacity>
 
-      {/* Student Name Section - Hidden in landscape mode */}
-      {!isLandscape && (
-        <View style={styles.studentSection}>
-          <Text style={styles.studentName}>{studentName || 'Student'}</Text>
-          <Text style={styles.sectionSubtitle}>Assignments & Homework</Text>
+          <Text style={styles.headerTitle}>Homework</Text>
+
+          <View style={styles.headerRight} />
         </View>
-      )}
+
+        {/* Student Info Subheader - Hidden in landscape mode */}
+        {!isLandscape && (
+          <View style={styles.subHeader}>
+            <Text style={styles.studentName}>{studentName || 'Student'}</Text>
+            <Text style={styles.sectionSubtitle}>Assignments & Homework</Text>
+          </View>
+        )}
+      </View>
 
       <View style={styles.content}>
         {isLandscape ? (
@@ -855,6 +859,34 @@ const createStyles = (theme) =>
       flex: 1,
       backgroundColor: theme.colors.background,
     },
+    // Compact Header Styles
+    compactHeaderContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 8,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      overflow: 'hidden',
+      zIndex: 1,
+    },
+    navigationHeader: {
+      backgroundColor: theme.colors.headerBackground,
+      padding: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    subHeader: {
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 16,
+      paddingVertical: 16,
+    },
+    // Legacy header style (keeping for compatibility)
     header: {
       backgroundColor: theme.colors.headerBackground,
       padding: 15,
@@ -897,6 +929,7 @@ const createStyles = (theme) =>
     content: {
       flex: 1,
       paddingVertical: 20,
+      marginHorizontal: 5,
     },
     scrollContainer: {
       flex: 1,
@@ -939,7 +972,7 @@ const createStyles = (theme) =>
     },
     subjectsGrid: {
       width: '95%',
-      paddingRight: 10,
+      paddingRight: 5,
     },
 
     // Modern Subject Card Styles (similar to GradesScreen)
@@ -1117,7 +1150,7 @@ const createStyles = (theme) =>
     // Assignments view styles
     assignmentsContainer: {
       flex: 1,
-      
+      marginHorizontal: 5,
     },
     assignmentsHeader: {
       flexDirection: 'row',
@@ -1126,21 +1159,7 @@ const createStyles = (theme) =>
       marginBottom: 20,
       paddingHorizontal: 10,
     },
-    backToSubjectsButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: theme.colors.surface,
-      paddingHorizontal: 15,
-      paddingVertical: 10,
-      borderRadius: 20,
-      ...createSmallShadow(theme),
-    },
-    backToSubjectsText: {
-      marginLeft: 8,
-      fontSize: 14,
-      color: '#007AFF',
-      fontWeight: '600',
-    },
+
     filterButton: {
       backgroundColor: '#f0f0f0',
       paddingHorizontal: 15,

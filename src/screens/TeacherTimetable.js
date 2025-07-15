@@ -358,31 +358,26 @@ export default function TeacherTimetable({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
+      {/* Compact Header */}
+      <View style={styles.compactHeaderContainer}>
+        {/* Navigation Header */}
+        <View style={styles.navigationHeader}>
           <TouchableOpacity
-            style={styles.headerButton}
+            style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <FontAwesomeIcon
-              icon={faArrowLeft}
-              size={20}
-              color={theme.colors.headerText}
-            />
+            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
           </TouchableOpacity>
+
           <Text style={styles.headerTitle}>My Timetable</Text>
+
+          <TouchableOpacity
+            style={styles.refreshButton}
+            onPress={fetchTimetableData}
+          >
+            <FontAwesomeIcon icon={faRefresh} size={18} color='#fff' />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={fetchTimetableData}
-        >
-          <FontAwesomeIcon
-            icon={faRefresh}
-            size={20}
-            color={theme.colors.headerText}
-          />
-        </TouchableOpacity>
       </View>
 
       {/* Scrollable Classes List */}
@@ -534,38 +529,50 @@ const createStyles = (theme) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.colors.background, // Changed from '#f8f9fa'
+      backgroundColor: theme.colors.background,
     },
-    header: {
-      backgroundColor: theme.colors.headerBackground, // Changed from '#007AFF'
+    // Compact Header Styles
+    compactHeaderContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 8,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      overflow: 'hidden',
+      zIndex: 1,
+    },
+    navigationHeader: {
+      backgroundColor: theme.colors.headerBackground,
       padding: 15,
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      shadowColor: theme.colors.shadow, // Changed from '#000'
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 5,
     },
-    headerLeft: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      flex: 1,
-    },
-    headerButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+    backButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
       backgroundColor: 'rgba(255, 255, 255, 0.2)',
       justifyContent: 'center',
       alignItems: 'center',
-      marginRight: 12,
     },
     headerTitle: {
-      color: theme.colors.headerText, // Changed from '#fff'
-      fontSize: 22,
+      color: '#fff',
+      fontSize: 20,
       fontWeight: 'bold',
+    },
+    refreshButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     scrollView: {
       flex: 1,

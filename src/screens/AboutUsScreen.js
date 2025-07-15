@@ -18,6 +18,7 @@ import {
   getAboutUsData,
   getUserBranchInfo,
   getSelectedBranchId,
+  getUniqueBranches,
 } from '../services/informationService';
 
 export default function AboutUsScreen({ navigation }) {
@@ -33,6 +34,29 @@ export default function AboutUsScreen({ navigation }) {
       flex: 1,
       backgroundColor: theme.colors.background,
     },
+    // Compact Header Styles
+    compactHeaderContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 8,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      overflow: 'hidden',
+      zIndex: 1,
+    },
+    navigationHeader: {
+      backgroundColor: theme.colors.headerBackground,
+      padding: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    // Legacy header style (keeping for compatibility)
     header: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -43,15 +67,17 @@ export default function AboutUsScreen({ navigation }) {
       ...theme.shadows.small,
     },
     backButton: {
-      padding: 8,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     headerTitle: {
-      fontSize: 18,
-      fontWeight: '600',
       color: '#fff',
-      flex: 1,
-      textAlign: 'center',
-      marginHorizontal: 16,
+      fontSize: 20,
+      fontWeight: 'bold',
     },
     headerRight: {
       width: 40,
@@ -163,35 +189,96 @@ export default function AboutUsScreen({ navigation }) {
     try {
       setError(null);
 
-      // Get user's branch information
-      const userBranchInfo = await getUserBranchInfo();
-      let branchId = userBranchInfo.branchId;
+      // Get all unique branches from all user data
+      const uniqueBranches = await getUniqueBranches();
 
-      // For teachers, check if they have a selected branch
-      if (userBranchInfo.userType === 'teacher') {
-        const selectedBranchId = await getSelectedBranchId();
-        if (selectedBranchId) {
-          branchId = selectedBranchId;
+      if (uniqueBranches.length === 0) {
+        // Fallback to old method if no branches found
+        const userBranchInfo = await getUserBranchInfo();
+        let branchId = userBranchInfo.branchId;
+
+        // For teachers, check if they have a selected branch
+        if (userBranchInfo.userType === 'teacher') {
+          const selectedBranchId = await getSelectedBranchId();
+          if (selectedBranchId) {
+            branchId = selectedBranchId;
+          }
         }
+
+        console.log('📖 ABOUT US: Using branch ID (fallback):', branchId);
+        console.log(
+          '📖 ABOUT US: User type (fallback):',
+          userBranchInfo.userType
+        );
+
+        const response = await getAboutUsData(branchId);
+
+        if (response.success) {
+          // Filter data by user's branch if branchId is provided
+          let filteredResponse = { ...response };
+          if (branchId && response.about_information) {
+            filteredResponse.about_information =
+              response.about_information.filter(
+                (branch) => branch.branch_id === branchId
+              );
+            filteredResponse.total_branches =
+              filteredResponse.about_information.length;
+            console.log(
+              '📖 ABOUT US: Filtered to user branch, showing',
+              filteredResponse.total_branches,
+              'branch(es)'
+            );
+          }
+          setAboutData(filteredResponse);
+        } else {
+          throw new Error('Failed to fetch About Us data');
+        }
+
+        return;
       }
 
-      console.log('📖 ABOUT US: Using branch ID:', branchId);
-      console.log('📖 ABOUT US: User type:', userBranchInfo.userType);
+      // If we have multiple branches, fetch data for all of them
+      console.log(
+        '📖 ABOUT US: Found unique branches:',
+        uniqueBranches.map((b) => `${b.branchName} (${b.userType})`)
+      );
 
-      const response = await getAboutUsData(branchId);
+      // If there's only one branch, use it directly
+      if (uniqueBranches.length === 1) {
+        const branchId = uniqueBranches[0].branchId;
+        console.log('📖 ABOUT US: Using single branch ID:', branchId);
+
+        const response = await getAboutUsData(branchId);
+
+        if (response.success) {
+          setAboutData(response);
+        } else {
+          throw new Error('Failed to fetch About Us data');
+        }
+
+        return;
+      }
+
+      // If there are multiple branches with different IDs, fetch all data
+      console.log('📖 ABOUT US: Fetching data for multiple branches');
+
+      // Get all data without branch filter
+      const response = await getAboutUsData();
 
       if (response.success) {
-        // Filter data by user's branch if branchId is provided
+        // Filter to only include branches that match our unique branches
+        const branchIds = uniqueBranches.map((b) => b.branchId);
+
         let filteredResponse = { ...response };
-        if (branchId && response.about_information) {
+        if (response.about_information) {
           filteredResponse.about_information =
-            response.about_information.filter(
-              (branch) => branch.branch_id === branchId
+            response.about_information.filter((branch) =>
+              branchIds.includes(branch.branch_id)
             );
           filteredResponse.total_branches =
             filteredResponse.about_information.length;
           console.log(
-            '📖 ABOUT US: Filtered to user branch, showing',
+            '📖 ABOUT US: Filtered to user branches, showing',
             filteredResponse.total_branches,
             'branch(es)'
           );
@@ -266,15 +353,21 @@ export default function AboutUsScreen({ navigation }) {
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <FontAwesomeIcon icon={faArrowLeft} size={20} color='#fff' />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>About Us</Text>
-          <View style={styles.headerRight} />
+        {/* Compact Header */}
+        <View style={styles.compactHeaderContainer}>
+          {/* Navigation Header */}
+          <View style={styles.navigationHeader}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+            </TouchableOpacity>
+
+            <Text style={styles.headerTitle}>About Us</Text>
+
+            <View style={styles.headerRight} />
+          </View>
         </View>
 
         <View style={styles.loadingContainer}>
@@ -290,15 +383,21 @@ export default function AboutUsScreen({ navigation }) {
   if (error) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <FontAwesomeIcon icon={faArrowLeft} size={20} color='#fff' />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>About Us</Text>
-          <View style={styles.headerRight} />
+        {/* Compact Header */}
+        <View style={styles.compactHeaderContainer}>
+          {/* Navigation Header */}
+          <View style={styles.navigationHeader}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+            </TouchableOpacity>
+
+            <Text style={styles.headerTitle}>About Us</Text>
+
+            <View style={styles.headerRight} />
+          </View>
         </View>
 
         <View style={styles.errorContainer}>
@@ -313,15 +412,21 @@ export default function AboutUsScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <FontAwesomeIcon icon={faArrowLeft} size={20} color='#fff' />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>About Us</Text>
-        <View style={styles.headerRight} />
+      {/* Compact Header */}
+      <View style={styles.compactHeaderContainer}>
+        {/* Navigation Header */}
+        <View style={styles.navigationHeader}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+          </TouchableOpacity>
+
+          <Text style={styles.headerTitle}>About Us</Text>
+
+          <View style={styles.headerRight} />
+        </View>
       </View>
 
       <ScrollView

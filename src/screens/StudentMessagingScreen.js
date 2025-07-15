@@ -441,57 +441,55 @@ const StudentMessagingScreen = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <FontAwesomeIcon
-            icon={faArrowLeft}
-            size={20}
-            color={theme.colors.headerText}
-          />
-        </TouchableOpacity>
+      {/* Compact Header */}
+      <View style={styles.compactHeaderContainer}>
+        {/* Navigation Header */}
+        <View style={styles.navigationHeader}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+          </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Messages</Text>
+          <View style={styles.headerCenter}>
+            <FontAwesomeIcon icon={faComments} size={18} color='#fff' />
+            <Text style={styles.headerTitle}>Messages</Text>
+          </View>
 
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() =>
-            navigation.navigate('StudentCreateConversationScreen', {
-              authCode,
-              studentName,
-              userType: 'student',
-            })
-          }
-        >
-          <FontAwesomeIcon
-            icon={faPlus}
-            size={20}
-            color={theme.colors.headerText}
-          />
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={styles.headerActionButton}
+            onPress={() =>
+              navigation.navigate('StudentCreateConversationScreen', {
+                authCode,
+                studentName,
+                userType: 'student',
+              })
+            }
+          >
+            <FontAwesomeIcon icon={faPlus} size={18} color='#fff' />
+          </TouchableOpacity>
+        </View>
 
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <FontAwesomeIcon
-            icon={faSearch}
-            size={16}
-            color={theme.colors.textSecondary}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder='Search conversations and messages...'
-            placeholderTextColor={theme.colors.textSecondary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchLoading && (
-            <ActivityIndicator size='small' color={theme.colors.primary} />
-          )}
+        {/* Search Bar Subheader */}
+        <View style={styles.subHeader}>
+          <View style={styles.searchBar}>
+            <FontAwesomeIcon
+              icon={faSearch}
+              size={16}
+              color={theme.colors.textSecondary}
+            />
+            <TextInput
+              style={styles.searchInput}
+              placeholder='Search conversations and messages...'
+              placeholderTextColor={theme.colors.textSecondary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchLoading && (
+              <ActivityIndicator size='small' color={theme.colors.primary} />
+            )}
+          </View>
         </View>
       </View>
 
@@ -541,6 +539,40 @@ const createStyles = (theme, fontSizes) => {
       flex: 1,
       backgroundColor: theme.colors.background,
     },
+    // Compact Header Styles
+    compactHeaderContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 8,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      overflow: 'hidden',
+      zIndex: 1,
+    },
+    navigationHeader: {
+      backgroundColor: theme.colors.headerBackground,
+      padding: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    subHeader: {
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 16,
+      paddingVertical: 16,
+    },
+    headerCenter: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      justifyContent: 'center',
+    },
+    // Legacy header style (keeping for compatibility)
     header: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -550,13 +582,28 @@ const createStyles = (theme, fontSizes) => {
       backgroundColor: theme.colors.headerBackground,
     },
     backButton: {
-      padding: 8,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     headerTitle: {
-      fontSize: safeFontSizes.large,
+      color: '#fff',
+      fontSize: 20,
       fontWeight: 'bold',
-      color: theme.colors.headerText,
+      marginLeft: 8,
     },
+    headerActionButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    // Legacy button styles (keeping for compatibility)
     addButton: {
       padding: 8,
     },
@@ -569,11 +616,16 @@ const createStyles = (theme, fontSizes) => {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: theme.colors.background,
-      borderRadius: 8,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
       borderWidth: 1,
       borderColor: theme.colors.border,
+      elevation: 1,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
     },
     searchInput: {
       flex: 1,

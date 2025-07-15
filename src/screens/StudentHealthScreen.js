@@ -290,15 +290,21 @@ export default function StudentHealthScreen({ route, navigation }) {
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Health Records</Text>
-          <View style={styles.headerRight} />
+        {/* Compact Header */}
+        <View style={styles.compactHeaderContainer}>
+          {/* Navigation Header */}
+          <View style={styles.navigationHeader}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+            </TouchableOpacity>
+
+            <Text style={styles.headerTitle}>Health Records</Text>
+
+            <View style={styles.headerRight} />
+          </View>
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size='large' color={theme.colors.primary} />
@@ -310,21 +316,29 @@ export default function StudentHealthScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Health Records</Text>
-        <View style={styles.headerRight} />
-      </View>
+      {/* Compact Header */}
+      <View style={styles.compactHeaderContainer}>
+        {/* Navigation Header */}
+        <View style={styles.navigationHeader}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+          </TouchableOpacity>
 
-      {/* Tab Navigation */}
-      <View style={styles.tabContainer}>
-        {renderTabButton('records', 'Visit Records', faHeartbeat)}
-        {renderTabButton('info', 'Health Info', faInfoCircle)}
+          <Text style={styles.headerTitle}>Health Records</Text>
+
+          <View style={styles.headerRight} />
+        </View>
+
+        {/* Tab Navigation Subheader */}
+        <View style={styles.subHeader}>
+          <View style={styles.tabContainer}>
+            {renderTabButton('records', 'Visit Records', faHeartbeat)}
+            {renderTabButton('info', 'Health Info', faInfoCircle)}
+          </View>
+        </View>
       </View>
       <Text style={styles.sectionTitle}>
         Health Visit Records ({healthRecords.length})
@@ -456,6 +470,34 @@ const createStyles = (theme, fontSizes) =>
       flex: 1,
       backgroundColor: theme.colors.background,
     },
+    // Compact Header Styles
+    compactHeaderContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 8,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      overflow: 'hidden',
+      zIndex: 1,
+    },
+    navigationHeader: {
+      backgroundColor: theme.colors.headerBackground,
+      padding: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    subHeader: {
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 16,
+      paddingBottom: 16,
+    },
+    // Legacy header style (keeping for compatibility)
     header: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -471,17 +513,17 @@ const createStyles = (theme, fontSizes) =>
       }),
     },
     backButton: {
-      padding: 8,
-      borderRadius: 20,
-      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     headerTitle: {
-      fontSize: fontSizes.headerTitle,
-      fontWeight: '600',
       color: '#fff',
-      flex: 1,
-      textAlign: 'center',
-      marginHorizontal: 16,
+      fontSize: 20,
+      fontWeight: 'bold',
     },
     headerRight: {
       width: 36,
@@ -499,33 +541,37 @@ const createStyles = (theme, fontSizes) =>
     },
     tabContainer: {
       flexDirection: 'row',
-      backgroundColor: theme.colors.surface,
-      paddingHorizontal: 16,
+      backgroundColor: 'transparent',
+      paddingHorizontal: 4,
       paddingVertical: 8,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
     },
     tabButton: {
       flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      paddingVertical: 12,
-      paddingHorizontal: 16,
-      borderRadius: 8,
-      marginHorizontal: 4,
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+      borderRadius: 10,
+      marginHorizontal: 3,
+      backgroundColor: theme.colors.background,
     },
     activeTabButton: {
-      backgroundColor: theme.colors.primaryLight,
+      backgroundColor: theme.colors.primary,
+      elevation: 2,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
     },
     tabButtonText: {
-      fontSize: fontSizes.bodySmall,
+      fontSize: 13,
       color: theme.colors.textSecondary,
-      marginLeft: 8,
+      marginLeft: 6,
       fontWeight: '500',
     },
     activeTabButtonText: {
-      color: theme.colors.primary,
+      color: '#fff',
       fontWeight: '600',
     },
     content: {
@@ -545,8 +591,8 @@ const createStyles = (theme, fontSizes) =>
       backgroundColor: theme.colors.surface,
       borderRadius: 12,
       marginBottom: 12,
-      
-      ...theme.shadows.small
+
+      ...theme.shadows.small,
     },
     recordHeader: {
       backgroundColor: theme.colors.primaryLight,

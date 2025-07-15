@@ -30,7 +30,7 @@ import {
   faBookOpen,
   faFileAlt,
   faHeartbeat,
-  faClock
+  faClock,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -596,83 +596,90 @@ export default function ParentScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
+      {/* Compact Header */}
+      <View style={styles.compactHeaderContainer}>
+        {/* Navigation Header */}
+        <View style={styles.navigationHeader}>
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
             <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
           </TouchableOpacity>
+
           <Text style={styles.headerTitle}>{t('parentDashboard')}</Text>
-        </View>
-        <View style={styles.headerActions}>
-          <TouchableOpacity
-            style={styles.messageButton}
-            onPress={() => {
-              // Navigate to appropriate messaging screen based on user type
-              // For parents, we'll navigate to a general messaging screen or student messaging
-              if (selectedStudent) {
-                navigation.navigate('StudentMessagingScreen', {
-                  authCode: selectedStudent.authCode,
-                  studentName: selectedStudent.name,
-                });
-              } else {
-                // If no student selected, show alert or navigate to first student
-                if (students.length > 0) {
+
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.headerActionButton}
+              onPress={() => {
+                // Navigate to appropriate messaging screen based on user type
+                // For parents, we'll navigate to a general messaging screen or student messaging
+                if (selectedStudent) {
                   navigation.navigate('StudentMessagingScreen', {
-                    authCode: students[0].authCode,
-                    studentName: students[0].name,
-                  });
-                }
-              }
-            }}
-          >
-            <FontAwesomeIcon icon={faComments} size={18} color='#fff' />
-            <MessageBadge
-              userType='parent'
-              selectedStudent={selectedStudent}
-              showAllStudents={false}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.notificationButton}
-            onPress={() => {
-              // Navigate to notification screen with selected student context
-              if (selectedStudent) {
-                navigation.navigate('NotificationScreen', {
-                  userType: 'parent',
-                  authCode: selectedStudent.authCode,
-                  studentName: selectedStudent.name,
-                  studentId: selectedStudent.id,
-                });
-              } else {
-                // If no student selected, show alert or navigate to first student
-                if (students.length > 0) {
-                  navigation.navigate('NotificationScreen', {
-                    userType: 'parent',
-                    authCode: students[0].authCode,
-                    studentName: students[0].name,
-                    studentId: students[0].id,
+                    authCode: selectedStudent.authCode,
+                    studentName: selectedStudent.name,
                   });
                 } else {
-                  Alert.alert(
-                    'No Students',
-                    'Please add a student account first to view notifications.'
-                  );
+                  // If no student selected, show alert or navigate to first student
+                  if (students.length > 0) {
+                    navigation.navigate('StudentMessagingScreen', {
+                      authCode: students[0].authCode,
+                      studentName: students[0].name,
+                    });
+                  }
                 }
-              }
-            }}
-          >
-            <FontAwesomeIcon icon={faBell} size={18} color='#fff' />
-            <ParentNotificationBadge
-              selectedStudent={selectedStudent}
-              showAllStudents={false}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.addButton} onPress={handleAddStudent}>
-            <FontAwesomeIcon icon={faPlus} size={18} color='#fff' />
-          </TouchableOpacity>
+              }}
+            >
+              <FontAwesomeIcon icon={faComments} size={18} color='#fff' />
+              <MessageBadge
+                userType='parent'
+                selectedStudent={selectedStudent}
+                showAllStudents={false}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.headerActionButton}
+              onPress={() => {
+                // Navigate to notification screen with selected student context
+                if (selectedStudent) {
+                  navigation.navigate('NotificationScreen', {
+                    userType: 'parent',
+                    authCode: selectedStudent.authCode,
+                    studentName: selectedStudent.name,
+                    studentId: selectedStudent.id,
+                  });
+                } else {
+                  // If no student selected, show alert or navigate to first student
+                  if (students.length > 0) {
+                    navigation.navigate('NotificationScreen', {
+                      userType: 'parent',
+                      authCode: students[0].authCode,
+                      studentName: students[0].name,
+                      studentId: students[0].id,
+                    });
+                  } else {
+                    Alert.alert(
+                      'No Students',
+                      'Please add a student account first to view notifications.'
+                    );
+                  }
+                }
+              }}
+            >
+              <FontAwesomeIcon icon={faBell} size={18} color='#fff' />
+              <ParentNotificationBadge
+                selectedStudent={selectedStudent}
+                showAllStudents={false}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.headerActionButton}
+              onPress={handleAddStudent}
+            >
+              <FontAwesomeIcon icon={faPlus} size={18} color='#fff' />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -763,6 +770,7 @@ export default function ParentScreen({ navigation }) {
               isTabletDevice &&
                 isLandscape &&
                 styles.tabletLandscapeActionTilesGrid,
+              { alignItems: 'center' }, // Centers the content horizontally within the scroll view
             ]}
             showsVerticalScrollIndicator={false}
           >
@@ -806,6 +814,29 @@ const createStyles = (theme, fontSizes) =>
       flex: 1,
       backgroundColor: theme.colors.background,
     },
+    // Compact Header Styles
+    compactHeaderContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 8,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      overflow: 'hidden',
+      zIndex: 1,
+    },
+    navigationHeader: {
+      backgroundColor: theme.colors.headerBackground,
+      padding: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    // Legacy header style (keeping for compatibility)
     header: {
       backgroundColor: theme.colors.headerBackground,
       padding: 15,
@@ -824,17 +855,24 @@ const createStyles = (theme, fontSizes) =>
       backgroundColor: 'rgba(255, 255, 255, 0.2)',
       justifyContent: 'center',
       alignItems: 'center',
-      marginRight: 10,
     },
     headerTitle: {
-      color: theme.colors.headerText,
-      fontSize: fontSizes.headerTitle,
+      color: '#fff',
+      fontSize: 20,
       fontWeight: 'bold',
     },
     headerActions: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
+      gap: 8,
+    },
+    headerActionButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     messageButton: {
       // width: 36,
@@ -1094,23 +1132,30 @@ const createStyles = (theme, fontSizes) =>
     },
     // iPad-specific grid layout - 4 tiles per row, wraps to next row for additional tiles
     iPadActionTilesGrid: {
+      flexDirection: 'row',
       flexWrap: 'wrap',
       justifyContent: 'flex-start',
+      gap: Math.max(8, (screenWidth - 80 - ((screenWidth - 80) / 4) * 4) / 3), // Dynamic gap calculation
     },
     // Tablet-specific grid layout - 4 tiles per row, wraps to next row for additional tiles
     tabletActionTilesGrid: {
+      flexDirection: 'row',
       flexWrap: 'wrap',
       justifyContent: 'flex-start',
+      gap: Math.max(10, (screenWidth - 80 - ((screenWidth - 80) / 4) * 4) / 3), // Dynamic gap calculation
     },
     // iPad landscape-specific grid layout - 6 tiles per row, wraps for additional tiles
     iPadLandscapeActionTilesGrid: {
+      flexDirection: 'row',
       flexWrap: 'wrap',
-      justifyContent: 'space-between',
+      justifyContent: 'flex-start',
+      gap: Math.max(6, (screenWidth - 80 - ((screenWidth - 80) / 6) * 6) / 5), // Dynamic gap for 6 tiles
     },
     // Tablet landscape-specific grid layout - 6 tiles per row, wraps for additional tiles
     tabletLandscapeActionTilesGrid: {
       flexWrap: 'wrap',
-      justifyContent: 'space-between',
+      justifyContent: 'flex-start',
+      gap: Math.max(8, (screenWidth - 90 - ((screenWidth - 90) / 6) * 6) / 5), // Dynamic gap for 6 tiles
     },
     actionTile: {
       width: (screenWidth - 48) / 3 - 8, // 3 tiles per row: screen width - padding (24*2) - margins (8*3) / 3
