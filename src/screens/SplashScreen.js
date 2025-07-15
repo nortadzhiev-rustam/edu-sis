@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { StyleSheet, Dimensions, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -9,6 +9,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { useTheme } from '../contexts/ThemeContext'; // Import useTheme
+import useThemeLogo from '../hooks/useThemeLogo';
 import { isIPad } from '../utils/deviceDetection';
 import { lockOrientationForDevice } from '../utils/orientationLock';
 
@@ -21,9 +22,13 @@ const FULL_TEXT = TEXT_LINE1 + '\n' + TEXT_LINE2;
 
 export default function SplashScreen({ onAnimationComplete }) {
   const { theme } = useTheme(); // Get theme from context
+  const logoSource = useThemeLogo();
   const [displayText, setDisplayText] = useState('');
   const [startTyping, setStartTyping] = useState(false);
   const animation = useSharedValue(0);
+
+  // Create styles based on current theme
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   // iPad-specific configurations
   const isIPadDevice = isIPad();
@@ -104,50 +109,64 @@ export default function SplashScreen({ onAnimationComplete }) {
   }, [startTyping]);
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-      edges={[]}
-    >
+    <SafeAreaView style={[styles.container]} edges={[]}>
       <Animated.Image
-        source={require('../../assets/app_logo.png')}
+        source={logoSource}
         style={[styles.logo, logoStyle]}
         resizeMode='contain'
       />
-      <Animated.Text
-        style={[styles.text, { color: theme.colors.primary }, textStyle]}
-      >
+      <Animated.Text style={[styles.text, textStyle]}>
         {displayText}
       </Animated.Text>
     </SafeAreaView>
   );
 }
 
-const createStyles = () => {
+const createStyles = (theme) => {
   const isIPadDevice = isIPad();
 
   return StyleSheet.create({
     container: {
       flex: 1,
-      // backgroundColor: '#ffffff', // Will be set by theme
+      backgroundColor: theme.colors.background,
       alignItems: 'center',
       justifyContent: 'center',
     },
     logo: {
       width: isIPadDevice ? Math.min(width * 0.4, 400) : width * 0.5,
       height: isIPadDevice ? Math.min(height * 0.4, 400) : height * 0.5,
+      // Add subtle shadow for better visibility in both themes
+      ...Platform.select({
+        ios: {
+          shadowColor: theme.mode === 'dark' ? '#ffffff' : '#000000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: theme.mode === 'dark' ? 0.1 : 0.05,
+          shadowRadius: 8,
+        },
+        android: {
+          elevation: theme.mode === 'dark' ? 2 : 1,
+        },
+      }),
     },
     text: {
       marginTop: isIPadDevice ? 30 : 20,
       fontSize: isIPadDevice ? 28 : 22,
       fontWeight: '600',
-      // color: '#007AFF', // Will be set by theme
+      color: theme.colors.primary,
       textAlign: 'center',
       paddingHorizontal: isIPadDevice ? 40 : 20,
       fontFamily: Platform.OS === 'ios' ? 'Helvetica Neue' : 'sans-serif',
       lineHeight: isIPadDevice ? 40 : 32,
       letterSpacing: isIPadDevice ? 0.8 : 0.5,
+      // Add subtle text shadow for better readability
+      ...Platform.select({
+        ios: {
+          textShadowColor:
+            theme.mode === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.8)',
+          textShadowOffset: { width: 0, height: 1 },
+          textShadowRadius: 2,
+        },
+      }),
     },
   });
 };
-
-const styles = createStyles();

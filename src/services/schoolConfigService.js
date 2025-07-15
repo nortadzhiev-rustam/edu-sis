@@ -48,7 +48,10 @@ const DEFAULT_SCHOOL_CONFIGS = {
     },
     branding: {
       name: 'BFI International School',
-      logo: require('../../assets/app_logo.png'), // Using existing logo for now
+      logo: {
+        light: require('../../assets/app_logo.png'),
+        dark: require('../../assets/app_logo_dark.png'),
+      },
       colors: {
         primary: '#007AFF',
         secondary: '#5856D6',
@@ -101,7 +104,10 @@ const DEFAULT_SCHOOL_CONFIGS = {
     },
     branding: {
       name: 'Demo School',
-      logo: require('../../assets/app_logo.png'),
+      logo: {
+        light: require('../../assets/app_logo.png'),
+        dark: require('../../assets/app_logo_dark.png'),
+      },
       colors: {
         primary: '#007AFF',
         secondary: '#5856D6',
@@ -382,6 +388,17 @@ class SchoolConfigService {
     }
   }
 }
+
+/**
+ * Get the appropriate logo based on theme mode
+ * @param {string} themeMode - 'light' or 'dark'
+ * @returns {any} Logo image source
+ */
+export const getThemeLogo = (themeMode = 'light') => {
+  // Use demo or production config based on environment
+  const config = Config.DEMO_MODE ? demoSchoolConfig : bfiSchoolConfig;
+  return config.branding.logo[themeMode] || config.branding.logo.light;
+};
 
 export default SchoolConfigService;
 export { DEFAULT_SCHOOL_CONFIGS, STORAGE_KEYS };

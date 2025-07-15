@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
-  ScrollView,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -33,16 +32,14 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Platform } from 'expo-modules-core';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import useThemeLogo, { useSchoolLogo } from '../hooks/useThemeLogo';
 import {
   isIPad,
-  isTablet,
-  getIPadLayoutConfig,
   getResponsiveFontSizes,
   getResponsiveSpacing,
-  getOptimalColumns,
 } from '../utils/deviceDetection';
 import { lockOrientationForDevice } from '../utils/orientationLock';
-import { createSmallShadow, createCustomShadow } from '../utils/commonStyles';
+import { createSmallShadow, createMediumShadow } from '../utils/commonStyles';
 import { updateCurrentUserLastLogin } from '../services/deviceService';
 
 const { width, height } = Dimensions.get('window');
@@ -51,6 +48,8 @@ export default function HomeScreen({ navigation }) {
   const { theme } = useTheme();
   const { t, currentLanguage } = useLanguage();
   const fontSizes = getLanguageFontSizes(currentLanguage);
+  const logoSource = useThemeLogo();
+  const schoolLogoSource = useSchoolLogo();
   // Lock orientation based on device type
   React.useEffect(() => {
     lockOrientationForDevice();
@@ -370,15 +369,11 @@ export default function HomeScreen({ navigation }) {
       </TouchableOpacity>
 
       <View style={styles.content}>
-        <Image
-          source={require('../../assets/app_logo.png')}
-          style={styles.logo}
-          resizeMode='contain'
-        />
+        <Image source={logoSource} style={styles.logo} resizeMode='contain' />
 
         <Text style={styles.title}>{t('welcomeTo')}</Text>
         <Image
-          source={require('../../assets/EduNova School Logo.png')}
+          source={schoolLogoSource}
           style={styles.secondaryLogo}
           resizeMode='contain'
         />
@@ -593,6 +588,7 @@ const createStyles = (
       height: isIPadDevice ? Math.min(height * 0.12, 150) : height * 0.15,
       // marginTop: isIPadDevice ? height * 0.03 : height * 0.001,
       marginBottom: isIPadDevice ? responsiveSpacing.lg : 20,
+      ...createMediumShadow(theme),
     },
     secondaryLogo: {
       width: isIPadDevice ? Math.min(width * 0.2, 200) : width * 0.3,

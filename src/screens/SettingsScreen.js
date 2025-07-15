@@ -34,6 +34,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useSchoolLogo } from '../hooks/useThemeLogo';
 import { Config } from '../config/env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
@@ -41,6 +42,7 @@ import * as Notifications from 'expo-notifications';
 export default function SettingsScreen({ navigation }) {
   const { theme, isDarkMode, toggleTheme } = useTheme();
   const { currentLanguage, changeLanguage, t, languages } = useLanguage();
+  const schoolLogoSource = useSchoolLogo();
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [isChangingLanguage, setIsChangingLanguage] = useState(false);
@@ -271,7 +273,7 @@ export default function SettingsScreen({ navigation }) {
         >
           {/* EduNova School Logo */}
           <Image
-            source={require('../../assets/EduNova School Logo.png')}
+            source={schoolLogoSource}
             style={styles.aboutLogo}
             resizeMode='contain'
           />
@@ -764,6 +766,9 @@ const createStyles = (theme) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
+      marginHorizontal: 16,
+      borderRadius: 16,
+      ...theme.shadows.small,
     },
     backButton: {
       width: 36,

@@ -31,6 +31,7 @@ import {
 } from '../services/familiesPolicyService';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import useThemeLogo from '../hooks/useThemeLogo';
 import { createSmallShadow } from '../utils/commonStyles';
 import AgeVerification from '../components/AgeVerification';
 import ParentalConsent from '../components/ParentalConsent';
@@ -42,6 +43,7 @@ export default function LoginScreen({ route, navigation }) {
   const { theme } = useTheme();
   const { t, currentLanguage } = useLanguage();
   const fontSizes = getLanguageFontSizes(currentLanguage);
+  const logoSource = useThemeLogo();
 
   // Get login type from route params or default to teacher
   const routeLoginType = route.params?.loginType;
@@ -453,7 +455,7 @@ export default function LoginScreen({ route, navigation }) {
           <FontAwesomeIcon icon={faArrowLeft} size={20} color='#007AFF' />
         </TouchableOpacity>
         <Animated.Image
-          source={require('../../assets/app_logo.png')}
+          source={logoSource}
           style={styles.logo}
           resizeMode='contain'
         />

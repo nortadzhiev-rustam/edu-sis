@@ -289,7 +289,7 @@ const translations = {
     teacher: 'ဆရာ/ဆရာမ',
     parent: 'မိဘ',
     student: 'ကျောင်းသား/သူ',
-    welcomeTOTo: 'မှကြိုဆိုပါတယ်။',
+    welcomeTo: 'မှကြိုဆိုပါတယ်။',
 
     // Academic
     grades: 'အမှတ်များ',
