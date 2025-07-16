@@ -19,13 +19,9 @@ import {
   faStar,
   faChevronDown,
   faChevronUp,
-  faFilter,
-  faRefresh,
-  faPlus,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { Config, buildApiUrl } from '../config/env';
-import { CommonHeader } from '../components';
 
 export default function HomeroomDisciplineScreen({ route, navigation }) {
   const { theme } = useTheme();
@@ -60,8 +56,8 @@ export default function HomeroomDisciplineScreen({ route, navigation }) {
 
       const url = buildApiUrl(Config.API_ENDPOINTS.GET_HOMEROOM_DISCIPLINE, {
         classroom_id: classroomData.classroom_id,
-        start_date: startDate,
-        end_date: endDate,
+        // start_date: startDate,
+        // end_date: endDate,
         auth_code: authCode,
       });
 
@@ -229,15 +225,44 @@ export default function HomeroomDisciplineScreen({ route, navigation }) {
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Discipline Records</Text>
-          <View style={styles.headerRight} />
+        {/* Compact Header */}
+        <View style={styles.compactHeaderContainer}>
+          {/* Navigation Header */}
+          <View style={styles.navigationHeader}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+            </TouchableOpacity>
+
+            <Text style={styles.headerTitle}>Discipline Records</Text>
+
+            <View style={styles.headerRight} />
+          </View>
+
+          {/* Subheader with classroom info */}
+          {classroomData && (
+            <View style={styles.subHeader}>
+              <View style={styles.classroomInfoSection}>
+                <View style={styles.compactIconContainer}>
+                  <FontAwesomeIcon
+                    icon={faClipboardList}
+                    size={20}
+                    color={theme.colors.primary}
+                  />
+                </View>
+                <View style={styles.compactTitleContainer}>
+                  <Text style={styles.compactClassroomTitle}>
+                    {classroomData.classroom_name}
+                  </Text>
+                  <Text style={styles.compactClassroomSubtitle}>
+                    Discipline Records - Last 30 Days
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size='large' color={theme.colors.primary} />
@@ -250,15 +275,44 @@ export default function HomeroomDisciplineScreen({ route, navigation }) {
   if (error) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Discipline Records</Text>
-          <View style={styles.headerRight} />
+        {/* Compact Header */}
+        <View style={styles.compactHeaderContainer}>
+          {/* Navigation Header */}
+          <View style={styles.navigationHeader}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+            </TouchableOpacity>
+
+            <Text style={styles.headerTitle}>Discipline Records</Text>
+
+            <View style={styles.headerRight} />
+          </View>
+
+          {/* Subheader with classroom info */}
+          {classroomData && (
+            <View style={styles.subHeader}>
+              <View style={styles.classroomInfoSection}>
+                <View style={styles.compactIconContainer}>
+                  <FontAwesomeIcon
+                    icon={faClipboardList}
+                    size={20}
+                    color={theme.colors.primary}
+                  />
+                </View>
+                <View style={styles.compactTitleContainer}>
+                  <Text style={styles.compactClassroomTitle}>
+                    {classroomData.classroom_name}
+                  </Text>
+                  <Text style={styles.compactClassroomSubtitle}>
+                    Discipline Records - Last 30 Days
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
         </View>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
@@ -275,47 +329,47 @@ export default function HomeroomDisciplineScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      {/* CommonHeader with responsive font size */}
-      <CommonHeader
-        title='Discipline Records'
-        onBackPress={() => navigation.goBack()}
-        theme={theme}
-        rightActions={[
-          {
-            icon: faFilter,
-            onPress: () => console.log('Filter pressed'),
-            iconColor: theme.colors.headerText,
-          },
-          {
-            icon: faRefresh,
-            onPress: () => fetchDisciplineData(),
-            iconColor: theme.colors.headerText,
-          },
-          {
-            icon: faPlus,
-            onPress: () => console.log('Add pressed'),
-            iconColor: theme.colors.headerText,
-          },
-        ]}
-      />
+      {/* Compact Header */}
+      <View style={styles.compactHeaderContainer}>
+        {/* Navigation Header */}
+        <View style={styles.navigationHeader}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+          </TouchableOpacity>
 
-      {/* Fixed Compact Summary Card */}
-      {disciplineData && (
-        <View style={styles.compactOverviewCard}>
-          <View style={styles.compactHeader}>
-            <View style={styles.compactIconContainer}>
-              <FontAwesomeIcon icon={faClipboardList} size={20} color='#fff' />
-            </View>
-            <View style={styles.compactTitleContainer}>
-              <Text style={styles.compactClassroomTitle}>
-                {classroomData.classroom_name}
-              </Text>
-              <Text style={styles.compactClassroomSubtitle}>
-                Discipline Records - Last 30 Days
-              </Text>
+          <Text style={styles.headerTitle}>Discipline Records</Text>
+
+          <View style={styles.headerRight} />
+        </View>
+
+        {/* Subheader with classroom info */}
+        {classroomData && (
+          <View style={styles.subHeader}>
+            <View style={styles.classroomInfoSection}>
+              <View style={styles.compactIconContainer}>
+                <FontAwesomeIcon
+                  icon={faClipboardList}
+                  size={20}
+                  color={theme.colors.primary}
+                />
+              </View>
+              <View style={styles.compactTitleContainer}>
+                <Text style={styles.compactClassroomTitle}>
+                  {classroomData.classroom_name}
+                </Text>
+                <Text style={styles.compactClassroomSubtitle}>
+                  Discipline Records - Last 30 Days
+                </Text>
+              </View>
             </View>
           </View>
+        )}
 
+        {/* Stats section */}
+        {disciplineData && (
           <View style={styles.compactStatsContainer}>
             <View style={styles.compactStatItem}>
               <FontAwesomeIcon
@@ -363,8 +417,8 @@ export default function HomeroomDisciplineScreen({ route, navigation }) {
               <Text style={styles.compactStatLabel}>Students</Text>
             </View>
           </View>
-        </View>
-      )}
+        )}
+      </View>
 
       {/* Scrollable Students List */}
       <ScrollView
@@ -428,6 +482,19 @@ const createStyles = (theme) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
+    },
+    subHeader: {
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    classroomInfoSection: {
+      flexDirection: 'row',
+      alignItems: 'center',
     },
     // Legacy header style (keeping for compatibility)
     header: {
@@ -487,32 +554,12 @@ const createStyles = (theme) =>
       fontSize: 16,
       fontWeight: '600',
     },
-    // Compact Overview Card Styles
-    compactOverviewCard: {
-      backgroundColor: theme.colors.surface,
-      borderRadius: 16,
-      marginHorizontal: 16,
-      marginTop: 8,
-      marginBottom: 8,
-      elevation: 3,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.15,
-      shadowRadius: 4,
-      overflow: 'hidden',
-    },
-    compactHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: theme.colors.primary,
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-    },
+
     compactIconContainer: {
       width: 36,
       height: 36,
       borderRadius: 18,
-      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      backgroundColor: 'rgba(0, 122, 255, 0.2)',
       justifyContent: 'center',
       alignItems: 'center',
       marginRight: 12,
@@ -523,11 +570,11 @@ const createStyles = (theme) =>
     compactClassroomTitle: {
       fontSize: 18,
       fontWeight: 'bold',
-      color: '#fff',
+      color: theme.colors.text,
     },
     compactClassroomSubtitle: {
       fontSize: 12,
-      color: 'rgba(255, 255, 255, 0.8)',
+      color: theme.colors.textSecondary,
       marginTop: 2,
     },
     compactStatsContainer: {
@@ -535,6 +582,9 @@ const createStyles = (theme) =>
       alignItems: 'center',
       paddingHorizontal: 20,
       paddingVertical: 16,
+      backgroundColor: theme.colors.surface,
+      borderBottomLeftRadius: 16,
+      borderBottomRightRadius: 16,
     },
     compactStatItem: {
       flex: 1,

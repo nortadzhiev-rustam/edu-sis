@@ -9,12 +9,6 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  interpolate,
-} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
@@ -23,7 +17,6 @@ import {
   faUsers,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
-import { getResponsiveHeaderFontSize } from '../utils/commonStyles';
 import {
   getAvailableUsersForStaff,
   createConversation,
@@ -69,8 +62,70 @@ const CreateConversationScreen = ({ navigation, route }) => {
     }
   }, []);
 
-  // Process grouped users to extract Head of School from Head of Section
+  // Process grouped users - check if head_of_school already exists in response
   const processGroupedUsers = (groups) => {
+    // Check if head_of_school group already exists in the response
+    const existingHeadOfSchoolGroup = groups.find(
+      (group) => group.type === 'head_of_school'
+    );
+
+    if (existingHeadOfSchoolGroup) {
+      // If head_of_school group already exists, check if we need to add more users from head_of_section
+      const processedGroups = [];
+      let headOfSchoolUsers = [...existingHeadOfSchoolGroup.users]; // Start with existing users
+
+      groups.forEach((group) => {
+        if (group.type === 'head_of_section') {
+          // Extract additional Head of School users from head_of_section (principal/director)
+          const additionalHeadOfSchool = group.users.filter(
+            (user) =>
+              user.email?.toLowerCase().includes('principal') ||
+              user.email?.toLowerCase().includes('director')
+          );
+
+          // Add to head of school users if not already present
+          additionalHeadOfSchool.forEach((user) => {
+            if (
+              !headOfSchoolUsers.some((existing) => existing.id === user.id)
+            ) {
+              headOfSchoolUsers.push(user);
+            }
+          });
+
+          // Remaining Head of Section users (excluding those moved to head of school)
+          const remainingHeadOfSection = group.users.filter(
+            (user) =>
+              !user.email?.toLowerCase().includes('principal') &&
+              !user.email?.toLowerCase().includes('director')
+          );
+
+          // Add remaining Head of Section users if any
+          if (remainingHeadOfSection.length > 0) {
+            processedGroups.push({
+              ...group,
+              users: remainingHeadOfSection,
+            });
+          }
+        } else if (group.type === 'head_of_school') {
+          // Skip the original head_of_school group - we'll add the updated one later
+          return;
+        } else {
+          // Keep other groups as is
+          processedGroups.push(group);
+        }
+      });
+
+      // Add the updated Head of School group at the beginning
+      processedGroups.unshift({
+        ...existingHeadOfSchoolGroup,
+        users: headOfSchoolUsers,
+        count: headOfSchoolUsers.length,
+      });
+
+      return processedGroups;
+    }
+
+    // Legacy processing for cases where API doesn't separate head_of_school
     const processedGroups = [];
     let headOfSchoolUsers = [];
 

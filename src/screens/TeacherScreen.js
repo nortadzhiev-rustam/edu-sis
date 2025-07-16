@@ -1190,12 +1190,7 @@ const createStyles = (theme, fontSizes) =>
       marginHorizontal: 16,
       marginTop: 8,
       marginBottom: 8,
-      elevation: 3,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.15,
-      shadowRadius: 4,
-      overflow: 'hidden',
+      ...theme.shadows.small,
       zIndex: 1,
     },
     navigationHeader: {
@@ -1204,11 +1199,15 @@ const createStyles = (theme, fontSizes) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
     },
     subHeader: {
       backgroundColor: theme.colors.surface,
       paddingHorizontal: 16,
       paddingVertical: 16,
+      borderBottomLeftRadius: 16,
+      borderBottomRightRadius: 16,
     },
     // Legacy header style (keeping for compatibility)
     header: {

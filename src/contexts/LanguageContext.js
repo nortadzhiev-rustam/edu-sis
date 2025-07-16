@@ -145,7 +145,7 @@ const translations = {
     noNegativeBehavior: 'No negative behavior points to display',
 
     // Common actions
-    viewTimetable: 'View Timetable',
+    viewTimetable: 'Timetable',
     manageBPS: 'Manage BPS',
     quickActions: 'Quick Actions',
     features: 'Features',

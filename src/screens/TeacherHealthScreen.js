@@ -644,7 +644,7 @@ const createStyles = (theme, fontSizes) =>
       alignItems: 'center',
       paddingVertical: 8,
       paddingHorizontal: 16,
-      borderRadius: 20,
+      borderRadius: 10,
       marginRight: 12,
       backgroundColor: theme.colors.background,
     },

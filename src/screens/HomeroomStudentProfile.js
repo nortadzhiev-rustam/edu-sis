@@ -447,6 +447,8 @@ const createStyles = (theme) =>
       justifyContent: 'space-between',
       alignItems: 'center',
       ...theme.shadows.medium,
+      marginHorizontal: 16,
+      borderRadius: 16,
     },
     backButton: {
       width: 36,

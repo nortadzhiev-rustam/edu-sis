@@ -793,7 +793,7 @@ const createStyles = (theme) =>
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.15,
       shadowRadius: 4,
-      overflow: 'hidden',
+      
       zIndex: 1,
     },
     navigationHeader: {
@@ -802,6 +802,8 @@ const createStyles = (theme) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
     },
     subHeader: {
       backgroundColor: theme.colors.surface,
@@ -812,6 +814,8 @@ const createStyles = (theme) =>
       alignItems: 'center',
       borderTopWidth: 1,
       borderTopColor: theme.colors.border,
+      borderBottomEndRadius: 16,
+      borderBottomStartRadius: 16,
     },
     // Legacy header style (keeping for compatibility)
     header: {

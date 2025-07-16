@@ -161,11 +161,11 @@ const ConversationItem = ({
   const animatedStyle = useAnimatedStyle(() => {
     return {
       transform: [{ translateX: translateX.value }],
-      // No border radius for any conversation items
-      // borderTopRightRadius: 0,
-      // borderBottomRightRadius: 0,
-      // borderTopLeftRadius: 0,
-      // borderBottomLeftRadius: 0,
+      // When swiped left, make right side straight while keeping left side rounded
+      borderTopRightRadius: isRevealed ? 0 : 12,
+      borderBottomRightRadius: isRevealed ? 0 : 12,
+      borderTopLeftRadius: 12,
+      borderBottomLeftRadius: 12,
     };
   });
 
@@ -567,7 +567,7 @@ const createStyles = (theme, fontSizes) => {
   return StyleSheet.create({
     container: {
       position: 'relative',
-      marginHorizontal: 16
+      marginHorizontal: 16,
     },
     swipeActionsContainer: {
       position: 'absolute',
@@ -644,7 +644,7 @@ const createStyles = (theme, fontSizes) => {
       flexDirection: 'row',
       padding: 16,
       backgroundColor: theme.colors.surface,
-      
+
       borderRadius: 20, // Rounded conversation items
     },
     unreadConversation: {

@@ -337,7 +337,7 @@ export default function HomeroomScreen({ route, navigation }) {
           <View style={styles.subHeader}>
             <View style={styles.classroomInfoSection}>
               <View style={styles.compactIconContainer}>
-                <FontAwesomeIcon icon={faUserGraduate} size={20} color='#fff' />
+                <FontAwesomeIcon icon={faUserGraduate} size={20} color={theme.mode === 'dark' ? '#fff' : theme.colors.primary} />
               </View>
               <View style={styles.compactTitleContainer}>
                 <Text style={styles.compactClassroomTitle}>
@@ -454,12 +454,11 @@ export default function HomeroomScreen({ route, navigation }) {
             faCalendarCheck,
             '#34C759',
             () =>
-              Alert.alert(
-                'Attendance',
-                attendanceData
-                  ? `Present: ${attendanceData.summary.present}, Absent: ${attendanceData.summary.absent}`
-                  : 'No attendance data'
-              ),
+              navigation.navigate('HomeroomAttendanceDetails', {
+                authCode,
+                classroomData,
+                attendanceData,
+              }),
             attendanceData?.summary.present || 0
           )}
 
@@ -496,12 +495,8 @@ const createStyles = (theme) =>
       marginHorizontal: 16,
       marginTop: 8,
       marginBottom: 8,
-      elevation: 3,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.15,
-      shadowRadius: 4,
-      overflow: 'hidden',
+      ...theme.shadows.small,
+     
       zIndex: 1,
     },
     navigationHeader: {
@@ -510,11 +505,15 @@ const createStyles = (theme) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
     },
     subHeader: {
       backgroundColor: theme.colors.surface,
       paddingHorizontal: 16,
-      paddingVertical: 16,
+      paddingVertical: 8,
+      borderBottomLeftRadius: 16,
+      borderBottomRightRadius: 16,
     },
     backButton: {
       width: 36,
@@ -559,8 +558,11 @@ const createStyles = (theme) =>
     classroomInfoSection: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 16,
+      
       paddingHorizontal: 4,
+      paddingBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
     },
     loadingContainer: {
       flex: 1,
@@ -602,15 +604,15 @@ const createStyles = (theme) =>
     compactOverviewCard: {
       backgroundColor: theme.colors.surface,
       borderRadius: 16,
-      margin: 16,
+      margin: 5,
       marginBottom: 12,
-      ...theme.shadows.small,
+      ...theme.shadows.large,
       elevation: 3,
     },
     compactHeader: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: theme.colors.primary,
+      backgroundColor: theme.colors.surface,
       paddingHorizontal: 20,
       paddingVertical: 16,
       borderTopLeftRadius: 16,
@@ -620,7 +622,9 @@ const createStyles = (theme) =>
       width: 36,
       height: 36,
       borderRadius: 18,
-      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      // '#007AFF' change the trancparency to 0.2
+      backgroundColor: theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 122, 255, 0.2)',
+      //backgroundColor: '#007AFF',
       justifyContent: 'center',
       alignItems: 'center',
       marginRight: 12,
@@ -631,18 +635,19 @@ const createStyles = (theme) =>
     compactClassroomTitle: {
       fontSize: 18,
       fontWeight: 'bold',
-      color: '#fff',
+      color: theme.colors.text,
     },
     compactClassroomSubtitle: {
       fontSize: 12,
-      color: 'rgba(255, 255, 255, 0.8)',
+      color: theme.colors.textSecondary,
       marginTop: 2,
     },
     compactStatsContainer: {
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: 20,
-      paddingVertical: 16,
+      paddingTop: 10,
+      backgroundColor: theme.colors.surface,
     },
     compactStatItem: {
       flex: 1,
@@ -682,7 +687,7 @@ const createStyles = (theme) =>
       alignItems: 'center',
       backgroundColor: theme.colors.primary,
       padding: 20,
-      paddingBottom: 16,
+      paddingBottom: 5,
     },
     classroomIconContainer: {
       width: 48,

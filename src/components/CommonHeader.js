@@ -183,7 +183,7 @@ const createStyles = (theme) =>
       justifyContent: 'space-between',
       paddingHorizontal: 16,
       paddingVertical: 12,
-      backgroundColor: theme.colors.header,
+      backgroundColor: theme.colors.headerBackground,
       borderBottomWidth: 1,
       borderBottomColor: theme.colors.border,
       minHeight: 56,

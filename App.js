@@ -23,6 +23,7 @@ import HomeroomScreen from './src/screens/HomeroomScreen';
 import HomeroomStudentsScreen from './src/screens/HomeroomStudentsScreen';
 import HomeroomStudentProfile from './src/screens/HomeroomStudentProfile';
 import HomeroomDisciplineScreen from './src/screens/HomeroomDisciplineScreen';
+import HomeroomAttendanceDetailsScreen from './src/screens/HomeroomAttendanceDetailsScreen';
 import ParentScreen from './src/screens/ParentScreen';
 import TimetableScreen from './src/screens/TimetableScreen';
 import GradesScreen from './src/screens/GradesScreen';
@@ -257,6 +258,10 @@ export default function App() {
                       component={HomeroomDisciplineScreen}
                     />
                     <Stack.Screen
+                      name='HomeroomAttendanceDetails'
+                      component={HomeroomAttendanceDetailsScreen}
+                    />
+                    <Stack.Screen
                       name='ParentScreen'
                       component={ParentScreen}
                     />
@@ -288,7 +293,7 @@ export default function App() {
                       name='SettingsScreen'
                       component={SettingsScreen}
                     />
-                    
+
                     <Stack.Screen
                       name='NotificationScreen'
                       component={NotificationScreen}
