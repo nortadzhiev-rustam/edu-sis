@@ -935,32 +935,8 @@ export default function TeacherBPS({ route, navigation }) {
   const currentBranch = getCurrentBranch();
   const filteredRecords = getFilteredRecords();
 
-  // Show loading indicator while data is being fetched
-  if (loading && !bpsData) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <TouchableOpacity
-              style={styles.headerButton}
-              onPress={() => navigation.goBack()}
-            >
-              <FontAwesomeIcon
-                icon={faArrowLeft}
-                size={20}
-                color={theme.colors.headerText}
-              />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>BPS Management</Text>
-          </View>
-        </View>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size='large' color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading BPS data...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+
+  
 
   return (
     <SafeAreaView style={styles.container}>
@@ -2029,6 +2005,7 @@ const getStyles = (theme) =>
       paddingVertical: 16,
     },
     loadingSubheader: {
+      flexDirection: 'row',
       paddingVertical: 20,
       alignItems: 'center',
       justifyContent: 'center',
