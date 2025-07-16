@@ -704,12 +704,14 @@ export default function ParentScreen({ navigation }) {
       <View style={styles.content}>
         <View style={styles.childrenSection}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{t('yourChildren')}</Text>
-            {students.length > 0 && (
+            <Text style={styles.sectionTitle}>
+              {students.length > 1 ? t('yourChildren') : t('yourChild')}
+            </Text>
+            {students.length > 2 && (
               <TouchableOpacity
                 style={styles.scrollIndicator}
                 onPress={() => {
-                  if (students.length > 1 && flatListRef.current) {
+                  if (students.length > 2 && flatListRef.current) {
                     // Scroll to the next item
                     const currentIndex = selectedStudent
                       ? students.findIndex((s) => s.id === selectedStudent.id)
@@ -723,7 +725,7 @@ export default function ParentScreen({ navigation }) {
                 }}
               >
                 <Text style={styles.scrollIndicatorText}>
-                  {students.length > 1 ? t('scrollForMore') : t('yourChild')}
+                  {t('scrollForMore')}
                 </Text>
               </TouchableOpacity>
             )}
@@ -935,7 +937,7 @@ const createStyles = (theme, fontSizes) =>
     // No longer needed with FontAwesome icon
     content: {
       flex: 1,
-      padding: 15,
+      padding: 10,
     },
     childrenSection: {
       marginBottom: 5,
@@ -955,6 +957,7 @@ const createStyles = (theme, fontSizes) =>
       alignItems: 'center',
       borderWidth: 1,
       borderColor: theme.colors.primary + '50',
+      marginRight: 10,
     },
     scrollIndicatorText: {
       color: theme.colors.primary,
@@ -972,10 +975,11 @@ const createStyles = (theme, fontSizes) =>
       fontWeight: '600',
       marginBottom: 10,
       color: theme.colors.text,
+      marginLeft: 15,
     },
     listContainer: {
       paddingBottom: 10,
-      paddingLeft: 12,
+      paddingLeft: 10,
       paddingRight: 40,
     },
     studentTileContainer: {
