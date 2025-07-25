@@ -60,6 +60,9 @@ import {
   setNavigationRef,
 } from './src/utils/messaging';
 import { getDemoCredentials } from './src/services/authService';
+import performanceMonitor, {
+  wrapWithTimeout,
+} from './src/utils/performanceMonitor';
 
 const Stack = createNativeStackNavigator();
 
@@ -75,6 +78,9 @@ export default function App() {
       '🔧 React Native version:',
       Platform.constants?.reactNativeVersion || 'Unknown'
     );
+
+    // Start performance monitoring
+    performanceMonitor.startMonitoring();
 
     // Log demo credentials for easy access
     console.log('\n🎭 DEMO MODE CREDENTIALS:');
@@ -95,58 +101,132 @@ export default function App() {
     const setupFirebase = async () => {
       try {
         console.log('🔥 FIREBASE SETUP: Starting Firebase initialization...');
+        console.log('📱 Platform:', Platform.OS);
 
-        // Request permission with our custom UI flow
-        console.log('🔔 APNS: Requesting user permission...');
-        await requestUserPermission();
+        // iOS-specific setup with shorter timeouts
+        if (Platform.OS === 'ios') {
+          console.log('🍎 iOS: Starting iOS-specific Firebase setup...');
 
-        // Setup local notifications
-        console.log('📲 NOTIFICATIONS: Setting up local notifications...');
-        await setupLocalNotifications();
+          // Request permission with timeout for iOS
+          console.log('🔔 iOS: Requesting user permission with timeout...');
+          try {
+            await wrapWithTimeout(
+              requestUserPermission,
+              15000, // 15 second timeout for iOS permission request
+              'iOS Permission Request'
+            );
+          } catch (permissionError) {
+            console.warn(
+              '⚠️ iOS: Permission request timed out or failed:',
+              permissionError
+            );
+            // Continue without permissions on iOS
+          }
 
-        // Setup notification listeners
+          // Setup local notifications with timeout
+          console.log('📲 iOS: Setting up local notifications...');
+          try {
+            await wrapWithTimeout(
+              setupLocalNotifications,
+              10000, // 10 second timeout
+              'iOS Local Notifications'
+            );
+          } catch (notificationError) {
+            console.warn(
+              '⚠️ iOS: Local notifications setup failed:',
+              notificationError
+            );
+          }
+
+          // Get device token with timeout (iOS specific)
+          console.log('🎫 iOS: Getting device token...');
+          try {
+            const token = await wrapWithTimeout(
+              getDeviceToken,
+              20000, // 20 second timeout for iOS device token
+              'iOS Device Token'
+            );
+
+            if (token) {
+              console.log('✅ iOS: APNS TOKEN RECEIVED');
+              console.log('🔗 iOS: Token length:', token.length);
+            } else {
+              console.log('❌ iOS: No token received');
+            }
+          } catch (tokenError) {
+            console.warn('⚠️ iOS: Device token retrieval failed:', tokenError);
+          }
+        } else {
+          // Android setup (original flow)
+          console.log('🤖 Android: Starting Android Firebase setup...');
+
+          await requestUserPermission();
+          await setupLocalNotifications();
+
+          const token = await getDeviceToken();
+          if (token) {
+            console.log('✅ Android: FCM TOKEN RECEIVED:', token);
+            console.log('🔗 Android: Token length:', token.length);
+          }
+        }
+
+        // Setup notification listeners (common for both platforms)
         console.log('👂 LISTENERS: Setting up notification listeners...');
         notificationListener();
 
         // Set navigation reference for programmatic navigation from notifications
-        // Note: This will be set when NavigationContainer is ready
         console.log(
           '🧭 NAVIGATION: Navigation reference will be set when container is ready...'
         );
-
-        // Get the token if permission was granted
-        console.log('🎫 TOKEN: Getting Firebase messaging token...');
-        const token = await getDeviceToken();
-        if (token) {
-          console.log('✅ APNS TOKEN RECEIVED:', token);
-          console.log('🔗 Token length:', token.length);
-          console.log('🏷️ Token prefix:', token.substring(0, 20) + '...');
-        } else {
-          console.log('❌ APNS TOKEN: No token received');
-        }
 
         console.log('✅ FIREBASE SETUP: Complete');
       } catch (error) {
         console.error('❌ FIREBASE SETUP ERROR:', error);
         console.error('🔍 Error details:', error.message);
         console.error('📊 Error stack:', error.stack);
+
+        // Platform-specific error handling
+        if (Platform.OS === 'ios') {
+          console.error(
+            '🍎 iOS: Firebase setup failed - this is common on iOS due to stricter permissions'
+          );
+        }
+
         // Continue with app initialization even if notifications fail
       }
     };
 
-    // Run initialization tasks
+    // Run initialization tasks with timeout protection
     const initialize = async () => {
       console.log('🏁 INITIALIZATION: Starting app initialization sequence...');
       const startTime = Date.now();
 
-      await setupFirebase();
+      try {
+        // Wrap Firebase setup with timeout protection
+        await wrapWithTimeout(
+          setupFirebase,
+          30000, // 30 second timeout
+          'Firebase Setup'
+        );
 
-      const endTime = Date.now();
-      console.log(`⚡ INITIALIZATION: Complete in ${endTime - startTime}ms`);
-      console.log('🎬 SPLASH: Waiting for splash screen animation...');
+        const endTime = Date.now();
+        console.log(`⚡ INITIALIZATION: Complete in ${endTime - startTime}ms`);
+        console.log('🎬 SPLASH: Waiting for splash screen animation...');
 
-      // We'll let the splash screen animation control when to transition
-      // The splash screen will call handleAnimationComplete when done
+        // We'll let the splash screen animation control when to transition
+        // The splash screen will call handleAnimationComplete when done
+      } catch (error) {
+        console.error('❌ INITIALIZATION: Failed with error:', error);
+
+        // Continue with app initialization even if some parts fail
+        const endTime = Date.now();
+        console.log(
+          `⚡ INITIALIZATION: Completed with errors in ${endTime - startTime}ms`
+        );
+
+        // Still proceed to show the app
+        console.log('🎬 SPLASH: Proceeding despite initialization errors...');
+      }
     };
 
     initialize();

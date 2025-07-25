@@ -180,22 +180,28 @@ export default function LibraryScreen({ navigation, route }) {
     }
   };
 
-  // author name split by comma and render
+  // author name split by comma and separated by 'and' if more than one
   const renderAuthorName = (authorName) => {
     if (!authorName) return null;
-    const authors = authorName.split(', ');
-    return (
-      <Text style={styles.bookAuthor}>
-        {authors.map((author, index) => (
-          <Text key={index}>
-            {author}
-            {index < authors.length - 1 ? ', ' : ''}
-          </Text>
-        ))}
-      </Text>
-    );
-  };
+    console.log('Original author name:', authorName);
 
+    // Split by comma (with or without space) and clean up any extra spaces
+    const authors = authorName.split(',').map((author) => author.trim());
+    console.log('Split authors:', authors);
+
+    let result;
+    if (authors.length === 1) {
+      result = authors[0];
+    } else if (authors.length === 2) {
+      result = authors.join(' & ');
+    } else {
+      const lastAuthor = authors.pop();
+      result = `${authors.join(' & ')} & ${lastAuthor}`;
+    }
+
+    console.log('Final result:', result);
+    return result;
+  };
 
   // Get status label
   const getStatusLabel = (status) => {
@@ -403,7 +409,11 @@ export default function LibraryScreen({ navigation, route }) {
                 {book.title || 'Unknown Title'}
               </Text>
               <Text style={styles.bookAuthor}>
-                {renderAuthorName(book.author_name) || 'Unknown Author'}
+                {renderAuthorName(book.author_name || book.author) ||
+                  'Unknown Author'}
+              </Text>
+              <Text style={styles.bookAuthor}>
+                Category: {book.category_name || 'Unknown Category'}
               </Text>
               <Text style={styles.bookISBN}>ISBN: {book.isbn || 'N/A'}</Text>
 
@@ -484,7 +494,12 @@ export default function LibraryScreen({ navigation, route }) {
                 {record.title || 'Unknown Title'}
               </Text>
               <Text style={styles.historyAuthor}>
-                {renderAuthorName(record.author_name )|| 'Unknown Author'}
+                {renderAuthorName(record.author_name || record.author) ||
+                  'Unknown Author'}
+              </Text>
+              {/* category */}
+              <Text style={styles.historyAuthor}>
+                Category: {record.category_name || 'Unknown Category'}
               </Text>
 
               <View style={styles.historyDates}>
@@ -546,7 +561,13 @@ export default function LibraryScreen({ navigation, route }) {
                 {book.title || 'Unknown Title'}
               </Text>
               <Text style={styles.availableBookAuthor}>
-                {renderAuthorName(book.author_name) || 'Unknown Author'}
+                Author:{' '}
+                {renderAuthorName(book.author_name || book.author) ||
+                  'Unknown Author'}
+              </Text>
+              {/* book category */}
+              <Text style={styles.availableBookAuthor}>
+                Category: {book.category_name || 'Unknown Category'}
               </Text>
               <Text style={styles.availableBookISBN}>
                 ISBN: {book.isbn || 'N/A'}
@@ -583,19 +604,19 @@ export default function LibraryScreen({ navigation, route }) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <View style={styles.compactHeaderContainer}>
-        {/* Navigation Header */}
-        <View style={styles.navigationHeader}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
-          </TouchableOpacity>
+          {/* Navigation Header */}
+          <View style={styles.navigationHeader}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
+            </TouchableOpacity>
 
-          <Text style={styles.headerTitle}>Library</Text>
+            <Text style={styles.headerTitle}>Library</Text>
 
-          <View style={styles.headerRight} />
-        </View>
+            <View style={styles.headerRight} />
+          </View>
         </View>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading library data...</Text>

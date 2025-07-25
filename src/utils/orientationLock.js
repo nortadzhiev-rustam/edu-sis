@@ -17,14 +17,25 @@ export const lockOrientationForDevice = async () => {
       await ScreenOrientation.unlockAsync();
       console.log('📱 Orientation: Unlocked for tablet/iPad');
     } else {
-      // Lock to portrait for phones
-      await ScreenOrientation.lockAsync(
+      // Lock to portrait for phones with timeout protection
+      const lockPromise = ScreenOrientation.lockAsync(
         ScreenOrientation.OrientationLock.PORTRAIT_UP
       );
+
+      // Add timeout for iOS orientation lock (can hang on iOS)
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Orientation lock timeout')), 5000);
+      });
+
+      await Promise.race([lockPromise, timeoutPromise]);
       console.log('📱 Orientation: Locked to portrait for phone');
     }
   } catch (error) {
     console.warn('⚠️ Orientation lock failed:', error);
+    // On iOS, orientation lock failures are common and shouldn't block the app
+    if (Platform.OS === 'ios') {
+      console.log('🍎 iOS: Continuing despite orientation lock failure');
+    }
   }
 };
 

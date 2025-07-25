@@ -41,6 +41,21 @@ import {
 import { lockOrientationForDevice } from '../utils/orientationLock';
 import { createSmallShadow, createMediumShadow } from '../utils/commonStyles';
 import { updateCurrentUserLastLogin } from '../services/deviceService';
+import {
+  getValidatedUserData,
+  getValidatedStudentAccounts,
+  validateAndSanitizeAllData,
+} from '../utils/dataValidation';
+import {
+  runHomescreenDiagnostics,
+  generateUserFriendlyErrorMessage,
+  logDiagnostics,
+  clearAllUserData,
+} from '../utils/homescreenDiagnostics';
+import {
+  wrapWithTimeout,
+  usePerformanceMonitoring,
+} from '../utils/performanceMonitor';
 
 const { width, height } = Dimensions.get('window');
 
@@ -50,10 +65,110 @@ export default function HomeScreen({ navigation }) {
   const fontSizes = getLanguageFontSizes(currentLanguage);
   const logoSource = useThemeLogo();
   const schoolLogoSource = useSchoolLogo();
-  // Lock orientation based on device type
+
+  // Use performance monitoring
+  const { logMetrics } = usePerformanceMonitoring();
+  // Lock orientation based on device type with iOS-specific handling
   React.useEffect(() => {
-    lockOrientationForDevice();
+    const handleOrientationLock = async () => {
+      try {
+        if (Platform.OS === 'ios') {
+          console.log('🍎 iOS: Setting up orientation lock with timeout...');
+          // Use timeout protection for iOS orientation lock
+          await wrapWithTimeout(
+            lockOrientationForDevice,
+            5000, // 5 second timeout for iOS
+            'iOS Orientation Lock'
+          );
+        } else {
+          await lockOrientationForDevice();
+        }
+      } catch (error) {
+        console.warn('⚠️ HOME: Orientation lock failed:', error);
+        // Continue without orientation lock on iOS
+        if (Platform.OS === 'ios') {
+          console.log('🍎 iOS: Continuing despite orientation lock failure');
+        }
+      }
+    };
+
+    handleOrientationLock();
   }, []);
+
+  // Validate and sanitize data on component mount with timeout protection
+  React.useEffect(() => {
+    const validateData = async () => {
+      try {
+        console.log('🔍 HOME: Validating stored data on mount...');
+
+        // Wrap validation with timeout protection
+        const validationResults = await wrapWithTimeout(
+          validateAndSanitizeAllData,
+          15000, // 15 second timeout
+          'Data Validation'
+        );
+
+        if (
+          !validationResults.userData.valid &&
+          !validationResults.studentAccounts.count
+        ) {
+          console.log('⚠️ HOME: No valid user data found');
+        } else {
+          console.log('✅ HOME: Data validation complete:', validationResults);
+        }
+
+        // Log performance metrics after validation
+        logMetrics();
+      } catch (error) {
+        console.error('❌ HOME: Error during data validation:', error);
+
+        // If validation times out or fails, continue anyway
+        console.log('🔄 HOME: Continuing despite validation error...');
+      }
+    };
+
+    validateData();
+  }, []);
+
+  // Diagnostic function for troubleshooting navigation issues
+  const runDiagnostics = async () => {
+    try {
+      console.log('🔍 HOME: Running diagnostics...');
+      const diagnostics = await runHomescreenDiagnostics();
+      logDiagnostics(diagnostics);
+
+      const userMessage = generateUserFriendlyErrorMessage(diagnostics);
+
+      Alert.alert('Navigation Diagnostics', userMessage, [
+        { text: 'OK', style: 'default' },
+        {
+          text: 'Clear Data & Restart',
+          style: 'destructive',
+          onPress: async () => {
+            const cleared = await clearAllUserData();
+            if (cleared) {
+              Alert.alert(
+                'Data Cleared',
+                'All user data has been cleared. Please restart the app and log in again.',
+                [{ text: 'OK' }]
+              );
+            } else {
+              Alert.alert(
+                'Error',
+                'Failed to clear data. Please restart the app manually.'
+              );
+            }
+          },
+        },
+      ]);
+    } catch (error) {
+      console.error('❌ HOME: Diagnostics failed:', error);
+      Alert.alert(
+        'Diagnostics Error',
+        'Unable to run diagnostics. Please restart the app.'
+      );
+    }
+  };
 
   // iPad-specific configurations
   const isIPadDevice = isIPad();
@@ -70,46 +185,85 @@ export default function HomeScreen({ navigation }) {
 
   const handleTeacherPress = async () => {
     try {
-      // Check if teacher is already logged in
-      const userData = await AsyncStorage.getItem('userData');
-      if (userData) {
-        const parsedUserData = JSON.parse(userData);
-        // Only navigate to teacher screen if the logged in user is a teacher
-        if (parsedUserData.userType === 'teacher') {
-          // Update last login timestamp when user opens the app
-          console.log(
-            '⏰ HOME: Updating last login for existing teacher user...'
+      console.log('👨‍🏫 HOME: Teacher button pressed, starting navigation...');
+
+      // Use validated user data with timeout protection
+      const userData = await wrapWithTimeout(
+        getValidatedUserData,
+        10000, // 10 second timeout
+        'Get Teacher Data'
+      );
+
+      if (userData && userData.userType === 'teacher') {
+        // Update last login timestamp when user opens the app
+        console.log(
+          '⏰ HOME: Updating last login for existing teacher user...'
+        );
+        try {
+          // Wrap last login update with timeout
+          const updateResult = await wrapWithTimeout(
+            updateCurrentUserLastLogin,
+            5000, // 5 second timeout
+            'Update Last Login'
           );
-          try {
-            const updateResult = await updateCurrentUserLastLogin();
-            if (updateResult.success) {
-              console.log('✅ HOME: Last login updated successfully');
-            } else {
-              console.warn(
-                '⚠️ HOME: Failed to update last login:',
-                updateResult.error
-              );
-              // Continue with navigation even if update fails
-            }
-          } catch (updateError) {
-            console.error('❌ HOME: Error updating last login:', updateError);
+
+          if (updateResult.success) {
+            console.log('✅ HOME: Last login updated successfully');
+          } else {
+            console.warn(
+              '⚠️ HOME: Failed to update last login:',
+              updateResult.error
+            );
             // Continue with navigation even if update fails
           }
-
-          navigation.navigate('TeacherScreen', { userData: parsedUserData });
-          return;
+        } catch (updateError) {
+          console.error('❌ HOME: Error updating last login:', updateError);
+          // Continue with navigation even if update fails
         }
+
+        console.log('🚀 HOME: Navigating to teacher screen...');
+        navigation.navigate('TeacherScreen', { userData });
+        return;
       }
+
       // If not logged in or not a teacher, go to login screen with teacher type
+      console.log('🔄 HOME: No valid teacher data found, redirecting to login');
       navigation.navigate('Login', { loginType: 'teacher' });
     } catch (error) {
-      navigation.navigate('Login', { loginType: 'teacher' });
+      console.error('❌ HOME: Unexpected error in handleTeacherPress:', error);
+      Alert.alert(
+        'Navigation Error',
+        'Unable to access teacher screen. This might be due to corrupted data.',
+        [
+          { text: 'Try Again', onPress: () => handleTeacherPress() },
+          { text: 'Run Diagnostics', onPress: () => runDiagnostics() },
+          {
+            text: 'Go to Login',
+            onPress: () =>
+              navigation.navigate('Login', { loginType: 'teacher' }),
+          },
+        ]
+      );
     }
   };
 
   const handleParentPress = async () => {
-    // Navigate to parent screen - no login check needed as parents can add students later
-    navigation.navigate('ParentScreen');
+    try {
+      // Navigate to parent screen - no login check needed as parents can add students later
+      console.log('👨‍👩‍👧‍👦 HOME: Navigating to parent screen');
+      navigation.navigate('ParentScreen');
+    } catch (error) {
+      console.error('❌ HOME: Error navigating to parent screen:', error);
+      Alert.alert(
+        'Navigation Error',
+        'Unable to access parent screen. Please try again.',
+        [
+          { text: 'Try Again', onPress: () => handleParentPress() },
+          { text: 'Run Diagnostics', onPress: () => runDiagnostics() },
+          { text: 'Cancel', style: 'cancel' },
+        ]
+      );
+    }
   };
 
   // Helper function to get all available user data for school resources
@@ -117,19 +271,17 @@ export default function HomeScreen({ navigation }) {
     const allUsers = [];
 
     try {
-      // Check for direct login userData (teacher or student)
-      const userData = await AsyncStorage.getItem('userData');
+      // Use validated user data utilities
+      const userData = await getValidatedUserData();
       if (userData) {
-        const user = JSON.parse(userData);
-        allUsers.push(user);
+        allUsers.push(userData);
       }
 
-      // Check for student accounts in parent system
-      const studentAccountsStr = await AsyncStorage.getItem('studentAccounts');
-      if (studentAccountsStr) {
-        const studentAccounts = JSON.parse(studentAccountsStr);
-        allUsers.push(...studentAccounts);
-      }
+      // Get validated student accounts
+      const studentAccounts = await getValidatedStudentAccounts();
+      allUsers.push(...studentAccounts);
+
+      console.log(`📊 HOME: Found ${allUsers.length} valid user accounts`);
     } catch (error) {
       console.error('❌ HOME: Error getting user data:', error);
     }
@@ -202,7 +354,18 @@ export default function HomeScreen({ navigation }) {
       navigation.navigate(screenName);
     } catch (error) {
       console.error(`❌ HOME: Error accessing ${screenName}:`, error);
-      Alert.alert('Error', `Unable to access ${screenName}. Please try again.`);
+      Alert.alert(
+        'Navigation Error',
+        `Unable to access ${screenName}. This might be due to data issues.`,
+        [
+          {
+            text: 'Try Again',
+            onPress: () => handleSchoolResourcePress(screenName),
+          },
+          { text: 'Run Diagnostics', onPress: () => runDiagnostics() },
+          { text: 'Cancel', style: 'cancel' },
+        ]
+      );
     }
   };
 
@@ -336,18 +499,25 @@ export default function HomeScreen({ navigation }) {
       );
     } catch (error) {
       console.error('❌ HOME: Error checking user data for calendar:', error);
-      // Show login options on error
-      Alert.alert('Login Required', 'Please log in to access the calendar.', [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Login as Teacher',
-          onPress: () => navigation.navigate('Login', { loginType: 'teacher' }),
-        },
-        {
-          text: 'Login as Student',
-          onPress: () => navigation.navigate('Login', { loginType: 'student' }),
-        },
-      ]);
+      // Show enhanced error options
+      Alert.alert(
+        'Calendar Access Error',
+        'Unable to access calendar. This might be due to data issues or missing login information.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Run Diagnostics', onPress: () => runDiagnostics() },
+          {
+            text: 'Login as Teacher',
+            onPress: () =>
+              navigation.navigate('Login', { loginType: 'teacher' }),
+          },
+          {
+            text: 'Login as Student',
+            onPress: () =>
+              navigation.navigate('Login', { loginType: 'student' }),
+          },
+        ]
+      );
     }
   };
 

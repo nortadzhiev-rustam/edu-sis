@@ -3165,7 +3165,7 @@ export const getDemoStudentLibraryData = () => {
       {
         id: 2,
         title: 'Physics: Principles and Applications',
-        author: 'Prof. Michael Johnson',
+        author: 'Prof. Michael Johnson, Dr. Jane Davis',
         isbn: '978-0-987654-32-1',
         barcode: 'LIB002345678',
         borrowed_date: '2024-01-08',
@@ -3179,7 +3179,7 @@ export const getDemoStudentLibraryData = () => {
       {
         id: 3,
         title: 'World Literature: Classic and Contemporary',
-        author: 'Emma Thompson',
+        author: 'Emma Thompson, John Smith, Sarah Wilson',
         isbn: '978-0-456789-01-2',
         barcode: 'LIB003456789',
         borrowed_date: '2024-01-12',
