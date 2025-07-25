@@ -26,7 +26,6 @@
         }
       },
       "ios": {
-        
         "cache": {
           "disabled": true
         }

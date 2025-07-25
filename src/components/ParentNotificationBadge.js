@@ -47,8 +47,8 @@ const createStyles = (theme) =>
       alignItems: 'center',
 
       position: 'absolute',
-      top: -10,
-      right: -10,
+      top: -1,
+      right: -1,
       borderWidth: 2,
       borderColor: theme.colors.background,
     },

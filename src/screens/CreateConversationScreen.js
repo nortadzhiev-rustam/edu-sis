@@ -405,6 +405,7 @@ const createStyles = (theme, fontSizes) => {
     container: {
       flex: 1,
       backgroundColor: theme.colors.background,
+      paddingHorizontal: 16,
     },
     header: {
       flexDirection: 'row',
@@ -413,6 +414,8 @@ const createStyles = (theme, fontSizes) => {
       paddingHorizontal: 16,
       paddingVertical: 12,
       backgroundColor: theme.colors.headerBackground,
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
     },
     backButton: {
       padding: 8,
@@ -425,7 +428,7 @@ const createStyles = (theme, fontSizes) => {
     createButton: {
       paddingHorizontal: 16,
       paddingVertical: 8,
-      borderRadius: 6,
+      borderRadius: 20,
       backgroundColor: 'rgba(255, 255, 255, 0.2)',
     },
     createButtonDisabled: {
@@ -463,6 +466,9 @@ const createStyles = (theme, fontSizes) => {
       paddingHorizontal: 16,
       paddingVertical: 12,
       backgroundColor: theme.colors.surface,
+      borderBottomLeftRadius: 16,
+      borderBottomRightRadius: 16,
+      marginBottom: 10,
     },
     searchBar: {
       flexDirection: 'row',
@@ -504,6 +510,8 @@ const createStyles = (theme, fontSizes) => {
     },
     listContainer: {
       paddingBottom: 16,
+      borderRadius: 16,
+      overflow: 'hidden',
     },
     userItem: {
       flexDirection: 'row',
@@ -513,6 +521,8 @@ const createStyles = (theme, fontSizes) => {
       backgroundColor: theme.colors.surface,
       borderBottomWidth: 1,
       borderBottomColor: theme.colors.border,
+      borderRadius: 12,
+      overflow: 'hidden',
     },
     selectedUserItem: {
       backgroundColor: theme.colors.primary + '10',

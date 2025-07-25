@@ -568,6 +568,7 @@ const createStyles = (theme, fontSizes) => {
     container: {
       position: 'relative',
       marginHorizontal: 16,
+      ...theme.shadows.small,
     },
     swipeActionsContainer: {
       position: 'absolute',
@@ -579,7 +580,7 @@ const createStyles = (theme, fontSizes) => {
       justifyContent: 'space-between',
       alignItems: 'center',
       borderRadius: 12,
-      marginVertical: 5,
+      marginVertical: 4,
       overflow: 'hidden',
     },
     leftActions: {
@@ -637,15 +638,16 @@ const createStyles = (theme, fontSizes) => {
     animatedContainer: {
       backgroundColor: theme.colors.surface,
       borderRadius: 12, // Rounded conversation items
-      overflow: 'hidden', // Ensure children respect border radius
-      marginVertical: 4, // Add spacing between items
+
+      marginVertical: 4, // Add spacing between items\
+      overflow: 'hidden',
     },
     conversationItem: {
       flexDirection: 'row',
       padding: 16,
       backgroundColor: theme.colors.surface,
 
-      borderRadius: 20, // Rounded conversation items
+      
     },
     unreadConversation: {
       backgroundColor: theme.colors.primary + '05',

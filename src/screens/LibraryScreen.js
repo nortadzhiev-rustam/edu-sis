@@ -167,11 +167,11 @@ export default function LibraryScreen({ navigation, route }) {
   // Get status color
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case 'borrowed':
+      case 'current':
         return '#007AFF';
-      case 'overdue':
+      case 'returned_late':
         return '#FF3B30';
-      case 'returned':
+      case 'returned_on_time':
         return '#34C759';
       case 'renewed':
         return '#FF9500';
@@ -180,14 +180,47 @@ export default function LibraryScreen({ navigation, route }) {
     }
   };
 
+  // author name split by comma and render
+  const renderAuthorName = (authorName) => {
+    if (!authorName) return null;
+    const authors = authorName.split(', ');
+    return (
+      <Text style={styles.bookAuthor}>
+        {authors.map((author, index) => (
+          <Text key={index}>
+            {author}
+            {index < authors.length - 1 ? ', ' : ''}
+          </Text>
+        ))}
+      </Text>
+    );
+  };
+
+
+  // Get status label
+  const getStatusLabel = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'current':
+        return 'Current';
+      case 'returned_late':
+        return 'Returned Late';
+      case 'returned_on_time':
+        return 'Returned';
+      case 'renewed':
+        return 'Renewed';
+      default:
+        return 'Unknown';
+    }
+  };
+
   // Get status icon
   const getStatusIcon = (status) => {
     switch (status?.toLowerCase()) {
-      case 'borrowed':
+      case 'current':
         return faBookOpen;
-      case 'overdue':
+      case 'returned_late':
         return faExclamationTriangle;
-      case 'returned':
+      case 'returned_on_time':
         return faCheckCircle;
       case 'renewed':
         return faRedo;
@@ -370,7 +403,7 @@ export default function LibraryScreen({ navigation, route }) {
                 {book.title || 'Unknown Title'}
               </Text>
               <Text style={styles.bookAuthor}>
-                {book.author || 'Unknown Author'}
+                {renderAuthorName(book.author_name) || 'Unknown Author'}
               </Text>
               <Text style={styles.bookISBN}>ISBN: {book.isbn || 'N/A'}</Text>
 
@@ -382,13 +415,13 @@ export default function LibraryScreen({ navigation, route }) {
                     color='#8E8E93'
                   />
                   <Text style={styles.dateText}>
-                    Borrowed: {formatDate(book.borrowed_date)}
+                    Borrowed: {formatDate(book.issue_date)}
                   </Text>
                 </View>
                 <View style={styles.dateItem}>
                   <FontAwesomeIcon icon={faClock} size={12} color='#8E8E93' />
                   <Text style={styles.dateText}>
-                    Due: {formatDate(book.due_date)}
+                    Due: {formatDate(book.should_return_date)}
                   </Text>
                 </View>
               </View>
@@ -451,15 +484,15 @@ export default function LibraryScreen({ navigation, route }) {
                 {record.title || 'Unknown Title'}
               </Text>
               <Text style={styles.historyAuthor}>
-                {record.author || 'Unknown Author'}
+                {renderAuthorName(record.author_name )|| 'Unknown Author'}
               </Text>
 
               <View style={styles.historyDates}>
                 <Text style={styles.historyDate}>
-                  Borrowed: {formatDate(record.borrowed_date)}
+                  Borrowed: {formatDate(record.issue_date)}
                 </Text>
                 <Text style={styles.historyDate}>
-                  Returned: {formatDate(record.returned_date)}
+                  Returned: {formatDate(record.return_date)}
                 </Text>
               </View>
             </View>
@@ -476,7 +509,7 @@ export default function LibraryScreen({ navigation, route }) {
                 color='#fff'
               />
               <Text style={styles.historyStatusText}>
-                {record.status || 'Returned'}
+                {getStatusLabel(record.status) || 'Returned'}
               </Text>
             </View>
           </View>
@@ -513,7 +546,7 @@ export default function LibraryScreen({ navigation, route }) {
                 {book.title || 'Unknown Title'}
               </Text>
               <Text style={styles.availableBookAuthor}>
-                {book.author_name || 'Unknown Author'}
+                {renderAuthorName(book.author_name) || 'Unknown Author'}
               </Text>
               <Text style={styles.availableBookISBN}>
                 ISBN: {book.isbn || 'N/A'}
@@ -549,26 +582,20 @@ export default function LibraryScreen({ navigation, route }) {
   if (loading && !libraryData) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-        <View style={styles.header}>
+        <View style={styles.compactHeaderContainer}>
+        {/* Navigation Header */}
+        <View style={styles.navigationHeader}>
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <FontAwesomeIcon icon={faArrowLeft} size={20} color='#fff' />
+            <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
           </TouchableOpacity>
+
           <Text style={styles.headerTitle}>Library</Text>
-          <TouchableOpacity
-            style={styles.notificationButton}
-            onPress={() =>
-              navigation.navigate('NotificationScreen', {
-                userType: 'student',
-                authCode: authCode,
-              })
-            }
-          >
-            <FontAwesomeIcon icon={faBell} size={18} color='#fff' />
-            <NotificationBadge />
-          </TouchableOpacity>
+
+          <View style={styles.headerRight} />
+        </View>
         </View>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading library data...</Text>
@@ -1036,7 +1063,7 @@ const createStyles = (theme) =>
       alignItems: 'center',
       paddingHorizontal: 8,
       paddingVertical: 4,
-      borderRadius: 12,
+      borderRadius: 14,
       height: 28,
     },
     historyStatusText: {

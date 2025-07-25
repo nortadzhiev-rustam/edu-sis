@@ -14,8 +14,8 @@ import { isIPad } from '../utils/deviceDetection';
 import { lockOrientationForDevice } from '../utils/orientationLock';
 
 const { width, height } = Dimensions.get('window');
-const TYPING_SPEED = 50; // Increased for better visibility
-const LOGO_ANIMATION_DURATION = 1000;
+const TYPING_SPEED = 30; // Faster typing animation
+const LOGO_ANIMATION_DURATION = 500;
 const TEXT_LINE1 = 'Inspiring Brilliance';
 const TEXT_LINE2 = 'Building Brighter Futures';
 const FULL_TEXT = TEXT_LINE1 + '\n' + TEXT_LINE2;
@@ -26,6 +26,28 @@ export default function SplashScreen({ onAnimationComplete }) {
   const [displayText, setDisplayText] = useState('');
   const [startTyping, setStartTyping] = useState(false);
   const animation = useSharedValue(0);
+
+  // Extract completion handler to reduce nesting
+  const handleAnimationComplete = () => {
+    if (!onAnimationComplete) return;
+
+    // Start the final animation
+    animation.value = withTiming(2, {
+      duration: 500,
+      easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+    });
+
+    // Call the completion callback after animation duration
+    setTimeout(() => {
+      onAnimationComplete();
+    }, 600); // 500ms animation + 100ms buffer
+  };
+
+  // Extract typing completion handler
+  const handleTypingComplete = () => {
+    // Add a small delay to ensure the text is fully visible
+    setTimeout(handleAnimationComplete, 400);
+  };
 
   // Create styles based on current theme
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -86,22 +108,8 @@ export default function SplashScreen({ onAnimationComplete }) {
         currentIndex++;
       } else {
         clearInterval(typewriterInterval);
-        // Animation is complete, call the callback if provided
-        if (onAnimationComplete) {
-          // Add a small delay to ensure the text is fully visible
-          setTimeout(() => {
-            // Start the final animation
-            animation.value = withTiming(2, {
-              duration: 500,
-              easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-            });
-
-            // Call the completion callback after a delay that matches the animation duration
-            setTimeout(() => {
-              onAnimationComplete();
-            }, 600); // 500ms animation + 100ms buffer
-          }, 1000);
-        }
+        // Animation is complete, call the extracted handler
+        handleTypingComplete();
       }
     }, TYPING_SPEED);
 

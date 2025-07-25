@@ -63,7 +63,7 @@ jobs:
         echo "Build ID: ${{ needs.build_production.outputs.build_id }}"
         echo "Update ID: ${{ needs.publish_update.outputs.update_id }}"
         if [ "${{ inputs.auto_submit }}" = "true" ]; then
-          echo "Apps have been submitted to app stores"
+          echo "Apps submitted to stores automatically"
         else
           echo "Manual submission required"
         fi
