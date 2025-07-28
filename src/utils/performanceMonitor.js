@@ -139,14 +139,21 @@ class PerformanceMonitor {
       `⏱️ PERFORMANCE: Starting operation "${operationName}" with ${timeout}ms timeout`
     );
 
+    let timeoutId;
+    let isCompleted = false;
+
     const timeoutPromise = new Promise((_, reject) => {
-      const timeoutId = setTimeout(() => {
-        console.error(
-          `❌ PERFORMANCE: Operation "${operationName}" timed out after ${timeout}ms`
-        );
-        reject(
-          new Error(`Operation "${operationName}" timed out after ${timeout}ms`)
-        );
+      timeoutId = setTimeout(() => {
+        if (!isCompleted) {
+          console.error(
+            `❌ PERFORMANCE: Operation "${operationName}" timed out after ${timeout}ms`
+          );
+          reject(
+            new Error(
+              `Operation "${operationName}" timed out after ${timeout}ms`
+            )
+          );
+        }
       }, timeout);
 
       this.operationTimeouts.set(operationId, timeoutId);
@@ -155,8 +162,8 @@ class PerformanceMonitor {
     try {
       const result = await Promise.race([operation(), timeoutPromise]);
 
-      // Clear timeout if operation completed
-      const timeoutId = this.operationTimeouts.get(operationId);
+      // Mark as completed and clear timeout
+      isCompleted = true;
       if (timeoutId) {
         clearTimeout(timeoutId);
         this.operationTimeouts.delete(operationId);
@@ -167,8 +174,8 @@ class PerformanceMonitor {
       );
       return result;
     } catch (error) {
-      // Clear timeout on error
-      const timeoutId = this.operationTimeouts.get(operationId);
+      // Mark as completed and clear timeout on error
+      isCompleted = true;
       if (timeoutId) {
         clearTimeout(timeoutId);
         this.operationTimeouts.delete(operationId);

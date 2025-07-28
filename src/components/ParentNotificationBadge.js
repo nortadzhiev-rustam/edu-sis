@@ -49,8 +49,6 @@ const createStyles = (theme) =>
       position: 'absolute',
       top: -1,
       right: -1,
-      borderWidth: 2,
-      borderColor: theme.colors.background,
     },
     badgeText: {
       color: '#FFFFFF',
