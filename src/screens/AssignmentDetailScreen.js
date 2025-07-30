@@ -36,6 +36,7 @@ import HomeworkFileUpload from '../components/homework/HomeworkFileUpload';
 import {
   updateHomeworkSubmission,
   submitHomeworkFile,
+  submitHomeworkTextWithFile,
 } from '../services/homeworkService';
 
 export default function AssignmentDetailScreen({ navigation, route }) {
@@ -103,39 +104,74 @@ export default function AssignmentDetailScreen({ navigation, route }) {
     const handleSubmit = async () => {
       setSubmitting(true);
       try {
-        let fileLink = null;
+        // Determine if this is a new submission or an update
+        const isUpdate =
+          assignmentData.is_completed && assignmentData.has_student_submission;
 
-        // Step 1: Upload file if provided
-        if (selectedFile) {
-          console.log('📤 Uploading homework file...');
-          const fileUploadResponse = await submitHomeworkFile(
-            assignmentData.homework_id, // Use homework_id for file upload
-            selectedFile,
+        let response;
+
+        if (isUpdate) {
+          // For updates, always use updateHomeworkSubmission
+          console.log('📝 Updating existing homework submission...');
+
+          let fileLink = null;
+          // Upload file first if provided
+          if (selectedFile) {
+            console.log('📤 Uploading homework file for update...');
+            const fileUploadResponse = await submitHomeworkFile(
+              assignmentData.homework_id, // Use homework_id for file upload
+              selectedFile,
+              replyText.trim(),
+              authCode
+            );
+
+            if (fileUploadResponse.success) {
+              fileLink =
+                fileUploadResponse.data?.web_view_link ||
+                fileUploadResponse.data?.file_url ||
+                fileUploadResponse.data?.file_link ||
+                fileUploadResponse.data?.url ||
+                fileUploadResponse.web_view_link;
+              console.log(
+                '📤 File uploaded successfully for update, file link:',
+                fileLink
+              );
+            } else {
+              console.warn(
+                '📤 File upload failed for update:',
+                fileUploadResponse.message
+              );
+            }
+          }
+
+          response = await updateHomeworkSubmission(
+            assignmentData.detail_id, // Use detail_id for submission update
             replyText.trim(),
+            fileLink,
             authCode
           );
-
-          if (fileUploadResponse.success) {
-            // Extract file link from upload response
-            fileLink =
-              fileUploadResponse.data?.web_view_link ||
-              fileUploadResponse.data?.file_url ||
-              fileUploadResponse.data?.file_link ||
-              fileUploadResponse.data?.url ||
-              fileUploadResponse.web_view_link;
-            console.log('📤 File uploaded successfully, file link:', fileLink);
+        } else {
+          // For new submissions, use different endpoints based on whether there's a file
+          if (selectedFile) {
+            console.log('📝 Creating new homework submission with file...');
+            // Use SUBMIT_HOMEWORK_FOLDER endpoint for file submissions
+            response = await submitHomeworkFile(
+              assignmentData.homework_id, // Use homework_id for file submission
+              selectedFile,
+              replyText.trim(),
+              authCode
+            );
           } else {
-            console.warn('📤 File upload failed:', fileUploadResponse.message);
+            console.log('📝 Creating new homework submission (text only)...');
+            // Use SUBMIT_HOMEWORK endpoint for text-only submissions
+            response = await submitHomeworkTextWithFile(
+              assignmentData.detail_id, // Use detail_id for text submission
+              replyText.trim(),
+              null, // No file link
+              authCode
+            );
           }
         }
-
-        // Step 2: Update homework submission with text and file link
-        const response = await updateHomeworkSubmission(
-          assignmentData.detail_id, // Use detail_id for submission update
-          replyText.trim(),
-          fileLink,
-          authCode
-        );
 
         if (response.success) {
           setAssignmentData((prev) => ({
@@ -151,7 +187,10 @@ export default function AssignmentDetailScreen({ navigation, route }) {
 
           // Show appropriate success message
           let alertMessage =
-            response.message || 'Assignment submitted successfully!';
+            response.message ||
+            (isUpdate
+              ? 'Assignment updated successfully!'
+              : 'Assignment submitted successfully!');
           if (response.fileUploadFailed && response.hasText) {
             alertMessage +=
               '\n\nNote: File upload failed, but your text response was submitted successfully.';
@@ -165,7 +204,10 @@ export default function AssignmentDetailScreen({ navigation, route }) {
         } else {
           Alert.alert(
             'Error',
-            response.message || 'Failed to submit assignment'
+            response.message ||
+              (isUpdate
+                ? 'Failed to update assignment'
+                : 'Failed to submit assignment')
           );
         }
       } catch (error) {
@@ -198,13 +240,19 @@ export default function AssignmentDetailScreen({ navigation, route }) {
       }
     };
 
+    // Determine if this is an update or new submission for the alert
+    const isUpdate =
+      assignmentData.is_completed && assignmentData.has_student_submission;
+
     Alert.alert(
-      'Submit Assignment',
-      'Are you sure you want to submit this assignment?',
+      isUpdate ? 'Update Assignment' : 'Submit Assignment',
+      isUpdate
+        ? 'Are you sure you want to update this assignment?'
+        : 'Are you sure you want to submit this assignment?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Submit',
+          text: isUpdate ? 'Update' : 'Submit',
           style: 'default',
           onPress: () => {
             handleSubmit();
@@ -1010,7 +1058,12 @@ export default function AssignmentDetailScreen({ navigation, route }) {
         ) : (
           /* Submission Form */
           <View style={styles.submissionCard}>
-            <Text style={styles.sectionTitle}>Submit Assignment</Text>
+            <Text style={styles.sectionTitle}>
+              {assignmentData.is_completed &&
+              assignmentData.has_student_submission
+                ? 'Update Assignment'
+                : 'Submit Assignment'}
+            </Text>
 
             {/* Text Response */}
             <View style={styles.inputSection}>
@@ -1082,7 +1135,10 @@ export default function AssignmentDetailScreen({ navigation, route }) {
                       color='#fff'
                     />
                     <Text style={styles.actionButtonText}>
-                      Submit Assignment
+                      {assignmentData.is_completed &&
+                      assignmentData.has_student_submission
+                        ? 'Update Assignment'
+                        : 'Submit Assignment'}
                     </Text>
                   </>
                 )}

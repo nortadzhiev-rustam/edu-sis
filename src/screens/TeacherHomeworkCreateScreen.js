@@ -220,8 +220,8 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
             // Step 1: Get existing folder or create new one
             const folderResponse = await getOrCreateHomeworkFolder(
               `${title.trim()} - ${className}`, // folder name
-              description.trim(), // description
               'class', // assignment type
+              description.trim(), // description
               [selectedClass.grade_id], // assigned classes
               [], // assigned students (empty for class assignment)
               null, // homeworkParentFolderId (will be auto-detected)
