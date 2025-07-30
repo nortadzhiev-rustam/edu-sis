@@ -4,6 +4,12 @@
  */
 import React from 'react';
 import { Alert, Platform } from 'react-native';
+import PerformanceConfig, {
+  getPlatformConfig,
+  isPerformanceMonitoringEnabled,
+  areAlertsEnabled,
+  getDevSettings,
+} from '../config/performanceConfig';
 
 /**
  * Monitor for app freezing and provide recovery options
@@ -11,34 +17,58 @@ import { Alert, Platform } from 'react-native';
 class PerformanceMonitor {
   constructor() {
     this.isMonitoring = false;
-    // iOS devices tend to freeze more easily, so use shorter threshold
-    this.freezeThreshold = Platform.OS === 'ios' ? 8000 : 10000; // 8s for iOS, 10s for Android
-    this.lastHeartbeat = Date.now();
+    this.isEnabled = isPerformanceMonitoringEnabled(); // Use config setting
+
+    // Get platform-specific configuration
+    const platformConfig = getPlatformConfig();
+    this.freezeThreshold = platformConfig.FREEZE_THRESHOLD;
     this.heartbeatInterval = null;
     this.freezeCheckInterval = null;
+    this.heartbeatIntervalMs = platformConfig.HEARTBEAT_INTERVAL;
+    this.checkIntervalMs = platformConfig.CHECK_INTERVAL;
+    this.maxConsecutiveFreezes = platformConfig.MAX_CONSECUTIVE_FREEZES;
+
+    this.lastHeartbeat = Date.now();
     this.operationTimeouts = new Map();
     this.iosSpecificIssues = [];
+    this.alertShown = false; // Prevent multiple alerts
+    this.consecutiveFreezeCount = 0; // Track consecutive freezes
+
+    const devSettings = getDevSettings();
+    this.verboseLogging = devSettings.VERBOSE_LOGGING;
+    this.logMetricsEnabled = devSettings.LOG_METRICS;
+  }
+
+  /**
+   * Enable or disable the performance monitor
+   */
+  setEnabled(enabled) {
+    this.isEnabled = enabled;
+    if (!enabled && this.isMonitoring) {
+      this.stopMonitoring();
+    }
+    console.log(`🔍 PERFORMANCE: Monitor ${enabled ? 'enabled' : 'disabled'}`);
   }
 
   /**
    * Start monitoring for app freezes
    */
   startMonitoring() {
-    if (this.isMonitoring) return;
+    if (!this.isEnabled || this.isMonitoring) return;
 
     console.log('🔍 PERFORMANCE: Starting freeze detection monitoring...');
     this.isMonitoring = true;
     this.lastHeartbeat = Date.now();
 
-    // Send heartbeat every 2 seconds
+    // Send heartbeat using configured interval
     this.heartbeatInterval = setInterval(() => {
       this.lastHeartbeat = Date.now();
-    }, 2000);
+    }, this.heartbeatIntervalMs);
 
-    // Check for freezes every 5 seconds
+    // Check for freezes using configured interval
     this.freezeCheckInterval = setInterval(() => {
       this.checkForFreeze();
-    }, 5000);
+    }, this.checkIntervalMs);
   }
 
   /**
@@ -67,12 +97,25 @@ class PerformanceMonitor {
     const timeSinceLastHeartbeat = now - this.lastHeartbeat;
 
     if (timeSinceLastHeartbeat > this.freezeThreshold) {
-      console.error('❌ PERFORMANCE: App freeze detected!');
-      console.error(
-        `⏰ Time since last heartbeat: ${timeSinceLastHeartbeat}ms`
+      this.consecutiveFreezeCount++;
+      console.warn(
+        `⚠️ PERFORMANCE: Potential freeze detected (${this.consecutiveFreezeCount}/${this.maxConsecutiveFreezes})`
       );
+      console.warn(`⏰ Time since last heartbeat: ${timeSinceLastHeartbeat}ms`);
 
-      this.handleFreeze();
+      // Only handle freeze after multiple consecutive detections
+      if (
+        this.consecutiveFreezeCount >= this.maxConsecutiveFreezes &&
+        !this.alertShown
+      ) {
+        this.handleFreeze();
+      }
+    } else if (this.consecutiveFreezeCount > 0) {
+      // Reset counter if heartbeat is normal
+      console.log(
+        '✅ PERFORMANCE: Heartbeat recovered, resetting freeze counter'
+      );
+      this.consecutiveFreezeCount = 0;
     }
   }
 
@@ -80,6 +123,24 @@ class PerformanceMonitor {
    * Handle detected freeze
    */
   handleFreeze() {
+    // Prevent multiple alerts
+    if (this.alertShown) return;
+    this.alertShown = true;
+
+    console.error(
+      '❌ PERFORMANCE: Confirmed app freeze after multiple detections'
+    );
+
+    // Check if alerts are enabled in configuration
+    if (!areAlertsEnabled()) {
+      console.log(
+        '🔇 PERFORMANCE: Alerts disabled in configuration, skipping alert'
+      );
+      this.alertShown = false; // Reset since we're not showing alert
+      this.consecutiveFreezeCount = 0; // Reset counter
+      return;
+    }
+
     // iOS-specific freeze handling
     const isIOS = Platform.OS === 'ios';
     const title = isIOS ? 'iOS Performance Issue' : 'App Performance Issue';
@@ -88,7 +149,14 @@ class PerformanceMonitor {
       : 'The app appears to be frozen or running slowly. This might be due to heavy operations or memory issues.';
 
     Alert.alert(title, message, [
-      { text: 'Continue', style: 'default' },
+      {
+        text: 'Continue',
+        style: 'default',
+        onPress: () => {
+          this.alertShown = false; // Allow future alerts
+          this.consecutiveFreezeCount = 0; // Reset counter
+        },
+      },
       {
         text: 'Force Restart',
         style: 'destructive',
@@ -99,6 +167,9 @@ class PerformanceMonitor {
           if (isIOS) {
             this.clearIOSSpecificIssues();
           }
+          // Reset alert state
+          this.alertShown = false;
+          this.consecutiveFreezeCount = 0;
           // Restart monitoring
           this.stopMonitoring();
           setTimeout(() => this.startMonitoring(), 1000);
@@ -237,6 +308,8 @@ export const startPerformanceMonitoring = () =>
   performanceMonitor.startMonitoring();
 export const stopPerformanceMonitoring = () =>
   performanceMonitor.stopMonitoring();
+export const setPerformanceMonitoringEnabled = (enabled) =>
+  performanceMonitor.setEnabled(enabled);
 export const wrapWithTimeout = (operation, timeout, name) =>
   performanceMonitor.wrapWithTimeout(operation, timeout, name);
 export const getPerformanceMetrics = () => performanceMonitor.getMetrics();

@@ -9,6 +9,7 @@ import {
   Alert,
   TextInput,
   Linking,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -47,6 +48,7 @@ export default function AssignmentDetailScreen({ navigation, route }) {
   const [fileLink, setFileLink] = useState('');
   const [assignmentData, setAssignmentData] = useState(assignment);
   const [showUpdateForm, setShowUpdateForm] = useState(false);
+  const [thumbnailErrors, setThumbnailErrors] = useState({});
 
   const styles = createStyles(theme);
 
@@ -375,6 +377,50 @@ export default function AssignmentDetailScreen({ navigation, route }) {
     }
   };
 
+  // Check if file is an image
+  const isImageFile = (fileName) => {
+    if (!fileName) return false;
+    const extension = getFileExtension(fileName);
+    return ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extension);
+  };
+
+  // Generate Google Drive thumbnail URL
+  const getGoogleDriveThumbnailUrl = (webViewLink, fileId) => {
+    if (!webViewLink && !fileId) return null;
+
+    // Extract file ID from web_view_link if not provided directly
+    let driveFileId = fileId;
+    if (!driveFileId && webViewLink) {
+      const match = webViewLink.match(/\/file\/d\/([a-zA-Z0-9-_]+)/);
+      if (match) {
+        driveFileId = match[1];
+      }
+    }
+
+    if (driveFileId) {
+      // Generate thumbnail URL for Google Drive files
+      return `https://drive.google.com/thumbnail?id=${driveFileId}&sz=w200-h200`;
+    }
+
+    return null;
+  };
+
+  // Get thumbnail URL for file
+  const getFileThumbnailUrl = (file) => {
+    // First check for explicit thumbnail data
+    if (file.thumbnail?.has_thumbnail && file.thumbnail?.thumbnail_url?.small) {
+      return file.thumbnail.thumbnail_url.small;
+    }
+
+    // For image files, try to generate Google Drive thumbnail
+    const fileName = file.original_name || file.file_name || file.name;
+    if (isImageFile(fileName)) {
+      return getGoogleDriveThumbnailUrl(file.web_view_link, file.file_id);
+    }
+
+    return null;
+  };
+
   // Get assignment status with approval information
   const getAssignmentStatus = () => {
     if (assignmentData.is_completed) {
@@ -566,29 +612,33 @@ export default function AssignmentDetailScreen({ navigation, route }) {
                 }
               >
                 <View style={styles.filePreviewHeader}>
-                  <View
-                    style={[
-                      styles.fileIconContainer,
-                      {
-                        backgroundColor:
-                          getFileTypeColor(
-                            assignmentData.homework_files ||
-                              assignmentData.homework_file
-                          ) + '20',
-                      },
-                    ]}
-                  >
-                    <FontAwesomeIcon
-                      icon={getFileTypeIcon(
-                        assignmentData.homework_files ||
-                          assignmentData.homework_file
-                      )}
-                      size={20}
-                      color={getFileTypeColor(
-                        assignmentData.homework_files ||
-                          assignmentData.homework_file
-                      )}
-                    />
+                  <View style={styles.fileThumbnailContainer}>
+                    {/* For homework_files/homework_file, we don't have file objects with thumbnail data,
+                        so we'll show icons for now. This could be enhanced if the API provides more file details */}
+                    <View
+                      style={[
+                        styles.fileIconContainer,
+                        {
+                          backgroundColor:
+                            getFileTypeColor(
+                              assignmentData.homework_files ||
+                                assignmentData.homework_file
+                            ) + '20',
+                        },
+                      ]}
+                    >
+                      <FontAwesomeIcon
+                        icon={getFileTypeIcon(
+                          assignmentData.homework_files ||
+                            assignmentData.homework_file
+                        )}
+                        size={20}
+                        color={getFileTypeColor(
+                          assignmentData.homework_files ||
+                            assignmentData.homework_file
+                        )}
+                      />
+                    </View>
                   </View>
                   <View style={styles.filePreviewInfo}>
                     <Text style={styles.filePreviewType}>
@@ -610,56 +660,74 @@ export default function AssignmentDetailScreen({ navigation, route }) {
             <View style={styles.filesSection}>
               <Text style={styles.sectionSubtitle}>Reference Materials</Text>
               {parseGoogleDriveFiles(assignmentData.google_drive_files).map(
-                (file, index) => (
-                  <TouchableOpacity
-                    key={file.file_id || index}
-                    style={styles.filePreviewCard}
-                    onPress={() => openFileLink(file.web_view_link)}
-                  >
-                    <View style={styles.filePreviewHeader}>
-                      <View
-                        style={[
-                          styles.fileIconContainer,
-                          {
-                            backgroundColor:
-                              getFileTypeColor(
-                                file.original_name || file.file_name
-                              ) + '20',
-                          },
-                        ]}
-                      >
+                (file, index) => {
+                  const thumbnailUrl = getFileThumbnailUrl(file);
+                  const fileName = file.original_name || file.file_name;
+                  const fileKey = file.file_id || index;
+                  const hasThumbnailError = thumbnailErrors[fileKey];
+
+                  return (
+                    <TouchableOpacity
+                      key={fileKey}
+                      style={styles.filePreviewCard}
+                      onPress={() => openFileLink(file.web_view_link)}
+                    >
+                      <View style={styles.filePreviewHeader}>
+                        <View style={styles.fileThumbnailContainer}>
+                          {thumbnailUrl && !hasThumbnailError ? (
+                            <Image
+                              source={{ uri: thumbnailUrl }}
+                              style={styles.fileThumbnail}
+                              resizeMode='cover'
+                              onError={() => {
+                                console.log(
+                                  'Failed to load thumbnail for:',
+                                  getFileName(file.web_view_link, fileName)
+                                );
+                                setThumbnailErrors((prev) => ({
+                                  ...prev,
+                                  [fileKey]: true,
+                                }));
+                              }}
+                            />
+                          ) : (
+                            <View
+                              style={[
+                                styles.fileIconContainer,
+                                {
+                                  backgroundColor:
+                                    getFileTypeColor(fileName) + '20',
+                                },
+                              ]}
+                            >
+                              <FontAwesomeIcon
+                                icon={getFileTypeIcon(fileName)}
+                                size={20}
+                                color={getFileTypeColor(fileName)}
+                              />
+                            </View>
+                          )}
+                        </View>
+                        <View style={styles.filePreviewInfo}>
+                          <Text style={styles.filePreviewName}>
+                            {getFileName(file.web_view_link, fileName)}
+                          </Text>
+                          <Text style={styles.filePreviewType}>
+                            {file.file_size
+                              ? `${Math.round(file.file_size / 1024)} KB • `
+                              : ''}
+                            Tap to open
+                          </Text>
+                        </View>
                         <FontAwesomeIcon
-                          icon={getFileTypeIcon(
-                            file.original_name || file.file_name
-                          )}
-                          size={20}
-                          color={getFileTypeColor(
-                            file.original_name || file.file_name
-                          )}
+                          icon={faExternalLinkAlt}
+                          size={16}
+                          color={theme.colors.textSecondary}
                         />
                       </View>
-                      <View style={styles.filePreviewInfo}>
-                        <Text style={styles.filePreviewName}>
-                          {getFileName(
-                            file.web_view_link,
-                            file.original_name || file.file_name
-                          )}
-                        </Text>
-                        <Text style={styles.filePreviewType}>
-                          {file.file_size
-                            ? `${Math.round(file.file_size / 1024)} KB • `
-                            : ''}
-                          Tap to open
-                        </Text>
-                      </View>
-                      <FontAwesomeIcon
-                        icon={faExternalLinkAlt}
-                        size={16}
-                        color={theme.colors.textSecondary}
-                      />
-                    </View>
-                  </TouchableOpacity>
-                )
+                    </TouchableOpacity>
+                  );
+                }
               )}
             </View>
           )}
@@ -1292,6 +1360,16 @@ const createStyles = (theme) =>
       borderRadius: 8,
       justifyContent: 'center',
       alignItems: 'center',
+    },
+    fileThumbnailContainer: {
+      position: 'relative',
+      marginRight: 12,
+    },
+    fileThumbnail: {
+      width: 40,
+      height: 40,
+      borderRadius: 8,
+      backgroundColor: '#f8f9fa',
     },
     filePreviewInfo: {
       flex: 1,

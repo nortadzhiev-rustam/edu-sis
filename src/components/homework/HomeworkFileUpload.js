@@ -7,6 +7,7 @@ import {
   Alert,
   Modal,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
@@ -16,7 +17,6 @@ import {
   faFile,
   faTimes,
   faCheckCircle,
-  faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -51,6 +51,7 @@ const HomeworkFileUpload = ({
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadResult, setUploadResult] = useState(null);
+  const [thumbnailError, setThumbnailError] = useState(false);
 
   // Request permissions
   const requestPermissions = async () => {
@@ -93,7 +94,9 @@ const HomeworkFileUpload = ({
           return;
         }
 
-        await handleFileSelection(asset);
+        // Mark as photo library image
+        const assetWithSource = { ...asset, isFromCamera: false };
+        await handleFileSelection(assetWithSource);
       }
     } catch (error) {
       console.error('Error picking image:', error);
@@ -123,7 +126,9 @@ const HomeworkFileUpload = ({
 
       if (!result.canceled && result.assets[0]) {
         const asset = result.assets[0];
-        await handleFileSelection(asset);
+        // Mark as camera image
+        const assetWithSource = { ...asset, isFromCamera: true };
+        await handleFileSelection(assetWithSource);
       }
     } catch (error) {
       console.error('Error taking photo:', error);
@@ -247,16 +252,63 @@ const HomeworkFileUpload = ({
     }, 300); // 300ms delay to ensure modal is fully closed
   };
 
+  // Generate filename for image files
+  const generateImageFileName = (uri, isFromCamera = false) => {
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-'); // HH-MM-SS
+
+    // Extract extension from URI, default to jpg for images
+    let extension = 'jpg';
+    if (uri && uri.includes('.')) {
+      const extractedExt = uri.split('.').pop()?.toLowerCase();
+      if (
+        extractedExt &&
+        ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extractedExt)
+      ) {
+        extension = extractedExt;
+      }
+    }
+
+    const prefix = isFromCamera ? 'camera' : 'photo';
+    return `${prefix}_${dateStr}_${timeStr}.${extension}`;
+  };
+
   // Handle file selection
   const handleFileSelection = async (file) => {
     try {
       console.log('📁 File selected:', file);
-      setSelectedFile(file);
-      onFileSelected?.(file);
+
+      // Ensure file has a proper name
+      let processedFile = { ...file };
+
+      // For image picker results that don't have a name
+      if (!processedFile.name && processedFile.uri) {
+        // Check if it's from image picker (has width/height but no name)
+        if (processedFile.width && processedFile.height) {
+          processedFile.name = generateImageFileName(
+            processedFile.uri,
+            processedFile.isFromCamera
+          );
+        } else {
+          // Fallback: extract name from URI or generate one
+          const uriParts = processedFile.uri.split('/');
+          const lastPart = uriParts[uriParts.length - 1];
+          processedFile.name = lastPart.includes('.')
+            ? lastPart
+            : 'selected_file';
+        }
+      }
+
+      // Reset thumbnail error when new file is selected
+      setThumbnailError(false);
+
+      setSelectedFile(processedFile);
+      onFileSelected?.(processedFile);
 
       // If upload function is provided, upload immediately
       if (uploadFunction) {
-        await handleFileUpload(file);
+        await handleFileUpload(processedFile);
       }
     } catch (error) {
       console.error('Error handling file selection:', error);
@@ -292,6 +344,7 @@ const HomeworkFileUpload = ({
   const removeSelectedFile = () => {
     setSelectedFile(null);
     setUploadResult(null);
+    setThumbnailError(false);
   };
 
   // Get file size display
@@ -300,6 +353,79 @@ const HomeworkFileUpload = ({
     if (size < 1024) return `${size} B`;
     if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
     return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  // Get file extension from filename
+  const getFileExtension = (filename) => {
+    const extension = filename?.split('.').pop();
+    return extension || 'FILE';
+  };
+
+  // Check if file is an image
+  const isImageFile = (fileName) => {
+    if (!fileName) return false;
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    return ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extension);
+  };
+
+  // Get file type icon based on extension
+  const getFileTypeIcon = (fileName) => {
+    if (!fileName) return faFile;
+    const extension = fileName.split('.').pop()?.toLowerCase();
+
+    switch (extension) {
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+      case 'bmp':
+      case 'webp':
+        return faImage;
+      case 'pdf':
+      case 'doc':
+      case 'docx':
+      case 'ppt':
+      case 'pptx':
+      case 'xls':
+      case 'xlsx':
+      case 'zip':
+      case 'rar':
+        return faFile;
+      default:
+        return faFile;
+    }
+  };
+
+  // Get file type color based on extension
+  const getFileTypeColor = (fileName) => {
+    if (!fileName) return theme.colors.primary;
+    const extension = fileName.split('.').pop()?.toLowerCase();
+
+    switch (extension) {
+      case 'pdf':
+        return '#FF3B30'; // Red for PDF
+      case 'doc':
+      case 'docx':
+        return '#007AFF'; // Blue for Word
+      case 'xls':
+      case 'xlsx':
+        return '#34C759'; // Green for Excel
+      case 'ppt':
+      case 'pptx':
+        return '#FF9500'; // Orange for PowerPoint
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+      case 'bmp':
+      case 'webp':
+        return '#AF52DE'; // Purple for images
+      case 'zip':
+      case 'rar':
+        return '#FF2D92'; // Pink for archives
+      default:
+        return theme.colors.primary;
+    }
   };
 
   return (
@@ -324,11 +450,56 @@ const HomeworkFileUpload = ({
       {showPreview && selectedFile && (
         <View style={styles.filePreview}>
           <View style={styles.fileInfo}>
-            <FontAwesomeIcon
-              icon={uploadResult ? faCheckCircle : faFile}
-              size={20}
-              color={uploadResult ? theme.colors.success : theme.colors.primary}
-            />
+            <View style={styles.fileThumbnailContainer}>
+              {isImageFile(selectedFile.name) &&
+              selectedFile.uri &&
+              !thumbnailError ? (
+                <Image
+                  source={{ uri: selectedFile.uri }}
+                  style={styles.fileThumbnail}
+                  resizeMode='cover'
+                  onError={() => {
+                    console.log(
+                      'Failed to load thumbnail for:',
+                      selectedFile.name
+                    );
+                    setThumbnailError(true);
+                  }}
+                />
+              ) : (
+                <View
+                  style={[
+                    styles.fileIconContainer,
+                    {
+                      backgroundColor: uploadResult
+                        ? theme.colors.success + '20'
+                        : getFileTypeColor(selectedFile.name) + '20',
+                    },
+                  ]}
+                >
+                  <FontAwesomeIcon
+                    icon={
+                      uploadResult
+                        ? faCheckCircle
+                        : getFileTypeIcon(selectedFile.name)
+                    }
+                    size={20}
+                    color={
+                      uploadResult
+                        ? theme.colors.success
+                        : getFileTypeColor(selectedFile.name)
+                    }
+                  />
+                </View>
+              )}
+
+              {/* File type badge */}
+              <View style={styles.fileTypeBadge}>
+                <Text style={styles.fileTypeBadgeText}>
+                  {getFileExtension(selectedFile.name).toUpperCase()}
+                </Text>
+              </View>
+            </View>
             <View style={styles.fileDetails}>
               <Text style={styles.fileName}>{selectedFile.name}</Text>
               <Text style={styles.fileSize}>
@@ -477,6 +648,39 @@ const createStyles = (theme) =>
       flexDirection: 'row',
       alignItems: 'center',
       flex: 1,
+    },
+    fileThumbnailContainer: {
+      position: 'relative',
+    },
+    fileThumbnail: {
+      width: 40,
+      height: 40,
+      borderRadius: 8,
+      backgroundColor: '#f8f9fa',
+    },
+    fileIconContainer: {
+      width: 40,
+      height: 40,
+      borderRadius: 8,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    fileTypeBadge: {
+      position: 'absolute',
+      bottom: -2,
+      right: -2,
+      backgroundColor: '#1a73e8',
+      borderRadius: 4,
+      paddingHorizontal: 4,
+      paddingVertical: 1,
+      minWidth: 20,
+      alignItems: 'center',
+    },
+    fileTypeBadgeText: {
+      fontSize: 9,
+      fontWeight: '600',
+      color: '#ffffff',
+      textAlign: 'center',
     },
     fileDetails: {
       marginLeft: 12,
