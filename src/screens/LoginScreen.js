@@ -25,16 +25,10 @@ import {
 } from '../services/authService';
 
 import { Config } from '../config/env';
-import {
-  checkComplianceStatus,
-  validateComplianceForAccess,
-} from '../services/familiesPolicyService';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import useThemeLogo from '../hooks/useThemeLogo';
 import { createSmallShadow } from '../utils/commonStyles';
-import AgeVerification from '../components/AgeVerification';
-import ParentalConsent from '../components/ParentalConsent';
 import { updateLastLogin } from '../services/deviceService';
 
 const { width, height } = Dimensions.get('window');
@@ -57,11 +51,6 @@ export default function LoginScreen({ route, navigation }) {
 
   // Login type state (teacher or student)
   const [loginType, setLoginType] = useState(routeLoginType || 'teacher');
-
-  // Families policy compliance state
-  const [showAgeVerification, setShowAgeVerification] = useState(false);
-  const [showParentalConsent, setShowParentalConsent] = useState(false);
-  const [pendingUserData, setPendingUserData] = useState(null);
 
   const styles = createStyles(theme, fontSizes);
 
@@ -280,28 +269,10 @@ export default function LoginScreen({ route, navigation }) {
         return;
       }
 
-      // For students, check compliance status
-      const compliance = await checkComplianceStatus(userData.id);
-
-      if (!compliance.isCompliant) {
-        setPendingUserData(userData);
-
-        if (compliance.reason === 'age_verification_required') {
-          setShowAgeVerification(true);
-          return;
-        }
-
-        if (compliance.reason === 'parental_consent_required') {
-          setShowParentalConsent(true);
-          return;
-        }
-      }
-
-      // User is compliant, proceed with login
+      // Proceed with login
       await proceedWithLogin(userData);
     } catch (error) {
-      console.error('Compliance check error:', error);
-      // In case of error, proceed with login but log the issue
+      console.error('Login error:', error);
       await proceedWithLogin(userData);
     }
   };
@@ -363,86 +334,6 @@ export default function LoginScreen({ route, navigation }) {
       Alert.alert('Error', 'Failed to complete login process');
     }
   };
-
-  // Handle age verification completion
-  const handleAgeVerified = async (verificationResult) => {
-    try {
-      const { storeAgeVerification } = await import(
-        '../services/familiesPolicyService'
-      );
-      await storeAgeVerification(verificationResult);
-
-      setShowAgeVerification(false);
-
-      // Check if parental consent is required
-      if (verificationResult.requiresParentalConsent) {
-        setShowParentalConsent(true);
-      } else {
-        // Age verified and no parental consent needed, proceed
-        await proceedWithLogin(pendingUserData);
-        setPendingUserData(null);
-      }
-    } catch (error) {
-      console.error('Age verification error:', error);
-      Alert.alert('Error', 'Failed to verify age. Please try again.');
-    }
-  };
-
-  // Handle parental consent completion
-  const handleConsentGranted = async (consentData) => {
-    try {
-      const { storeParentalConsent } = await import(
-        '../services/familiesPolicyService'
-      );
-      await storeParentalConsent(consentData);
-
-      setShowParentalConsent(false);
-
-      // Consent granted, proceed with login
-      await proceedWithLogin(pendingUserData);
-      setPendingUserData(null);
-    } catch (error) {
-      console.error('Parental consent error:', error);
-      Alert.alert(
-        'Error',
-        'Failed to process parental consent. Please try again.'
-      );
-    }
-  };
-
-  // Handle compliance flow cancellation
-  const handleComplianceCancel = () => {
-    setShowAgeVerification(false);
-    setShowParentalConsent(false);
-    setPendingUserData(null);
-    setLoading(false);
-  };
-
-  // Show age verification screen
-  if (showAgeVerification) {
-    return (
-      <AgeVerification
-        onAgeVerified={handleAgeVerified}
-        onCancel={handleComplianceCancel}
-        userType={pendingUserData?.userType || 'student'}
-      />
-    );
-  }
-
-  // Show parental consent screen
-  if (showParentalConsent) {
-    return (
-      <ParentalConsent
-        studentData={pendingUserData}
-        onConsentGranted={handleConsentGranted}
-        onConsentDenied={handleComplianceCancel}
-        onBack={() => {
-          setShowParentalConsent(false);
-          setShowAgeVerification(true);
-        }}
-      />
-    );
-  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>

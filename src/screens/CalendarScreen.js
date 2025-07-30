@@ -22,21 +22,17 @@ import {
   faCalendarDay,
   faList,
   faArrowLeft,
-  faSync,
-  faCog,
 } from '@fortawesome/free-solid-svg-icons';
-import { faGoogle } from '@fortawesome/free-brands-svg-icons';
 
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme,getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { getLanguageFontSizes } from '../contexts/ThemeContext';
 import { createSmallShadow } from '../utils/commonStyles';
 
 import CalendarService from '../services/calendarService';
 import SchoolConfigService from '../services/schoolConfigService';
 
 import CalendarView from '../components/CalendarView';
-import { showCalendarDiagnostics } from '../utils/calendarDiagnostics';
+
 
 export default function CalendarScreen({ navigation, route }) {
   const { theme } = useTheme();
@@ -45,7 +41,6 @@ export default function CalendarScreen({ navigation, route }) {
 
   // Get calendar mode from route params (default to 'combined' for backward compatibility)
   const calendarMode = route?.params?.mode || 'combined';
-  const isPersonalCalendarEnabled = calendarMode === 'combined';
 
   // Utility function to strip HTML tags from text
   const stripHtmlTags = (html) => {
@@ -324,14 +319,7 @@ export default function CalendarScreen({ navigation, route }) {
     }
   };
 
-  const handleDiagnostics = async () => {
-    try {
-      await showCalendarDiagnostics(userData, schoolConfig);
-    } catch (error) {
-      console.error('❌ Diagnostics error:', error);
-      Alert.alert('Error', `Failed to run diagnostics: ${error.message}`);
-    }
-  };
+  
 
   const renderEvent = (event, index) => {
     const eventDate = new Date(event.startTime);
@@ -936,70 +924,7 @@ export default function CalendarScreen({ navigation, route }) {
             />
           }
         >
-          {/* Google Calendar Section */}
-          {calendarService?.isGoogleCalendarAvailable() && (
-            <View style={styles.googleSection}>
-              <View style={styles.calendarTypes}>
-                <Text style={styles.calendarTypesTitle}>Event Types:</Text>
-                <View style={styles.calendarTypesList}>
-                  <View style={styles.calendarTypeItem}>
-                    <View
-                      style={[
-                        styles.calendarTypeDot,
-                        { backgroundColor: getEventTypeColor('Academic') },
-                      ]}
-                    />
-                    <Text style={styles.calendarTypeText}>Academic</Text>
-                  </View>
-                  <View style={styles.calendarTypeItem}>
-                    <View
-                      style={[
-                        styles.calendarTypeDot,
-                        { backgroundColor: getEventTypeColor('Exam') },
-                      ]}
-                    />
-                    <Text style={styles.calendarTypeText}>Exam</Text>
-                  </View>
-                  <View style={styles.calendarTypeItem}>
-                    <View
-                      style={[
-                        styles.calendarTypeDot,
-                        { backgroundColor: getEventTypeColor('Meeting') },
-                      ]}
-                    />
-                    <Text style={styles.calendarTypeText}>Meeting</Text>
-                  </View>
-                  <View style={styles.calendarTypeItem}>
-                    <View
-                      style={[
-                        styles.calendarTypeDot,
-                        { backgroundColor: getEventTypeColor('Event') },
-                      ]}
-                    />
-                    <Text style={styles.calendarTypeText}>Event</Text>
-                  </View>
-                  <View style={styles.calendarTypeItem}>
-                    <View
-                      style={[
-                        styles.calendarTypeDot,
-                        { backgroundColor: getEventTypeColor('Assignment') },
-                      ]}
-                    />
-                    <Text style={styles.calendarTypeText}>Assignment</Text>
-                  </View>
-                  <View style={styles.calendarTypeItem}>
-                    <View
-                      style={[
-                        styles.calendarTypeDot,
-                        { backgroundColor: getEventTypeColor('Holiday') },
-                      ]}
-                    />
-                    <Text style={styles.calendarTypeText}>Holiday</Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-          )}
+          
 
           {/* Events List */}
           <View style={styles.eventsHeader}>

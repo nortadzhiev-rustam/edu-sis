@@ -5,7 +5,6 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
-import { clearFamiliesPolicyData } from './familiesPolicyService';
 import { clearNotificationHistory } from '../utils/messaging';
 import {
   removeCurrentUserFromDevice,
@@ -162,9 +161,6 @@ export const performLogout = async (options = {}) => {
     ];
     await AsyncStorage.multiRemove(messagingKeys);
 
-    // 6. Clear families policy data
-    console.log('👨‍👩‍👧‍👦 LOGOUT: Clearing families policy data...');
-    await clearFamiliesPolicyData();
 
     // 7. Clear cached user-specific data
     console.log('🗂️ LOGOUT: Clearing cached data...');

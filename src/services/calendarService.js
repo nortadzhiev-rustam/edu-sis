@@ -3,10 +3,7 @@
  * Manages calendar data from multiple sources (Google Calendar, timetable, homework, etc.)
  */
 
-import GoogleCalendarService from './googleCalendarService';
-import ReadOnlyGoogleCalendarService from './readOnlyGoogleCalendarService';
 import SchoolConfigService from './schoolConfigService';
-import CalendarSecurityService from './calendarSecurityService';
 import { Config, buildApiUrl } from '../config/env';
 
 /**
@@ -16,8 +13,6 @@ class CalendarService {
   constructor(schoolConfig, userData, options = {}) {
     this.schoolConfig = schoolConfig;
     this.userData = userData;
-    this.googleCalendarService = null;
-    this.readOnlyGoogleCalendarService = null;
     this.eventCache = new Map(); // In-memory cache for better performance
     this.lastFetchTime = null;
     this.cacheDuration = 5 * 60 * 1000; // 5 minutes cache
@@ -63,75 +58,11 @@ class CalendarService {
         schoolConfig.features.googleCalendarReadOnly
       );
 
-      if (
-        schoolConfig.hasGoogleWorkspace &&
-        schoolConfig.features.googleCalendar
-      ) {
-        // Always use read-only service for schools (preferred approach)
-        const useReadOnly =
-          schoolConfig.features.googleCalendarReadOnly !== false;
-        console.log(
-          '🎯 CALENDAR SERVICE: Should use read-only service:',
-          useReadOnly
-        );
-
-        if (useReadOnly) {
-          try {
-            console.log(
-              '🚀 CALENDAR SERVICE: Initializing read-only Google Calendar service...'
-            );
-            service.readOnlyGoogleCalendarService =
-              await ReadOnlyGoogleCalendarService.initialize(
-                schoolConfig,
-                userData
-              );
-            console.log(
-              '📖 CALENDAR SERVICE: Using read-only Google Calendar (no sign-in required)'
-            );
-            console.log(
-              '🏢 CALENDAR SERVICE: Branch-based calendar access enabled'
-            );
-          } catch (error) {
-            console.error(
-              '❌ CALENDAR SERVICE: Read-only service initialization failed:',
-              error
-            );
-            console.log(
-              '🔄 CALENDAR SERVICE: Falling back to interactive service...'
-            );
-            service.googleCalendarService =
-              await GoogleCalendarService.initialize(schoolConfig);
-            console.log(
-              '🔐 CALENDAR SERVICE: Using interactive Google Calendar (sign-in required) as fallback'
-            );
-          }
-        } else {
-          // Only use interactive service if explicitly disabled read-only
-          console.log(
-            '🚀 CALENDAR SERVICE: Initializing interactive Google Calendar service...'
-          );
-          service.googleCalendarService =
-            await GoogleCalendarService.initialize(schoolConfig);
-          console.log(
-            '🔐 CALENDAR SERVICE: Using interactive Google Calendar (sign-in required)'
-          );
-        }
-      } else {
-        console.log(
-          '❌ CALENDAR SERVICE: Google Calendar not available for this school'
-        );
-      }
-
       console.log(
         '✅ CALENDAR SERVICE: Initialized for school:',
         schoolConfig.name
       );
-      console.log(
-        '📅 CALENDAR SERVICE: Google Calendar available:',
-        !!(
-          service.googleCalendarService || service.readOnlyGoogleCalendarService
-        )
-      );
+      console.log('� CALENDAR SERVICE: Using server-based calendar data');
       // Get branch information - handle different user types
       const branchId =
         userData.branchId || userData.branch_id || userData.branch?.branch_id;
@@ -217,15 +148,7 @@ class CalendarService {
         forceRefresh = false,
       } = options;
 
-      // Check rate limiting
-      const rateLimitOk = await CalendarSecurityService.checkRateLimit(
-        this.userData.id,
-        'fetch_events'
-      );
-
-      if (!rateLimitOk) {
-        throw new Error('Too many requests. Please try again later.');
-      }
+      // Note: Rate limiting removed since we're using server-based calendar data
 
       // Check cache first (unless force refresh)
       if (!forceRefresh && this.isCacheValid()) {
@@ -380,35 +303,8 @@ class CalendarService {
         );
       }
 
-      // Filter events based on user permissions
-      let filteredEvents = [];
-      try {
-        filteredEvents = CalendarSecurityService.filterEventsForUser(
-          allEvents,
-          this.userData,
-          this.schoolConfig
-        );
-        if (!Array.isArray(filteredEvents)) {
-          console.warn(
-            '⚠️ CALENDAR SERVICE: filterEventsForUser did not return array'
-          );
-          filteredEvents = [];
-        }
-      } catch (error) {
-        console.error('❌ CALENDAR SERVICE: Error filtering events:', error);
-        filteredEvents = allEvents; // Use unfiltered events as fallback
-      }
-
-      // Sanitize event data
-      let sanitizedEvents = [];
-      try {
-        sanitizedEvents = filteredEvents.map((event) =>
-          CalendarSecurityService.sanitizeEventData(event)
-        );
-      } catch (error) {
-        console.error('❌ CALENDAR SERVICE: Error sanitizing events:', error);
-        sanitizedEvents = filteredEvents; // Use unfiltered events as fallback
-      }
+      // Use all events since server-based calendar data is already filtered
+      const sanitizedEvents = allEvents;
 
       // Sort events by start time
       sanitizedEvents.sort((a, b) => {
@@ -430,17 +326,13 @@ class CalendarService {
       this.eventCache.set(cacheKey, sanitizedEvents);
       this.lastFetchTime = Date.now();
 
-      // Log security event
-      CalendarSecurityService.logSecurityEvent(
-        'calendar_events_accessed',
-        this.userData,
-        {
-          schoolId: this.schoolConfig.schoolId,
-          totalEvents: allEvents.length,
-          visibleEvents: sanitizedEvents.length,
-          dateRange: { startDate, endDate },
-        }
-      );
+      // Log calendar access
+      console.log('📅 CALENDAR SERVICE: Calendar events accessed', {
+        schoolId: this.schoolConfig.schoolId,
+        totalEvents: allEvents.length,
+        visibleEvents: sanitizedEvents.length,
+        dateRange: { startDate, endDate },
+      });
 
       return sanitizedEvents;
     } catch (error) {
@@ -1481,49 +1373,6 @@ class CalendarService {
   }
 
   /**
-   * Get Google Calendar events (interactive - requires sign-in)
-   * @param {Date} startDate - Start date
-   * @param {Date} endDate - End date
-   * @returns {Promise<Array>} Google Calendar events
-   */
-  async getGoogleCalendarEvents(startDate, endDate) {
-    try {
-      if (!this.googleCalendarService) {
-        return [];
-      }
-
-      const events = await this.googleCalendarService.getCalendarEvents({
-        timeMin: startDate.toISOString(),
-        timeMax: endDate.toISOString(),
-        maxResults: 100,
-      });
-
-      // Transform Google Calendar events to unified format
-      return events.map((event) => ({
-        id: `google_${event.id}`,
-        title: event.summary || 'Untitled Event',
-        description: event.description || '',
-        startTime: event.start?.dateTime || event.start?.date,
-        endTime: event.end?.dateTime || event.end?.date,
-        isAllDay: !event.start?.dateTime,
-        location: event.location || '',
-        type: 'google_calendar',
-        subType: event.calendarType || 'general',
-        source: 'Google Calendar',
-        color: this.getEventColor('google_calendar', event.calendarType),
-        canEdit: false,
-        originalData: event,
-      }));
-    } catch (error) {
-      console.error(
-        '❌ CALENDAR SERVICE: Google Calendar events error:',
-        error
-      );
-      return [];
-    }
-  }
-
-  /**
    * Get timetable events
    * @param {Date} startDate - Start date
    * @param {Date} endDate - End date
@@ -2079,117 +1928,6 @@ class CalendarService {
       Sunday: 7,
     };
     return dayMap[dayName] || 1;
-  }
-
-  /**
-   * Sign in to Google Calendar (if available)
-   * @returns {Promise<Object>} User info
-   */
-  async signInToGoogle() {
-    // Check permissions
-    if (
-      !CalendarSecurityService.canAccessGoogleCalendar(
-        this.userData,
-        this.schoolConfig
-      )
-    ) {
-      CalendarSecurityService.logSecurityEvent(
-        'google_calendar_access_denied',
-        this.userData,
-        {
-          reason: 'insufficient_permissions',
-          schoolId: this.schoolConfig.schoolId,
-        }
-      );
-      throw new Error('You do not have permission to access Google Calendar');
-    }
-
-    // Check rate limiting
-    const rateLimitOk = await CalendarSecurityService.checkRateLimit(
-      this.userData.id,
-      'google_signin'
-    );
-
-    if (!rateLimitOk) {
-      CalendarSecurityService.logSecurityEvent(
-        'google_calendar_rate_limit_exceeded',
-        this.userData,
-        { action: 'google_signin', schoolId: this.schoolConfig.schoolId }
-      );
-      throw new Error('Too many sign-in attempts. Please try again later.');
-    }
-
-    if (!this.googleCalendarService) {
-      throw new Error('Google Calendar not available for this school');
-    }
-
-    try {
-      const userInfo = await this.googleCalendarService.signIn();
-
-      // Validate domain restriction
-      if (
-        !CalendarSecurityService.validateGoogleCalendarDomain(
-          userInfo.user.email,
-          this.schoolConfig
-        )
-      ) {
-        await this.googleCalendarService.signOut();
-        CalendarSecurityService.logSecurityEvent(
-          'google_calendar_domain_violation',
-          this.userData,
-          {
-            attemptedEmail: userInfo.user.email,
-            allowedDomain: this.schoolConfig.domain,
-            schoolId: this.schoolConfig.schoolId,
-          }
-        );
-        throw new Error(
-          `Please sign in with your ${this.schoolConfig.domain} account`
-        );
-      }
-
-      // Log successful sign-in
-      CalendarSecurityService.logSecurityEvent(
-        'google_calendar_signin_success',
-        this.userData,
-        {
-          googleEmail: userInfo.user.email,
-          schoolId: this.schoolConfig.schoolId,
-        }
-      );
-
-      return userInfo;
-    } catch (error) {
-      CalendarSecurityService.logSecurityEvent(
-        'google_calendar_signin_error',
-        this.userData,
-        {
-          error: error.message,
-          schoolId: this.schoolConfig.schoolId,
-        }
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Sign out from Google Calendar
-   */
-  async signOutFromGoogle() {
-    if (this.googleCalendarService) {
-      await this.googleCalendarService.signOut();
-    }
-  }
-
-  /**
-   * Check if Google Calendar is available
-   * @returns {boolean} True if available
-   */
-  isGoogleCalendarAvailable() {
-    return !!(
-      this.googleCalendarService?.isGoogleCalendarAvailable() ||
-      this.readOnlyGoogleCalendarService?.isGoogleCalendarAvailable()
-    );
   }
 
   /**
