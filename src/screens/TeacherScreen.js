@@ -727,17 +727,14 @@ export default function TeacherScreen({ route, navigation }) {
         title: t('materials'),
         subtitle: t('resourcesFiles'),
         icon: faBookOpen,
-        backgroundColor: '#B0B0B0',
+        backgroundColor: '#4CAF50',
         iconColor: '#fff',
-        disabled: true,
-        badge: (
-          <ComingSoonBadge
-            text={t('comingSoon')}
-            theme={theme}
-            fontSizes={fontSizes}
-          />
-        ),
-        onPress: () => {},
+        disabled: false,
+        onPress: () => {
+          navigation.navigate('WorkspaceScreen', {
+            userData: userData,
+          });
+        },
       },
       {
         id: 'reports',

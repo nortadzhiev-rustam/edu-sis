@@ -22,10 +22,15 @@ import {
   faFileAlt,
   faPaperPlane,
   faExternalLinkAlt,
+  faThumbsUp,
+  faThumbsDown,
+  faCheckCircle,
+  faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { buildApiUrl } from '../config/env';
 import { processHtmlContent } from '../utils/htmlUtils';
+import { reviewHomeworkSubmission } from '../services/homeworkService';
 
 export default function TeacherHomeworkDetailScreen({ navigation, route }) {
   const { theme } = useTheme();
@@ -37,6 +42,7 @@ export default function TeacherHomeworkDetailScreen({ navigation, route }) {
   const [feedbackText, setFeedbackText] = useState('');
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
+  const [reviewingSubmission, setReviewingSubmission] = useState(false);
 
   const styles = createStyles(theme);
 
@@ -122,6 +128,43 @@ export default function TeacherHomeworkDetailScreen({ navigation, route }) {
     }
   };
 
+  // Review homework submission (approve/reject)
+  const reviewHomework = async (detailId, action, comment = '') => {
+    if (action === 'reject' && !comment.trim()) {
+      Alert.alert('Error', 'Please provide a comment when rejecting homework');
+      return;
+    }
+
+    setReviewingSubmission(true);
+    try {
+      const result = await reviewHomeworkSubmission(
+        detailId,
+        action,
+        comment,
+        authCode
+      );
+
+      if (result.success) {
+        Alert.alert(
+          'Success',
+          action === 'approve'
+            ? 'Homework approved successfully!'
+            : 'Homework rejected successfully!'
+        );
+        setFeedbackText('');
+        setSelectedSubmission(null);
+        fetchHomeworkDetail(); // Refresh data
+      } else {
+        Alert.alert('Error', result.message || 'Failed to review homework');
+      }
+    } catch (error) {
+      console.error('Error reviewing homework:', error);
+      Alert.alert('Error', error.message || 'Failed to connect to server');
+    } finally {
+      setReviewingSubmission(false);
+    }
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'No date';
     const date = new Date(dateString);
@@ -133,20 +176,6 @@ export default function TeacherHomeworkDetailScreen({ navigation, route }) {
       hour: '2-digit',
       minute: '2-digit',
     });
-  };
-
-  const getSubmissionStatusColor = (submission) => {
-    if (!submission.is_completed) return '#FF3B30'; // Not submitted
-    if (submission.needs_review) return '#FF9500'; // Needs review
-    if (submission.teacher_comment) return '#34C759'; // Reviewed
-    return '#007AFF'; // Submitted
-  };
-
-  const getSubmissionStatusText = (submission) => {
-    if (!submission.is_completed) return 'Not Submitted';
-    if (submission.needs_review) return 'Needs Review';
-    if (submission.teacher_comment) return 'Reviewed';
-    return 'Submitted';
   };
 
   const navigateToStudentDetail = (submission) => {
@@ -164,9 +193,59 @@ export default function TeacherHomeworkDetailScreen({ navigation, route }) {
     });
   };
 
+  // Get submission status with approval information
+  const getSubmissionStatus = (submission) => {
+    if (!submission.is_completed) {
+      return {
+        status: 'not_submitted',
+        color: '#FF3B30',
+        icon: faExclamationTriangle,
+        label: 'Not Submitted',
+      };
+    }
+
+    if (submission.approval_status === 'approved') {
+      return {
+        status: 'approved',
+        color: '#34C759',
+        icon: faCheckCircle,
+        label: 'Approved',
+      };
+    }
+
+    if (submission.approval_status === 'rejected') {
+      return {
+        status: 'rejected',
+        color: '#FF3B30',
+        icon: faExclamationTriangle,
+        label: 'Rejected',
+      };
+    }
+
+    if (submission.teacher_comment) {
+      return {
+        status: 'reviewed',
+        color: '#007AFF',
+        icon: faComment,
+        label: 'Reviewed',
+      };
+    }
+
+    return {
+      status: 'needs_review',
+      color: '#FF9500',
+      icon: faExclamationTriangle,
+      label: 'Needs Review',
+    };
+  };
+
+  // Check if submission can be reviewed (approved/rejected)
+  const canReviewSubmission = (submission) => {
+    return submission.is_completed && !submission.approval_status;
+  };
+
   const renderSubmissionCard = (submission) => {
-    const statusColor = getSubmissionStatusColor(submission);
-    const statusText = getSubmissionStatusText(submission);
+    const status = getSubmissionStatus(submission);
 
     return (
       <TouchableOpacity
@@ -190,13 +269,22 @@ export default function TeacherHomeworkDetailScreen({ navigation, route }) {
             )}
             <View style={styles.studentDetails}>
               <Text style={styles.studentName}>{submission.student_name}</Text>
-              <Text style={[styles.submissionStatus, { color: statusColor }]}>
-                {statusText}
-              </Text>
+              <View style={styles.statusContainer}>
+                <FontAwesomeIcon
+                  icon={status.icon}
+                  size={14}
+                  color={status.color}
+                />
+                <Text
+                  style={[styles.submissionStatus, { color: status.color }]}
+                >
+                  {status.label}
+                </Text>
+              </View>
             </View>
           </View>
           <View
-            style={[styles.statusIndicator, { backgroundColor: statusColor }]}
+            style={[styles.statusIndicator, { backgroundColor: status.color }]}
           />
         </View>
 
@@ -233,6 +321,44 @@ export default function TeacherHomeworkDetailScreen({ navigation, route }) {
               </View>
             )}
 
+            {/* Approval Status Display */}
+            {submission.approval_status && (
+              <View style={styles.approvalSection}>
+                <Text style={styles.sectionLabel}>
+                  {submission.approval_status === 'approved'
+                    ? 'Approved'
+                    : 'Rejected'}
+                </Text>
+                <View style={styles.approvalInfo}>
+                  <FontAwesomeIcon
+                    icon={
+                      submission.approval_status === 'approved'
+                        ? faCheckCircle
+                        : faExclamationTriangle
+                    }
+                    size={16}
+                    color={
+                      submission.approval_status === 'approved'
+                        ? '#34C759'
+                        : '#FF3B30'
+                    }
+                  />
+                  <Text style={styles.approvalText}>
+                    {submission.approval_status === 'approved'
+                      ? 'This homework has been approved'
+                      : 'This homework needs revision'}
+                  </Text>
+                </View>
+                {submission.reviewed_at && (
+                  <Text style={styles.reviewDate}>
+                    Reviewed on{' '}
+                    {new Date(submission.reviewed_at).toLocaleDateString()}
+                  </Text>
+                )}
+              </View>
+            )}
+
+            {/* Teacher Feedback */}
             {submission.teacher_comment && (
               <View style={styles.feedbackSection}>
                 <Text style={styles.sectionLabel}>Your Feedback:</Text>
@@ -242,21 +368,22 @@ export default function TeacherHomeworkDetailScreen({ navigation, route }) {
               </View>
             )}
 
-            {submission.needs_review && !submission.teacher_comment && (
-              <View style={styles.feedbackInputSection}>
+            {/* Review Actions for Completed Submissions */}
+            {canReviewSubmission(submission) && (
+              <View style={styles.reviewActionsSection}>
                 {selectedSubmission === submission.detail_id ? (
-                  <View style={styles.feedbackForm}>
+                  <View style={styles.reviewForm}>
                     <TextInput
                       style={styles.feedbackInput}
                       multiline
-                      numberOfLines={4}
-                      placeholder='Enter your feedback...'
+                      numberOfLines={3}
+                      placeholder='Enter feedback (optional for approval, required for rejection)...'
                       placeholderTextColor={theme.colors.textSecondary}
                       value={feedbackText}
                       onChangeText={setFeedbackText}
                       textAlignVertical='top'
                     />
-                    <View style={styles.feedbackActions}>
+                    <View style={styles.reviewActions}>
                       <TouchableOpacity
                         style={styles.cancelButton}
                         onPress={() => {
@@ -267,20 +394,52 @@ export default function TeacherHomeworkDetailScreen({ navigation, route }) {
                         <Text style={styles.cancelButtonText}>Cancel</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
-                        style={styles.submitButton}
-                        onPress={() => submitFeedback(submission.detail_id)}
-                        disabled={submittingFeedback}
+                        style={styles.rejectButton}
+                        onPress={() =>
+                          reviewHomework(
+                            submission.detail_id,
+                            'reject',
+                            feedbackText
+                          )
+                        }
+                        disabled={reviewingSubmission}
                       >
-                        {submittingFeedback ? (
+                        {reviewingSubmission ? (
                           <ActivityIndicator size='small' color='#fff' />
                         ) : (
                           <>
                             <FontAwesomeIcon
-                              icon={faPaperPlane}
+                              icon={faThumbsDown}
                               size={14}
                               color='#fff'
                             />
-                            <Text style={styles.submitButtonText}>Submit</Text>
+                            <Text style={styles.rejectButtonText}>Reject</Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.approveButton}
+                        onPress={() =>
+                          reviewHomework(
+                            submission.detail_id,
+                            'approve',
+                            feedbackText
+                          )
+                        }
+                        disabled={reviewingSubmission}
+                      >
+                        {reviewingSubmission ? (
+                          <ActivityIndicator size='small' color='#fff' />
+                        ) : (
+                          <>
+                            <FontAwesomeIcon
+                              icon={faThumbsUp}
+                              size={14}
+                              color='#fff'
+                            />
+                            <Text style={styles.approveButtonText}>
+                              Approve
+                            </Text>
                           </>
                         )}
                       </TouchableOpacity>
@@ -288,7 +447,7 @@ export default function TeacherHomeworkDetailScreen({ navigation, route }) {
                   </View>
                 ) : (
                   <TouchableOpacity
-                    style={styles.addFeedbackButton}
+                    style={styles.reviewButton}
                     onPress={() => setSelectedSubmission(submission.detail_id)}
                   >
                     <FontAwesomeIcon
@@ -296,11 +455,78 @@ export default function TeacherHomeworkDetailScreen({ navigation, route }) {
                       size={16}
                       color={theme.colors.primary}
                     />
-                    <Text style={styles.addFeedbackText}>Add Feedback</Text>
+                    <Text style={styles.reviewButtonText}>Review Homework</Text>
                   </TouchableOpacity>
                 )}
               </View>
             )}
+
+            {/* Legacy Feedback for Unreviewed Submissions */}
+            {submission.needs_review &&
+              !submission.teacher_comment &&
+              !canReviewSubmission(submission) && (
+                <View style={styles.feedbackInputSection}>
+                  {selectedSubmission === submission.detail_id ? (
+                    <View style={styles.feedbackForm}>
+                      <TextInput
+                        style={styles.feedbackInput}
+                        multiline
+                        numberOfLines={4}
+                        placeholder='Enter your feedback...'
+                        placeholderTextColor={theme.colors.textSecondary}
+                        value={feedbackText}
+                        onChangeText={setFeedbackText}
+                        textAlignVertical='top'
+                      />
+                      <View style={styles.feedbackActions}>
+                        <TouchableOpacity
+                          style={styles.cancelButton}
+                          onPress={() => {
+                            setSelectedSubmission(null);
+                            setFeedbackText('');
+                          }}
+                        >
+                          <Text style={styles.cancelButtonText}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.submitButton}
+                          onPress={() => submitFeedback(submission.detail_id)}
+                          disabled={submittingFeedback}
+                        >
+                          {submittingFeedback ? (
+                            <ActivityIndicator size='small' color='#fff' />
+                          ) : (
+                            <>
+                              <FontAwesomeIcon
+                                icon={faPaperPlane}
+                                size={14}
+                                color='#fff'
+                              />
+                              <Text style={styles.submitButtonText}>
+                                Submit
+                              </Text>
+                            </>
+                          )}
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.addFeedbackButton}
+                      onPress={() =>
+                        setSelectedSubmission(submission.detail_id)
+                      }
+                    >
+                      <FontAwesomeIcon
+                        icon={faComment}
+                        size={16}
+                        color={theme.colors.primary}
+                      />
+                      <Text style={styles.addFeedbackText}>Add Feedback</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
           </View>
         )}
       </TouchableOpacity>
@@ -801,6 +1027,101 @@ const createStyles = (theme) =>
       gap: 6,
     },
     submitButtonText: {
+      fontSize: 14,
+      color: '#fff',
+      fontWeight: '500',
+    },
+
+    // Approval System Styles
+    statusContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    approvalSection: {
+      backgroundColor: theme.colors.background,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      borderLeftWidth: 4,
+      borderLeftColor: theme.colors.primary,
+    },
+    approvalInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 8,
+    },
+    approvalText: {
+      fontSize: 14,
+      color: theme.colors.text,
+      fontWeight: '500',
+    },
+    reviewDate: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      fontStyle: 'italic',
+    },
+    reviewActionsSection: {
+      marginTop: 12,
+    },
+    reviewForm: {
+      backgroundColor: theme.colors.background,
+      borderRadius: 12,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    reviewActions: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginTop: 12,
+      gap: 8,
+    },
+    reviewButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.colors.primary + '20',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 8,
+      gap: 8,
+    },
+    reviewButtonText: {
+      fontSize: 14,
+      color: theme.colors.primary,
+      fontWeight: '600',
+    },
+    approveButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#34C759',
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 6,
+      gap: 6,
+      flex: 1,
+    },
+    approveButtonText: {
+      fontSize: 14,
+      color: '#fff',
+      fontWeight: '500',
+    },
+    rejectButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#FF3B30',
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 6,
+      gap: 6,
+      flex: 1,
+    },
+    rejectButtonText: {
       fontSize: 14,
       color: '#fff',
       fontWeight: '500',

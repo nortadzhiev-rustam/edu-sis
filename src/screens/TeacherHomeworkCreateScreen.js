@@ -21,6 +21,12 @@ import { useTheme } from '../contexts/ThemeContext';
 import { buildApiUrl } from '../config/env';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useFocusEffect } from '@react-navigation/native';
+import HomeworkFileUpload from '../components/homework/HomeworkFileUpload';
+import {
+  createHomeworkAssignment,
+  getOrCreateHomeworkFolder,
+  uploadHomeworkFile,
+} from '../services/homeworkService';
 
 export default function TeacherHomeworkCreateScreen({ navigation, route }) {
   const { theme } = useTheme();
@@ -44,6 +50,9 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [deadline, setDeadline] = useState(new Date());
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+
+  // File upload state
+  const [selectedFile, setSelectedFile] = useState(null);
 
   const styles = createStyles(theme);
 
@@ -176,37 +185,109 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
       return;
     }
 
-    // Format deadline for API
-    const combinedDeadline = formatDateTime(deadline);
-
     setCreating(true);
     try {
-      const response = await fetch(buildApiUrl('/teacher/homework/create'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({
-          auth_code: authCode,
-          title: title.trim(),
-          grade_id: selectedClass.grade_id,
-          students: selectedStudents,
-          deadline: combinedDeadline,
-          homework_data: description.trim(),
-          homework_files: fileLink.trim() || null,
-        }),
+      console.log('📝 Creating homework assignment with data:', {
+        title: title.trim(),
+        description: description.trim(),
+        gradeId: selectedClass.grade_id,
+        studentIds: selectedStudents,
+        deadline: deadline.toISOString().split('T')[0],
       });
 
-      if (response.ok) {
-        Alert.alert('Success', 'Homework created successfully!', [
+      // Create homework assignment using assignment API
+      const assignmentResponse = await createHomeworkAssignment(
+        title.trim(),
+        description.trim(),
+        selectedClass.grade_id,
+        selectedStudents, // selectedStudents already contains student IDs
+        deadline.toISOString().split('T')[0], // Format date as YYYY-MM-DD
+        authCode
+      );
+
+      if (assignmentResponse.success) {
+        const homeworkId =
+          assignmentResponse.data.homework_id || assignmentResponse.data.id;
+
+        // Upload file if selected (first create folder, then upload file)
+        if (selectedFile) {
+          try {
+            const className =
+              selectedClass.grade_name || selectedClass.class_name;
+
+            console.log('📁 Getting or creating homework folder...');
+
+            // Step 1: Get existing folder or create new one
+            const folderResponse = await getOrCreateHomeworkFolder(
+              `${title.trim()} - ${className}`, // folder name
+              description.trim(), // description
+              'class', // assignment type
+              [selectedClass.grade_id], // assigned classes
+              [], // assigned students (empty for class assignment)
+              null, // homeworkParentFolderId (will be auto-detected)
+              authCode // authCode
+            );
+
+            if (folderResponse.success) {
+              // Extract folder ID from response - try different possible structures
+              const folderId =
+                folderResponse.data?.google_drive_folder_id ||
+                folderResponse.google_drive_folder_id ||
+                folderResponse.data?.folder_id ||
+                folderResponse.data?.homework_folder_id ||
+                folderResponse.folder_id ||
+                folderResponse.homework_folder_id;
+
+              console.log('📁 Folder response:', folderResponse);
+              console.log('📁 Extracted folder ID:', folderId);
+
+              if (folderResponse.data?.existing_folder) {
+                console.log('📁 Using existing folder');
+              } else {
+                console.log('📁 Created new folder');
+              }
+
+              if (folderId) {
+                // Step 2: Upload file to the created/found folder
+                await uploadHomeworkFile(
+                  folderId,
+                  selectedFile,
+                  `Assignment file for ${title.trim()}`, // file description
+                  homeworkId, // homework assignment ID for context
+                  authCode
+                );
+
+                console.log('📤 File uploaded successfully to folder');
+              } else {
+                console.error(
+                  '📁 No folder ID found in response:',
+                  folderResponse
+                );
+                throw new Error('No folder ID returned from folder operation');
+              }
+            } else {
+              throw new Error('Failed to create or access homework folder');
+            }
+          } catch (uploadError) {
+            console.error('File upload error:', uploadError);
+            Alert.alert(
+              'Warning',
+              'Homework assignment created but file upload failed. You can upload files later.'
+            );
+          }
+        }
+
+        Alert.alert('Success', 'Homework assignment created successfully!', [
           {
             text: 'OK',
             onPress: () => navigation.goBack(),
           },
         ]);
       } else {
-        Alert.alert('Error', 'Failed to create homework');
+        Alert.alert(
+          'Error',
+          assignmentResponse.message || 'Failed to create homework assignment'
+        );
       }
     } catch (error) {
       console.error('Error creating homework:', error);
@@ -252,17 +333,6 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
     hideDatePicker();
   };
 
-  const formatDateTime = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-  };
-
   const formatDisplayDateTime = (date) => {
     return date.toLocaleString('en-US', {
       year: 'numeric',
@@ -297,6 +367,15 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
   const currentClasses = useMemo(() => {
     return getCurrentClasses();
   }, [branchData, selectedBranchId]);
+
+  // File upload handlers
+  const handleFileSelected = (file) => {
+    setSelectedFile(file);
+  };
+
+  const handleFileUploaded = (result) => {
+    console.log('File uploaded successfully:', result);
+  };
 
   if (loading || !branchData) {
     return (
@@ -386,9 +465,37 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
           />
         </View>
 
-        {/* File Link Input */}
+        {/* File Upload Section */}
         <View style={styles.inputSection}>
-          <Text style={styles.inputLabel}>File Link (Optional)</Text>
+          <Text style={styles.inputLabel}>Assignment Files (Optional)</Text>
+          <HomeworkFileUpload
+            onFileSelected={handleFileSelected}
+            onFileUploaded={handleFileUploaded}
+            maxFileSize={50 * 1024 * 1024} // 50MB for teachers
+            userType='teacher'
+            buttonText='Add Assignment File'
+            allowedTypes={[
+              'pdf',
+              'doc',
+              'docx',
+              'ppt',
+              'pptx',
+              'xls',
+              'xlsx',
+              'jpg',
+              'png',
+              'zip',
+            ]}
+          />
+          <Text style={styles.inputHint}>
+            Upload reference materials, documents, or files for this homework
+            assignment
+          </Text>
+        </View>
+
+        {/* File Link Input (Alternative) */}
+        <View style={styles.inputSection}>
+          <Text style={styles.inputLabel}>Or Add File Link (Optional)</Text>
           <TextInput
             style={styles.textInput}
             placeholder='Enter file URL (e.g., https://example.com/file.pdf)...'

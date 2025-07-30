@@ -394,7 +394,8 @@ export const teacherLogin = async (username, password, deviceToken) => {
         try {
           const schoolConfig = await SchoolConfigService.detectSchoolFromLogin(
             username,
-            'teacher'
+            'teacher',
+            data // Pass the authentication response data
           );
           await SchoolConfigService.saveCurrentSchoolConfig(schoolConfig);
           console.log(
@@ -656,7 +657,8 @@ export const studentLogin = async (username, password, deviceToken) => {
         try {
           const schoolConfig = await SchoolConfigService.detectSchoolFromLogin(
             username,
-            'student'
+            'student',
+            data // Pass the authentication response data
           );
           await SchoolConfigService.saveCurrentSchoolConfig(schoolConfig);
           console.log(

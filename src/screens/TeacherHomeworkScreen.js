@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -27,6 +28,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { buildApiUrl } from '../config/env';
 import { getDemoTeacherHomeworkData } from '../services/demoModeService';
 import { getResponsiveHeaderFontSize } from '../utils/commonStyles';
+import { getTeacherHomeworkList } from '../services/homeworkService';
 
 export default function TeacherHomeworkScreen({ navigation, route }) {
   const { theme } = useTheme();
@@ -45,6 +47,15 @@ export default function TeacherHomeworkScreen({ navigation, route }) {
     }
   }, [authCode]);
 
+  // Refresh homework list when screen comes into focus (e.g., after creating new homework)
+  useFocusEffect(
+    React.useCallback(() => {
+      if (authCode) {
+        fetchHomeworkList();
+      }
+    }, [authCode])
+  );
+
   const fetchHomeworkList = async () => {
     // Check if this is a demo authCode
     if (authCode && authCode.startsWith('DEMO_AUTH_')) {
@@ -57,26 +68,94 @@ export default function TeacherHomeworkScreen({ navigation, route }) {
     }
 
     try {
-      const response = await fetch(
-        buildApiUrl(`/teacher/homework/list?auth_code=${authCode}`),
-        {
-          method: 'GET',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      // Use homework assignment API (not folder API)
+      const response = await getTeacherHomeworkList(authCode);
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setHomeworkList(data.data || []);
-        } else {
-          Alert.alert('Error', 'Failed to fetch homework list');
+      if (response.success) {
+        console.log('📚 Homework API Response:', response.data);
+
+        // Handle homework assignment API response structure
+        let transformedData = [];
+
+        if (
+          response.data.assignments &&
+          Array.isArray(response.data.assignments)
+        ) {
+          // New homework assignment API structure
+          transformedData = response.data.assignments.map((assignment) => ({
+            homework_id: assignment.id || assignment.homework_id,
+            title: assignment.title || assignment.assignment_title,
+            subject_name:
+              assignment.subject_name || assignment.subject || 'General',
+            grade_name:
+              assignment.grade_name ||
+              assignment.class_name ||
+              'Multiple Classes',
+            deadline: assignment.deadline || assignment.due_date,
+            status:
+              assignment.status ||
+              (assignment.submission_count > 0 ? 'active' : 'draft'),
+            statistics: {
+              total_students:
+                assignment.total_students || assignment.student_count || 0,
+              submitted_count:
+                assignment.submitted_count || assignment.submission_count || 0,
+              submission_rate:
+                assignment.submission_rate ||
+                (assignment.student_count > 0
+                  ? Math.round(
+                      (assignment.submission_count / assignment.student_count) *
+                        100
+                    )
+                  : 0),
+            },
+            teacher_name: assignment.teacher_name || assignment.created_by,
+            created_at: assignment.created_at,
+            file_count: assignment.file_count || 0,
+            google_drive_folder_id: assignment.google_drive_folder_id,
+            web_view_link: assignment.web_view_link,
+            homework_data: assignment.description || assignment.homework_data,
+          }));
+        } else if (
+          response.data.folders &&
+          Array.isArray(response.data.folders)
+        ) {
+          // Fallback to folder API structure (if still using folder endpoint)
+          transformedData = response.data.folders.map((folder) => ({
+            homework_id: folder.id,
+            title: folder.folder_name,
+            subject_name: folder.subject_name || 'General',
+            grade_name: folder.grade_name || 'Multiple Classes',
+            deadline: folder.due_date,
+            status: folder.submission_count > 0 ? 'active' : 'draft',
+            statistics: {
+              total_students: folder.student_count || 0,
+              submitted_count: folder.submission_count || 0,
+              submission_rate:
+                folder.student_count > 0
+                  ? Math.round(
+                      (folder.submission_count / folder.student_count) * 100
+                    )
+                  : 0,
+            },
+            teacher_name: folder.teacher_name,
+            created_at: folder.created_at,
+            file_count: folder.file_count || 0,
+            google_drive_folder_id: folder.google_drive_folder_id,
+            web_view_link: folder.web_view_link,
+          }));
+        } else if (Array.isArray(response.data)) {
+          // Direct array response - use the data as-is since it should already have the correct structure
+          transformedData = response.data;
         }
+
+        console.log('📚 Transformed homework data:', transformedData);
+        setHomeworkList(transformedData);
       } else {
-        Alert.alert('Error', `Failed to fetch homework: ${response.status}`);
+        Alert.alert(
+          'Error',
+          response.message || 'Failed to fetch homework list'
+        );
       }
     } catch (error) {
       console.error('Error fetching homework list:', error);
@@ -190,7 +269,8 @@ export default function TeacherHomeworkScreen({ navigation, route }) {
   const renderHomeworkCard = (homework) => {
     const statusColor = getStatusColor(homework.status);
     const statusIcon = getStatusIcon(homework.status);
-    const submissionRate = homework.statistics?.submission_rate || 0;
+    const submissionRate =
+      homework.completion_rate || homework.statistics?.submission_rate || 0;
 
     const handleCardPress = () => {
       navigation.navigate('TeacherHomeworkDetail', {
@@ -251,7 +331,10 @@ export default function TeacherHomeworkScreen({ navigation, route }) {
                 color={theme.colors.textSecondary}
               />
               <Text style={styles.statText}>
-                {homework.statistics?.total_students || 0} students
+                {homework.total_students ||
+                  homework.statistics?.total_students ||
+                  0}{' '}
+                students
               </Text>
             </View>
 
@@ -262,7 +345,10 @@ export default function TeacherHomeworkScreen({ navigation, route }) {
                 color={theme.colors.success}
               />
               <Text style={styles.statText}>
-                {homework.statistics?.submitted_count || 0} submitted
+                {homework.submission_count ||
+                  homework.statistics?.submitted_count ||
+                  0}{' '}
+                submitted
               </Text>
             </View>
           </View>

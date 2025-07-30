@@ -48,6 +48,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { getHtmlPreview } from '../utils/htmlUtils';
 import { createSmallShadow, createMediumShadow } from '../utils/commonStyles';
 import { getDemoStudentHomeworkData } from '../services/demoModeService';
+import { getStudentHomeworkList } from '../services/homeworkService';
 
 export default function AssignmentsScreen({ navigation, route }) {
   const { theme } = useTheme();
@@ -407,25 +408,27 @@ export default function AssignmentsScreen({ navigation, route }) {
         return;
       }
 
-      const url = buildApiUrl(Config.API_ENDPOINTS.GET_STUDENT_HOMEWORK, {
-        authCode,
-      });
+      // Use homework assignment API
+      const response = await getStudentHomeworkList(authCode);
 
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-      });
+      if (response.success && Array.isArray(response.data)) {
+        // The API returns assignments directly in the data array
+        // Transform the data to ensure compatibility with existing UI components
+        const transformedData = response.data.map((assignment) => ({
+          ...assignment,
+          // Ensure compatibility with existing component expectations
+          subject: assignment.subject_name,
+          completed: assignment.is_completed === 1,
+          // Add any missing fields that the UI might expect
+          days_remaining: assignment.is_overdue ? 0 : null,
+        }));
 
-      if (response.ok) {
-        const data = await response.json();
-        setAssignments(data);
+        setAssignments(transformedData);
       } else {
-        Alert.alert('Error', `Failed to fetch assignments: ${response.status}`);
+        Alert.alert('Error', response.message || 'Failed to fetch assignments');
       }
     } catch (error) {
+      console.error('Error fetching assignments:', error);
       Alert.alert('Error', 'Failed to connect to server');
     } finally {
       setLoading(false);

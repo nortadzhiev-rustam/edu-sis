@@ -48,6 +48,7 @@ import UserCalendarScreen from './src/screens/UserCalendarScreen';
 import AboutUsScreen from './src/screens/AboutUsScreen';
 import ContactsScreen from './src/screens/ContactsScreen';
 import FAQScreen from './src/screens/FAQScreen';
+import WorkspaceScreen from './src/screens/WorkspaceScreen';
 import { ThemeProvider } from './src/contexts/ThemeContext';
 import { LanguageProvider } from './src/contexts/LanguageContext';
 import { NotificationProvider } from './src/contexts/NotificationContext';
@@ -426,6 +427,10 @@ export default function App() {
                     <Stack.Screen name='AboutUs' component={AboutUsScreen} />
                     <Stack.Screen name='Contacts' component={ContactsScreen} />
                     <Stack.Screen name='FAQ' component={FAQScreen} />
+                    <Stack.Screen
+                      name='WorkspaceScreen'
+                      component={WorkspaceScreen}
+                    />
                   </Stack.Navigator>
                   {/* <DevTokenDisplay /> */}
                 </NavigationContainer>

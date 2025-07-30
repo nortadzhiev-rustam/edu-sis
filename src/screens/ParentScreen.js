@@ -129,16 +129,15 @@ const getMenuItems = (t) => [
     action: 'messages',
     comingSoon: false,
   },
-  // Coming soon
   {
     id: 'materials',
     title: 'Materials',
     icon: faFileAlt,
-    backgroundColor: '#B0B0B0',
+    backgroundColor: '#4CAF50',
     iconColor: '#fff',
     action: 'materials',
-    disabled: true,
-    comingSoon: true,
+    disabled: false,
+    comingSoon: false,
   },
 ];
 
@@ -355,6 +354,17 @@ export default function ParentScreen({ navigation }) {
         } catch (error) {
           console.error('Error saving student data for calendar:', error);
           Alert.alert('Error', 'Failed to access calendar');
+        }
+        break;
+      case 'materials':
+        if (selectedStudent) {
+          navigation.navigate('WorkspaceScreen', {
+            userData: {
+              ...selectedStudent,
+              userType: 'parent',
+            },
+            studentData: selectedStudent,
+          });
         }
         break;
       default:

@@ -136,9 +136,14 @@ class SchoolConfigService {
    * Detect school from user credentials during login
    * @param {string} username - User's username
    * @param {string} userType - User type (teacher/student)
+   * @param {Object} authResponseData - Optional authentication response data containing branch info
    * @returns {Promise<Object>} School configuration
    */
-  static async detectSchoolFromLogin(username, userType) {
+  static async detectSchoolFromLogin(
+    username,
+    userType,
+    authResponseData = null
+  ) {
     try {
       console.log('🏫 SCHOOL CONFIG: Detecting school for user:', username);
 
@@ -156,7 +161,21 @@ class SchoolConfigService {
         return demoConfig;
       }
 
-      // Try to detect from username pattern or API call
+      // Try to detect from authentication response data first
+      if (authResponseData) {
+        const schoolId = this.detectSchoolFromAuthData(authResponseData);
+        if (schoolId) {
+          console.log(
+            '🔍 SCHOOL CONFIG: Detected from auth response:',
+            schoolId
+          );
+          const schoolConfig = await this.getSchoolConfig(schoolId);
+          console.log('✅ SCHOOL CONFIG: School detected:', schoolConfig.name);
+          return schoolConfig;
+        }
+      }
+
+      // Fallback to username pattern detection
       const schoolId = await this.detectSchoolId(username, userType);
       const schoolConfig = await this.getSchoolConfig(schoolId);
 
@@ -167,6 +186,264 @@ class SchoolConfigService {
       // Fallback to default school
       return DEFAULT_SCHOOL_CONFIGS.bfi_edu_mm;
     }
+  }
+
+  /**
+   * Detect school ID from authentication response data
+   * @param {Object} authData - Authentication response data
+   * @returns {string|null} School ID or null if not detected
+   */
+  static detectSchoolFromAuthData(authData) {
+    try {
+      console.log(
+        '🔍 SCHOOL CONFIG: Analyzing auth response data for school detection'
+      );
+
+      // For teachers - check branches array
+      if (
+        authData.branches &&
+        Array.isArray(authData.branches) &&
+        authData.branches.length > 0
+      ) {
+        const firstBranch = authData.branches[0];
+        console.log(
+          '🏫 SCHOOL CONFIG: Found teacher branch data:',
+          firstBranch
+        );
+
+        // Try to detect school from branch name or code
+        if (firstBranch.branch_name) {
+          const schoolId = this.detectSchoolFromBranchName(
+            firstBranch.branch_name
+          );
+          if (schoolId) {
+            console.log(
+              '✅ SCHOOL CONFIG: Detected from teacher branch name:',
+              schoolId
+            );
+            return schoolId;
+          }
+        }
+
+        if (firstBranch.branch_code) {
+          const schoolId = this.detectSchoolFromBranchCode(
+            firstBranch.branch_code
+          );
+          if (schoolId) {
+            console.log(
+              '✅ SCHOOL CONFIG: Detected from teacher branch code:',
+              schoolId
+            );
+            return schoolId;
+          }
+        }
+
+        if (firstBranch.branch_id) {
+          const schoolId = this.detectSchoolFromBranchId(firstBranch.branch_id);
+          if (schoolId) {
+            console.log(
+              '✅ SCHOOL CONFIG: Detected from teacher branch ID:',
+              schoolId
+            );
+            return schoolId;
+          }
+        }
+      }
+
+      // For students - check branch object
+      if (authData.branch && typeof authData.branch === 'object') {
+        console.log(
+          '🏫 SCHOOL CONFIG: Found student branch data:',
+          authData.branch
+        );
+
+        if (authData.branch.branch_name) {
+          const schoolId = this.detectSchoolFromBranchName(
+            authData.branch.branch_name
+          );
+          if (schoolId) {
+            console.log(
+              '✅ SCHOOL CONFIG: Detected from student branch name:',
+              schoolId
+            );
+            return schoolId;
+          }
+        }
+
+        if (authData.branch.branch_code) {
+          const schoolId = this.detectSchoolFromBranchCode(
+            authData.branch.branch_code
+          );
+          if (schoolId) {
+            console.log(
+              '✅ SCHOOL CONFIG: Detected from student branch code:',
+              schoolId
+            );
+            return schoolId;
+          }
+        }
+
+        if (authData.branch.branch_id) {
+          const schoolId = this.detectSchoolFromBranchId(
+            authData.branch.branch_id
+          );
+          if (schoolId) {
+            console.log(
+              '✅ SCHOOL CONFIG: Detected from student branch ID:',
+              schoolId
+            );
+            return schoolId;
+          }
+        }
+      }
+
+      // Check for direct branch_id or branch_name in root level
+      if (authData.branch_id || authData.branch_name) {
+        console.log('🏫 SCHOOL CONFIG: Found root level branch data');
+
+        if (authData.branch_name) {
+          const schoolId = this.detectSchoolFromBranchName(
+            authData.branch_name
+          );
+          if (schoolId) {
+            console.log(
+              '✅ SCHOOL CONFIG: Detected from root branch name:',
+              schoolId
+            );
+            return schoolId;
+          }
+        }
+      }
+
+      console.log('⚠️ SCHOOL CONFIG: Could not detect school from auth data');
+      return null;
+    } catch (error) {
+      console.error(
+        '❌ SCHOOL CONFIG: Error detecting school from auth data:',
+        error
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Detect school ID from branch name
+   * @param {string} branchName - Branch name
+   * @returns {string|null} School ID or null
+   */
+  static detectSchoolFromBranchName(branchName) {
+    if (!branchName || typeof branchName !== 'string') {
+      console.log('⚠️ SCHOOL CONFIG: Invalid branch name:', branchName);
+      return null;
+    }
+
+    const lowerBranchName = branchName.toLowerCase();
+
+    // BFI patterns
+    if (
+      lowerBranchName.includes('bfi') ||
+      lowerBranchName.includes('british') ||
+      lowerBranchName.includes('foundation')
+    ) {
+      return 'bfi_edu_mm';
+    }
+
+    // Add more school patterns here as needed
+    // Example:
+    // if (lowerBranchName.includes('other_school')) {
+    //   return 'other_school_id';
+    // }
+
+    return null;
+  }
+
+  /**
+   * Detect school ID from branch code
+   * @param {string|number} branchCode - Branch code (can be string or number)
+   * @returns {string|null} School ID or null
+   */
+  static detectSchoolFromBranchCode(branchCode) {
+    if (!branchCode && branchCode !== 0) {
+      console.log('⚠️ SCHOOL CONFIG: Invalid branch code:', branchCode);
+      return null;
+    }
+
+    // Convert to string for consistent comparison
+    const stringBranchCode = String(branchCode).toLowerCase();
+    console.log(
+      '🔍 SCHOOL CONFIG: Analyzing branch code:',
+      branchCode,
+      '→',
+      stringBranchCode
+    );
+
+    // BFI patterns - handle both string and numeric codes
+    if (
+      stringBranchCode.includes('bfi') ||
+      stringBranchCode === 'mc' ||
+      stringBranchCode === 'sc' ||
+      // Add numeric branch code patterns for BFI
+      stringBranchCode === '1' ||
+      stringBranchCode === '2' ||
+      stringBranchCode === '10' ||
+      stringBranchCode === '20'
+    ) {
+      console.log('✅ SCHOOL CONFIG: Branch code matches BFI pattern');
+      return 'bfi_edu_mm';
+    }
+
+    // Add more school patterns here as needed
+    console.log(
+      '⚠️ SCHOOL CONFIG: No school pattern matched for branch code:',
+      branchCode
+    );
+    return null;
+  }
+
+  /**
+   * Detect school ID from branch ID
+   * @param {number|string} branchId - Branch ID
+   * @returns {string|null} School ID or null
+   */
+  static detectSchoolFromBranchId(branchId) {
+    if (!branchId) {
+      console.log('⚠️ SCHOOL CONFIG: Invalid branch ID:', branchId);
+      return null;
+    }
+
+    // Convert to number for comparison
+    const numericBranchId =
+      typeof branchId === 'string' ? parseInt(branchId, 10) : branchId;
+
+    if (isNaN(numericBranchId)) {
+      console.log(
+        '⚠️ SCHOOL CONFIG: Branch ID is not a valid number:',
+        branchId
+      );
+      return null;
+    }
+
+    console.log('🔍 SCHOOL CONFIG: Analyzing branch ID:', numericBranchId);
+
+    // BFI branch ID patterns (adjust these based on actual BFI branch IDs)
+    // For now, assuming BFI uses branch IDs 1, 2, etc.
+    // You may need to adjust these based on the actual branch IDs in your system
+    if (numericBranchId >= 1 && numericBranchId <= 10) {
+      console.log('✅ SCHOOL CONFIG: Branch ID matches BFI pattern');
+      return 'bfi_edu_mm';
+    }
+
+    // Add more school patterns here as needed
+    // Example:
+    // if (numericBranchId >= 100 && numericBranchId <= 199) {
+    //   return 'other_school_id';
+    // }
+
+    console.log(
+      '⚠️ SCHOOL CONFIG: No school pattern matched for branch ID:',
+      numericBranchId
+    );
+    return null;
   }
 
   /**
@@ -190,27 +467,48 @@ class SchoolConfigService {
         }
       }
 
-      // Method 2: Call backend API to detect school
-      const response = await fetch(buildApiUrl('/detect-school'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username,
-          userType,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.schoolId) {
-          console.log('🔍 SCHOOL CONFIG: Detected from API:', data.schoolId);
-          return data.schoolId;
-        }
+      // Method 2: Try to detect from username prefix patterns
+      if (username.startsWith('bfi_') || username.includes('bfi')) {
+        console.log('🔍 SCHOOL CONFIG: Detected BFI from username pattern');
+        return 'bfi_edu_mm';
       }
 
-      // Method 3: Fallback - use default school
+      // Method 3: Call backend API to detect school (if endpoint exists)
+      try {
+        // Create timeout controller for older environments
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        const response = await fetch(buildApiUrl('/detect-school'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            username,
+            userType,
+          }),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.schoolId) {
+            console.log('🔍 SCHOOL CONFIG: Detected from API:', data.schoolId);
+            return data.schoolId;
+          }
+        }
+      } catch (apiError) {
+        console.log(
+          '⚠️ SCHOOL CONFIG: API detection failed (endpoint may not exist):',
+          apiError.message
+        );
+        // Continue to fallback - this is expected if endpoint doesn't exist
+      }
+
+      // Method 4: Fallback - use default school
       console.log('🔍 SCHOOL CONFIG: Using default school (BFI)');
       return 'bfi_edu_mm';
     } catch (error) {
@@ -322,21 +620,42 @@ class SchoolConfigService {
    */
   static async fetchSchoolConfigFromAPI(schoolId) {
     try {
+      console.log(
+        '🌐 SCHOOL CONFIG: Attempting to fetch config from API for:',
+        schoolId
+      );
+
+      // Create timeout controller for older environments
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
       const response = await fetch(buildApiUrl(`/school-config/${schoolId}`), {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ SCHOOL CONFIG: Successfully fetched from API');
         return data;
+      } else {
+        console.log(
+          '⚠️ SCHOOL CONFIG: API returned non-OK status:',
+          response.status
+        );
+        return null;
       }
-
-      return null;
     } catch (error) {
-      console.error('❌ SCHOOL CONFIG: Error fetching from API:', error);
+      console.log(
+        '⚠️ SCHOOL CONFIG: API fetch failed (endpoint may not exist):',
+        error.message
+      );
+      // This is expected if the endpoint doesn't exist - return null to use fallback
       return null;
     }
   }

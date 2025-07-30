@@ -94,6 +94,40 @@ export const Config = {
     GET_CALENDAR_PERSONAL: '/calendar/personal',
     GET_CALENDAR_UPCOMING: '/calendar/upcoming',
     GET_CALENDAR_MONTHLY: '/calendar/monthly',
+
+    // Workspace API Endpoints
+    GET_WORKSPACE_STRUCTURE: '/workspace/structure',
+    GET_FOLDER_CONTENTS: '/workspace/folder-contents',
+    UPLOAD_WORKSPACE_FILE: '/workspace/upload-file',
+    CREATE_WORKSPACE_FOLDER: '/workspace/create-folder',
+    SEARCH_WORKSPACE_FILES: '/workspace/search',
+    GET_RECENT_WORKSPACE_FILES: '/workspace/recent-files',
+    GET_WORKSPACE_STATISTICS: '/workspace/statistics',
+    DELETE_WORKSPACE_ITEM: '/workspace/delete-item',
+
+    // Homework Assignment API Endpoints (Primary - Teachers)
+    GET_TEACHER_HOMEWORK_LIST: '/teacher/homework/list',
+    GET_TEACHER_HOMEWORK_DETAILS: '/teacher/homework/details',
+    CREATE_HOMEWORK_ASSIGNMENT: '/teacher/homework/create',
+    CLOSE_HOMEWORK_ASSIGNMENT: '/teacher/homework/close',
+    PROVIDE_HOMEWORK_FEEDBACK: '/teacher/homework/feedback',
+    // Homework Submission API Endpoints (Primary - Students)
+    MARK_HOMEWORK_VIEWED: '/homework/mark-viewed',
+    SUBMIT_HOMEWORK: '/homework/submit',
+    MARK_HOMEWORK_DONE: '/homework/mark-done',
+    UPLOAD_HOMEWORK_FILE: '/homework/upload-file',
+    UPDATE_HOMEWORK_SUBMISSION: '/homework/update-submission',
+
+    // Homework Folder API Endpoints (For Materials/Resources)
+    CREATE_HOMEWORK_FOLDER: '/homework/folder/create',
+    UPLOAD_HOMEWORK_FOLDER_FILE: '/homework/folder/upload-file',
+    GET_TEACHER_HOMEWORK_FOLDERS: '/homework/folder/teacher/list',
+    GET_TEACHER_HOMEWORK_FOLDERS_SIMPLE: '/homework/folder/teacher/list-simple',
+    GET_STUDENT_HOMEWORK_FOLDERS: '/homework/folder/student/list',
+    GET_HOMEWORK_FOLDER_FILES: '/homework/folder/files',
+    SUBMIT_HOMEWORK_FOLDER: '/homework/submission/upload',
+    GET_HOMEWORK_SUBMISSIONS: '/homework/submission/list',
+    GET_TEACHER_HOMEWORK_CLASSES: '/teacher/homework/classes',
   },
 
   // Web Resources
