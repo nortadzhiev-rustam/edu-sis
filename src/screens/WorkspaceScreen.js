@@ -1508,7 +1508,7 @@ const createStyles = (theme, fontSizes) =>
     subHeader: {
       backgroundColor: theme.colors.surface,
       paddingHorizontal: 16,
-      paddingVertical: 12,
+      paddingVertical: 10,
       borderBottomLeftRadius: 16,
       borderBottomRightRadius: 16,
     },
@@ -1519,23 +1519,26 @@ const createStyles = (theme, fontSizes) =>
     },
     rootFolderInfo: {
       alignItems: 'center',
-      paddingHorizontal: 10,
+      paddingHorizontal: 3,
+      paddingVertical: 8,
     },
     rootFolderHeader: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 4,
+      marginBottom: 6,
     },
     rootFolderName: {
       fontSize: 16,
       fontWeight: '600',
       color: theme.colors.text,
       marginLeft: 8,
+      flex: 1,
     },
     rootFolderDescription: {
       fontSize: 13,
       color: theme.colors.textSecondary,
       textAlign: 'center',
+      paddingHorizontal: 5,
     },
     rootFolderIconContainer: {
       width: 48,
@@ -1544,7 +1547,6 @@ const createStyles = (theme, fontSizes) =>
       backgroundColor: theme.colors.primary + '15',
       justifyContent: 'center',
       alignItems: 'center',
-      marginRight: 12,
     },
     backButton: {
       width: 36,
@@ -1597,16 +1599,6 @@ const createStyles = (theme, fontSizes) =>
     },
     folderInfo: {
       flex: 1,
-    },
-    rootFolderName: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: theme.colors.text,
-      marginBottom: 4,
-    },
-    rootFolderDescription: {
-      fontSize: 14,
-      color: theme.colors.textSecondary,
     },
     foldersSection: {
       marginBottom: 20,
