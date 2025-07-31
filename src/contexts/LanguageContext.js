@@ -78,11 +78,11 @@ const translations = {
     welcomeTo: 'Welcome to',
 
     // Academic
-    grades: 'Grades',
+    assessments: 'Assessments',
     attendance: 'Attendance',
     timetable: 'Timetable',
     homework: 'Homework',
-    behavior: 'Behavior',
+    behavior: 'BPS Management',
     discipline: 'Discipline',
 
     // Settings
@@ -104,6 +104,7 @@ const translations = {
     parentDashboard: 'Parent Dashboard',
     teacherDashboard: 'Teacher Dashboard',
     yourChildren: 'Your Children',
+    yourChild: 'Your Child',
     menu: 'Menu',
     addStudent: 'Add Student',
     deleteStudent: 'Delete Student',
@@ -121,10 +122,156 @@ const translations = {
     addStudentAccount: 'Add Student Account',
     noStudentAccounts: 'No student accounts added yet',
     tapToAdd: "Tap the + button in the header to add your child's account",
-    duplicateStudent: 'Duplicate Student',
     scrollForMore: 'Scroll for more →',
-    yourChild: 'Your child',
-    selected: 'SELECTED',
+    selected: 'Selected',
+
+    // Menu Items
+    calendar: 'Calendar',
+    health: 'Medical Reports',
+    messages: 'Messages',
+
+    // Alert Messages
+    noStudents: 'No Students',
+    pleaseAddStudent:
+      'Please add a student account first to view notifications.',
+    duplicateStudent: 'Duplicate Student',
+
+    // Login Screen
+    teacherId: 'Teacher ID',
+    studentId: 'Student ID',
+    pleaseEnterCredentials: 'Please enter both username and password',
+    studentAccountExists: 'This student account has already been added.',
+    studentAccountAdded: 'Student account added successfully',
+    failedToSaveStudent: 'Failed to save student account',
+    loginSuccessful: 'Login Successful',
+    welcomeMessage:
+      'Welcome {name}! You can now access the calendar and other school resources.',
+    loginFailed: 'Login Failed',
+    networkConnectionError:
+      'Network connection error. Please check your internet connection.',
+    unableToConnectServer:
+      'Unable to connect to server. Please try again later.',
+    connectionTimeout:
+      'Connection timeout. Please check your internet connection and try again.',
+    unknownError: 'Unknown error',
+    failedToCompleteLogin: 'Failed to complete login process',
+
+    // Messaging
+    enableNotifications: 'Enable Notifications',
+    notificationPermissionMessage:
+      "Would you like to receive important updates about your child's education? This includes grades, attendance, and school announcements.",
+    notNow: 'Not Now',
+
+    // Performance Monitor
+    continue: 'Continue',
+    forceRestart: 'Force Restart',
+
+    // Diagnostics
+    diagnosticsError: 'Diagnostics Error',
+    unableToRunDiagnostics:
+      'Unable to run diagnostics. Please restart the app.',
+    navigationDiagnostics: 'Navigation Diagnostics',
+    dataCleared: 'Data Cleared',
+    clearDataRestart: 'Clear Data & Restart',
+    allDataCleared:
+      'All user data has been cleared. Please restart the app and log in again.',
+    deviceStorageError:
+      'The app is unable to access device storage. Please restart the app and try again.',
+    noUserAccountsFound:
+      'No user accounts found. Please log in as a teacher/student or add a student account through the parent section.',
+
+    // Common UI
+    typeMessage: 'Type a message...',
+    available: 'Available',
+    notAvailable: 'Not Available',
+    enabled: 'Enabled',
+    disabled: 'Disabled',
+    debugInfo: 'Debug Info (App Review)',
+    platform: 'Platform',
+    dummyData: 'Dummy Data',
+    networkTimeout: 'Network Timeout',
+    deviceToken: 'Device Token',
+
+    // Modal and Dialog
+    confirm: 'Confirm',
+    step: 'Step',
+    of: 'of',
+
+    // Empty States
+    somethingWentWrong: 'Something went wrong',
+    pleaseTryAgainLater: 'Please try again later',
+    retry: 'Retry',
+
+    // Settings Screen
+    developedBy: 'Developed by EduNova Myanmar',
+
+    // BPS Notifications
+    positiveBehaviorRecognition: 'Positive Behavior Recognition',
+    behaviorNotice: 'Behavior Notice',
+    points: 'points',
+
+    // File Upload
+    fileTooLarge: 'File Too Large',
+    pleaseSelectSmallerFile: 'Please select a file smaller than',
+    failedToSelectImage: 'Failed to select image',
+    uploadFunctionNotProvided: 'Upload function not provided',
+    fileUploadedSuccessfully: 'File uploaded successfully!',
+    uploadFailed: 'Upload Failed',
+    failedToUploadFile: 'Failed to upload file. Please try again.',
+
+    // Validation
+    packageJsonNotFound: 'package.json not found',
+    nameIsRequired: 'name is required',
+    versionIsRequired: 'version is required',
+    invalidJson: 'Invalid JSON',
+    pleaseFix: 'Please fix the errors before proceeding.',
+    pleaseReview:
+      'Please review the warnings. The app may still work but some configurations need attention.',
+
+    // Home Screen
+    chooseYourRole: 'Choose your role to continue',
+    schoolResources: 'School Resources',
+    connectWithUs: 'Connect with Us',
+
+    // Role Descriptions
+    teacherDescription:
+      'Access teaching tools, manage classes, and track student progress',
+    parentDescription:
+      "Monitor your child's progress, communicate with teachers, and stay updated",
+    studentDescription:
+      'View assignments, check grades, and access learning materials',
+
+    // Menu Items
+    aboutUs: 'About Us',
+    contactUs: 'Contact Us',
+    faq: 'FAQ',
+
+    // Settings Screen
+    darkThemeEnabled: 'Dark theme enabled',
+    lightThemeEnabled: 'Light theme enabled',
+    notificationsTitle: 'Notifications',
+    pushNotifications: 'Push Notifications',
+    notificationEnabled: 'Enabled',
+    notificationDisabled: 'Disabled',
+    notificationSound: 'Sound',
+    playSoundForNotifications: 'Play sound for notifications',
+    notificationVibration: 'Vibration',
+    vibrateForNotifications: 'Vibrate for notifications',
+    notificationTypes: 'Notification Types',
+    gradesNotification: 'Grades',
+    newGradesAndUpdates: 'New grades and academic updates',
+    attendanceNotification: 'Attendance',
+    attendanceReminders: 'Attendance reminders and updates',
+    homeworkNotification: 'Homework',
+    assignmentDueDates: 'Assignment due dates and updates',
+    behaviorPointsNotification: 'Behavior Points',
+    bpsUpdates: 'BPS updates and behavior notifications',
+    emergencyAlerts: 'Emergency Alerts',
+    importantAnnouncements: 'Important school announcements',
+    permissionRequired: 'Permission Required',
+    enableNotificationsMessage:
+      'Please enable notifications in your device settings to receive important updates.',
+    openSettings: 'Open Settings',
 
     // Academic specific
     totalPoints: 'Total Points',
@@ -253,7 +400,6 @@ const translations = {
       "This app complies with COPPA (Children's Online Privacy Protection Act) and other applicable privacy laws.",
     parentalConsentError:
       'An error occurred while processing parental consent. Please try again.',
-    continue: 'Continue',
   },
   my: {
     // Common
@@ -292,11 +438,11 @@ const translations = {
     welcomeTo: 'မှကြိုဆိုပါတယ်။',
 
     // Academic
-    grades: 'အမှတ်များ',
+    assessments: 'အမှတ်များ',
     attendance: 'တက်ရောက်မှု',
     timetable: 'အချိန်ဇယား',
     homework: 'စာတွေ',
-    behavior: 'အပြုအမူအမှတ်များ',
+    behavior: 'BPS စီမံခန့်ခွဲမှု',
     discipline: 'စည်းကမ်း',
 
     // Settings
@@ -318,6 +464,7 @@ const translations = {
     parentDashboard: 'မိဘထိန်းချုပ်မှုစာမျက်နှာ',
     teacherDashboard: 'ဆရာ/ဆရာမထိန်းချုပ်မှုစာမျက်နှာ',
     yourChildren: 'သင့်ကလေးများ',
+    yourChild: 'သင့်ကလေး',
     menu: 'မီနူး',
     addStudent: 'ကျောင်းသားထည့်ရန်',
     deleteStudent: 'ကျောင်းသားဖျက်ရန်',
@@ -335,10 +482,154 @@ const translations = {
     addStudentAccount: 'ကျောင်းသားအကောင့်ထည့်ရန်',
     noStudentAccounts: 'ကျောင်းသားအကောင့်များ မထည့်ရသေးပါ',
     tapToAdd: 'သင့်ကလေး၏အကောင့်ထည့်ရန် ခေါင်းစီးရှိ + ခလုတ်ကို နှိပ်ပါ',
-    duplicateStudent: 'ထပ်တူကျောင်းသား',
-    scrollForMore: 'နောက်ထပ်အတွက် လှိမ့်ပါ →',
-    yourChild: 'သင့်ကလေး',
-    selected: 'ရွေးချယ်ထား',
+    scrollForMore: 'နောက်ထပ်ကြည့်ရန် လှိမ့်ပါ →',
+    selected: 'ရွေးချယ်ထားသည်',
+
+    // Menu Items
+    calendar: 'ပြက္ခဒိန်',
+    health: 'ဆေးဘက်ဆိုင်ရာအစီရင်ခံစာများ',
+    messages: 'စာများ',
+
+    // Alert Messages
+    noStudents: 'ကျောင်းသားများမရှိပါ',
+    pleaseAddStudent:
+      'အကြောင်းကြားချက်များကြည့်ရန် ကျောင်းသားအကောင့်တစ်ခုကို ဦးစွာထည့်ပါ။',
+    duplicateStudent: 'ကျောင်းသားပွားနေသည်',
+
+    // Login Screen
+    teacherId: 'ဆရာ/ဆရာမ ID',
+    studentId: 'ကျောင်းသား ID',
+    pleaseEnterCredentials: 'အသုံးပြုသူအမည်နှင့် စကားဝှက်နှစ်ခုလုံးကို ထည့်ပါ',
+    studentAccountExists: 'ဤကျောင်းသားအကောင့်ကို ထည့်ပြီးပါပြီ။',
+    studentAccountAdded: 'ကျောင်းသားအကောင့်ကို အောင်မြင်စွာထည့်ပြီး',
+    failedToSaveStudent: 'ကျောင်းသားအကောင့်သိမ်းဆည်းမှု မအောင်မြင်ပါ',
+    loginSuccessful: 'အကောင့်ဝင်ရောက်မှု အောင်မြင်ပါပြီ',
+    welcomeMessage:
+      'ကြိုဆိုပါတယ် {name}! ယခုအခါ ပြက္ခဒိန်နှင့် အခြားကျောင်းအရင်းအမြစ်များကို အသုံးပြုနိုင်ပါပြီ။',
+    loginFailed: 'အကောင့်ဝင်ရောက်မှု မအောင်မြင်ပါ',
+    networkConnectionError:
+      'ကွန်ယက်ချိတ်ဆက်မှုအမှား။ သင့်အင်တာနက်ချိတ်ဆက်မှုကို စစ်ဆေးပါ။',
+    unableToConnectServer: 'ဆာဗာနှင့် ချိတ်ဆက်မရပါ။ နောက်မှ ထပ်စမ်းကြည့်ပါ။',
+    connectionTimeout:
+      'ချိတ်ဆက်မှု အချိန်ကုန်ပါပြီ။ သင့်အင်တာနက်ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ထပ်စမ်းကြည့်ပါ။',
+    unknownError: 'မသိသောအမှား',
+    failedToCompleteLogin: 'အကောင့်ဝင်ရောက်မှုလုပ်ငန်းစဉ် မပြီးမြောက်ပါ',
+
+    // Messaging
+    enableNotifications: 'အကြောင်းကြားစာများကို ဖွင့်ပါ',
+    notificationPermissionMessage:
+      'သင့်ကလေး၏ပညာရေးနှင့်ပတ်သက်သော အရေးကြီးသောအချက်အလက်များကို လက်ခံလိုပါသလား? ဤတွင် အမှတ်များ၊ တက်ရောက်မှု၊ နှင့် ကျောင်းကြေညာများ ပါဝင်ပါသည်။',
+    notNow: 'ယခုမဟုတ်ပါ',
+
+    // Performance Monitor
+    continue: 'ဆက်လက်လုပ်ဆောင်ပါ',
+    forceRestart: 'အတင်းပြန်စတင်ပါ',
+
+    // Diagnostics
+    diagnosticsError: 'စစ်ဆေးမှုအမှား',
+    unableToRunDiagnostics: 'စစ်ဆေးမှုမလုပ်နိုင်ပါ။ အက်ပ်ကို ပြန်စတင်ပါ။',
+    navigationDiagnostics: 'လမ်းညွှန်မှုစစ်ဆေးမှု',
+    dataCleared: 'ဒေတာရှင်းလင်းပြီး',
+    clearDataRestart: 'ဒေတာရှင်းလင်းပြီး ပြန်စတင်ပါ',
+    allDataCleared:
+      'အသုံးပြုသူဒေတာအားလုံးကို ရှင်းလင်းပြီးပါပြီ။ အက်ပ်ကို ပြန်စတင်ပြီး ထပ်မံအကောင့်ဝင်ပါ။',
+    deviceStorageError:
+      'အက်ပ်သည် စက်ပစ္စည်းသိုလှောင်မှုကို အသုံးပြုမရပါ။ အက်ပ်ကို ပြန်စတင်ပြီး ထပ်စမ်းကြည့်ပါ။',
+    noUserAccountsFound:
+      'အသုံးပြုသူအကောင့်များ မတွေ့ပါ။ ဆရာ/ကျောင်းသားအဖြစ် အကောင့်ဝင်ပါ သို့မဟုတ် မိဘကဏ္ဍမှတစ်ဆင့် ကျောင်းသားအကောင့်ထည့်ပါ။',
+
+    // Common UI
+    typeMessage: 'စာတစ်စောင်ရိုက်ပါ...',
+    available: 'ရရှိနိုင်သည်',
+    notAvailable: 'မရရှိနိုင်ပါ',
+    enabled: 'ဖွင့်ထားသည်',
+    disabled: 'ပိတ်ထားသည်',
+    debugInfo: 'အမှားရှာမှုအချက်အလက် (အက်ပ်ပြန်လည်သုံးသပ်မှု)',
+    platform: 'ပလပ်ဖောင်း',
+    dummyData: 'နမူနာဒေတာ',
+    networkTimeout: 'ကွန်ယက်အချိန်ကုန်',
+    deviceToken: 'စက်ပစ္စည်းတိုကင်',
+
+    // Modal and Dialog
+    confirm: 'အတည်ပြုပါ',
+    step: 'အဆင့်',
+    of: 'မှ',
+
+    // Empty States
+    somethingWentWrong: 'တစ်ခုခုမှားယွင်းနေပါသည်',
+    pleaseTryAgainLater: 'နောက်မှ ထပ်စမ်းကြည့်ပါ',
+    retry: 'ထပ်စမ်းကြည့်ပါ',
+
+    // Settings Screen
+    developedBy: 'EduNova Myanmar မှ ဖန်တီးထားသည်',
+
+    // BPS Notifications
+    positiveBehaviorRecognition: 'အပြုသဘောဆောင်သော အပြုအမူအသိအမှတ်ပြုမှု',
+    behaviorNotice: 'အပြုအမူအကြောင်းကြားချက်',
+    points: 'အမှတ်များ',
+
+    // File Upload
+    fileTooLarge: 'ဖိုင်အရွယ်အစားကြီးလွန်းသည်',
+    pleaseSelectSmallerFile: 'ကျေးဇူးပြု၍ ပိုသေးသောဖိုင်ရွေးချယ်ပါ',
+    failedToSelectImage: 'ပုံရွေးချယ်ရန်မအောင်မြင်ပါ',
+    uploadFunctionNotProvided: 'အပ်လုဒ်လုပ်ဆောင်ချက်မပေးထားပါ',
+    fileUploadedSuccessfully: 'ဖိုင်အပ်လုဒ်အောင်မြင်ပါပြီ!',
+    uploadFailed: 'အပ်လုဒ်မအောင်မြင်ပါ',
+    failedToUploadFile: 'ဖိုင်အပ်လုဒ်မအောင်မြင်ပါ။ ထပ်စမ်းကြည့်ပါ။',
+
+    // Validation
+    packageJsonNotFound: 'package.json မတွေ့ပါ',
+    nameIsRequired: 'အမည်လိုအပ်သည်',
+    versionIsRequired: 'ဗားရှင်းလိုအပ်သည်',
+    invalidJson: 'မမှန်ကန်သော JSON',
+    pleaseFix: 'ကျေးဇူးပြု၍ အမှားများကိုပြင်ဆင်ပြီးမှ ဆက်လုပ်ပါ။',
+    pleaseReview:
+      'ကျေးဇူးပြု၍ သတိပေးချက်များကိုပြန်လည်သုံးသပ်ပါ။ အက်ပ်သည်အလုပ်လုပ်နိုင်သေးသော်လည်း အချို့သောဖွဲ့စည်းမှုများကို အာရုံစိုက်ရန်လိုအပ်သည်။',
+
+    // Home Screen
+    chooseYourRole: 'ဆက်လက်လုပ်ဆောင်ရန် သင့်အခန်းကဏ္ဍကို ရွေးချယ်ပါ',
+    schoolResources: 'ကျောင်းအရင်းအမြစ်များ',
+    connectWithUs: 'ကျွန်ုပ်တို့နှင့် ဆက်သွယ်ပါ',
+
+    // Role Descriptions
+    teacherDescription:
+      'သင်ကြားရေးကိရိယာများကို အသုံးပြုပါ၊ အတန်းများကို စီမံခန့်ခွဲပါ၊ ကျောင်းသားများ၏ တိုးတက်မှုကို ခြေရာခံပါ',
+    parentDescription:
+      'သင့်ကလေး၏ တိုးတက်မှုကို စောင့်ကြည့်ပါ၊ ဆရာများနှင့် ဆက်သွယ်ပါ၊ နောက်ဆုံးအချက်အလက်များကို ရယူပါ',
+    studentDescription:
+      'အလုပ်အတွက်များကို ကြည့်ရှုပါ၊ အမှတ်များကို စစ်ဆေးပါ၊ သင်ယူရေးပစ္စည်းများကို အသုံးပြုပါ',
+
+    // Menu Items
+    aboutUs: 'ကျွန်ုပ်တို့အကြောင်း',
+    contactUs: 'ဆက်သွယ်ရန်',
+    faq: 'မေးခွန်းများ',
+
+    // Settings Screen
+    darkThemeEnabled: 'မှောင်မိုက်အပြင်အဆင် ဖွင့်ထားသည်',
+    lightThemeEnabled: 'အလင်းအပြင်အဆင် ဖွင့်ထားသည်',
+    notificationsTitle: 'အကြောင်းကြားချက်များ',
+    pushNotifications: 'တွန်းအကြောင်းကြားချက်များ',
+    notificationEnabled: 'ဖွင့်ထားသည်',
+    notificationDisabled: 'ပိတ်ထားသည်',
+    notificationSound: 'အသံ',
+    playSoundForNotifications: 'အကြောင်းကြားချက်များအတွက် အသံဖွင့်ရန်',
+    notificationVibration: 'တုန်ခါမှု',
+    vibrateForNotifications: 'အကြောင်းကြားချက်များအတွက် တုန်ခါရန်',
+    notificationTypes: 'အကြောင်းကြားချက်အမျိုးအစားများ',
+    gradesNotification: 'အမှတ်များ',
+    newGradesAndUpdates: 'အမှတ်အသစ်များနှင့် ပညာရေးအပ်ဒိတ်များ',
+    attendanceNotification: 'တက်ရောက်မှု',
+    attendanceReminders: 'တက်ရောက်မှုသတိပေးချက်များနှင့် အပ်ဒိတ်များ',
+    homeworkNotification: 'အိမ်စာ',
+    assignmentDueDates: 'အိမ်စာသတ်မှတ်ရက်များနှင့် အပ်ဒိတ်များ',
+    behaviorPointsNotification: 'အပြုအမူအမှတ်များ',
+    bpsUpdates: 'BPS အပ်ဒိတ်များနှင့် အပြုအမူအကြောင်းကြားချက်များ',
+    emergencyAlerts: 'အရေးပေါ်သတိပေးချက်များ',
+    importantAnnouncements: 'အရေးကြီးကြေညာချက်များ',
+    permissionRequired: 'ခွင့်ပြုချက်လိုအပ်သည်',
+    enableNotificationsMessage:
+      'အရေးကြီးအပ်ဒိတ်များရရှိရန် သင့်စက်ပစ္စည်းဆက်တင်များတွင် အကြောင်းကြားချက်များကို ဖွင့်ပေးပါ။',
+    openSettings: 'ဆက်တင်များဖွင့်ရန်',
 
     // Academic specific
     totalPoints: 'စုစုပေါင်းအမှတ်များ',
@@ -450,14 +741,14 @@ const translations = {
     teacher: '教师',
     parent: '家长',
     student: '学生',
-    welcomeTO: '欢迎来到',
+    welcomeTo: '欢迎来到',
 
     // Academic
-    grades: '成绩',
+    assessments: '评估',
     attendance: '出勤',
     timetable: '时间表',
     homework: '作业',
-    behavior: '行为分数',
+    behavior: 'BPS管理',
     discipline: '纪律',
 
     // Settings
@@ -479,6 +770,7 @@ const translations = {
     parentDashboard: '家长仪表板',
     teacherDashboard: '教师仪表板',
     yourChildren: '您的孩子',
+    yourChild: '您的孩子',
     menu: '菜单',
     addStudent: '添加学生',
     deleteStudent: '删除学生',
@@ -494,10 +786,143 @@ const translations = {
     addStudentAccount: '添加学生账户',
     noStudentAccounts: '尚未添加学生账户',
     tapToAdd: '点击标题中的+按钮添加您孩子的账户',
-    duplicateStudent: '重复学生',
     scrollForMore: '滑动查看更多 →',
-    yourChild: '您的孩子',
     selected: '已选择',
+
+    // Menu Items
+    calendar: '日历',
+    health: '医疗报告',
+    messages: '消息',
+
+    // Alert Messages
+    noStudents: '没有学生',
+    pleaseAddStudent: '请先添加学生账户以查看通知。',
+    duplicateStudent: '重复学生',
+
+    // Login Screen
+    teacherId: '教师ID',
+    studentId: '学生ID',
+    pleaseEnterCredentials: '请输入用户名和密码',
+    studentAccountExists: '此学生账户已经添加过了。',
+    studentAccountAdded: '学生账户添加成功',
+    failedToSaveStudent: '保存学生账户失败',
+    loginSuccessful: '登录成功',
+    welcomeMessage: '欢迎 {name}！您现在可以访问日历和其他学校资源。',
+    loginFailed: '登录失败',
+    networkConnectionError: '网络连接错误。请检查您的网络连接。',
+    unableToConnectServer: '无法连接到服务器。请稍后再试。',
+    connectionTimeout: '连接超时。请检查您的网络连接并重试。',
+    unknownError: '未知错误',
+    failedToCompleteLogin: '无法完成登录过程',
+
+    // Messaging
+    enableNotifications: '启用通知',
+    notificationPermissionMessage:
+      '您想接收有关孩子教育的重要更新吗？这包括成绩、出勤和学校公告。',
+    notNow: '暂不',
+
+    // Performance Monitor
+    continue: '继续',
+    forceRestart: '强制重启',
+
+    // Diagnostics
+    diagnosticsError: '诊断错误',
+    unableToRunDiagnostics: '无法运行诊断。请重启应用。',
+    navigationDiagnostics: '导航诊断',
+    dataCleared: '数据已清除',
+    clearDataRestart: '清除数据并重启',
+    allDataCleared: '所有用户数据已清除。请重启应用并重新登录。',
+    deviceStorageError: '应用无法访问设备存储。请重启应用并重试。',
+    noUserAccountsFound:
+      '未找到用户账户。请以教师/学生身份登录或通过家长部分添加学生账户。',
+
+    // Common UI
+    typeMessage: '输入消息...',
+    available: '可用',
+    notAvailable: '不可用',
+    enabled: '已启用',
+    disabled: '已禁用',
+    debugInfo: '调试信息（应用审核）',
+    platform: '平台',
+    dummyData: '虚拟数据',
+    networkTimeout: '网络超时',
+    deviceToken: '设备令牌',
+
+    // Modal and Dialog
+    confirm: '确认',
+    step: '步骤',
+    of: '的',
+
+    // Empty States
+    somethingWentWrong: '出现了问题',
+    pleaseTryAgainLater: '请稍后再试',
+    retry: '重试',
+
+    // Settings Screen
+    developedBy: '由 EduNova Myanmar 开发',
+
+    // BPS Notifications
+    positiveBehaviorRecognition: '积极行为表彰',
+    behaviorNotice: '行为通知',
+    points: '分',
+
+    // File Upload
+    fileTooLarge: '文件过大',
+    pleaseSelectSmallerFile: '请选择小于',
+    failedToSelectImage: '选择图片失败',
+    uploadFunctionNotProvided: '未提供上传功能',
+    fileUploadedSuccessfully: '文件上传成功！',
+    uploadFailed: '上传失败',
+    failedToUploadFile: '文件上传失败。请重试。',
+
+    // Validation
+    packageJsonNotFound: '未找到 package.json',
+    nameIsRequired: '需要名称',
+    versionIsRequired: '需要版本',
+    invalidJson: '无效的 JSON',
+    pleaseFix: '请在继续之前修复错误。',
+    pleaseReview: '请查看警告。应用程序可能仍然可以工作，但某些配置需要注意。',
+
+    // Home Screen
+    chooseYourRole: '选择您的角色以继续',
+    schoolResources: '学校资源',
+    connectWithUs: '联系我们',
+
+    // Role Descriptions
+    teacherDescription: '访问教学工具，管理班级，跟踪学生进度',
+    parentDescription: '监控您孩子的进度，与老师沟通，保持更新',
+    studentDescription: '查看作业，检查成绩，访问学习材料',
+
+    // Menu Items
+    aboutUs: '关于我们',
+    contactUs: '联系我们',
+    faq: '常见问题',
+
+    // Settings Screen
+    darkThemeEnabled: '深色主题已启用',
+    lightThemeEnabled: '浅色主题已启用',
+    notificationsTitle: '通知',
+    pushNotifications: '推送通知',
+    notificationEnabled: '已启用',
+    notificationDisabled: '已禁用',
+    notificationSound: '声音',
+    playSoundForNotifications: '为通知播放声音',
+    notificationVibration: '振动',
+    vibrateForNotifications: '为通知振动',
+    notificationTypes: '通知类型',
+    gradesNotification: '成绩',
+    newGradesAndUpdates: '新成绩和学术更新',
+    attendanceNotification: '出勤',
+    attendanceReminders: '出勤提醒和更新',
+    homeworkNotification: '作业',
+    assignmentDueDates: '作业截止日期和更新',
+    behaviorPointsNotification: '行为积分',
+    bpsUpdates: 'BPS更新和行为通知',
+    emergencyAlerts: '紧急警报',
+    importantAnnouncements: '重要公告',
+    permissionRequired: '需要权限',
+    enableNotificationsMessage: '请在设备设置中启用通知以接收重要更新。',
+    openSettings: '打开设置',
 
     // Academic specific
     totalPoints: '总分',
@@ -609,14 +1034,14 @@ const translations = {
     teacher: 'ครู',
     parent: 'ผู้ปกครอง',
     student: 'นักเรียน',
-    welcomeTO: 'ยินดีต้อนรับ',
+    welcomeTo: 'ยินดีต้อนรับสู่',
 
     // Academic
-    grades: 'เกรด',
+    assessments: 'การประเมิน',
     attendance: 'การเข้าเรียน',
     timetable: 'ตารางเรียน',
     homework: 'การบ้าน',
-    behavior: 'คะแนนพฤติกรรม',
+    behavior: 'การจัดการ BPS',
     discipline: 'วินัย',
 
     // Settings
@@ -638,6 +1063,7 @@ const translations = {
     parentDashboard: 'แดชบอร์ดผู้ปกครอง',
     teacherDashboard: 'แดชบอร์ดครู',
     yourChildren: 'บุตรหลานของคุณ',
+    yourChild: 'บุตรหลานของคุณ',
     menu: 'เมนู',
     addStudent: 'เพิ่มนักเรียน',
     deleteStudent: 'ลบนักเรียน',
@@ -654,10 +1080,154 @@ const translations = {
     addStudentAccount: 'เพิ่มบัญชีนักเรียน',
     noStudentAccounts: 'ยังไม่ได้เพิ่มบัญชีนักเรียน',
     tapToAdd: 'แตะปุ่ม + ในส่วนหัวเพื่อเพิ่มบัญชีของบุตรหลาน',
-    duplicateStudent: 'นักเรียนซ้ำ',
     scrollForMore: 'เลื่อนเพื่อดูเพิ่มเติม →',
-    yourChild: 'บุตรหลานของคุณ',
     selected: 'เลือกแล้ว',
+
+    // Menu Items
+    calendar: 'ปฏิทิน',
+    health: 'รายงานการแพทย์',
+    messages: 'ข้อความ',
+
+    // Alert Messages
+    noStudents: 'ไม่มีนักเรียน',
+    pleaseAddStudent: 'กรุณาเพิ่มบัญชีนักเรียนก่อนเพื่อดูการแจ้งเตือน',
+    duplicateStudent: 'นักเรียนซ้ำ',
+
+    // Login Screen
+    teacherId: 'รหัสครู',
+    studentId: 'รหัสนักเรียน',
+    pleaseEnterCredentials: 'กรุณาใส่ชื่อผู้ใช้และรหัสผ่านทั้งสองอย่าง',
+    studentAccountExists: 'บัญชีนักเรียนนี้ได้ถูกเพิ่มแล้ว',
+    studentAccountAdded: 'เพิ่มบัญชีนักเรียนสำเร็จ',
+    failedToSaveStudent: 'บันทึกบัญชีนักเรียนไม่สำเร็จ',
+    loginSuccessful: 'เข้าสู่ระบบสำเร็จ',
+    welcomeMessage:
+      'ยินดีต้อนรับ {name}! ตอนนี้คุณสามารถเข้าถึงปฏิทินและทรัพยากรของโรงเรียนอื่นๆ ได้แล้ว',
+    loginFailed: 'เข้าสู่ระบบไม่สำเร็จ',
+    networkConnectionError:
+      'ข้อผิดพลาดการเชื่อมต่อเครือข่าย กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตของคุณ',
+    unableToConnectServer:
+      'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้งในภายหลัง',
+    connectionTimeout:
+      'การเชื่อมต่อหมดเวลา กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตและลองใหม่อีกครั้ง',
+    unknownError: 'ข้อผิดพลาดที่ไม่ทราบสาเหตุ',
+    failedToCompleteLogin: 'ไม่สามารถดำเนินการเข้าสู่ระบบให้เสร็จสิ้นได้',
+
+    // Messaging
+    enableNotifications: 'เปิดใช้งานการแจ้งเตือน',
+    notificationPermissionMessage:
+      'คุณต้องการรับข้อมูลอัปเดตที่สำคัญเกี่ยวกับการศึกษาของบุตรหลานหรือไม่? ซึ่งรวมถึงเกรด การเข้าเรียน และประกาศของโรงเรียน',
+    notNow: 'ไม่ใช่ตอนนี้',
+
+    // Performance Monitor
+    continue: 'ดำเนินการต่อ',
+    forceRestart: 'บังคับรีสตาร์ท',
+
+    // Diagnostics
+    diagnosticsError: 'ข้อผิดพลาดการวินิจฉัย',
+    unableToRunDiagnostics: 'ไม่สามารถรันการวินิจฉัยได้ กรุณารีสตาร์ทแอป',
+    navigationDiagnostics: 'การวินิจฉัยการนำทาง',
+    dataCleared: 'ล้างข้อมูลแล้ว',
+    clearDataRestart: 'ล้างข้อมูลและรีสตาร์ท',
+    allDataCleared:
+      'ข้อมูลผู้ใช้ทั้งหมดได้ถูกล้างแล้ว กรุณารีสตาร์ทแอปและเข้าสู่ระบบใหม่',
+    deviceStorageError:
+      'แอปไม่สามารถเข้าถึงที่เก็บข้อมูลของอุปกรณ์ได้ กรุณารีสตาร์ทแอปและลองใหม่อีกครั้ง',
+    noUserAccountsFound:
+      'ไม่พบบัญชีผู้ใช้ กรุณาเข้าสู่ระบบในฐานะครู/นักเรียน หรือเพิ่มบัญชีนักเรียนผ่านส่วนผู้ปกครอง',
+
+    // Common UI
+    typeMessage: 'พิมพ์ข้อความ...',
+    available: 'พร้อมใช้งาน',
+    notAvailable: 'ไม่พร้อมใช้งาน',
+    enabled: 'เปิดใช้งาน',
+    disabled: 'ปิดใช้งาน',
+    debugInfo: 'ข้อมูลดีบัก (การตรวจสอบแอป)',
+    platform: 'แพลตฟอร์ม',
+    dummyData: 'ข้อมูลจำลอง',
+    networkTimeout: 'เครือข่ายหมดเวลา',
+    deviceToken: 'โทเค็นอุปกรณ์',
+
+    // Modal and Dialog
+    confirm: 'ยืนยัน',
+    step: 'ขั้นตอน',
+    of: 'จาก',
+
+    // Empty States
+    somethingWentWrong: 'เกิดข้อผิดพลาดบางอย่าง',
+    pleaseTryAgainLater: 'กรุณาลองใหม่อีกครั้งในภายหลัง',
+    retry: 'ลองใหม่',
+
+    // Settings Screen
+    developedBy: 'พัฒนาโดย EduNova Myanmar',
+
+    // BPS Notifications
+    positiveBehaviorRecognition: 'การยอมรับพฤติกรรมเชิงบวก',
+    behaviorNotice: 'ประกาศพฤติกรรม',
+    points: 'คะแนน',
+
+    // File Upload
+    fileTooLarge: 'ไฟล์ใหญ่เกินไป',
+    pleaseSelectSmallerFile: 'กรุณาเลือกไฟล์ที่เล็กกว่า',
+    failedToSelectImage: 'ไม่สามารถเลือกรูปภาพได้',
+    uploadFunctionNotProvided: 'ไม่ได้ระบุฟังก์ชันอัปโหลด',
+    fileUploadedSuccessfully: 'อัปโหลดไฟล์สำเร็จ!',
+    uploadFailed: 'อัปโหลดล้มเหลว',
+    failedToUploadFile: 'ไม่สามารถอัปโหลดไฟล์ได้ กรุณาลองใหม่อีกครั้ง',
+
+    // Validation
+    packageJsonNotFound: 'ไม่พบ package.json',
+    nameIsRequired: 'จำเป็นต้องมีชื่อ',
+    versionIsRequired: 'จำเป็นต้องมีเวอร์ชัน',
+    invalidJson: 'JSON ไม่ถูกต้อง',
+    pleaseFix: 'กรุณาแก้ไขข้อผิดพลาดก่อนดำเนินการต่อ',
+    pleaseReview:
+      'กรุณาตรวจสอบคำเตือน แอปอาจยังคงทำงานได้ แต่การกำหนดค่าบางอย่างต้องการความสนใจ',
+
+    // Home Screen
+    chooseYourRole: 'เลือกบทบาทของคุณเพื่อดำเนินการต่อ',
+    schoolResources: 'ทรัพยากรโรงเรียน',
+    connectWithUs: 'ติดต่อเรา',
+
+    // Role Descriptions
+    teacherDescription:
+      'เข้าถึงเครื่องมือการสอน จัดการชั้นเรียน และติดตามความก้าวหน้าของนักเรียน',
+    parentDescription:
+      'ติดตามความก้าวหน้าของลูก สื่อสารกับครู และรับข้อมูลล่าสุด',
+    studentDescription:
+      'ดูงานที่ได้รับมอบหมาย ตรวจสอบเกรด และเข้าถึงสื่อการเรียนรู้',
+
+    // Menu Items
+    aboutUs: 'เกี่ยวกับเรา',
+    contactUs: 'ติดต่อเรา',
+    faq: 'คำถามที่พบบ่อย',
+
+    // Settings Screen
+    darkThemeEnabled: 'เปิดใช้งานธีมมืดแล้ว',
+    lightThemeEnabled: 'เปิดใช้งานธีมสว่างแล้ว',
+    notificationsTitle: 'การแจ้งเตือน',
+    pushNotifications: 'การแจ้งเตือนแบบพุช',
+    notificationEnabled: 'เปิดใช้งาน',
+    notificationDisabled: 'ปิดใช้งาน',
+    notificationSound: 'เสียง',
+    playSoundForNotifications: 'เล่นเสียงสำหรับการแจ้งเตือน',
+    notificationVibration: 'การสั่น',
+    vibrateForNotifications: 'สั่นสำหรับการแจ้งเตือน',
+    notificationTypes: 'ประเภทการแจ้งเตือน',
+    gradesNotification: 'เกรด',
+    newGradesAndUpdates: 'เกรดใหม่และการอัปเดตทางวิชาการ',
+    attendanceNotification: 'การเข้าเรียน',
+    attendanceReminders: 'การเตือนการเข้าเรียนและการอัปเดต',
+    homeworkNotification: 'การบ้าน',
+    assignmentDueDates: 'วันครบกำหนดงานและการอัปเดต',
+    behaviorPointsNotification: 'คะแนนพฤติกรรม',
+    bpsUpdates: 'การอัปเดต BPS และการแจ้งเตือนพฤติกรรม',
+    emergencyAlerts: 'การแจ้งเตือนฉุกเฉิน',
+    importantAnnouncements: 'ประกาศสำคัญของโรงเรียน',
+    permissionRequired: 'ต้องการสิทธิ์',
+    enableNotificationsMessage:
+      'กรุณาเปิดใช้งานการแจ้งเตือนในการตั้งค่าอุปกรณ์ของคุณเพื่อรับการอัปเดตที่สำคัญ',
+    openSettings: 'เปิดการตั้งค่า',
 
     // Academic specific
     totalPoints: 'คะแนนรวม',

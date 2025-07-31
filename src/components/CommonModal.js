@@ -11,10 +11,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faTimes, faArrowLeft } from '@fortawesome/free-solid-svg-icons';
+import { useLanguage } from '../contexts/LanguageContext';
 
 /**
  * CommonModal Component
- * 
+ *
  * A reusable modal component with header, content, and footer sections.
  */
 const CommonModal = ({
@@ -54,10 +55,8 @@ const CommonModal = ({
           </View>
           <View style={styles.headerRight} />
         </View>
-        
-        <View style={[styles.modalContent, contentStyle]}>
-          {children}
-        </View>
+
+        <View style={[styles.modalContent, contentStyle]}>{children}</View>
       </SafeAreaView>
     </Modal>
   );
@@ -65,7 +64,7 @@ const CommonModal = ({
 
 /**
  * StepModal Component
- * 
+ *
  * A specialized modal for step-based workflows with progress indicator.
  */
 const StepModal = ({
@@ -129,14 +128,11 @@ const StepModal = ({
             <Text style={styles.backButtonText}>Back</Text>
           </TouchableOpacity>
         )}
-        
+
         <View style={styles.footerRight}>
           {currentStep < totalSteps ? (
             <TouchableOpacity
-              style={[
-                styles.nextButton,
-                !canProceed && styles.disabledButton,
-              ]}
+              style={[styles.nextButton, !canProceed && styles.disabledButton]}
               onPress={onNext}
               disabled={!canProceed}
             >
@@ -151,16 +147,13 @@ const StepModal = ({
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
-              style={[
-                styles.submitButton,
-                loading && styles.disabledButton,
-              ]}
+              style={[styles.submitButton, loading && styles.disabledButton]}
               onPress={onSubmit}
               disabled={loading}
             >
               {loading ? (
                 <ActivityIndicator
-                  size="small"
+                  size='small'
                   color={theme.colors.headerText}
                 />
               ) : (
@@ -178,19 +171,19 @@ const StepModal = ({
       visible={visible}
       onClose={onClose}
       title={stepTitle}
-      subtitle={`Step ${currentStep} of ${totalSteps}`}
+      subtitle={`${t('step')} ${currentStep} ${t('of')} ${totalSteps}`}
       theme={theme}
       style={style}
     >
       {renderProgressIndicator()}
-      
+
       <ScrollView
         style={styles.stepContent}
         showsVerticalScrollIndicator={false}
       >
         {children}
       </ScrollView>
-      
+
       {renderFooter()}
     </CommonModal>
   );
@@ -198,7 +191,7 @@ const StepModal = ({
 
 /**
  * ConfirmationModal Component
- * 
+ *
  * A specialized modal for confirmation dialogs.
  */
 const ConfirmationModal = ({
@@ -220,16 +213,14 @@ const ConfirmationModal = ({
     <Modal
       visible={visible}
       transparent={true}
-      animationType="fade"
+      animationType='fade'
       onRequestClose={onClose}
     >
       <View style={styles.confirmationOverlay}>
         <View style={styles.confirmationContent}>
           <Text style={styles.confirmationTitle}>{title}</Text>
-          {message && (
-            <Text style={styles.confirmationMessage}>{message}</Text>
-          )}
-          
+          {message && <Text style={styles.confirmationMessage}>{message}</Text>}
+
           <View style={styles.confirmationActions}>
             <TouchableOpacity
               style={styles.cancelButton}
@@ -238,7 +229,7 @@ const ConfirmationModal = ({
             >
               <Text style={styles.cancelButtonText}>{cancelText}</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               style={[
                 styles.confirmButton,
@@ -250,7 +241,7 @@ const ConfirmationModal = ({
             >
               {loading ? (
                 <ActivityIndicator
-                  size="small"
+                  size='small'
                   color={theme.colors.headerText}
                 />
               ) : (

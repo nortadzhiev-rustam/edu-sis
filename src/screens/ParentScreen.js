@@ -52,8 +52,8 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 // Menu items configuration
 const getMenuItems = (t) => [
   {
-    id: 'grades',
-    title: t('grades'),
+    id: 'assessments',
+    title: t('assessments'),
     icon: faChartLine,
     backgroundColor: '#FF9500',
     iconColor: '#fff',
@@ -85,7 +85,7 @@ const getMenuItems = (t) => [
   },
   {
     id: 'calendar',
-    title: 'Calendar',
+    title: t('calendar'),
     icon: faCalendarAlt,
     backgroundColor: '#5856D6',
     iconColor: '#fff',
@@ -101,7 +101,7 @@ const getMenuItems = (t) => [
   },
   {
     id: 'library',
-    title: 'Library',
+    title: t('library'),
     icon: faBookOpen,
     backgroundColor: '#FF6B35',
     iconColor: '#fff',
@@ -110,7 +110,7 @@ const getMenuItems = (t) => [
   // Health
   {
     id: 'health',
-    title: 'Health',
+    title: t('health'),
     icon: faHeartbeat,
     backgroundColor: '#028090',
     iconColor: '#fff',
@@ -121,7 +121,7 @@ const getMenuItems = (t) => [
   // Messaging
   {
     id: 'messages',
-    title: 'Messages',
+    title: t('messages'),
     icon: faComments,
     backgroundColor: '#d90429',
     iconColor: '#fff',
@@ -131,7 +131,7 @@ const getMenuItems = (t) => [
   },
   {
     id: 'materials',
-    title: 'Materials',
+    title: t('materials'),
     icon: faFileAlt,
     backgroundColor: '#4CAF50',
     iconColor: '#fff',
@@ -573,7 +573,7 @@ export default function ParentScreen({ navigation }) {
               isSelected && styles.selectedStudentText,
             ]}
           >
-            {item.name || 'Student'}
+            {item.name || t('student')}
           </Text>
           <Text style={styles.studentDetails}>ID: {item.id || 'N/A'}</Text>
 
@@ -679,10 +679,7 @@ export default function ParentScreen({ navigation }) {
                       studentId: students[0].id,
                     });
                   } else {
-                    Alert.alert(
-                      'No Students',
-                      'Please add a student account first to view notifications.'
-                    );
+                    Alert.alert(t('noStudents'), t('pleaseAddStudent'));
                   }
                 }
               }}

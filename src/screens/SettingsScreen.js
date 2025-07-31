@@ -108,17 +108,13 @@ export default function SettingsScreen({ navigation }) {
     try {
       const { status } = await Notifications.requestPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert(
-          'Permission Required',
-          'Please enable notifications in your device settings to receive important updates.',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            {
-              text: 'Open Settings',
-              onPress: () => Notifications.openSettingsAsync(),
-            },
-          ]
-        );
+        Alert.alert(t('permissionRequired'), t('enableNotificationsMessage'), [
+          { text: t('cancel'), style: 'cancel' },
+          {
+            text: t('openSettings'),
+            onPress: () => Notifications.openSettingsAsync(),
+          },
+        ]);
         return false;
       }
       return true;
@@ -283,9 +279,7 @@ export default function SettingsScreen({ navigation }) {
             <Text style={styles.aboutVersion}>
               {t('version')}: {Config.APP.VERSION}
             </Text>
-            <Text style={styles.aboutDeveloper}>
-              Developed by EduNova Myanmar
-            </Text>
+            <Text style={styles.aboutDeveloper}>{t('developedBy')}</Text>
           </View>
 
           {/* Close Button */}
@@ -348,7 +342,7 @@ export default function SettingsScreen({ navigation }) {
                   {isDarkMode ? t('darkMode') : t('lightMode')}
                 </Text>
                 <Text style={styles.settingSubtitle}>
-                  {isDarkMode ? 'Dark theme enabled' : 'Light theme enabled'}
+                  {isDarkMode ? t('darkThemeEnabled') : t('lightThemeEnabled')}
                 </Text>
               </View>
             </View>
@@ -368,7 +362,7 @@ export default function SettingsScreen({ navigation }) {
 
         {/* Notifications Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notifications</Text>
+          <Text style={styles.sectionTitle}>{t('notificationsTitle')}</Text>
 
           {/* Master notification toggle */}
           <View style={styles.settingItem}>
@@ -386,9 +380,13 @@ export default function SettingsScreen({ navigation }) {
                 />
               </View>
               <View style={styles.settingText}>
-                <Text style={styles.settingTitle}>Push Notifications</Text>
+                <Text style={styles.settingTitle}>
+                  {t('pushNotifications')}
+                </Text>
                 <Text style={styles.settingSubtitle}>
-                  {notificationSettings.enabled ? 'Enabled' : 'Disabled'}
+                  {notificationSettings.enabled
+                    ? t('notificationEnabled')
+                    : t('notificationDisabled')}
                 </Text>
               </View>
             </View>
@@ -424,9 +422,11 @@ export default function SettingsScreen({ navigation }) {
                   />
                 </View>
                 <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>Sound</Text>
+                  <Text style={styles.settingTitle}>
+                    {t('notificationSound')}
+                  </Text>
                   <Text style={styles.settingSubtitle}>
-                    Play sound for notifications
+                    {t('playSoundForNotifications')}
                   </Text>
                 </View>
               </View>
@@ -463,9 +463,11 @@ export default function SettingsScreen({ navigation }) {
                   />
                 </View>
                 <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>Vibration</Text>
+                  <Text style={styles.settingTitle}>
+                    {t('notificationVibration')}
+                  </Text>
                   <Text style={styles.settingSubtitle}>
-                    Vibrate for notifications
+                    {t('vibrateForNotifications')}
                   </Text>
                 </View>
               </View>
@@ -489,7 +491,7 @@ export default function SettingsScreen({ navigation }) {
         {/* Notification Categories */}
         {notificationSettings.enabled && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Notification Types</Text>
+            <Text style={styles.sectionTitle}>{t('notificationTypes')}</Text>
 
             {/* Grades */}
             <View style={styles.settingItem}>
@@ -507,9 +509,11 @@ export default function SettingsScreen({ navigation }) {
                   />
                 </View>
                 <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>Grades</Text>
+                  <Text style={styles.settingTitle}>
+                    {t('gradesNotification')}
+                  </Text>
                   <Text style={styles.settingSubtitle}>
-                    New grades and academic updates
+                    {t('newGradesAndUpdates')}
                   </Text>
                 </View>
               </View>
@@ -544,9 +548,11 @@ export default function SettingsScreen({ navigation }) {
                   />
                 </View>
                 <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>Attendance</Text>
+                  <Text style={styles.settingTitle}>
+                    {t('attendanceNotification')}
+                  </Text>
                   <Text style={styles.settingSubtitle}>
-                    Attendance reminders and updates
+                    {t('attendanceReminders')}
                   </Text>
                 </View>
               </View>
@@ -579,9 +585,11 @@ export default function SettingsScreen({ navigation }) {
                   <FontAwesomeIcon icon={faBook} size={20} color='#007AFF' />
                 </View>
                 <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>Homework</Text>
+                  <Text style={styles.settingTitle}>
+                    {t('homeworkNotification')}
+                  </Text>
                   <Text style={styles.settingSubtitle}>
-                    Assignment due dates and updates
+                    {t('assignmentDueDates')}
                   </Text>
                 </View>
               </View>
@@ -614,10 +622,10 @@ export default function SettingsScreen({ navigation }) {
                   <FontAwesomeIcon icon={faGavel} size={20} color='#5856D6' />
                 </View>
                 <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>Behavior Points</Text>
-                  <Text style={styles.settingSubtitle}>
-                    BPS updates and behavior notifications
+                  <Text style={styles.settingTitle}>
+                    {t('behaviorPointsNotification')}
                   </Text>
+                  <Text style={styles.settingSubtitle}>{t('bpsUpdates')}</Text>
                 </View>
               </View>
               <Switch
@@ -653,9 +661,11 @@ export default function SettingsScreen({ navigation }) {
                   />
                 </View>
                 <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>Emergency Alerts</Text>
+                  <Text style={styles.settingTitle}>
+                    {t('emergencyAlerts')}
+                  </Text>
                   <Text style={styles.settingSubtitle}>
-                    Important school announcements
+                    {t('importantAnnouncements')}
                   </Text>
                 </View>
               </View>

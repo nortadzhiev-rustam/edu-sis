@@ -150,7 +150,7 @@ class PerformanceMonitor {
 
     Alert.alert(title, message, [
       {
-        text: 'Continue',
+        text: 'Continue', // TODO: Replace with t('continue') when context is available
         style: 'default',
         onPress: () => {
           this.alertShown = false; // Allow future alerts
@@ -158,7 +158,7 @@ class PerformanceMonitor {
         },
       },
       {
-        text: 'Force Restart',
+        text: 'Force Restart', // TODO: Replace with t('forceRestart')
         style: 'destructive',
         onPress: () => {
           // Clear all timeouts and intervals

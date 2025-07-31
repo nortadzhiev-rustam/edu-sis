@@ -240,7 +240,7 @@ const NotificationItem = ({ notification, onPress, userType }) => {
     title = notification.title,
     body = notification.body
   ) => {
-    Alert.alert(title, body, [{ text: 'OK', style: 'default' }]);
+    Alert.alert(title, body, [{ text: 'OK', style: 'default' }]); // TODO: Replace 'OK' with t('ok') when context is available
   };
 
   const navigateToScreen = async (type) => {

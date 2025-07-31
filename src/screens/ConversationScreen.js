@@ -1391,7 +1391,7 @@ const ConversationScreen = ({ navigation, route }) => {
           <View style={styles.inputWrapper}>
             <TextInput
               style={styles.textInput}
-              placeholder='Type a message...'
+              placeholder={t('typeMessage')}
               placeholderTextColor={theme.colors.textSecondary}
               value={messageText}
               onChangeText={setMessageText}

@@ -112,7 +112,7 @@ export default function LoginScreen({ route, navigation }) {
 
   const handleLogin = async () => {
     if (!username || !password) {
-      Alert.alert(t('error'), 'Please enter both username and password');
+      Alert.alert(t('error'), t('pleaseEnterCredentials'));
       return;
     }
 
@@ -150,10 +150,7 @@ export default function LoginScreen({ route, navigation }) {
           );
 
           if (studentExists) {
-            Alert.alert(
-              t('duplicateStudent'),
-              'This student account has already been added.'
-            );
+            Alert.alert(t('duplicateStudent'), t('studentAccountExists'));
             return;
           }
 
@@ -203,10 +200,10 @@ export default function LoginScreen({ route, navigation }) {
           );
 
           // Navigate back to parent screen
-          Alert.alert(t('success'), 'Student account added successfully');
+          Alert.alert(t('success'), t('studentAccountAdded'));
           navigation.goBack();
         } catch (error) {
-          Alert.alert('Error', 'Failed to save student account');
+          Alert.alert(t('error'), t('failedToSaveStudent'));
         }
       } else {
         // Normal login flow - check families policy compliance first
@@ -227,20 +224,17 @@ export default function LoginScreen({ route, navigation }) {
         // Provide more specific error messages based on error type
         switch (userData.errorType) {
           case 'TypeError':
-            errorMessage =
-              'Network connection error. Please check your internet connection.';
+            errorMessage = t('networkConnectionError');
             break;
           case 'NetworkError':
-            errorMessage =
-              'Unable to connect to server. Please try again later.';
+            errorMessage = t('unableToConnectServer');
             break;
           case 'TimeoutError':
-            errorMessage =
-              'Connection timeout. Please check your internet connection and try again.';
+            errorMessage = t('connectionTimeout');
             break;
           default:
-            errorMessage = `Login failed: ${
-              userData.errorMessage || 'Unknown error'
+            errorMessage = `${t('loginFailed')}: ${
+              userData.errorMessage || t('unknownError')
             }`;
         }
 
@@ -256,7 +250,7 @@ export default function LoginScreen({ route, navigation }) {
         });
       }
 
-      Alert.alert('Login Failed', errorMessage);
+      Alert.alert(t('loginFailed'), errorMessage);
     }
   };
 
@@ -319,11 +313,11 @@ export default function LoginScreen({ route, navigation }) {
           '✅ STUDENT LOGIN: Student logged in successfully, navigating to home'
         );
         Alert.alert(
-          'Login Successful',
-          `Welcome ${userData.name}! You can now access the calendar and other school resources.`,
+          t('loginSuccessful'),
+          t('welcomeMessage').replace('{name}', userData.name),
           [
             {
-              text: 'OK',
+              text: t('ok'),
               onPress: () => navigation.replace('Home'),
             },
           ]
@@ -331,7 +325,7 @@ export default function LoginScreen({ route, navigation }) {
       }
     } catch (error) {
       console.error('Login completion error:', error);
-      Alert.alert('Error', 'Failed to complete login process');
+      Alert.alert(t('error'), t('failedToCompleteLogin'));
     }
   };
 
@@ -357,7 +351,7 @@ export default function LoginScreen({ route, navigation }) {
         >
           <Text style={styles.title}>
             {isAddingStudent
-              ? 'Add Student Account'
+              ? t('addStudentAccount')
               : routeLoginType
               ? `${t(routeLoginType)} ${t('login')}`
               : t('login')}
@@ -404,7 +398,9 @@ export default function LoginScreen({ route, navigation }) {
 
           <TextInput
             style={styles.input}
-            placeholder={loginType === 'teacher' ? 'Teacher ID' : 'Student ID'}
+            placeholder={
+              loginType === 'teacher' ? t('teacherId') : t('studentId')
+            }
             placeholderTextColor={theme.colors.textLight}
             value={username}
             onChangeText={setUsername}

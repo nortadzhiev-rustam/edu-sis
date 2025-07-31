@@ -1256,10 +1256,9 @@ export default function GradesScreen({ navigation, route }) {
           </TouchableOpacity>
 
           <View style={styles.headerCenter}>
-            <FontAwesomeIcon icon={faChartLine} size={18} color='#fff' />
             <Text style={styles.headerTitle}>
               {showSubjectList
-                ? `${t('grades')} - Select Subject`
+                ? `${t('assessments')}`
                 : isLandscape
                 ? `${selectedSubject} - ${
                     activeTab === 'summative' ? 'Summative' : 'Life Skills'
@@ -1399,7 +1398,7 @@ const createStyles = (theme) =>
       color: '#fff',
       fontSize: 20,
       fontWeight: 'bold',
-      marginLeft: 8,
+     
     },
     headerRight: {
       flexDirection: 'row',

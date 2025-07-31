@@ -21,6 +21,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const HomeworkFileUpload = ({
   onFileSelected,
@@ -45,6 +46,7 @@ const HomeworkFileUpload = ({
   showPreview = true,
 }) => {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const styles = createStyles(theme);
 
   const [showOptions, setShowOptions] = useState(false);
@@ -86,8 +88,8 @@ const HomeworkFileUpload = ({
         // Check file size
         if (asset.fileSize && asset.fileSize > maxFileSize) {
           Alert.alert(
-            'File Too Large',
-            `Please select an image smaller than ${Math.round(
+            t('fileTooLarge'),
+            `${t('pleaseSelectSmallerFile')} ${Math.round(
               maxFileSize / (1024 * 1024)
             )}MB`
           );
@@ -100,7 +102,7 @@ const HomeworkFileUpload = ({
       }
     } catch (error) {
       console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to select image');
+      Alert.alert(t('error'), t('failedToSelectImage'));
     }
   };
 
@@ -319,7 +321,7 @@ const HomeworkFileUpload = ({
   // Handle file upload
   const handleFileUpload = async (file) => {
     if (!uploadFunction) {
-      Alert.alert('Error', 'Upload function not provided');
+      Alert.alert(t('error'), t('uploadFunctionNotProvided'));
       return;
     }
 
@@ -328,13 +330,10 @@ const HomeworkFileUpload = ({
       const result = await uploadFunction(file);
       setUploadResult(result);
       onFileUploaded?.(result);
-      Alert.alert('Success', 'File uploaded successfully!');
+      Alert.alert(t('success'), t('fileUploadedSuccessfully'));
     } catch (error) {
       console.error('Error uploading file:', error);
-      Alert.alert(
-        'Upload Failed',
-        error.message || 'Failed to upload file. Please try again.'
-      );
+      Alert.alert(t('uploadFailed'), error.message || t('failedToUploadFile'));
     } finally {
       setUploading(false);
     }

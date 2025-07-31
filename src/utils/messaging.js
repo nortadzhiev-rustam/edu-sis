@@ -45,12 +45,13 @@ export async function requestUserPermission() {
     if (hasAskedForPermission !== 'true') {
       console.log('🆕 PERMISSION: First time asking for permission');
       // First time asking - show a custom alert explaining why we need notifications
+      // Note: We need to import the language context to use translations here
       Alert.alert(
-        'Enable Notifications',
-        "Would you like to receive important updates about your child's education? This includes grades, attendance, and school announcements.",
+        'Enable Notifications', // TODO: Replace with t('enableNotifications') when context is available
+        "Would you like to receive important updates about your child's education? This includes grades, attendance, and school announcements.", // TODO: Replace with t('notificationPermissionMessage')
         [
           {
-            text: 'Not Now',
+            text: 'Not Now', // TODO: Replace with t('notNow')
             onPress: async () => {
               // Remember that we've asked even if they said no
               await AsyncStorage.setItem(
@@ -1048,11 +1049,11 @@ export async function sendBPSLocalNotification(bpsData) {
 
     const isPositive = item_type === 'prs';
     const title = isPositive
-      ? 'Positive Behavior Recognition'
-      : 'Behavior Notice';
+      ? 'Positive Behavior Recognition' // TODO: Replace with t('positiveBehaviorRecognition') when context is available
+      : 'Behavior Notice'; // TODO: Replace with t('behaviorNotice')
     const pointText = item_point > 0 ? `+${item_point}` : `${item_point}`;
 
-    let body = `${item_title} (${pointText} points)`;
+    let body = `${item_title} (${pointText} points)`; // TODO: Replace 'points' with t('points')
     if (note?.trim()) {
       body += `\n${note}`;
     }

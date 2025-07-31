@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Language-specific font size adjustments
 const getFontSize = (baseSize, language) => {
   const adjustments = {
-    my: 0.85, // Myanmar - reduce by 15%
+    my: 0.75, // Myanmar - reduce by 25%
     zh: 0.95, // Chinese - reduce by 5%
     th: 0.95, // Thai - reduce by 5%
     en: 1.0, // English - no change
@@ -15,43 +15,69 @@ const getFontSize = (baseSize, language) => {
   return Math.round(baseSize * multiplier);
 };
 
+// Language-specific line height adjustments
+const getLineHeight = (fontSize, language) => {
+  const lineHeightMultipliers = {
+    my: 1.4, // Myanmar - normal line spacing to prevent cutting
+    zh: 1.3, // Chinese - normal spacing
+    th: 1.3, // Thai - normal spacing
+    en: 1.3, // English - normal spacing
+  };
+
+  const multiplier = lineHeightMultipliers[language] || 1.3;
+  return Math.round(fontSize * multiplier);
+};
+
 // Helper function to get language-aware font sizes
-export const getLanguageFontSizes = (language) => ({
-  // Header sizes
-  headerTitle: getFontSize(20, language),
-  headerSubtitle: getFontSize(16, language),
+export const getLanguageFontSizes = (language) => {
+  const sizes = {
+    // Header sizes
+    headerTitle: getFontSize(20, language),
+    headerSubtitle: getFontSize(16, language),
 
-  // Body text sizes
-  title: getFontSize(24, language),
-  subtitle: getFontSize(18, language),
-  body: getFontSize(16, language),
-  bodySmall: getFontSize(14, language),
-  caption: getFontSize(12, language),
+    // Body text sizes
+    title: getFontSize(24, language),
+    subtitle: getFontSize(18, language),
+    body: getFontSize(16, language),
+    bodySmall: getFontSize(14, language),
+    caption: getFontSize(12, language),
 
-  // Button sizes
-  buttonText: getFontSize(16, language),
-  buttonTextSmall: getFontSize(14, language),
+    // Button sizes
+    buttonText: getFontSize(16, language),
+    buttonTextSmall: getFontSize(14, language),
+  };
 
-  // Profile specific sizes
-  profileName: getFontSize(24, language),
-  profileRole: getFontSize(16, language),
-  profileId: getFontSize(14, language),
-  sectionTitle: getFontSize(18, language),
-  profileItemLabel: getFontSize(14, language),
-  profileItemValue: getFontSize(16, language),
+  // Add line heights
+  return {
+    ...sizes,
+    // Line heights
+    titleLineHeight: getLineHeight(sizes.title, language),
+    subtitleLineHeight: getLineHeight(sizes.subtitle, language),
+    bodyLineHeight: getLineHeight(sizes.body, language),
+    bodySmallLineHeight: getLineHeight(sizes.bodySmall, language),
+    captionLineHeight: getLineHeight(sizes.caption, language),
 
-  // Feature sizes
-  featureTitle: getFontSize(16, language),
-  featureSubtitle: getFontSize(14, language),
+    // Profile specific sizes
+    profileName: getFontSize(24, language),
+    profileRole: getFontSize(16, language),
+    profileId: getFontSize(14, language),
+    sectionTitle: getFontSize(18, language),
+    profileItemLabel: getFontSize(14, language),
+    profileItemValue: getFontSize(16, language),
 
-  // Tile sizes
-  tileTitle: getFontSize(16, language),
-  tileSubtitle: getFontSize(12, language),
+    // Feature sizes
+    featureTitle: getFontSize(16, language),
+    featureSubtitle: getFontSize(14, language),
 
-  // Badge sizes
-  badgeText: getFontSize(10, language),
-  comingSoonText: getFontSize(10, language),
-});
+    // Tile sizes
+    tileTitle: getFontSize(16, language),
+    tileSubtitle: getFontSize(12, language),
+
+    // Badge sizes
+    badgeText: getFontSize(10, language),
+    comingSoonText: getFontSize(10, language),
+  };
+};
 
 /**
  * Creates platform-specific shadow styles

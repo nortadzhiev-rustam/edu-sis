@@ -163,10 +163,7 @@ export default function HomeScreen({ navigation }) {
       ]);
     } catch (error) {
       console.error('❌ HOME: Diagnostics failed:', error);
-      Alert.alert(
-        'Diagnostics Error',
-        'Unable to run diagnostics. Please restart the app.'
-      );
+      Alert.alert(t('diagnosticsError'), t('unableToRunDiagnostics'));
     }
   };
 
@@ -547,7 +544,7 @@ export default function HomeScreen({ navigation }) {
           style={styles.secondaryLogo}
           resizeMode='contain'
         />
-        <Text style={styles.subtitle}>Choose your role to continue</Text>
+        <Text style={styles.subtitle}>{t('chooseYourRole')}</Text>
 
         <Animated.View
           entering={FadeInDown.delay(300).springify()}
@@ -568,7 +565,7 @@ export default function HomeScreen({ navigation }) {
               </View>
               <Text style={styles.roleText}>{t('teacher')}</Text>
               <Text style={styles.roleDescription} numberOfLines={2}>
-                {t('Access classes and grades')}
+                {t('teacherDescription')}
               </Text>
             </TouchableOpacity>
 
@@ -585,13 +582,13 @@ export default function HomeScreen({ navigation }) {
               </View>
               <Text style={styles.roleText}>{t('parent')}</Text>
               <Text style={styles.roleDescription} numberOfLines={2}>
-                {t('Monitor student progress')}
+                {t('parentDescription')}
               </Text>
             </TouchableOpacity>
           </View>
 
           {/* Second row with additional buttons */}
-          <Text style={styles.sectionTitle}>School Resources</Text>
+          <Text style={styles.sectionTitle}>{t('schoolResources')}</Text>
           <View style={styles.resourcesContainer}>
             <TouchableOpacity
               style={styles.resourceButton}
@@ -609,7 +606,13 @@ export default function HomeScreen({ navigation }) {
                   color='#5856D6'
                 />
               </View>
-              <Text style={styles.resourceText}>Calendar</Text>
+              <Text
+                style={styles.resourceText}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+              >
+                {t('calendar')}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -628,7 +631,13 @@ export default function HomeScreen({ navigation }) {
                   color='#34C759'
                 />
               </View>
-              <Text style={styles.resourceText}>About Us</Text>
+              <Text
+                style={styles.resourceText}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+              >
+                {t('aboutUs')}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -643,7 +652,13 @@ export default function HomeScreen({ navigation }) {
               >
                 <FontAwesomeIcon icon={faEnvelope} size={20} color='#FF3B30' />
               </View>
-              <Text style={styles.resourceText}>Contact Us</Text>
+              <Text
+                style={styles.resourceText}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+              >
+                {t('contactUs')}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -662,7 +677,13 @@ export default function HomeScreen({ navigation }) {
                   color='#FF9500'
                 />
               </View>
-              <Text style={styles.resourceText}>FAQ</Text>
+              <Text
+                style={styles.resourceText}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+              >
+                {t('faq')}
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -675,7 +696,7 @@ export default function HomeScreen({ navigation }) {
               <View style={styles.socialMediaIconContainer}>
                 <FontAwesomeIcon icon={faShareAlt} size={20} color='#fff' />
               </View>
-              <Text style={styles.socialMediaText}>Connect With Us</Text>
+              <Text style={styles.socialMediaText}>{t('connectWithUs')}</Text>
             </TouchableOpacity>
 
             <View style={styles.socialIconsRow}>
@@ -690,7 +711,11 @@ export default function HomeScreen({ navigation }) {
                 style={styles.socialIcon}
                 onPress={() => alert('Twitter page coming soon!')}
               >
-                <FontAwesomeIcon icon={faXTwitter} size={18} color='#000000' />
+                <FontAwesomeIcon
+                  icon={faXTwitter}
+                  size={18}
+                  color={theme.mode === 'dark' ? '#fff' : '#000000'}
+                />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -774,8 +799,9 @@ const createStyles = (
     subtitle: {
       fontSize: isIPadDevice ? responsiveFonts.subtitle : fontSizes.body,
       color: theme.colors.textSecondary,
-      marginBottom: isIPadDevice ? responsiveSpacing.lg : 20,
+      marginBottom: isIPadDevice ? responsiveSpacing.lg : 10,
       textAlign: 'center',
+      lineHeight: fontSizes.bodyLineHeight,
     },
     buttonsContainer: {
       width: '100%',
@@ -790,7 +816,8 @@ const createStyles = (
     roleButton: {
       backgroundColor: theme.colors.surface,
       borderRadius: 15,
-      padding: 15,
+      paddingHorizontal: 15,
+      paddingVertical: 10,
       marginBottom: 10,
       ...theme.shadows.small,
       marginLeft: 0,
@@ -798,7 +825,7 @@ const createStyles = (
     },
     roleButtonHorizontal: {
       width: '48%',
-      height: 160,
+      height: 150,
     },
     iconContainer: {
       width: 60,
@@ -818,18 +845,20 @@ const createStyles = (
       fontSize: fontSizes.body,
       fontWeight: '600',
       color: theme.colors.text,
+      lineHeight: fontSizes.bodyLineHeight,
     },
     roleDescription: {
       fontSize: fontSizes.bodySmall,
       color: theme.colors.textSecondary,
-      lineHeight: fontSizes.bodySmall + 2,
+      lineHeight: fontSizes.bodySmallLineHeight,
     },
     sectionTitle: {
       fontSize: fontSizes.subtitle,
       fontWeight: '600',
       color: theme.colors.text,
-      marginBottom: 10,
+      marginBottom: 5,
       alignSelf: 'flex-start',
+      lineHeight: fontSizes.subtitleLineHeight,
     },
     resourcesContainer: {
       flexDirection: 'row',
@@ -840,9 +869,10 @@ const createStyles = (
     resourceButton: {
       backgroundColor: theme.colors.surface,
       borderRadius: 12,
-      padding: 12,
+      padding: 15,
       marginBottom: 15,
       width: '48%',
+      minHeight: 70,
       flexDirection: 'row',
       alignItems: 'center',
       ...theme.shadows.small,
@@ -860,6 +890,9 @@ const createStyles = (
       fontSize: fontSizes.body,
       fontWeight: '500',
       color: theme.colors.text,
+      lineHeight: fontSizes.bodyLineHeight,
+      flex: 1,
+      textAlign: 'left',
     },
     socialMediaSection: {
       width: '100%',
@@ -887,6 +920,7 @@ const createStyles = (
       color: '#fff',
       fontSize: fontSizes.body,
       fontWeight: '600',
+      lineHeight: fontSizes.bodyLineHeight,
     },
     socialIconsRow: {
       flexDirection: 'row',
