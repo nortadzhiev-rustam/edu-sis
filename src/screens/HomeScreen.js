@@ -7,6 +7,8 @@ import {
   Image,
   Dimensions,
   Alert,
+  AccessibilityInfo,
+  PixelRatio,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -66,8 +68,140 @@ export default function HomeScreen({ navigation }) {
   const logoSource = useThemeLogo();
   const schoolLogoSource = useSchoolLogo();
 
+  // iOS fallback state to ensure content appears
+  const [contentVisible, setContentVisible] = React.useState(
+    Platform.OS !== 'ios'
+  );
+
+  // Device state tracking for debugging
+  const [deviceState, setDeviceState] = React.useState({
+    reduceMotion: false,
+    fontScale: 1.0,
+    screenReader: false,
+    debugInfo: '',
+  });
+
+  // Debug logging for iOS content visibility
+  React.useEffect(() => {
+    if (Platform.OS === 'ios') {
+      console.log('🍎 iOS: Content visibility state changed:', contentVisible);
+      console.log('🍎 iOS: Device state:', deviceState);
+    }
+  }, [contentVisible, deviceState]);
+
   // Use performance monitoring
   const { logMetrics } = usePerformanceMonitoring();
+
+  // Comprehensive iOS accessibility and device state detection
+  React.useEffect(() => {
+    if (Platform.OS === 'ios') {
+      console.log('🍎 iOS: Starting comprehensive device state detection...');
+
+      const detectDeviceState = async () => {
+        try {
+          // Get device accessibility and performance info
+          const [reduceMotion, screenReader] = await Promise.all([
+            AccessibilityInfo.isReduceMotionEnabled(),
+            AccessibilityInfo.isScreenReaderEnabled(),
+          ]);
+
+          const fontScale = PixelRatio.getFontScale();
+          const pixelRatio = PixelRatio.get();
+
+          // Create debug info string
+          const debugInfo = `FontScale: ${fontScale}, PixelRatio: ${pixelRatio}, ReduceMotion: ${reduceMotion}, ScreenReader: ${screenReader}`;
+
+          // Update device state
+          const newDeviceState = {
+            reduceMotion,
+            fontScale,
+            screenReader,
+            debugInfo,
+          };
+
+          setDeviceState(newDeviceState);
+
+          console.log('🍎 iOS: Device State Detection Results:');
+          console.log(`- Reduce Motion: ${reduceMotion}`);
+          console.log(`- Font Scale: ${fontScale}`);
+          console.log(`- Screen Reader: ${screenReader}`);
+          console.log(`- Pixel Ratio: ${pixelRatio}`);
+
+          // Determine if we should skip animations and show content immediately
+          const shouldSkipAnimation =
+            reduceMotion || // User has Reduce Motion enabled
+            fontScale > 1.3 || // User has large text enabled
+            screenReader; // User has screen reader enabled
+
+          if (shouldSkipAnimation) {
+            console.log(
+              '🍎 iOS: Accessibility settings detected - showing content immediately'
+            );
+            console.log(
+              `- Reason: ${
+                reduceMotion
+                  ? 'Reduce Motion'
+                  : fontScale > 1.3
+                  ? 'Large Text'
+                  : 'Screen Reader'
+              }`
+            );
+            setContentVisible(true);
+            return;
+          }
+
+          // If no accessibility issues, use progressive fallback timers
+          console.log(
+            '🍎 iOS: No accessibility issues detected - using fallback timers'
+          );
+
+          // Immediate fallback for performance issues
+          const immediateTimer = setTimeout(() => {
+            console.log('🍎 iOS: Immediate fallback (100ms) - showing content');
+            setContentVisible(true);
+          }, 100);
+
+          // Secondary fallback
+          const secondaryTimer = setTimeout(() => {
+            console.log(
+              '🍎 iOS: Secondary fallback (500ms) - ensuring content visibility'
+            );
+            setContentVisible(true);
+          }, 500);
+
+          // Final fallback
+          const finalTimer = setTimeout(() => {
+            console.log(
+              '🍎 iOS: Final fallback (1500ms) - forcing content visibility'
+            );
+            setContentVisible(true);
+          }, 1500);
+
+          // Cleanup function
+          return () => {
+            clearTimeout(immediateTimer);
+            clearTimeout(secondaryTimer);
+            clearTimeout(finalTimer);
+          };
+        } catch (error) {
+          console.error('🍎 iOS: Error detecting device state:', error);
+          // Fallback to showing content immediately if detection fails
+          setContentVisible(true);
+        }
+      };
+
+      // Run detection
+      const cleanup = detectDeviceState();
+
+      // Return cleanup function if it exists
+      return () => {
+        if (cleanup && typeof cleanup.then === 'function') {
+          cleanup.then((cleanupFn) => cleanupFn && cleanupFn());
+        }
+      };
+    }
+  }, []);
+
   // Lock orientation based on device type with iOS-specific handling
   React.useEffect(() => {
     const handleOrientationLock = async () => {
@@ -546,9 +680,31 @@ export default function HomeScreen({ navigation }) {
         />
         <Text style={styles.subtitle}>{t('chooseYourRole')}</Text>
 
+        {/* Debug info for iOS devices (only in development) */}
+        {__DEV__ && Platform.OS === 'ios' && (
+          <Text style={styles.debugText}>Debug: {deviceState.debugInfo}</Text>
+        )}
+
         <Animated.View
-          entering={FadeInDown.delay(300).springify()}
-          style={styles.buttonsContainer}
+          key={
+            Platform.OS === 'ios'
+              ? `ios-content-${contentVisible}-${deviceState.debugInfo}`
+              : 'android-content'
+          }
+          entering={
+            Platform.OS === 'ios'
+              ? deviceState.reduceMotion || deviceState.fontScale > 1.3
+                ? undefined // Skip animation for accessibility settings
+                : FadeInDown.delay(0).springify() // No delay on iOS
+              : FadeInDown.delay(300).springify()
+          }
+          style={[
+            styles.buttonsContainer,
+            Platform.OS === 'ios' && {
+              opacity: contentVisible ? 1 : 0.3, // Minimum opacity to ensure visibility
+              minHeight: deviceState.fontScale > 1.3 ? 500 : 400, // Adjust height for large fonts
+            },
+          ]}
         >
           {/* First row with Teacher and Parent cards */}
           <View style={styles.roleRow}>
@@ -936,5 +1092,13 @@ const createStyles = (
       alignItems: 'center',
       marginHorizontal: 10,
       ...theme.shadows.small,
+    },
+    debugText: {
+      fontSize: 10,
+      color: theme.colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: 10,
+      paddingHorizontal: 20,
+      fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
     },
   });

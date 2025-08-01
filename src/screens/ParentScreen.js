@@ -1179,7 +1179,7 @@ const createStyles = (theme, fontSizes) =>
       gap: Math.max(8, (screenWidth - 90 - ((screenWidth - 90) / 6) * 6) / 5), // Dynamic gap for 6 tiles
     },
     actionTile: {
-      width: (screenWidth - 48) / 3 - 8, // 3 tiles per row: screen width - padding (24*2) - margins (8*3) / 3
+      width: (screenWidth - 30) / 3 - 8, // 3 tiles per row: screen width - padding (24*2) - margins (8*3) / 3
       aspectRatio: 1, // Square tiles
       borderRadius: 20, // Slightly smaller border radius for smaller tiles
       padding: 14, // Reduced padding for smaller tiles
