@@ -378,7 +378,9 @@ export default function StudentHealthScreen({ route, navigation }) {
         </View>
       </View>
       <Text style={styles.sectionTitle}>
-        Health Visit Records ({healthRecords.length})
+        {activeTab === 'records'
+          ? t('visitRecords')
+          : t('healthInfo')}
       </Text>
       <ScrollView
         style={styles.content}
