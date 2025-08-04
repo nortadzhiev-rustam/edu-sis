@@ -16,6 +16,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Config, buildApiUrl } from '../config/env';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { getDemoBPSData } from '../services/demoModeService';
 
 // Import reusable components
@@ -51,6 +52,7 @@ export default function TeacherBPS({ route, navigation }) {
     selectedBranchId: initialSelectedBranchId, // New branch_id parameter
   } = route.params || {};
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const styles = getStyles(theme);
 
   const [bpsData, setBpsData] = useState(initialData);
@@ -121,11 +123,11 @@ export default function TeacherBPS({ route, navigation }) {
         const data = await response.json();
         setBpsData(data);
       } else {
-        Alert.alert('Error', 'Failed to fetch BPS data');
+        Alert.alert(t('error'), t('failedToFetchBPSData'));
       }
     } catch (error) {
       console.error('Error fetching BPS data:', error);
-      Alert.alert('Error', 'Network error occurred');
+      Alert.alert(t('error'), t('networkErrorOccurred'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -145,17 +147,14 @@ export default function TeacherBPS({ route, navigation }) {
         : [];
 
     if (studentsToProcess.length === 0 || behaviorsToSubmit.length === 0) {
-      Alert.alert(
-        'Error',
-        'Please select at least one student and at least one behavior'
-      );
+      Alert.alert(t('error'), t('pleaseSelectStudentAndBehavior'));
       return;
     }
 
     // Get current branch information
     const currentBranch = getCurrentBranch();
     if (!currentBranch) {
-      Alert.alert('Error', 'No branch information available');
+      Alert.alert(t('error'), t('noBranchInformationAvailable'));
       return;
     }
 
@@ -236,7 +235,7 @@ export default function TeacherBPS({ route, navigation }) {
               result.successful_records || 0
             } BPS record(s) created successfully`;
 
-          Alert.alert('Success', successMessage);
+          Alert.alert(t('success'), successMessage);
           setShowAddModal(false);
           resetForm();
           await fetchBPSData();
@@ -246,22 +245,25 @@ export default function TeacherBPS({ route, navigation }) {
 
           if (result.successful_records && result.successful_records > 0) {
             Alert.alert(
-              'Partial Success',
-              `${result.successful_records} out of ${result.total_records_attempted} records created successfully.\n\n${errorMessage}`,
+              t('partialSuccess'),
+              t('recordsCreatedPartially')
+                .replace('{successful}', result.successful_records)
+                .replace('{total}', result.total_records_attempted) +
+                `\n\n${errorMessage}`,
               [
                 {
-                  text: 'Continue',
+                  text: t('continue'),
                   onPress: () => {
                     setShowAddModal(false);
                     resetForm();
                     fetchBPSData();
                   },
                 },
-                { text: 'OK', style: 'cancel' },
+                { text: t('ok'), style: 'cancel' },
               ]
             );
           } else {
-            Alert.alert('Error', errorMessage);
+            Alert.alert(t('error'), errorMessage);
 
             // Show detailed error information if available
             if (result.results && Array.isArray(result.results)) {
@@ -934,9 +936,6 @@ export default function TeacherBPS({ route, navigation }) {
 
   const currentBranch = getCurrentBranch();
   const filteredRecords = getFilteredRecords();
-
-
-  
 
   return (
     <SafeAreaView style={styles.container}>

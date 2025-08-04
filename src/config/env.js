@@ -128,6 +128,21 @@ export const Config = {
     SUBMIT_HOMEWORK_FOLDER: '/homework/submission/upload',
     GET_HOMEWORK_SUBMISSIONS: '/homework/submission/list',
     GET_TEACHER_HOMEWORK_CLASSES: '/teacher/homework/classes',
+
+    // Reports API Endpoints
+    GET_AVAILABLE_REPORTS: '/reports/available',
+    // Student Reports
+    GET_STUDENT_ATTENDANCE_REPORT: '/reports/student/attendance',
+    GET_STUDENT_GRADES_REPORT: '/reports/student/grades',
+    GET_STUDENT_BPS_REPORT: '/reports/student/bps',
+    GET_STUDENT_HOMEWORK_REPORT: '/reports/student/homework',
+    GET_STUDENT_LIBRARY_REPORT: '/reports/student/library',
+    // Staff Reports
+    GET_STAFF_CLASSES: '/reports/staff/classes',
+    GET_CLASS_ATTENDANCE_REPORT: '/reports/staff/class-attendance',
+    GET_CLASS_ASSESSMENT_REPORT: '/reports/staff/class-assessment',
+    GET_BEHAVIORAL_ANALYTICS_REPORT: '/reports/staff/behavioral-analytics',
+    GET_HOMEWORK_ANALYTICS_REPORT: '/reports/staff/homework-analytics',
   },
 
   // Web Resources

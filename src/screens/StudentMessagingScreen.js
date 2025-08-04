@@ -24,6 +24,7 @@ import {
   faComments,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useMessaging } from '../contexts/MessagingContext';
 import {
   getConversations,
@@ -38,6 +39,7 @@ import { getResponsiveHeaderFontSize } from '../utils/commonStyles';
 
 const StudentMessagingScreen = ({ navigation, route }) => {
   const { theme, fontSizes } = useTheme();
+  const { t } = useLanguage();
   const { refreshUnreadCounts } = useMessaging();
   const { authCode, studentName } = route.params;
 
@@ -50,7 +52,6 @@ const StudentMessagingScreen = ({ navigation, route }) => {
 
   // Animation values for collapsible search bar
   const searchBarHeight = useSharedValue(0);
-
 
   // Animated style for search bar
   const searchBarAnimatedStyle = useAnimatedStyle(() => {
@@ -231,7 +232,7 @@ const StudentMessagingScreen = ({ navigation, route }) => {
       }
     } catch (error) {
       console.error('Error fetching conversations:', error);
-      Alert.alert('Error', 'Failed to load conversations');
+      Alert.alert(t('error'), t('failedToLoadConversations'));
     } finally {
       setLoading(false);
     }
@@ -264,16 +265,16 @@ const StudentMessagingScreen = ({ navigation, route }) => {
           );
           // Refresh unread counts
           refreshUnreadCounts();
-          Alert.alert('Success', 'Conversation deleted successfully');
+          Alert.alert(t('success'), t('conversationDeletedSuccess'));
         } else {
           Alert.alert(
-            'Error',
-            response.error || 'Failed to delete conversation'
+            t('error'),
+            response.error || t('failedToDeleteConversation')
           );
         }
       } catch (error) {
         console.error('Error deleting conversation:', error);
-        Alert.alert('Error', 'Failed to delete conversation');
+        Alert.alert(t('error'), t('failedToDeleteConversation'));
       }
     },
     [authCode, refreshUnreadCounts]
@@ -297,16 +298,16 @@ const StudentMessagingScreen = ({ navigation, route }) => {
           );
           // Refresh unread counts
           refreshUnreadCounts();
-          Alert.alert('Success', 'Left conversation successfully');
+          Alert.alert(t('success'), t('leftConversationSuccess'));
         } else {
           Alert.alert(
-            'Error',
-            response.error || 'Failed to leave conversation'
+            t('error'),
+            response.error || t('failedToLeaveConversation')
           );
         }
       } catch (error) {
         console.error('Error leaving conversation:', error);
-        Alert.alert('Error', 'Failed to leave conversation');
+        Alert.alert(t('error'), t('failedToLeaveConversation'));
       }
     },
     [authCode, refreshUnreadCounts]
@@ -334,7 +335,7 @@ const StudentMessagingScreen = ({ navigation, route }) => {
         }
       } catch (error) {
         console.error('Error marking conversation as read:', error);
-        Alert.alert('Error', 'Failed to mark conversation as read');
+        Alert.alert(t('error'), t('failedToMarkAsRead'));
       }
     },
     [authCode, refreshUnreadCounts]
@@ -386,7 +387,7 @@ const StudentMessagingScreen = ({ navigation, route }) => {
         }
       } catch (error) {
         console.error('Error searching messages:', error);
-        Alert.alert('Error', 'Failed to search messages');
+        Alert.alert(t('error'), t('failedToSearchMessages'));
       } finally {
         setSearchLoading(false);
       }
@@ -487,7 +488,7 @@ const StudentMessagingScreen = ({ navigation, route }) => {
             <Text
               style={[
                 styles.headerTitle,
-                { fontSize: getResponsiveHeaderFontSize(2, 'Messages') },
+                { fontSize: getResponsiveHeaderFontSize(2, t('messages')) },
               ]}
             >
               Messages
@@ -541,7 +542,7 @@ const StudentMessagingScreen = ({ navigation, route }) => {
             />
             <TextInput
               style={styles.searchInput}
-              placeholder='Search conversations and messages...'
+              placeholder={t('searchConversationsMessages')}
               placeholderTextColor='rgba(255, 255, 255, 0.7)'
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -562,7 +563,7 @@ const StudentMessagingScreen = ({ navigation, route }) => {
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size='large' color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading conversations...</Text>
+          <Text style={styles.loadingText}>{t('loadingConversations')}</Text>
         </View>
       ) : (
         <Animated.FlatList
@@ -574,7 +575,7 @@ const StudentMessagingScreen = ({ navigation, route }) => {
             item.id?.toString() ||
             `conversation-${index}`
           }
-          contentContainerStyle={styles.listContainer}         
+          contentContainerStyle={styles.listContainer}
           scrollEventThrottle={16}
           refreshControl={
             <RefreshControl

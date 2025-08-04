@@ -541,6 +541,33 @@ const getDemoStudentHealthInfo = () => ({
       emergency_phone_1: '+1234567890',
       emergency_phone_2: '+0987654321',
     },
+    measurements: {
+      latest_measurement: {
+        id: 220,
+        height: '139.00',
+        weight: '46.00',
+        date: '2025-07-16',
+        created_at: '2025-07-25T09:53:56.000000Z',
+      },
+      measurement_history: [
+        {
+          id: 220,
+          height: '139.00',
+          weight: '46.00',
+          date: '2025-07-16',
+          created_at: '2025-07-25T09:53:56.000000Z',
+        },
+        {
+          id: 219,
+          height: '137.00',
+          weight: '44.50',
+          date: '2025-01-15',
+          created_at: '2025-01-20T10:30:00.000000Z',
+        },
+      ],
+      total_measurements: 2,
+      has_measurements: true,
+    },
   },
 });
 

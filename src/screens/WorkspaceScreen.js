@@ -136,7 +136,7 @@ export default function WorkspaceScreen({ navigation, route }) {
       setFolderPath([]);
     } catch (error) {
       console.error('Error loading workspace:', error);
-      Alert.alert('Error', 'Failed to load workspace. Please try again.');
+      Alert.alert(t('error'), t('failedToLoadWorkspace'));
     } finally {
       setLoading(false);
     }
@@ -208,7 +208,7 @@ export default function WorkspaceScreen({ navigation, route }) {
       }
     } catch (error) {
       console.error('Error loading folder contents:', error);
-      Alert.alert('Error', 'Failed to load folder contents. Please try again.');
+      Alert.alert(t('error'), t('failedToLoadFolderContents'));
     } finally {
       setLoading(false);
     }
@@ -225,7 +225,7 @@ export default function WorkspaceScreen({ navigation, route }) {
       setCurrentView('recent');
     } catch (error) {
       console.error('Error loading recent files:', error);
-      Alert.alert('Error', 'Failed to load recent files. Please try again.');
+      Alert.alert(t('error'), t('failedToLoadRecentFiles'));
     } finally {
       setLoading(false);
     }

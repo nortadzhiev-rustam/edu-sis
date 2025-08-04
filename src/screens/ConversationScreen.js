@@ -62,6 +62,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 const ConversationScreen = ({ navigation, route }) => {
   const { theme, fontSizes } = useTheme();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const { markConversationAsReadLocally, markMessageAsReadLocally } =
     useMessaging();
@@ -372,7 +373,7 @@ const ConversationScreen = ({ navigation, route }) => {
       } catch (error) {
         console.error('Error fetching messages:', error);
         if (!silent) {
-          Alert.alert('Error', 'Failed to load messages');
+          Alert.alert(t('error'), t('failedToLoadMessages'));
         }
       } finally {
         if (!silent) {
@@ -470,14 +471,14 @@ const ConversationScreen = ({ navigation, route }) => {
         setMessages((prev) =>
           prev.filter((msg) => msg.message_id !== tempMessage.message_id)
         );
-        Alert.alert('Error', 'Failed to send message');
+        Alert.alert(t('error'), t('failedToSendMessage'));
       }
     } catch (error) {
       console.error('Error sending message:', error);
       setMessages((prev) =>
         prev.filter((msg) => msg.message_id !== tempMessage.message_id)
       );
-      Alert.alert('Error', 'Failed to send message');
+      Alert.alert(t('error'), t('failedToSendMessage'));
     } finally {
       setSending(false);
     }
@@ -771,10 +772,10 @@ const ConversationScreen = ({ navigation, route }) => {
       // Extract plain text from HTML content if needed
       const textContent = message.content.replace(/<[^>]*>/g, '').trim();
       Clipboard.setString(textContent);
-      Alert.alert('Success', 'Message copied to clipboard');
+      Alert.alert(t('success'), t('messageCopied'));
     } catch (error) {
       console.error('Error copying message:', error);
-      Alert.alert('Error', 'Failed to copy message');
+      Alert.alert(t('error'), t('failedToCopyMessage'));
     }
   }, []);
 
@@ -786,14 +787,14 @@ const ConversationScreen = ({ navigation, route }) => {
     const deleteType = userType === 'student' ? 'soft' : 'hard';
 
     Alert.alert(
-      'Delete Messages',
-      `Are you sure you want to delete ${selectedMessages.length} message${
-        selectedMessages.length !== 1 ? 's' : ''
-      }?`,
+      t('deleteMessages'),
+      t('confirmDeleteMessages')
+        .replace('{count}', selectedMessages.length.toString())
+        .replace('{plural}', selectedMessages.length !== 1 ? 's' : ''),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('delete'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -823,17 +824,23 @@ const ConversationScreen = ({ navigation, route }) => {
                 }
                 exitSelectionMode();
                 Alert.alert(
-                  'Success',
-                  `${response.data.successful_deletes} message${
-                    response.data.successful_deletes !== 1 ? 's' : ''
-                  } deleted successfully`
+                  t('success'),
+                  t('messagesDeletedSuccessfully')
+                    .replace(
+                      '{count}',
+                      response.data.successful_deletes.toString()
+                    )
+                    .replace(
+                      '{plural}',
+                      response.data.successful_deletes !== 1 ? 's' : ''
+                    )
                 );
               } else {
-                Alert.alert('Error', 'Failed to delete messages');
+                Alert.alert(t('error'), t('failedToDeleteMessages'));
               }
             } catch (error) {
               console.error('Error bulk deleting messages:', error);
-              Alert.alert('Error', 'Failed to delete messages');
+              Alert.alert(t('error'), t('failedToDeleteMessages'));
             }
           },
         },
@@ -867,13 +874,13 @@ const ConversationScreen = ({ navigation, route }) => {
         );
         setEditingMessage(null);
         setEditText('');
-        Alert.alert('Success', 'Message edited successfully');
+        Alert.alert(t('success'), t('messageEditedSuccessfully'));
       } else {
-        Alert.alert('Error', response.error || 'Failed to edit message');
+        Alert.alert(t('error'), response.error || t('failedToEditMessage'));
       }
     } catch (error) {
       console.error('Error editing message:', error);
-      Alert.alert('Error', 'Failed to edit message');
+      Alert.alert(t('error'), t('failedToEditMessage'));
     }
   }, [editingMessage, editText, authCode]);
 
@@ -1402,10 +1409,7 @@ const ConversationScreen = ({ navigation, route }) => {
             <TouchableOpacity
               style={styles.attachButton}
               onPress={() =>
-                Alert.alert(
-                  'Coming Soon',
-                  'File attachments will be available soon'
-                )
+                Alert.alert(t('comingSoon'), t('fileAttachmentsComingSoon'))
               }
             >
               <FontAwesomeIcon
@@ -1513,7 +1517,7 @@ const ConversationScreen = ({ navigation, route }) => {
               style={styles.editTextInput}
               value={editText}
               onChangeText={setEditText}
-              placeholder='Enter your message...'
+              placeholder={t('enterMessage')}
               placeholderTextColor={theme.colors.textSecondary}
               multiline
               autoFocus

@@ -19,12 +19,14 @@ import {
   faCheckDouble,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import NotificationItem from '../components/NotificationItem';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const NotificationScreen = ({ navigation, route }) => {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const {
     notifications,
     unreadCount,
@@ -148,28 +150,24 @@ const NotificationScreen = ({ navigation, route }) => {
   };
 
   const handleClearAll = () => {
-    Alert.alert(
-      'Clear All Notifications',
-      'Are you sure you want to clear all notifications? This action cannot be undone.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
+    Alert.alert(t('clearAllNotifications'), t('clearAllNotificationsConfirm'), [
+      {
+        text: t('cancel'),
+        style: 'cancel',
+      },
+      {
+        text: t('clearAll'),
+        style: 'destructive',
+        onPress: async () => {
+          const success = await clearAll();
+          if (success) {
+            Alert.alert(t('success'), t('allNotificationsCleared'));
+          } else {
+            Alert.alert(t('error'), t('failedToClearNotifications'));
+          }
         },
-        {
-          text: 'Clear All',
-          style: 'destructive',
-          onPress: async () => {
-            const success = await clearAll();
-            if (success) {
-              Alert.alert('Success', 'All notifications have been cleared.');
-            } else {
-              Alert.alert('Error', 'Failed to clear notifications.');
-            }
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleMarkAllAsRead = async () => {
@@ -188,7 +186,7 @@ const NotificationScreen = ({ navigation, route }) => {
       }
 
       if (apiResponse?.success) {
-        Alert.alert('Success', 'All notifications marked as read.');
+        Alert.alert(t('success'), t('allNotificationsMarkedRead'));
         await refreshNotifications(); // Refresh to get updated data
         return;
       }
@@ -201,9 +199,9 @@ const NotificationScreen = ({ navigation, route }) => {
         await markAsRead(notification.id);
       }
 
-      Alert.alert('Success', 'All notifications marked as read.');
+      Alert.alert(t('success'), t('allNotificationsMarkedRead'));
     } catch (error) {
-      Alert.alert('Error', 'Failed to mark notifications as read.');
+      Alert.alert(t('error'), t('failedToMarkAsRead'));
     }
   };
 
@@ -326,8 +324,8 @@ const NotificationScreen = ({ navigation, route }) => {
       <Text style={styles.emptyStateTitle}>No Notifications</Text>
       <Text style={styles.emptyStateSubtitle}>
         {filter === 'unread'
-          ? "You're all caught up! No unread notifications."
-          : "You'll see your notifications here when you receive them."}
+          ? t('noUnreadNotifications')
+          : t('noNotificationsYet')}
       </Text>
       {!loading && (
         <TouchableOpacity
@@ -408,14 +406,14 @@ const NotificationScreen = ({ navigation, route }) => {
             showsHorizontalScrollIndicator={false}
             style={styles.filterContainer}
           >
-            {renderFilterButton('all', 'All')}
-            {renderFilterButton('unread', 'Unread')}
-            {renderFilterButton('behavior', 'Behavior')}
-            {renderFilterButton('attendance', 'Attendance')}
-            {renderFilterButton('grade', 'Grades')}
-            {renderFilterButton('homework', 'Homework')}
-            {renderFilterButton('messaging', 'Messages')}
-            {renderFilterButton('announcement', 'Announcements')}
+            {renderFilterButton('all', t('all'))}
+            {renderFilterButton('unread', t('unread'))}
+            {renderFilterButton('behavior', t('behavior'))}
+            {renderFilterButton('attendance', t('attendance'))}
+            {renderFilterButton('grade', t('grades'))}
+            {renderFilterButton('homework', t('homework'))}
+            {renderFilterButton('messaging', t('messages'))}
+            {renderFilterButton('announcement', t('announcements'))}
           </ScrollView>
         </View>
       </View>
@@ -425,7 +423,7 @@ const NotificationScreen = ({ navigation, route }) => {
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size='large' color={theme.colors.primary} />
-            <Text style={styles.loadingText}>Loading notifications...</Text>
+            <Text style={styles.loadingText}>{t('loadingNotifications')}</Text>
           </View>
         ) : (
           <FlatList

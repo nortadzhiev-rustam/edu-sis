@@ -62,7 +62,7 @@ export default function LibraryScreen({ navigation, route }) {
   // Fetch library data from API
   const fetchLibraryData = async () => {
     if (!authCode) {
-      Alert.alert('Error', 'Authentication required');
+      Alert.alert(t('error'), t('authenticationRequired'));
       return;
     }
 
@@ -94,14 +94,14 @@ export default function LibraryScreen({ navigation, route }) {
         if (data.success) {
           setLibraryData(data);
         } else {
-          Alert.alert('Error', 'Failed to load library data');
+          Alert.alert(t('error'), t('failedToLoadLibraryData'));
         }
       } else {
-        Alert.alert('Error', 'Failed to connect to library system');
+        Alert.alert(t('error'), t('failedToConnectLibrarySystem'));
       }
     } catch (error) {
       console.error('Library data fetch error:', error);
-      Alert.alert('Error', 'Network error occurred');
+      Alert.alert(t('error'), t('networkErrorOccurred'));
     } finally {
       setLoading(false);
     }
@@ -650,10 +650,10 @@ export default function LibraryScreen({ navigation, route }) {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.tabScrollContent}
           >
-            {renderTabButton('overview', 'Overview', faBook)}
-            {renderTabButton('borrowed', 'Borrowed', faBookOpen)}
-            {renderTabButton('history', 'History', faClock)}
-            {renderTabButton('available', 'Available', faCheckCircle)}
+            {renderTabButton('overview', t('overview'), faBook)}
+            {renderTabButton('borrowed', t('borrowed'), faBookOpen)}
+            {renderTabButton('history', t('history'), faClock)}
+            {renderTabButton('available', t('available'), faCheckCircle)}
           </ScrollView>
         </View>
       </View>

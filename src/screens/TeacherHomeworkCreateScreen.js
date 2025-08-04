@@ -18,6 +18,7 @@ import {
   faCalendarAlt,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { buildApiUrl } from '../config/env';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useFocusEffect } from '@react-navigation/native';
@@ -30,6 +31,7 @@ import {
 
 export default function TeacherHomeworkCreateScreen({ navigation, route }) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const {
     authCode,
     selectedBranchId: initialSelectedBranchId, // Get selected branch from params
@@ -146,14 +148,17 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
             });
           }
         } else {
-          Alert.alert('Error', 'Failed to fetch classes');
+          Alert.alert(t('error'), t('failedToFetchClasses'));
         }
       } else {
-        Alert.alert('Error', `Failed to fetch classes: ${response.status}`);
+        Alert.alert(
+          t('error'),
+          `${t('failedToFetchClasses')}: ${response.status}`
+        );
       }
     } catch (error) {
       console.error('Error fetching classes:', error);
-      Alert.alert('Error', 'Failed to connect to server');
+      Alert.alert(t('error'), t('failedToConnect'));
     } finally {
       setLoading(false);
     }
@@ -161,27 +166,27 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
 
   const createHomework = async () => {
     if (!title.trim()) {
-      Alert.alert('Error', 'Please enter homework title');
+      Alert.alert(t('error'), t('pleaseEnterHomeworkTitle'));
       return;
     }
 
     if (!description.trim()) {
-      Alert.alert('Error', 'Please enter homework description');
+      Alert.alert(t('error'), t('pleaseEnterHomeworkDescription'));
       return;
     }
 
     if (!selectedClass) {
-      Alert.alert('Error', 'Please select a class');
+      Alert.alert(t('error'), t('pleaseSelectClass'));
       return;
     }
 
     if (selectedStudents.length === 0) {
-      Alert.alert('Error', 'Please select at least one student');
+      Alert.alert(t('error'), t('pleaseSelectStudents'));
       return;
     }
 
     if (!deadline) {
-      Alert.alert('Error', 'Please select deadline');
+      Alert.alert(t('error'), t('pleaseSelectDeadline'));
       return;
     }
 
@@ -270,14 +275,11 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
             }
           } catch (uploadError) {
             console.error('File upload error:', uploadError);
-            Alert.alert(
-              'Warning',
-              'Homework assignment created but file upload failed. You can upload files later.'
-            );
+            Alert.alert(t('warning'), t('fileUploadWarning'));
           }
         }
 
-        Alert.alert('Success', 'Homework assignment created successfully!', [
+        Alert.alert(t('success'), t('homeworkCreatedSuccessfully'), [
           {
             text: 'OK',
             onPress: () => navigation.goBack(),
@@ -285,13 +287,13 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
         ]);
       } else {
         Alert.alert(
-          'Error',
-          assignmentResponse.message || 'Failed to create homework assignment'
+          t('error'),
+          assignmentResponse.message || t('failedToCreateHomework')
         );
       }
     } catch (error) {
       console.error('Error creating homework:', error);
-      Alert.alert('Error', 'Failed to connect to server');
+      Alert.alert(t('error'), t('failedToConnect'));
     } finally {
       setCreating(false);
     }
@@ -391,14 +393,14 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
               <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
             </TouchableOpacity>
 
-            <Text style={styles.headerTitle}>Create Homework</Text>
+            <Text style={styles.headerTitle}>{t('createHomework')}</Text>
 
             <View style={styles.headerRight} />
           </View>
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size='large' color='#007AFF' />
-          <Text style={styles.loadingText}>Loading classes...</Text>
+          <Text style={styles.loadingText}>{t('loadingClasses')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -417,7 +419,7 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
             <FontAwesomeIcon icon={faArrowLeft} size={18} color='#fff' />
           </TouchableOpacity>
 
-          <Text style={styles.headerTitle}>Create Homework</Text>
+          <Text style={styles.headerTitle}>{t('createHomework')}</Text>
 
           <TouchableOpacity
             style={styles.saveButton}
@@ -440,10 +442,10 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
       >
         {/* Title Input */}
         <View style={styles.inputSection}>
-          <Text style={styles.inputLabel}>Homework Title *</Text>
+          <Text style={styles.inputLabel}>{t('homeworkTitle')} *</Text>
           <TextInput
             style={styles.textInput}
-            placeholder='Enter homework title...'
+            placeholder={t('enterHomeworkTitle')}
             placeholderTextColor={theme.colors.textSecondary}
             value={title}
             onChangeText={setTitle}
@@ -457,7 +459,7 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
             style={[styles.textInput, styles.multilineInput]}
             multiline
             numberOfLines={6}
-            placeholder='Enter homework description and instructions...'
+            placeholder={t('enterHomeworkDescription')}
             placeholderTextColor={theme.colors.textSecondary}
             value={description}
             onChangeText={setDescription}
@@ -473,7 +475,7 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
             onFileUploaded={handleFileUploaded}
             maxFileSize={50 * 1024 * 1024} // 50MB for teachers
             userType='teacher'
-            buttonText='Add Assignment File'
+            buttonText={t('addAssignmentFile')}
             allowedTypes={[
               'pdf',
               'doc',
@@ -498,7 +500,7 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
           <Text style={styles.inputLabel}>Or Add File Link (Optional)</Text>
           <TextInput
             style={styles.textInput}
-            placeholder='Enter file URL (e.g., https://example.com/file.pdf)...'
+            placeholder={t('enterFileUrl')}
             placeholderTextColor={theme.colors.textSecondary}
             value={fileLink}
             onChangeText={setFileLink}
@@ -514,7 +516,7 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
 
         {/* Class Selection */}
         <View style={styles.inputSection}>
-          <Text style={styles.inputLabel}>Select Class *</Text>
+          <Text style={styles.inputLabel}>{t('selectClass')} *</Text>
           {currentClasses.map((classItem) => (
             <TouchableOpacity
               key={classItem.grade_id}
@@ -554,7 +556,7 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
         {selectedClass && (
           <View style={styles.inputSection}>
             <View style={styles.studentSelectionHeader}>
-              <Text style={styles.inputLabel}>Select Students *</Text>
+              <Text style={styles.inputLabel}>{t('selectStudents')} *</Text>
               {selectedClass.students && selectedClass.students.length > 0 && (
                 <View style={styles.selectionActions}>
                   <TouchableOpacity
@@ -672,7 +674,7 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
               paddingBottom: 20,
             }}
             // iOS Button Styling
-            confirmTextIOS='Set Deadline'
+            confirmTextIOS={t('setDeadline')}
             cancelTextIOS='Cancel'
             buttonTextColorIOS={theme.colors.primary}
             // Test IDs for automation
@@ -692,7 +694,7 @@ export default function TeacherHomeworkCreateScreen({ navigation, route }) {
           ) : (
             <>
               <FontAwesomeIcon icon={faPlus} size={16} color='#fff' />
-              <Text style={styles.createButtonText}>Create Homework</Text>
+              <Text style={styles.createButtonText}>{t('createHomework')}</Text>
             </>
           )}
         </TouchableOpacity>

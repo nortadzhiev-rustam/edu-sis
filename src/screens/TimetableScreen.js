@@ -156,11 +156,11 @@ export default function TimetableScreen({ navigation, route }) {
             subject:
               item.subject?.name ||
               item.subject?.subject_name ||
-              'Unknown Subject',
+              t('unknownSubject'),
             teacher:
-              item.user?.name || item.user?.full_name || 'Unknown Teacher',
+              item.user?.name || item.user?.full_name || t('unknownTeacher'),
             period: item.week_time,
-            time: `Period ${item.week_time}`, // You can customize this format
+            time: t('period') + ` ${item.week_time}`, // You can customize this format
             // Keep original data for reference
             originalData: item,
           }));

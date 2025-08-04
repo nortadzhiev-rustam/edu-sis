@@ -302,7 +302,7 @@ export default function FAQScreen({ navigation }) {
       }
     } catch (error) {
       console.error('Error fetching FAQ data:', error);
-      setError('Unable to load FAQ information. Please try again.');
+      setError(t('unableToLoadFAQInfo'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -376,7 +376,7 @@ export default function FAQScreen({ navigation }) {
         <Text style={styles.branchName}>{branch.branch_name}</Text>
         <Text style={styles.faqCount}>
           {branch.total_faqs}{' '}
-          {branch.total_faqs === 1 ? 'Question' : 'Questions'}
+          {branch.total_faqs === 1 ? t('question') : t('questions')}
         </Text>
       </View>
 

@@ -9,6 +9,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { useTheme } from '../contexts/ThemeContext'; // Import useTheme
+import { useLanguage } from '../contexts/LanguageContext';
 import useThemeLogo from '../hooks/useThemeLogo';
 import { isIPad } from '../utils/deviceDetection';
 import { lockOrientationForDevice } from '../utils/orientationLock';
@@ -16,12 +17,10 @@ import { lockOrientationForDevice } from '../utils/orientationLock';
 const { width, height } = Dimensions.get('window');
 const TYPING_SPEED = 30; // Faster typing animation
 const LOGO_ANIMATION_DURATION = 500;
-const TEXT_LINE1 = 'Inspiring Brilliance';
-const TEXT_LINE2 = 'Building Brighter Futures';
-const FULL_TEXT = TEXT_LINE1 + '\n' + TEXT_LINE2;
 
 export default function SplashScreen({ onAnimationComplete }) {
   const { theme } = useTheme(); // Get theme from context
+  const { t } = useLanguage();
   const logoSource = useThemeLogo();
   const [displayText, setDisplayText] = useState('');
   const [startTyping, setStartTyping] = useState(false);
@@ -101,6 +100,8 @@ export default function SplashScreen({ onAnimationComplete }) {
   useEffect(() => {
     if (!startTyping) return;
 
+    const FULL_TEXT =
+      t('inspiringBrilliance') + '\n' + t('buildingBrighterFutures');
     let currentIndex = 0;
     const typewriterInterval = setInterval(() => {
       if (currentIndex <= FULL_TEXT.length) {
@@ -114,7 +115,7 @@ export default function SplashScreen({ onAnimationComplete }) {
     }, TYPING_SPEED);
 
     return () => clearInterval(typewriterInterval);
-  }, [startTyping]);
+  }, [startTyping, t]);
 
   return (
     <SafeAreaView style={[styles.container]} edges={[]}>

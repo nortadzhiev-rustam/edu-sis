@@ -289,7 +289,7 @@ export default function AboutUsScreen({ navigation }) {
       }
     } catch (error) {
       console.error('Error fetching About Us data:', error);
-      setError('Unable to load About Us information. Please try again.');
+      setError(t('unableToLoadAboutUs'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -373,7 +373,7 @@ export default function AboutUsScreen({ navigation }) {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size='large' color={theme.colors.primary} />
           <Text style={[styles.emptyText, { marginTop: 16 }]}>
-            Loading About Us information...
+            {t('loadingAboutUs')}
           </Text>
         </View>
       </SafeAreaView>
@@ -447,7 +447,7 @@ export default function AboutUsScreen({ navigation }) {
             {aboutData.about_information.map(renderBranch)}
             {aboutData.generated_at && (
               <Text style={styles.generatedAt}>
-                Last updated:{' '}
+                {t('lastUpdated')}{' '}
                 {new Date(aboutData.generated_at).toLocaleDateString()}
               </Text>
             )}
@@ -459,9 +459,7 @@ export default function AboutUsScreen({ navigation }) {
               size={48}
               color={theme.colors.textSecondary}
             />
-            <Text style={styles.emptyText}>
-              No About Us information available at the moment.
-            </Text>
+            <Text style={styles.emptyText}>{t('noAboutUsInfo')}</Text>
           </View>
         )}
       </ScrollView>

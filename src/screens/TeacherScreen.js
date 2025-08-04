@@ -41,7 +41,7 @@ import { useNotifications } from '../contexts/NotificationContext';
 import { useMessaging } from '../contexts/MessagingContext';
 import NotificationBadge from '../components/NotificationBadge';
 import MessageBadge from '../components/MessageBadge';
-import { QuickActionTile, ComingSoonBadge } from '../components';
+import { QuickActionTile } from '../components';
 import { performLogout } from '../services/logoutService';
 import DemoModeIndicator from '../components/DemoModeIndicator';
 import { isIPad, isTablet } from '../utils/deviceDetection';
@@ -558,7 +558,7 @@ export default function TeacherScreen({ route, navigation }) {
   // This eliminates race conditions and ensures data consistency
 
   const handleLogout = () => {
-    Alert.alert(t('logout'), 'Are you sure you want to logout?', [
+    Alert.alert(t('logout'), t('confirmLogout'), [
       {
         text: t('cancel'),
         style: 'cancel',
@@ -612,7 +612,7 @@ export default function TeacherScreen({ route, navigation }) {
       {
         id: 'timetable',
         title: t('viewTimetable'),
-        subtitle: 'Schedule & Attendance',
+        subtitle: t('scheduleAttendance'),
         icon: faClock,
         backgroundColor: theme.colors.primary,
         iconColor: theme.colors.headerText,
@@ -628,7 +628,7 @@ export default function TeacherScreen({ route, navigation }) {
       {
         id: 'bps',
         title: t('manageBPS'),
-        subtitle: 'Behavior Points',
+        subtitle: t('behaviorPoints'),
         icon: faScaleBalanced,
         backgroundColor: '#AF52DE',
         iconColor: '#fff',
@@ -642,8 +642,8 @@ export default function TeacherScreen({ route, navigation }) {
       },
       {
         id: 'homework',
-        title: 'Homework',
-        subtitle: 'Assignments & Review',
+        title: t('homework'),
+        subtitle: t('assignmentsReview'),
         icon: faClipboardList,
         backgroundColor: '#34C759',
         iconColor: '#fff',
@@ -657,8 +657,8 @@ export default function TeacherScreen({ route, navigation }) {
       },
       {
         id: 'messaging',
-        title: 'Messages',
-        subtitle: 'Chat & Communication',
+        title: t('messages'),
+        subtitle: t('chatCommunication'),
         icon: faComments,
         backgroundColor: '#d90429',
         iconColor: '#fff',
@@ -678,8 +678,8 @@ export default function TeacherScreen({ route, navigation }) {
       },
       {
         id: 'calendar',
-        title: 'My Calendar',
-        subtitle: 'Personal & School Events',
+        title: t('myCalendar'),
+        subtitle: t('personalSchoolEvents'),
         icon: faCalendarAlt,
         backgroundColor: '#5856D6',
         iconColor: '#fff',
@@ -709,8 +709,8 @@ export default function TeacherScreen({ route, navigation }) {
       // Health quick action
       {
         id: 'health',
-        title: 'Health',
-        subtitle: 'Teacher/Student Well-being',
+        title: t('health'),
+        subtitle: t('teacherStudentWellbeing'),
         icon: faHeartbeat,
         backgroundColor: '#028090',
         iconColor: '#fff',
@@ -736,31 +736,28 @@ export default function TeacherScreen({ route, navigation }) {
           });
         },
       },
-      {
-        id: 'reports',
-        title: t('reports'),
-        subtitle: t('analyticsStats'),
-        icon: faChartLine,
-        backgroundColor: '#B0B0B0',
-        iconColor: '#fff',
-        disabled: true,
-        badge: (
-          <ComingSoonBadge
-            text={t('comingSoon')}
-            theme={theme}
-            fontSizes={fontSizes}
-          />
-        ),
-        onPress: () => {},
-      },
+      // {
+      //   id: 'reports',
+      //   title: t('reports'),
+      //   subtitle: t('analyticsStats'),
+      //   icon: faChartLine,
+      //   backgroundColor: '#3498db',
+      //   iconColor: '#fff',
+      //   disabled: false,
+      //   onPress: () => {
+      //     navigation.navigate('StaffReports', {
+      //       userData: userData,
+      //     });
+      //   },
+      // },
     ];
 
     // Add homeroom action conditionally
     if (userData.is_homeroom) {
       actions.splice(3, 0, {
         id: 'homeroom',
-        title: 'Homeroom',
-        subtitle: 'Class Management',
+        title: t('homeroom'),
+        subtitle: t('classManagement'),
         icon: faHome,
         backgroundColor: '#FF6B35',
         iconColor: '#fff',
@@ -860,7 +857,7 @@ export default function TeacherScreen({ route, navigation }) {
             >
               <View style={styles.teacherInfo}>
                 <Text style={styles.compactTeacherName}>
-                  {userData.name || 'Teacher'}
+                  {userData.name || t('teacher')}
                 </Text>
                 <TouchableOpacity
                   onPress={handleRoleTap}
@@ -905,7 +902,7 @@ export default function TeacherScreen({ route, navigation }) {
                     {formatUserRoles(userData)}
                   </Text>
                   <Text style={styles.compactTeacherId}>
-                    ID: {userData.id || 'N/A'}
+                    {t('id')}: {userData.id || t('notAvailable')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -958,7 +955,7 @@ export default function TeacherScreen({ route, navigation }) {
                           return branches[0].branch_name;
                         }
                         return (
-                          getCurrentBranch()?.branch_name || 'Select Branch'
+                          getCurrentBranch()?.branch_name || t('selectBranch')
                         );
                       })()}
                     </Text>
@@ -983,11 +980,12 @@ export default function TeacherScreen({ route, navigation }) {
                     })()}
                   </TouchableOpacity>
                   <Text style={styles.branchSummarySubtitle}>
-                    Academic Year:{' '}
+                    {t('academicYear')}:{' '}
                     {timetableData?.global_academic_year?.academic_year ||
-                      'N/A'}{' '}
-                    / Week:{' '}
-                    {timetableData?.branches?.[0]?.current_week || 'N/A'}
+                      t('notAvailable')}{' '}
+                    / {t('week')}:{' '}
+                    {timetableData?.branches?.[0]?.current_week ||
+                      t('notAvailable')}
                     {(() => {
                       const branches =
                         teacherClassesData?.branches ||
@@ -1148,21 +1146,70 @@ export default function TeacherScreen({ route, navigation }) {
                   styles.tabletLandscapeActionTilesGrid,
               ]}
             >
-              {getQuickActions().map((action) => (
-                <QuickActionTile
-                  key={action.id}
-                  title={action.title}
-                  subtitle={action.subtitle}
-                  icon={action.icon}
-                  backgroundColor={action.backgroundColor}
-                  iconColor={action.iconColor}
-                  disabled={action.disabled}
-                  badge={action.badge}
-                  onPress={action.onPress}
-                  styles={styles}
-                  isLandscape={isLandscape}
-                />
-              ))}
+              {getQuickActions().map((action, index) => {
+                const quickActions = getQuickActions();
+                const totalItems = quickActions.length;
+
+                // Calculate columns per row based on device type
+                let itemsPerRow = 2; // Default for mobile (TeacherScreen uses 2 per row)
+                if (isIPadDevice && isLandscape) {
+                  itemsPerRow = 6;
+                } else if (isTabletDevice && isLandscape) {
+                  itemsPerRow = 6;
+                } else if (isIPadDevice) {
+                  itemsPerRow = 4;
+                } else if (isTabletDevice) {
+                  itemsPerRow = 4;
+                }
+
+                // Check if this is the last item in an incomplete row
+                const isLastRow =
+                  Math.floor(index / itemsPerRow) ===
+                  Math.floor((totalItems - 1) / itemsPerRow);
+                const isLastInRow =
+                  (index + 1) % itemsPerRow === 0 || index === totalItems - 1;
+                const isIncompleteRow = totalItems % itemsPerRow !== 0;
+                const shouldExpand =
+                  isLastRow && isLastInRow && isIncompleteRow;
+
+                // Calculate minimum height based on device type
+                let minHeight = (screenWidth - 52) / 2; // Default mobile (2 per row, accounting for margins and gap)
+                if (isIPadDevice && isLandscape) {
+                  minHeight = (screenWidth - 80) / 6 - 6;
+                } else if (isTabletDevice && isLandscape) {
+                  minHeight = (screenWidth - 80) / 6 - 12;
+                } else if (isIPadDevice) {
+                  minHeight = (screenWidth - 80) / 4 - 12;
+                } else if (isTabletDevice) {
+                  minHeight = (screenWidth - 80) / 4 - 12;
+                }
+
+                return (
+                  <QuickActionTile
+                    key={action.id}
+                    title={action.title}
+                    subtitle={action.subtitle}
+                    icon={action.icon}
+                    backgroundColor={action.backgroundColor}
+                    iconColor={action.iconColor}
+                    disabled={action.disabled}
+                    badge={action.badge}
+                    onPress={action.onPress}
+                    styles={styles}
+                    isLandscape={isLandscape}
+                    additionalStyle={
+                      shouldExpand
+                        ? {
+                            flex: 1,
+                            marginRight: 0,
+                            aspectRatio: undefined, // Remove aspect ratio constraint for expanding tiles
+                            height: minHeight, // Set exact height to match other tiles
+                          }
+                        : {}
+                    }
+                  />
+                );
+              })}
             </View>
           </View>
         </ScrollView>
@@ -1522,7 +1569,7 @@ const createStyles = (theme, fontSizes) =>
     actionTilesGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      justifyContent: 'space-between',
+      justifyContent: 'flex-start', // Changed from space-between to support flex expansion
       gap: 12,
     },
     // iPad-specific grid layout - 4 tiles per row, wraps to next row for additional tiles
@@ -1551,6 +1598,7 @@ const createStyles = (theme, fontSizes) =>
     },
     actionTile: {
       width: (screenWidth - 52) / 2, // 2 tiles per row with margins and gap
+      minWidth: (screenWidth - 52) / 2, // Minimum width for flex expansion
       aspectRatio: 1, // Square tiles
       borderRadius: 24,
       padding: 20,
@@ -1564,7 +1612,7 @@ const createStyles = (theme, fontSizes) =>
     // iPad-specific action tile - optimized for 4 per row, wraps for additional tiles
     iPadActionTile: {
       width: (screenWidth - 80) / 4 - 2, // Optimized for 4 tiles per row with wrapping support
-      minWidth: 160, // Minimum width to ensure tiles don't get too small
+      minWidth: (screenWidth - 80) / 4 - 2, // Minimum width for flex expansion
       aspectRatio: 1, // Square tiles
       borderRadius: 16,
       padding: 12,
@@ -1578,7 +1626,7 @@ const createStyles = (theme, fontSizes) =>
     // Tablet-specific action tile - optimized for 4 per row, wraps for additional tiles
     tabletActionTile: {
       width: (screenWidth - 70) / 4 - 2, // Optimized for 4 tiles per row with wrapping support
-      minWidth: 150, // Minimum width to ensure tiles don't get too small
+      minWidth: (screenWidth - 70) / 4 - 2, // Minimum width for flex expansion
       aspectRatio: 1, // Square tiles
       borderRadius: 18,
       padding: 14,
@@ -1592,7 +1640,7 @@ const createStyles = (theme, fontSizes) =>
     // iPad landscape-specific action tile - optimized for 6 per row
     iPadLandscapeActionTile: {
       width: (screenWidth - 100) / 6 - 2, // 6 tiles per row in landscape with wrapping support
-      minWidth: 120, // Minimum width for landscape tiles
+      minWidth: (screenWidth - 100) / 6 - 2, // Minimum width for flex expansion
       aspectRatio: 1, // Square tiles
       borderRadius: 14,
       padding: 10,
@@ -1606,7 +1654,7 @@ const createStyles = (theme, fontSizes) =>
     // Tablet landscape-specific action tile - optimized for 6 per row
     tabletLandscapeActionTile: {
       width: (screenWidth - 90) / 6 - 2, // 6 tiles per row in landscape with wrapping support
-      minWidth: 110, // Minimum width for landscape tiles
+      minWidth: (screenWidth - 90) / 6 - 2, // Minimum width for flex expansion
       aspectRatio: 1, // Square tiles
       borderRadius: 16,
       padding: 12,

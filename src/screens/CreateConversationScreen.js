@@ -17,6 +17,7 @@ import {
   faUsers,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import {
   getAvailableUsersForStaff,
   createConversation,
@@ -25,6 +26,7 @@ import { UserSelector } from '../components/messaging';
 
 const CreateConversationScreen = ({ navigation, route }) => {
   const { theme, fontSizes } = useTheme();
+  const { t } = useLanguage();
   const { authCode, teacherName } = route.params;
 
   const [topic, setTopic] = useState('');
@@ -56,7 +58,7 @@ const CreateConversationScreen = ({ navigation, route }) => {
       }
     } catch (error) {
       console.error('Error fetching users:', error);
-      Alert.alert('Error', 'Failed to load users');
+      Alert.alert(t('error'), t('failedToLoadUsers'));
     } finally {
       setLoading(false);
     }
@@ -200,12 +202,12 @@ const CreateConversationScreen = ({ navigation, route }) => {
   // Create conversation
   const handleCreateConversation = useCallback(async () => {
     if (!topic.trim()) {
-      Alert.alert('Error', 'Please enter a conversation topic');
+      Alert.alert(t('error'), t('pleaseEnterConversationTopic'));
       return;
     }
 
     if (selectedUsers.length === 0) {
-      Alert.alert('Error', 'Please select at least one user');
+      Alert.alert(t('error'), t('pleaseSelectAtLeastOneUser'));
       return;
     }
 
@@ -219,9 +221,9 @@ const CreateConversationScreen = ({ navigation, route }) => {
       );
 
       if (response.success && response.data) {
-        Alert.alert('Success', 'Conversation created successfully', [
+        Alert.alert(t('success'), t('conversationCreatedSuccessfully'), [
           {
-            text: 'OK',
+            text: t('ok'),
             onPress: () => {
               navigation.navigate('ConversationScreen', {
                 conversationUuid: response.data.conversation_uuid,
@@ -233,11 +235,11 @@ const CreateConversationScreen = ({ navigation, route }) => {
           },
         ]);
       } else {
-        Alert.alert('Error', 'Failed to create conversation');
+        Alert.alert(t('error'), t('failedToCreateConversation'));
       }
     } catch (error) {
       console.error('Error creating conversation:', error);
-      Alert.alert('Error', 'Failed to create conversation');
+      Alert.alert(t('error'), t('failedToCreateConversation'));
     } finally {
       setCreating(false);
     }
@@ -271,8 +273,7 @@ const CreateConversationScreen = ({ navigation, route }) => {
           color={theme.colors.primary}
         />
         <Text style={styles.selectedText}>
-          {selectedUsers.length} user{selectedUsers.length !== 1 ? 's' : ''}{' '}
-          selected
+          {t('usersSelected').replace('{count}', selectedUsers.length)}
         </Text>
       </View>
     );
@@ -321,7 +322,7 @@ const CreateConversationScreen = ({ navigation, route }) => {
         <Text style={styles.topicLabel}>Conversation Topic</Text>
         <TextInput
           style={styles.topicInput}
-          placeholder='Enter conversation topic...'
+          placeholder={t('enterConversationTopic')}
           placeholderTextColor={theme.colors.textSecondary}
           value={topic}
           onChangeText={setTopic}
@@ -339,7 +340,7 @@ const CreateConversationScreen = ({ navigation, route }) => {
           />
           <TextInput
             style={styles.searchInput}
-            placeholder='Search users...'
+            placeholder={t('searchUsers')}
             placeholderTextColor={theme.colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -352,7 +353,7 @@ const CreateConversationScreen = ({ navigation, route }) => {
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size='large' color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading users...</Text>
+          <Text style={styles.loadingText}>{t('loadingUsers')}</Text>
         </View>
       ) : (
         <SectionList

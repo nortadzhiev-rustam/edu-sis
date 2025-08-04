@@ -216,7 +216,10 @@ export default function LoginScreen({ route, navigation }) {
       }
     } else {
       // Handle login failure with detailed error information
-      let errorMessage = `Incorrect ${loginType} ID or password!`;
+      let errorMessage = t('incorrectCredentials').replace(
+        '{loginType}',
+        t(loginType)
+      );
 
       if (userData && userData.error) {
         console.log('🔍 LOGIN DEBUG: Error details received:', userData);

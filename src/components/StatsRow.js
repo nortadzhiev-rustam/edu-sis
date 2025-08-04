@@ -179,7 +179,7 @@ const createStyles = (theme) =>
     },
     detailedContainer: {
       paddingVertical: 20,
-      paddingHorizontal: 20,
+      paddingHorizontal: 5,
     },
 
     // Stat item styles
@@ -194,7 +194,7 @@ const createStyles = (theme) =>
       paddingVertical: 4,
     },
     detailedStatItem: {
-      paddingVertical: 12,
+      paddingVertical: 2,
     },
 
     statIconContainer: {

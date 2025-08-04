@@ -60,7 +60,7 @@ export default function BehaviorScreen({ navigation, route }) {
 
   const fetchBehaviorData = async () => {
     if (!authCode) {
-      Alert.alert('Error', 'Authentication code is missing');
+      Alert.alert(t('error'), t('authenticationCodeMissing'));
       return;
     }
 
@@ -244,7 +244,7 @@ export default function BehaviorScreen({ navigation, route }) {
 
   // Helper function to format date
   const formatDate = (dateString) => {
-    if (!dateString) return 'No date';
+    if (!dateString) return t('noDate');
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       month: 'short',
@@ -376,14 +376,16 @@ export default function BehaviorScreen({ navigation, route }) {
         <View style={styles.subHeader}>
           <Text style={styles.viewContextText}>
             {selectedView === 'summary'
-              ? 'Overview & Statistics'
+              ? t('overviewStatistics')
               : selectedView === 'behavior'
-              ? `${selectedBehaviorType} Records`
+              ? `${selectedBehaviorType} ${t('records')}`
               : selectedView === 'detention'
               ? `${
-                  selectedDetentionType === 'served' ? 'Served' : 'Not Served'
-                } Detentions`
-              : 'Behavior Points'}
+                  selectedDetentionType === 'served'
+                    ? t('served')
+                    : t('notServed')
+                } ${t('detentions')}`
+              : t('behaviorPoints')}
           </Text>
         </View>
       </View>
@@ -598,8 +600,8 @@ export default function BehaviorScreen({ navigation, route }) {
                   <Text style={styles.emptyText}>No behavior points found</Text>
                   <Text style={styles.emptySubtext}>
                     {selectedBehaviorType === 'PRS'
-                      ? 'No positive behavior points to display'
-                      : 'No negative behavior points to display'}
+                      ? t('noPositiveBehaviorPoints')
+                      : t('noNegativeBehaviorPoints')}
                   </Text>
                 </View>
               ) : (
@@ -692,8 +694,8 @@ export default function BehaviorScreen({ navigation, route }) {
                   <Text style={styles.emptyText}>No detentions found</Text>
                   <Text style={styles.emptySubtext}>
                     {selectedDetentionType === 'served'
-                      ? 'No served detentions to display'
-                      : 'No pending detentions to display'}
+                      ? t('noServedDetentions')
+                      : t('noPendingDetentions')}
                   </Text>
                 </View>
               ) : (
@@ -793,7 +795,7 @@ const createStyles = (theme) =>
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.15,
       shadowRadius: 4,
-      
+
       zIndex: 1,
     },
     navigationHeader: {

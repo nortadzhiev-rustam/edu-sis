@@ -14,7 +14,11 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { getResponsiveHeaderFontSize } from '../utils/commonStyles';
+import {
+  getResponsiveHeaderFontSize,
+  createCustomShadow,
+  createMediumShadow,
+} from '../utils/commonStyles';
 
 import {
   faPlus,
@@ -45,7 +49,6 @@ import DemoModeIndicator from '../components/DemoModeIndicator';
 import { updateLastLogin } from '../services/deviceService';
 
 import { useFocusEffect } from '@react-navigation/native';
-import { createCustomShadow, createMediumShadow } from '../utils/commonStyles';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -139,6 +142,17 @@ const getMenuItems = (t) => [
     disabled: false,
     comingSoon: false,
   },
+  // {
+  //   id: 'reports',
+  //   title: t('reports'),
+  //   icon: faChartLine,
+  //   backgroundColor: '#3498db',
+  //   iconColor: '#fff',
+  //   action: 'reports',
+  //   disabled: false,
+  //   comingSoon: false,
+  // },
+  
 ];
 
 export default function ParentScreen({ navigation }) {
@@ -353,7 +367,7 @@ export default function ParentScreen({ navigation }) {
           navigation.navigate('UserCalendar', { mode: 'combined' });
         } catch (error) {
           console.error('Error saving student data for calendar:', error);
-          Alert.alert('Error', 'Failed to access calendar');
+          Alert.alert(t('error'), t('failedToAccessCalendar'));
         }
         break;
       case 'materials':
@@ -366,6 +380,15 @@ export default function ParentScreen({ navigation }) {
             studentData: selectedStudent,
           });
         }
+        break;
+      case 'reports':
+        navigation.navigate('StudentReports', {
+          userData: {
+            ...selectedStudent,
+            name: selectedStudent.name,
+            authCode: selectedStudent.authCode,
+          },
+        });
         break;
       default:
         break;
@@ -575,7 +598,9 @@ export default function ParentScreen({ navigation }) {
           >
             {item.name || t('student')}
           </Text>
-          <Text style={styles.studentDetails}>ID: {item.id || 'N/A'}</Text>
+          <Text style={styles.studentDetails}>
+            {t('id')}: {item.id || t('notAvailable')}
+          </Text>
 
           {isSelected && (
             <View style={styles.selectedBadge}>
@@ -793,33 +818,81 @@ export default function ParentScreen({ navigation }) {
             ]}
             showsVerticalScrollIndicator={false}
           >
-            {getMenuItems(t).map((item) => (
-              <QuickActionTile
-                key={item.id}
-                title={item.title}
-                subtitle='' // Parent menu items don't have subtitles
-                icon={item.icon}
-                backgroundColor={item.backgroundColor}
-                iconColor={item.iconColor}
-                onPress={
-                  item.disabled
-                    ? undefined
-                    : () => handleMenuItemPress(item.action)
-                }
-                disabled={item.disabled}
-                badge={
-                  item.comingSoon ? (
-                    <ComingSoonBadge
-                      text='Soon'
-                      theme={theme}
-                      fontSizes={fontSizes}
-                    />
-                  ) : undefined
-                }
-                styles={styles}
-                isLandscape={isLandscape}
-              />
-            ))}
+            {getMenuItems(t).map((item, index) => {
+              const menuItems = getMenuItems(t);
+              const totalItems = menuItems.length;
+
+              // Calculate columns per row based on device type
+              let itemsPerRow = 3; // Default for mobile
+              if (isIPadDevice && isLandscape) {
+                itemsPerRow = 6;
+              } else if (isTabletDevice && isLandscape) {
+                itemsPerRow = 6;
+              } else if (isIPadDevice) {
+                itemsPerRow = 4;
+              } else if (isTabletDevice) {
+                itemsPerRow = 4;
+              }
+
+              // Check if this is the last item in an incomplete row
+              const isLastRow =
+                Math.floor(index / itemsPerRow) ===
+                Math.floor((totalItems - 1) / itemsPerRow);
+              const isLastInRow =
+                (index + 1) % itemsPerRow === 0 || index === totalItems - 1;
+              const isIncompleteRow = totalItems % itemsPerRow !== 0;
+              const shouldExpand = isLastRow && isLastInRow && isIncompleteRow;
+
+              // Calculate minimum height based on device type
+              let minHeight = (screenWidth - 30) / 3 - 8; // Default mobile
+              if (isIPadDevice && isLandscape) {
+                minHeight = (screenWidth - 100) / 6 - 6;
+              } else if (isTabletDevice && isLandscape) {
+                minHeight = (screenWidth - 90) / 6 - 8;
+              } else if (isIPadDevice) {
+                minHeight = (screenWidth - 80) / 4 - 8;
+              } else if (isTabletDevice) {
+                minHeight = (screenWidth - 70) / 4 - 10;
+              }
+
+              return (
+                <QuickActionTile
+                  key={item.id}
+                  title={item.title}
+                  subtitle='' // Parent menu items don't have subtitles
+                  icon={item.icon}
+                  backgroundColor={item.backgroundColor}
+                  iconColor={item.iconColor}
+                  onPress={
+                    item.disabled
+                      ? undefined
+                      : () => handleMenuItemPress(item.action)
+                  }
+                  disabled={item.disabled}
+                  badge={
+                    item.comingSoon ? (
+                      <ComingSoonBadge
+                        text={t('soon')}
+                        theme={theme}
+                        fontSizes={fontSizes}
+                      />
+                    ) : undefined
+                  }
+                  styles={styles}
+                  isLandscape={isLandscape}
+                  additionalStyle={
+                    shouldExpand
+                      ? {
+                          flex: 1,
+                          marginRight: 0,
+                          aspectRatio: undefined, // Remove aspect ratio constraint for expanding tiles
+                          height: minHeight, // Set exact height to match other tiles
+                        }
+                      : {}
+                  }
+                />
+              );
+            })}
           </ScrollView>
         </View>
       </View>
@@ -1147,7 +1220,7 @@ const createStyles = (theme, fontSizes) =>
     actionTilesGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      justifyContent: 'space-between', // Better distribution for 3 tiles per row
+      justifyContent: 'flex-start', // Changed from space-between to support flex expansion
       paddingBottom: 50, // Add padding for scrollable content
       paddingHorizontal: 5, // Add padding for scrollable content
     },
@@ -1180,6 +1253,7 @@ const createStyles = (theme, fontSizes) =>
     },
     actionTile: {
       width: (screenWidth - 30) / 3 - 8, // 3 tiles per row: screen width - padding (24*2) - margins (8*3) / 3
+      minWidth: (screenWidth - 30) / 3 - 8, // Minimum width for flex expansion
       aspectRatio: 1, // Square tiles
       borderRadius: 20, // Slightly smaller border radius for smaller tiles
       padding: 14, // Reduced padding for smaller tiles
@@ -1195,7 +1269,7 @@ const createStyles = (theme, fontSizes) =>
     // iPad-specific action tile - optimized for 4 per row, wraps for additional tiles
     iPadActionTile: {
       width: (screenWidth - 80) / 4 - 8, // Optimized for 4 tiles per row with wrapping support
-      minWidth: 160, // Minimum width to ensure tiles don't get too small
+      minWidth: (screenWidth - 80) / 4 - 8, // Minimum width for flex expansion
       aspectRatio: 1, // Square tiles
       borderRadius: 16,
       padding: 12,
@@ -1211,7 +1285,7 @@ const createStyles = (theme, fontSizes) =>
     // Tablet-specific action tile - optimized for 4 per row, wraps for additional tiles
     tabletActionTile: {
       width: (screenWidth - 70) / 4 - 10, // Optimized for 4 tiles per row with wrapping support
-      minWidth: 150, // Minimum width to ensure tiles don't get too small
+      minWidth: (screenWidth - 70) / 4 - 10, // Minimum width for flex expansion
       aspectRatio: 1, // Square tiles
       borderRadius: 18,
       padding: 14,
@@ -1227,7 +1301,7 @@ const createStyles = (theme, fontSizes) =>
     // iPad landscape-specific action tile - optimized for 6 per row
     iPadLandscapeActionTile: {
       width: (screenWidth - 100) / 6 - 6, // 6 tiles per row in landscape with wrapping support
-      minWidth: 120, // Minimum width for landscape tiles
+      minWidth: (screenWidth - 100) / 6 - 6, // Minimum width for flex expansion
       aspectRatio: 1, // Square tiles
       borderRadius: 14,
       padding: 10,
@@ -1243,7 +1317,7 @@ const createStyles = (theme, fontSizes) =>
     // Tablet landscape-specific action tile - optimized for 6 per row
     tabletLandscapeActionTile: {
       width: (screenWidth - 90) / 6 - 8, // 6 tiles per row in landscape with wrapping support
-      minWidth: 110, // Minimum width for landscape tiles
+      minWidth: (screenWidth - 90) / 6 - 8, // Minimum width for flex expansion
       aspectRatio: 1, // Square tiles
       borderRadius: 16,
       padding: 12,

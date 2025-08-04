@@ -24,7 +24,7 @@ import {
   faArrowLeft,
 } from '@fortawesome/free-solid-svg-icons';
 
-import { useTheme,getLanguageFontSizes } from '../contexts/ThemeContext';
+import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { createSmallShadow } from '../utils/commonStyles';
 
@@ -32,7 +32,6 @@ import CalendarService from '../services/calendarService';
 import SchoolConfigService from '../services/schoolConfigService';
 
 import CalendarView from '../components/CalendarView';
-
 
 export default function CalendarScreen({ navigation, route }) {
   const { theme } = useTheme();
@@ -142,23 +141,19 @@ export default function CalendarScreen({ navigation, route }) {
 
       if (!userDataStr) {
         console.log('❌ CALENDAR: No user data found in AsyncStorage');
-        Alert.alert(
-          'Login Required',
-          'Please log in as a teacher or student to access the calendar.',
-          [
-            { text: 'Cancel', onPress: () => navigation.goBack() },
-            {
-              text: 'Login as Teacher',
-              onPress: () =>
-                navigation.navigate('Login', { loginType: 'teacher' }),
-            },
-            {
-              text: 'Login as Student',
-              onPress: () =>
-                navigation.navigate('Login', { loginType: 'student' }),
-            },
-          ]
-        );
+        Alert.alert(t('loginRequired'), t('loginRequiredCalendarMessage'), [
+          { text: t('cancel'), onPress: () => navigation.goBack() },
+          {
+            text: t('loginAsTeacher'),
+            onPress: () =>
+              navigation.navigate('Login', { loginType: 'teacher' }),
+          },
+          {
+            text: t('loginAsStudent'),
+            onPress: () =>
+              navigation.navigate('Login', { loginType: 'student' }),
+          },
+        ]);
         return;
       }
 
@@ -183,7 +178,7 @@ export default function CalendarScreen({ navigation, route }) {
       // Get school configuration
       const config = await SchoolConfigService.getCurrentSchoolConfig();
       if (!config) {
-        Alert.alert('Error', 'School configuration not found');
+        Alert.alert(t('error'), t('schoolConfigNotFound'));
         navigation.goBack();
         return;
       }
@@ -208,7 +203,7 @@ export default function CalendarScreen({ navigation, route }) {
       await loadEvents(service);
     } catch (error) {
       console.error('❌ CALENDAR: Initialization error:', error);
-      Alert.alert('Error', 'Failed to initialize calendar');
+      Alert.alert(t('error'), t('failedToInitializeCalendar'));
     } finally {
       setLoading(false);
     }
@@ -227,7 +222,7 @@ export default function CalendarScreen({ navigation, route }) {
       );
     } catch (error) {
       console.error('❌ CALENDAR: Error loading events:', error);
-      Alert.alert('Error', 'Failed to load calendar events');
+      Alert.alert(t('error'), t('failedToLoadCalendarEvents'));
     }
   };
 
@@ -239,15 +234,15 @@ export default function CalendarScreen({ navigation, route }) {
 
   const handleEventPress = (event) => {
     const cleanDescription =
-      stripHtmlTags(event.description) || 'No description';
+      stripHtmlTags(event.description) || t('noDescription');
     Alert.alert(
       event.title,
-      `${cleanDescription}\n\nTime: ${new Date(
+      `${cleanDescription}\n\n${t('time')}: ${new Date(
         event.startTime
-      ).toLocaleString()}\nType: ${event.calendarType}${
-        event.location ? `\nLocation: ${event.location}` : ''
+      ).toLocaleString()}\n${t('type')}: ${event.calendarType}${
+        event.location ? `\n${t('location')}: ${event.location}` : ''
       }`,
-      [{ text: 'OK' }]
+      [{ text: t('ok') }]
     );
   };
 
@@ -258,7 +253,7 @@ export default function CalendarScreen({ navigation, route }) {
   const handleTestConnection = async () => {
     try {
       if (!calendarService) {
-        Alert.alert('Error', 'Calendar service not initialized');
+        Alert.alert(t('error'), t('calendarServiceNotInitialized'));
         return;
       }
 
@@ -266,23 +261,20 @@ export default function CalendarScreen({ navigation, route }) {
         !userData ||
         (userData.userType !== 'staff' && userData.userType !== 'teacher')
       ) {
-        Alert.alert(
-          'Access Denied',
-          'Calendar connection test is only available for staff users'
-        );
+        Alert.alert(t('accessDenied'), t('calendarTestStaffOnly'));
         return;
       }
 
       const branchId = userData.branchId || userData.branches?.[0]?.id;
       if (!branchId) {
-        Alert.alert('Error', 'No branch ID available for testing');
+        Alert.alert(t('error'), t('noBranchIdForTesting'));
         return;
       }
 
       Alert.alert(
-        'Testing Calendar Connection',
-        'Testing Google Calendar connection... Please wait.',
-        [{ text: 'OK' }]
+        t('testingCalendarConnection'),
+        t('testingCalendarConnectionMessage'),
+        [{ text: t('ok') }]
       );
 
       const testResults = await calendarService.testCalendarConnection(
@@ -318,8 +310,6 @@ export default function CalendarScreen({ navigation, route }) {
       );
     }
   };
-
-  
 
   const renderEvent = (event, index) => {
     const eventDate = new Date(event.startTime);
@@ -904,7 +894,7 @@ export default function CalendarScreen({ navigation, route }) {
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size='large' color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading calendar events...</Text>
+          <Text style={styles.loadingText}>{t('loadingCalendarEvents')}</Text>
         </View>
       ) : viewMode === 'calendar' ? (
         <CalendarView
@@ -924,8 +914,6 @@ export default function CalendarScreen({ navigation, route }) {
             />
           }
         >
-          
-
           {/* Events List */}
           <View style={styles.eventsHeader}>
             <Text style={styles.eventsTitle}>Upcoming Events</Text>
@@ -946,8 +934,8 @@ export default function CalendarScreen({ navigation, route }) {
                   No upcoming events found.{'\n'}
                   {calendarService?.isGoogleCalendarAvailable() &&
                   !googleSignedIn
-                    ? 'Sign in to Google Calendar to see more events.'
-                    : 'Check back later for new events.'}
+                    ? t('signInToGoogleCalendar')
+                    : t('checkBackForNewEvents')}
                 </Text>
               </View>
             )}

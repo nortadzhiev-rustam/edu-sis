@@ -502,8 +502,6 @@ export default function AttendanceScreen({ navigation, route }) {
 
   const renderDailyView = () => (
     <View style={styles.tableWithPagination}>
-      
-
       <View style={styles.tableSection}>
         <View
           style={[
@@ -539,8 +537,6 @@ export default function AttendanceScreen({ navigation, route }) {
 
   const renderDetailView = () => (
     <View style={styles.tableWithPagination}>
-     
-
       <View style={styles.tableSection}>
         <View
           style={[
@@ -579,7 +575,7 @@ export default function AttendanceScreen({ navigation, route }) {
       return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size='large' color='#007AFF' />
-          <Text style={styles.loadingText}>Loading attendance data...</Text>
+          <Text style={styles.loadingText}>{t('loadingAttendanceData')}</Text>
         </View>
       );
     }
@@ -636,15 +632,17 @@ export default function AttendanceScreen({ navigation, route }) {
         {/* Student Info Subheader - Hidden in landscape mode */}
         {!isLandscape && (
           <View style={styles.subHeader}>
-            <Text style={styles.studentName}>{studentName || 'Student'}</Text>
+            <Text style={styles.studentName}>
+              {studentName || t('student')}
+            </Text>
             <Text style={styles.sectionSubtitle}>
               {selectedView === 'summary'
-                ? 'Attendance Summary'
+                ? t('attendanceSummary')
                 : selectedView === 'daily'
-                ? 'Daily Statistics'
+                ? t('dailyStatistics')
                 : selectedView === 'absent'
-                ? 'Absent Records'
-                : 'Late Records'}
+                ? t('absentRecords')
+                : t('lateRecords')}
             </Text>
           </View>
         )}

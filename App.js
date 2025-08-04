@@ -49,6 +49,11 @@ import AboutUsScreen from './src/screens/AboutUsScreen';
 import ContactsScreen from './src/screens/ContactsScreen';
 import FAQScreen from './src/screens/FAQScreen';
 import WorkspaceScreen from './src/screens/WorkspaceScreen';
+
+// Report Screens
+import StudentReportsScreen from './src/screens/StudentReportsScreen';
+import StaffReportsScreen from './src/screens/StaffReportsScreen';
+import ReportDetailScreen from './src/screens/ReportDetailScreen';
 import { ThemeProvider } from './src/contexts/ThemeContext';
 import { LanguageProvider } from './src/contexts/LanguageContext';
 import { NotificationProvider } from './src/contexts/NotificationContext';
@@ -256,7 +261,9 @@ export default function App() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
           <ThemeProvider>
-            <SplashScreen onAnimationComplete={handleAnimationComplete} />
+            <LanguageProvider>
+              <SplashScreen onAnimationComplete={handleAnimationComplete} />
+            </LanguageProvider>
           </ThemeProvider>
         </SafeAreaProvider>
       </GestureHandlerRootView>
@@ -430,6 +437,20 @@ export default function App() {
                     <Stack.Screen
                       name='WorkspaceScreen'
                       component={WorkspaceScreen}
+                    />
+
+                    {/* Report Screens */}
+                    <Stack.Screen
+                      name='StudentReports'
+                      component={StudentReportsScreen}
+                    />
+                    <Stack.Screen
+                      name='StaffReports'
+                      component={StaffReportsScreen}
+                    />
+                    <Stack.Screen
+                      name='ReportDetail'
+                      component={ReportDetailScreen}
                     />
                   </Stack.Navigator>
                   {/* <DevTokenDisplay /> */}

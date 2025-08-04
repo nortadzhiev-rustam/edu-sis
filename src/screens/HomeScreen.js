@@ -273,24 +273,19 @@ export default function HomeScreen({ navigation }) {
 
       const userMessage = generateUserFriendlyErrorMessage(diagnostics);
 
-      Alert.alert('Navigation Diagnostics', userMessage, [
-        { text: 'OK', style: 'default' },
+      Alert.alert(t('navigationDiagnostics'), userMessage, [
+        { text: t('ok'), style: 'default' },
         {
-          text: 'Clear Data & Restart',
+          text: t('clearDataRestart'),
           style: 'destructive',
           onPress: async () => {
             const cleared = await clearAllUserData();
             if (cleared) {
-              Alert.alert(
-                'Data Cleared',
-                'All user data has been cleared. Please restart the app and log in again.',
-                [{ text: 'OK' }]
-              );
+              Alert.alert(t('dataCleared'), t('dataClearedMessage'), [
+                { text: t('ok') },
+              ]);
             } else {
-              Alert.alert(
-                'Error',
-                'Failed to clear data. Please restart the app manually.'
-              );
+              Alert.alert(t('error'), t('failedToClearData'));
             }
           },
         },
@@ -362,19 +357,14 @@ export default function HomeScreen({ navigation }) {
       navigation.navigate('Login', { loginType: 'teacher' });
     } catch (error) {
       console.error('❌ HOME: Unexpected error in handleTeacherPress:', error);
-      Alert.alert(
-        'Navigation Error',
-        'Unable to access teacher screen. This might be due to corrupted data.',
-        [
-          { text: 'Try Again', onPress: () => handleTeacherPress() },
-          { text: 'Run Diagnostics', onPress: () => runDiagnostics() },
-          {
-            text: 'Go to Login',
-            onPress: () =>
-              navigation.navigate('Login', { loginType: 'teacher' }),
-          },
-        ]
-      );
+      Alert.alert(t('navigationError'), t('unableToAccessTeacherScreen'), [
+        { text: t('tryAgain'), onPress: () => handleTeacherPress() },
+        { text: t('runDiagnostics'), onPress: () => runDiagnostics() },
+        {
+          text: t('goToLogin'),
+          onPress: () => navigation.navigate('Login', { loginType: 'teacher' }),
+        },
+      ]);
     }
   };
 
@@ -385,15 +375,11 @@ export default function HomeScreen({ navigation }) {
       navigation.navigate('ParentScreen');
     } catch (error) {
       console.error('❌ HOME: Error navigating to parent screen:', error);
-      Alert.alert(
-        'Navigation Error',
-        'Unable to access parent screen. Please try again.',
-        [
-          { text: 'Try Again', onPress: () => handleParentPress() },
-          { text: 'Run Diagnostics', onPress: () => runDiagnostics() },
-          { text: 'Cancel', style: 'cancel' },
-        ]
-      );
+      Alert.alert(t('navigationError'), t('unableToAccessParentScreen'), [
+        { text: t('tryAgain'), onPress: () => handleParentPress() },
+        { text: t('runDiagnostics'), onPress: () => runDiagnostics() },
+        { text: t('cancel'), style: 'cancel' },
+      ]);
     }
   };
 
@@ -451,21 +437,21 @@ export default function HomeScreen({ navigation }) {
       if (allUsers.length === 0) {
         // No user data found - show options
         Alert.alert(
-          `Access ${screenName}`,
-          'To view school information, you can either login directly or add a student account.',
+          t('accessScreen').replace('{screenName}', screenName),
+          t('schoolInfoAccessMessage'),
           [
-            { text: 'Cancel', style: 'cancel' },
+            { text: t('cancel'), style: 'cancel' },
             {
-              text: 'Add Student',
+              text: t('addStudent'),
               onPress: () => navigation.navigate('ParentScreen'),
             },
             {
-              text: 'Login as Teacher',
+              text: t('loginAsTeacher'),
               onPress: () =>
                 navigation.navigate('Login', { loginType: 'teacher' }),
             },
             {
-              text: 'Login as Student',
+              text: t('loginAsStudent'),
               onPress: () =>
                 navigation.navigate('Login', { loginType: 'student' }),
             },
@@ -847,7 +833,7 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.socialMediaSection}>
             <TouchableOpacity
               style={styles.socialMediaButton}
-              onPress={() => alert('Connect with us on social media!')}
+              onPress={() => alert(t('connectWithUsSocial'))}
             >
               <View style={styles.socialMediaIconContainer}>
                 <FontAwesomeIcon icon={faShareAlt} size={20} color='#fff' />
@@ -858,14 +844,14 @@ export default function HomeScreen({ navigation }) {
             <View style={styles.socialIconsRow}>
               <TouchableOpacity
                 style={styles.socialIcon}
-                onPress={() => alert('Facebook page coming soon!')}
+                onPress={() => alert(t('facebookComingSoon'))}
               >
                 <FontAwesomeIcon icon={faFacebookF} size={18} color='#3b5998' />
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.socialIcon}
-                onPress={() => alert('Twitter page coming soon!')}
+                onPress={() => alert(t('twitterComingSoon'))}
               >
                 <FontAwesomeIcon
                   icon={faXTwitter}
@@ -876,14 +862,14 @@ export default function HomeScreen({ navigation }) {
 
               <TouchableOpacity
                 style={styles.socialIcon}
-                onPress={() => alert('Instagram page coming soon!')}
+                onPress={() => alert(t('instagramComingSoon'))}
               >
                 <FontAwesomeIcon icon={faInstagram} size={18} color='#C13584' />
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.socialIcon}
-                onPress={() => alert('YouTube channel coming soon!')}
+                onPress={() => alert(t('youtubeComingSoon'))}
               >
                 <FontAwesomeIcon icon={faYoutube} size={18} color='#FF0000' />
               </TouchableOpacity>

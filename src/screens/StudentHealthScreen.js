@@ -21,13 +21,14 @@ import {
   faCommentMedical,
   faUserMd,
   faInfoCircle,
-  faExclamationTriangle,
   faPhone,
   faEye,
-  faEar,
+  faEarDeaf,
   faUtensils,
   faAllergies,
   faFirstAid,
+  faRulerVertical,
+  faWeight,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -43,12 +44,13 @@ export default function StudentHealthScreen({ route, navigation }) {
   const fontSizes = getLanguageFontSizes(currentLanguage);
   const styles = createStyles(theme, fontSizes);
 
-  const { authCode, studentName } = route.params || {};
+  const { authCode } = route.params || {};
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [healthRecords, setHealthRecords] = useState([]);
   const [healthInfo, setHealthInfo] = useState(null);
+  const [measurements, setMeasurements] = useState(null);
   const [activeTab, setActiveTab] = useState('records'); // 'records' or 'info'
 
   useEffect(() => {
@@ -61,7 +63,7 @@ export default function StudentHealthScreen({ route, navigation }) {
       await Promise.all([loadHealthRecords(), loadHealthInfo()]);
     } catch (error) {
       console.error('Error loading health data:', error);
-      Alert.alert('Error', 'Failed to load health data. Please try again.');
+      Alert.alert(t('error'), t('failedToLoadHealthData'));
     } finally {
       setLoading(false);
     }
@@ -83,6 +85,7 @@ export default function StudentHealthScreen({ route, navigation }) {
       const response = await getStudentHealthInfo(authCode);
       if (response.success && response.data) {
         setHealthInfo(response.data.health_info);
+        setMeasurements(response.data.measurements);
       }
     } catch (error) {
       console.error('Error loading health info:', error);
@@ -155,7 +158,7 @@ export default function StudentHealthScreen({ route, navigation }) {
           <View style={styles.recordTextContainer}>
             <Text style={styles.recordLabel}>Reason:</Text>
             <Text style={styles.recordValue}>
-              {record.reason || 'Not specified'}
+              {record.reason || t('notSpecified')}
             </Text>
           </View>
         </View>
@@ -262,6 +265,40 @@ export default function StudentHealthScreen({ route, navigation }) {
     );
   };
 
+  const renderInfoRowWithDefault = (label, value, icon, defaultMessage) => {
+    const displayValue =
+      value && value !== 'None' && value !== 'No' && value !== null
+        ? value
+        : defaultMessage;
+
+    return (
+      <View style={styles.infoRow}>
+        {icon && (
+          <FontAwesomeIcon
+            icon={icon}
+            size={14}
+            color={theme.colors.textSecondary}
+          />
+        )}
+        <View style={styles.infoTextContainer}>
+          <Text style={styles.infoLabel}>{label}:</Text>
+          <Text
+            style={[
+              styles.infoValue,
+              (!value ||
+                value === 'None' ||
+                value === 'No' ||
+                value === null) &&
+                styles.infoValueDefault,
+            ]}
+          >
+            {displayValue}
+          </Text>
+        </View>
+      </View>
+    );
+  };
+
   const renderTabButton = (tabKey, title, icon) => (
     <TouchableOpacity
       style={[styles.tabButton, activeTab === tabKey && styles.activeTabButton]}
@@ -272,7 +309,7 @@ export default function StudentHealthScreen({ route, navigation }) {
         size={16}
         color={
           activeTab === tabKey
-            ? theme.colors.primary
+            ? theme.colors.headerText
             : theme.colors.textSecondary
         }
       />
@@ -308,7 +345,7 @@ export default function StudentHealthScreen({ route, navigation }) {
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size='large' color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading health data...</Text>
+          <Text style={styles.loadingText}>{t('loadingHealthData')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -335,8 +372,8 @@ export default function StudentHealthScreen({ route, navigation }) {
         {/* Tab Navigation Subheader */}
         <View style={styles.subHeader}>
           <View style={styles.tabContainer}>
-            {renderTabButton('records', 'Visit Records', faHeartbeat)}
-            {renderTabButton('info', 'Health Info', faInfoCircle)}
+            {renderTabButton('records', t('visitRecords'), faHeartbeat)}
+            {renderTabButton('info', t('healthInfo'), faInfoCircle)}
           </View>
         </View>
       </View>
@@ -372,16 +409,45 @@ export default function StudentHealthScreen({ route, navigation }) {
 
         {activeTab === 'info' && healthInfo && (
           <View style={styles.infoContainer}>
+            {/* Physical Measurements Section */}
+            {measurements?.has_measurements &&
+              renderHealthInfoSection(
+                'Physical Measurements',
+                faRulerVertical,
+                <>
+                  {measurements.latest_measurement && (
+                    <>
+                      {renderInfoRow(
+                        'Height',
+                        `${measurements.latest_measurement.height} cm`,
+                        faRulerVertical
+                      )}
+                      {renderInfoRow(
+                        'Weight',
+                        `${measurements.latest_measurement.weight} kg`,
+                        faWeight
+                      )}
+                      {renderInfoRow(
+                        'Last Measured',
+                        formatDate(measurements.latest_measurement.date),
+                        faCalendarAlt
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+
             {renderHealthInfoSection(
-              'Medical Conditions',
+              t('medicalConditions'),
               faCommentMedical,
               <>
                 {renderInfoRow(
-                  'Medical Conditions',
-                  healthInfo.medical_conditions
+                  t('medicalConditions'),
+                  healthInfo.medical_conditions,
+                  faCommentMedical
                 )}
                 {renderInfoRow(
-                  'Regular Medication',
+                  t('regularMedication'),
                   healthInfo.regularly_used_medication,
                   faPills
                 )}
@@ -389,45 +455,55 @@ export default function StudentHealthScreen({ route, navigation }) {
             )}
 
             {renderHealthInfoSection(
-              'Vision & Hearing',
+              t('visionAndHearing'),
               faEye,
               <>
-                {renderInfoRow(
-                  'Vision Problems',
+                {renderInfoRowWithDefault(
+                  t('visionProblems'),
                   healthInfo.has_vision_problem,
-                  faEye
+                  faEye,
+                  'No vision issue found'
                 )}
                 {healthInfo.vision_check_date &&
                   renderInfoRow(
-                    'Last Vision Check',
-                    formatDate(healthInfo.vision_check_date)
+                    t('lastVisionCheck'),
+                    formatDate(healthInfo.vision_check_date),
+                    
                   )}
-                {renderInfoRow(
-                  'Hearing Issues',
+                {renderInfoRowWithDefault(
+                  t('hearingIssues'),
                   healthInfo.hearing_issue,
-                  faEar
+                  faEarDeaf,
+                  'No hearing issue found'
                 )}
               </>
             )}
 
             {renderHealthInfoSection(
-              'Allergies & Food',
+              t('allergiesAndFood'),
               faAllergies,
               <>
                 {renderInfoRow(
-                  'Food Considerations',
+                  t('foodConsiderations'),
                   healthInfo.special_food_consideration,
                   faUtensils
                 )}
-                {renderInfoRow('Allergies', healthInfo.allergies, faAllergies)}
-                {renderInfoRow('Allergy Symptoms', healthInfo.allergy_symtoms)}
                 {renderInfoRow(
-                  'First Aid Instructions',
+                  t('allergies'),
+                  healthInfo.allergies,
+                  faAllergies
+                )}
+                {renderInfoRow(
+                  t('allergySymptoms'),
+                  healthInfo.allergy_symtoms
+                )}
+                {renderInfoRow(
+                  t('firstAidInstructions'),
                   healthInfo.allergy_first_aid,
                   faFirstAid
                 )}
                 {renderInfoRow(
-                  'Allowed Medications',
+                  t('allowedMedications'),
                   healthInfo.allowed_drugs,
                   faPills
                 )}
@@ -435,24 +511,27 @@ export default function StudentHealthScreen({ route, navigation }) {
             )}
 
             {renderHealthInfoSection(
-              'Emergency Contacts',
+              t('emergencyContacts'),
               faPhone,
               <>
                 {renderInfoRow(
-                  'Primary Contact',
+                  t('primaryContact'),
                   healthInfo.emergency_name_1,
                   faPhone
                 )}
                 {healthInfo.emergency_phone_1 &&
-                  renderInfoRow('Primary Phone', healthInfo.emergency_phone_1)}
+                  renderInfoRow(
+                    t('primaryPhone'),
+                    healthInfo.emergency_phone_1
+                  )}
                 {renderInfoRow(
-                  'Secondary Contact',
+                  t('secondaryContact'),
                   healthInfo.emergency_name_2,
                   faPhone
                 )}
                 {healthInfo.emergency_phone_2 &&
                   renderInfoRow(
-                    'Secondary Phone',
+                    t('secondaryPhone'),
                     healthInfo.emergency_phone_2
                   )}
               </>
@@ -700,7 +779,7 @@ const createStyles = (theme, fontSizes) =>
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: theme.colors.primaryLight,
-      paddingHorizontal: 16,
+      paddingHorizontal: 14,
       paddingVertical: 12,
     },
     infoSectionTitle: {
@@ -720,16 +799,23 @@ const createStyles = (theme, fontSizes) =>
     infoTextContainer: {
       flex: 1,
       marginLeft: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexWrap: 'wrap'
     },
     infoLabel: {
       fontSize: fontSizes.bodySmall,
       fontWeight: '600',
       color: theme.colors.textSecondary,
-      marginBottom: 2,
+      marginRight: 8,
     },
     infoValue: {
       fontSize: fontSizes.body,
       color: theme.colors.text,
       lineHeight: 20,
+    },
+    infoValueDefault: {
+      color: theme.colors.textSecondary,
+      fontStyle: 'italic',
     },
   });

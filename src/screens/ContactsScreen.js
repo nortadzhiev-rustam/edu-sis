@@ -300,7 +300,7 @@ export default function ContactsScreen({ navigation }) {
       }
     } catch (error) {
       console.error('Error fetching contacts data:', error);
-      setError('Unable to load contact information. Please try again.');
+      setError(t('unableToLoadContactInfo'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -377,7 +377,7 @@ export default function ContactsScreen({ navigation }) {
       <View style={styles.contactsContainer}>
         {renderContactItem(
           faPhone,
-          'Phone',
+          t('phone'),
           branch.branch_phone,
           () => handlePhonePress(branch.branch_phone),
           true
@@ -385,7 +385,7 @@ export default function ContactsScreen({ navigation }) {
 
         {renderContactItem(
           faEnvelope,
-          'Email',
+          t('email'),
           branch.branch_email,
           () => handleEmailPress(branch.branch_email),
           true
@@ -393,7 +393,7 @@ export default function ContactsScreen({ navigation }) {
 
         {renderContactItem(
           faMapMarkerAlt,
-          'Address',
+          t('address'),
           branch.branch_address,
           null,
           false
@@ -401,7 +401,7 @@ export default function ContactsScreen({ navigation }) {
 
         {renderContactItem(
           faGlobe,
-          'Website',
+          t('website'),
           branch.branch_website,
           () => handleWebsitePress(branch.branch_website),
           true

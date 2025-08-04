@@ -928,11 +928,11 @@ export default function GradesScreen({ navigation, route }) {
         const scoreDisplay =
           obtainedMarks !== null && obtainedMarks !== undefined && maxMarks
             ? `${obtainedMarks}/${maxMarks}`
-            : 'Not Graded';
+            : t('notGraded');
         const percentageDisplay =
           percentage !== null && percentage !== undefined
             ? `${percentage}%`
-            : 'Not Graded';
+            : t('notGraded');
 
         return {
           id: item.id || index + 1,
@@ -1195,10 +1195,13 @@ export default function GradesScreen({ navigation, route }) {
         <View style={styles.comingSoon}>
           <Text style={styles.comingSoonText}>
             {loading
-              ? 'Loading formative grades...'
+              ? t('loadingFormativeGrades')
               : selectedSubject
-              ? `No Life Skills grades available for ${selectedSubject}`
-              : 'No Life Skills grades available'}
+              ? t('noLifeSkillsGradesForSubject').replace(
+                  '{subject}',
+                  selectedSubject
+                )
+              : t('noLifeSkillsGrades')}
           </Text>
         </View>
       );
@@ -1261,7 +1264,7 @@ export default function GradesScreen({ navigation, route }) {
                 ? `${t('assessments')}`
                 : isLandscape
                 ? `${selectedSubject} - ${
-                    activeTab === 'summative' ? 'Summative' : 'Life Skills'
+                    activeTab === 'summative' ? t('summative') : t('lifeSkills')
                   }`
                 : selectedSubject.substring(0, 16) || t('grades')}
             </Text>
@@ -1289,8 +1292,8 @@ export default function GradesScreen({ navigation, route }) {
         {!showSubjectList && !isLandscape && (
           <View style={styles.subHeader}>
             <View style={styles.tabContainer}>
-              {renderTabButton('summative', 'Summative')}
-              {renderTabButton('formative', 'Life Skills')}
+              {renderTabButton('summative', t('summative'))}
+              {renderTabButton('formative', t('lifeSkills'))}
             </View>
           </View>
         )}
@@ -1324,8 +1327,6 @@ export default function GradesScreen({ navigation, route }) {
         ) : (
           // Show grades table for selected subject
           <View style={styles.gradesContainer}>
-           
-
             {/* Tab Content */}
             <View style={styles.scrollContainer}>
               {activeTab === 'summative'
@@ -1398,7 +1399,6 @@ const createStyles = (theme) =>
       color: '#fff',
       fontSize: 20,
       fontWeight: 'bold',
-     
     },
     headerRight: {
       flexDirection: 'row',
@@ -1762,7 +1762,7 @@ const createStyles = (theme) =>
     subjectHeader: {
       margin: 10,
     },
-   
+
     tabContainer: {
       flexDirection: 'row',
       backgroundColor: theme.colors.background,

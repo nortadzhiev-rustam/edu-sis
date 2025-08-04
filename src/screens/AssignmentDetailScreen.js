@@ -29,6 +29,7 @@ import {
   faExternalLinkAlt,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { buildApiUrl } from '../config/env';
 import { createSmallShadow } from '../utils/commonStyles';
 import { processHtmlContent } from '../utils/htmlUtils';
@@ -41,6 +42,7 @@ import {
 
 export default function AssignmentDetailScreen({ navigation, route }) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const { assignment, authCode } = route.params || {};
 
   const [submitting, setSubmitting] = useState(false);
@@ -94,10 +96,7 @@ export default function AssignmentDetailScreen({ navigation, route }) {
   // Submit assignment
   const submitAssignment = () => {
     if (!replyText.trim() && !selectedFile && !fileLink.trim()) {
-      Alert.alert(
-        'Error',
-        'Please provide either a written response, attach a file, or add a file link'
-      );
+      Alert.alert(t('error'), t('pleaseProvideResponse'));
       return;
     }
 
@@ -196,18 +195,18 @@ export default function AssignmentDetailScreen({ navigation, route }) {
               '\n\nNote: File upload failed, but your text response was submitted successfully.';
           }
 
-          Alert.alert('Success', alertMessage);
+          Alert.alert(t('success'), alertMessage);
           setReplyText('');
           setSelectedFile(null);
           setFileLink('');
           setShowUpdateForm(false);
         } else {
           Alert.alert(
-            'Error',
+            t('error'),
             response.message ||
               (isUpdate
-                ? 'Failed to update assignment'
-                : 'Failed to submit assignment')
+                ? t('failedToUpdateAssignment')
+                : t('failedToSubmitAssignment'))
           );
         }
       } catch (error) {
@@ -215,25 +214,21 @@ export default function AssignmentDetailScreen({ navigation, route }) {
 
         // Handle specific error cases
         if (error.message.includes('already been submitted')) {
-          Alert.alert(
-            'Already Submitted',
-            'This assignment has already been submitted.',
-            [
-              { text: 'OK', style: 'default' },
-              {
-                text: 'Contact Teacher',
-                style: 'default',
-                onPress: () => {
-                  Alert.alert(
-                    'Contact Teacher',
-                    'Please contact your teacher if you need to update your submission.'
-                  );
-                },
+          Alert.alert(t('alreadySubmitted'), t('assignmentAlreadySubmitted'), [
+            { text: t('ok'), style: 'default' },
+            {
+              text: t('contactTeacher'),
+              style: 'default',
+              onPress: () => {
+                Alert.alert(t('contactTeacher'), t('contactTeacherMessage'));
               },
-            ]
-          );
+            },
+          ]);
         } else {
-          Alert.alert('Error', `Failed to connect to server: ${error.message}`);
+          Alert.alert(
+            t('error'),
+            t('failedToConnectServer').replace('{error}', error.message)
+          );
         }
       } finally {
         setSubmitting(false);
@@ -245,14 +240,12 @@ export default function AssignmentDetailScreen({ navigation, route }) {
       assignmentData.is_completed && assignmentData.has_student_submission;
 
     Alert.alert(
-      isUpdate ? 'Update Assignment' : 'Submit Assignment',
-      isUpdate
-        ? 'Are you sure you want to update this assignment?'
-        : 'Are you sure you want to submit this assignment?',
+      isUpdate ? t('updateAssignment') : t('submitAssignment'),
+      isUpdate ? t('confirmUpdateAssignment') : t('confirmSubmitAssignment'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: isUpdate ? 'Update' : 'Submit',
+          text: isUpdate ? t('update') : t('submit'),
           style: 'default',
           onPress: () => {
             handleSubmit();
@@ -264,7 +257,7 @@ export default function AssignmentDetailScreen({ navigation, route }) {
 
   // Format date
   const formatDate = (dateString) => {
-    if (!dateString) return 'No date';
+    if (!dateString) return t('noDate');
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
@@ -289,7 +282,7 @@ export default function AssignmentDetailScreen({ navigation, route }) {
     if (!url) return;
 
     Linking.openURL(url).catch(() => {
-      Alert.alert('Error', 'Unable to open file link');
+      Alert.alert(t('error'), t('unableToOpenFileLink'));
     });
   };
 

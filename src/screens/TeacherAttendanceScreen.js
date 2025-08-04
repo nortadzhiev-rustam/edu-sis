@@ -21,11 +21,13 @@ import {
   faEdit,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Config, buildApiUrl } from '../config/env';
 import { getDemoTeacherAttendanceData } from '../services/demoModeService';
 
 export default function TeacherAttendanceScreen({ route, navigation }) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const styles = createStyles(theme);
 
   const {
@@ -158,15 +160,15 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
             setAttendanceSummary(data.attendance_summary);
           }
         } else {
-          Alert.alert('Error', 'Failed to load attendance details');
+          Alert.alert(t('error'), t('failedToLoadAttendanceDetails'));
           loadStudents(); // Fallback
         }
       } else {
-        Alert.alert('Error', 'Failed to load attendance details');
+        Alert.alert(t('error'), t('failedToLoadAttendanceDetails'));
         loadStudents(); // Fallback
       }
     } catch (error) {
-      Alert.alert('Error', 'Network error occurred while loading attendance');
+      Alert.alert(t('error'), t('networkErrorLoadingAttendance'));
       loadStudents(); // Fallback
     } finally {
       setLoading(false);
@@ -237,10 +239,10 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
           setHasChanges(true);
         }
       } else {
-        Alert.alert('Error', 'Failed to load students data');
+        Alert.alert(t('error'), t('failedToLoadStudentsData'));
       }
     } catch (error) {
-      Alert.alert('Error', 'Network error occurred while loading students');
+      Alert.alert(t('error'), t('networkErrorLoadingStudents'));
     } finally {
       setLoading(false);
     }
@@ -270,9 +272,12 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
     const unmarkedStudents = students.filter((s) => !s.attendance_status);
     if (unmarkedStudents.length > 0) {
       Alert.alert(
-        'Incomplete Attendance',
-        `Please mark attendance for all students. ${unmarkedStudents.length} student(s) remaining.`,
-        [{ text: 'OK' }]
+        t('incompleteAttendance'),
+        t('pleaseMarkAttendanceForAllStudents').replace(
+          '{count}',
+          unmarkedStudents.length
+        ),
+        [{ text: t('ok') }]
       );
       return;
     }
@@ -287,22 +292,18 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
         // Simulate network delay
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
-        Alert.alert(
-          'Success',
-          'Attendance has been submitted successfully! (Demo Mode)',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                // Call the callback if provided
-                if (onAttendanceSubmitted) {
-                  onAttendanceSubmitted();
-                }
-                navigation.goBack();
-              },
+        Alert.alert(t('success'), t('attendanceSubmittedSuccessfullyDemo'), [
+          {
+            text: t('ok'),
+            onPress: () => {
+              // Call the callback if provided
+              if (onAttendanceSubmitted) {
+                onAttendanceSubmitted();
+              }
+              navigation.goBack();
             },
-          ]
-        );
+          },
+        ]);
         setSubmitting(false);
         return;
       }
@@ -364,21 +365,21 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
           }
 
           Alert.alert(
-            'Success',
+            t('success'),
             isUpdate
-              ? 'Attendance updated successfully!'
-              : 'Attendance submitted successfully!',
+              ? t('attendanceUpdatedSuccessfully')
+              : t('attendanceSubmittedSuccessfully'),
             [
               {
-                text: 'OK',
+                text: t('ok'),
                 onPress: () => navigation.goBack(),
               },
             ]
           );
         } else {
           Alert.alert(
-            'Error',
-            result?.message || 'Failed to submit attendance'
+            t('error'),
+            result?.message || t('failedToSubmitAttendance')
           );
         }
       } else {
@@ -397,13 +398,13 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
           }): ${responseText.substring(0, 100)}`;
         }
 
-        Alert.alert('Error', errorMessage);
+        Alert.alert(t('error'), errorMessage);
       }
     } catch (error) {
       console.error('Submit attendance error:', error);
       Alert.alert(
-        'Error',
-        `Network error: ${error.message || 'Unknown error'}`
+        t('error'),
+        t('networkError') + `: ${error.message || t('unknownError')}`
       );
     } finally {
       setSubmitting(false);
@@ -452,7 +453,7 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
             </TouchableOpacity>
 
             <Text style={styles.headerTitle}>
-              {isUpdate ? 'Update Attendance' : 'Take Attendance'}
+              {isUpdate ? t('updateAttendance') : t('takeAttendance')}
             </Text>
 
             <View style={styles.headerRight} />
@@ -461,7 +462,7 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
 
         <View style={styles.loadingContainer}>
           <ActivityIndicator size='large' color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading students...</Text>
+          <Text style={styles.loadingText}>{t('loadingStudents')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -481,7 +482,7 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
           </TouchableOpacity>
 
           <Text style={styles.headerTitle}>
-            {isUpdate ? 'Update Attendance' : 'Take Attendance'}
+            {isUpdate ? t('updateAttendance') : t('takeAttendance')}
           </Text>
 
           <TouchableOpacity
@@ -615,7 +616,7 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
                         styles.selectedButtonText,
                     ]}
                   >
-                    Present
+                    {t('present')}
                   </Text>
                 </TouchableOpacity>
 
@@ -646,7 +647,7 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
                         styles.selectedButtonText,
                     ]}
                   >
-                    Late
+                    {t('late')}
                   </Text>
                 </TouchableOpacity>
 
@@ -677,7 +678,7 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
                         styles.selectedButtonText,
                     ]}
                   >
-                    Absent
+                    {t('absent')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -706,7 +707,7 @@ export default function TeacherAttendanceScreen({ route, navigation }) {
                 color='#fff'
               />
               <Text style={styles.submitButtonText}>
-                {isUpdate ? 'Update Attendance' : 'Submit Attendance'}
+                {isUpdate ? t('updateAttendance') : t('submitAttendance')}
               </Text>
             </>
           )}

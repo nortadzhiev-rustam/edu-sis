@@ -30,6 +30,17 @@ export { default as UserProfile } from './UserProfile';
 export { EmptyState, LoadingState, ErrorState } from './EmptyState';
 export { StatsRow, StatCard as StatsCard } from './StatsRow';
 export { MenuGrid, QuickActions, FeatureGrid } from './MenuGrid';
+
+// Chart Components
+export {
+  BarChart,
+  DoughnutChart,
+  chartColors,
+  defaultChartColors,
+  chartPresets,
+  formatChartData,
+  calculatePercentages,
+} from './charts';
 export {
   ResponsiveLayout,
   ResponsiveGrid,
