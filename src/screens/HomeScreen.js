@@ -659,11 +659,7 @@ export default function HomeScreen({ navigation }) {
         <Image source={logoSource} style={styles.logo} resizeMode='contain' />
 
         <Text style={styles.title}>{t('welcomeTo')}</Text>
-        <Image
-          source={schoolLogoSource}
-          style={styles.secondaryLogo}
-          resizeMode='contain'
-        />
+        
         <Text style={styles.subtitle}>{t('chooseYourRole')}</Text>
 
         {/* Debug info for iOS devices (only in development) */}

@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "EduNova School",
+    "name": "BFI",
     "slug": "edu-sis",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "default",
     "icon": "./assets/app_logo.png",
     "userInterfaceStyle": "light",
@@ -56,7 +56,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.edunovaasia.edusis",
       "buildNumber": "30",
-      "runtimeVersion": "1.0.0",
+      "runtimeVersion": "1.0.2",
       "googleServicesFile": "./GoogleService-Info.plist",
       "config": {
         "usesNonExemptEncryption": false
@@ -79,7 +79,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.edunovaasia.edusis",
-      "runtimeVersion": "1.0.1",
+      "runtimeVersion": "1.0.2",
       "googleServicesFile": "./google-services.json",
       "screenOrientation": "portrait",
       "compileSdkVersion": 35,
