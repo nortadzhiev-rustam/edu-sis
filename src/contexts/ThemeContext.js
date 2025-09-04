@@ -36,7 +36,7 @@ export const getLanguageFontSizes = (language) => {
     headerSubtitle: getFontSize(16, language),
 
     // Body text sizes
-    title: getFontSize(24, language),
+    title: getFontSize(32, language),
     subtitle: getFontSize(18, language),
     body: getFontSize(16, language),
     bodySmall: getFontSize(14, language),

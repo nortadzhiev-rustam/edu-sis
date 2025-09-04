@@ -4,13 +4,15 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
   Dimensions,
   Alert,
   AccessibilityInfo,
   PixelRatio,
+  Animated,
+  AppState,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
@@ -30,11 +32,11 @@ import {
   faYoutube,
 } from '@fortawesome/free-brands-svg-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import ReAnimated, { FadeInDown } from 'react-native-reanimated';
 import { Platform } from 'expo-modules-core';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import useThemeLogo, { useSchoolLogo } from '../hooks/useThemeLogo';
+import { useBranchLogo } from '../hooks/useThemeLogo';
 import {
   isIPad,
   getResponsiveFontSizes,
@@ -58,15 +60,81 @@ import {
   wrapWithTimeout,
   usePerformanceMonitoring,
 } from '../utils/performanceMonitor';
-
+import { Config } from '../config/env';
 const { width, height } = Dimensions.get('window');
 
 export default function HomeScreen({ navigation }) {
   const { theme } = useTheme();
   const { t, currentLanguage } = useLanguage();
   const fontSizes = getLanguageFontSizes(currentLanguage);
-  const logoSource = useThemeLogo();
-  const schoolLogoSource = useSchoolLogo();
+  const logoData = useBranchLogo();
+
+  // Helper function to check if animations should be reduced (with null safety)
+  const shouldReduceMotion = React.useMemo(() => {
+    return (
+      deviceState?.reduceMotion ||
+      false ||
+      (deviceState?.fontScale || 1) > 1.3 ||
+      deviceState?.screenReader ||
+      false
+    );
+  }, [
+    deviceState?.reduceMotion,
+    deviceState?.fontScale,
+    deviceState?.screenReader,
+  ]);
+
+  // Animation values for smooth logo transition
+  const appLogoOpacity = React.useRef(new Animated.Value(1)).current;
+  const appLogoScale = React.useRef(new Animated.Value(1)).current;
+  const branchLogoOpacity = React.useRef(new Animated.Value(0)).current;
+  const branchLogoScale = React.useRef(new Animated.Value(1.2)).current;
+
+  // Trigger logo transition animation (respecting accessibility settings)
+  React.useEffect(() => {
+    if (logoData.shouldTransition && logoData.hasBranchLogo) {
+      if (shouldReduceMotion) {
+        // Instant transition for accessibility
+        console.log(
+          '🏠 LOGO: Skipping animation due to accessibility settings'
+        );
+        appLogoOpacity.setValue(0);
+        appLogoScale.setValue(0.8);
+        branchLogoOpacity.setValue(1);
+        branchLogoScale.setValue(1);
+      } else {
+        // Liquid-like transition with spring animation
+        Animated.parallel([
+          // Fade out and scale down app logo
+          Animated.timing(appLogoOpacity, {
+            toValue: 0,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.spring(appLogoScale, {
+            toValue: 0.8,
+            tension: 100,
+            friction: 8,
+            useNativeDriver: true,
+          }),
+          // Fade in and scale branch logo
+          Animated.timing(branchLogoOpacity, {
+            toValue: 1,
+            duration: 1000,
+            delay: 200,
+            useNativeDriver: true,
+          }),
+          Animated.spring(branchLogoScale, {
+            toValue: 1,
+            tension: 80,
+            friction: 6,
+            delay: 200,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }
+    }
+  }, [logoData.shouldTransition, logoData.hasBranchLogo, shouldReduceMotion]);
 
   // iOS fallback state to ensure content appears
   const [contentVisible, setContentVisible] = React.useState(
@@ -91,6 +159,49 @@ export default function HomeScreen({ navigation }) {
 
   // Use performance monitoring
   const { logMetrics } = usePerformanceMonitoring();
+
+  // Refresh branch logo when screen comes into focus (e.g., after login or adding student)
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('🏠 HOME: Screen focused, refreshing branch logo');
+      logoData.refreshBranchData();
+    }, [logoData.refreshBranchData])
+  );
+
+  // Also listen for navigation state changes to catch immediate updates
+  React.useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      console.log('🏠 HOME: Navigation focus event, refreshing branch logo');
+      // Small delay to ensure AsyncStorage has been updated
+      setTimeout(() => {
+        logoData.refreshBranchData();
+      }, 100);
+    });
+
+    return unsubscribe;
+  }, [navigation, logoData.refreshBranchData]);
+
+  // Listen for app state changes to refresh logo when app comes back from background
+  React.useEffect(() => {
+    const handleAppStateChange = (nextAppState) => {
+      if (nextAppState === 'active') {
+        console.log('🏠 HOME: App became active, refreshing branch logo');
+        // Small delay to ensure any background updates have completed
+        setTimeout(() => {
+          logoData.refreshBranchData();
+        }, 200);
+      }
+    };
+
+    const subscription = AppState.addEventListener(
+      'change',
+      handleAppStateChange
+    );
+
+    return () => {
+      subscription?.remove();
+    };
+  }, [logoData.refreshBranchData]);
 
   // Comprehensive iOS accessibility and device state detection
   React.useEffect(() => {
@@ -656,26 +767,69 @@ export default function HomeScreen({ navigation }) {
       </TouchableOpacity>
 
       <View style={styles.content}>
-        <Image source={logoSource} style={styles.logo} resizeMode='contain' />
-
         <Text style={styles.title}>{t('welcomeTo')}</Text>
-        
+        {/* Logo with liquid transition effect */}
+        <View style={styles.logoContainer}>
+          <Animated.Image
+            source={logoData.appLogo}
+            style={[
+              styles.logo,
+              {
+                opacity:
+                  shouldReduceMotion && logoData.hasBranchLogo
+                    ? 0 // Hide app logo immediately if reduce motion and branch logo available
+                    : appLogoOpacity,
+                transform: [
+                  {
+                    scale: appLogoScale,
+                  },
+                ],
+              },
+            ]}
+            resizeMode='contain'
+          />
+          {logoData.hasBranchLogo && (
+            <Animated.Image
+              source={logoData.branchLogo}
+              style={[
+                styles.logo,
+                styles.branchLogoOverlay,
+                {
+                  opacity: shouldReduceMotion
+                    ? 1 // Show branch logo immediately if reduce motion
+                    : branchLogoOpacity,
+                  transform: [
+                    {
+                      scale: shouldReduceMotion
+                        ? 1 // Normal scale if reduce motion
+                        : branchLogoScale,
+                    },
+                  ],
+                },
+              ]}
+              resizeMode='contain'
+            />
+          )}
+        </View>
+
         <Text style={styles.subtitle}>{t('chooseYourRole')}</Text>
 
         {/* Debug info for iOS devices (only in development) */}
-        {__DEV__ && Platform.OS === 'ios' && (
-          <Text style={styles.debugText}>Debug: {deviceState.debugInfo}</Text>
-        )}
+        {/* {__DEV__ && Platform.OS === 'ios' && (
+          <Text style={styles.debugText}>Debug: {deviceState?.debugInfo || 'Loading...'}</Text>
+        )} */}
 
-        <Animated.View
+        <ReAnimated.View
           key={
             Platform.OS === 'ios'
-              ? `ios-content-${contentVisible}-${deviceState.debugInfo}`
+              ? `ios-content-${contentVisible}-${
+                  deviceState?.debugInfo || 'unknown'
+                }`
               : 'android-content'
           }
           entering={
             Platform.OS === 'ios'
-              ? deviceState.reduceMotion || deviceState.fontScale > 1.3
+              ? shouldReduceMotion
                 ? undefined // Skip animation for accessibility settings
                 : FadeInDown.delay(0).springify() // No delay on iOS
               : FadeInDown.delay(300).springify()
@@ -683,8 +837,9 @@ export default function HomeScreen({ navigation }) {
           style={[
             styles.buttonsContainer,
             Platform.OS === 'ios' && {
-              opacity: contentVisible ? 1 : 0.3, // Minimum opacity to ensure visibility
-              minHeight: deviceState.fontScale > 1.3 ? 500 : 400, // Adjust height for large fonts
+              // Ensure visibility when animations are disabled
+              opacity: shouldReduceMotion ? 1 : contentVisible ? 1 : 0.3,
+              minHeight: (deviceState?.fontScale || 1) > 1.3 ? 500 : 400, // Adjust height for large fonts
             },
           ]}
         >
@@ -871,7 +1026,12 @@ export default function HomeScreen({ navigation }) {
               </TouchableOpacity>
             </View>
           </View>
-        </Animated.View>
+          {/* copyright with version */}
+          <Text style={styles.copyright}>
+            © {new Date().getFullYear()} Powered by EduNova. {t('version')}{' '}
+            {Config.APP.VERSION}
+          </Text>
+        </ReAnimated.View>
       </View>
     </SafeAreaView>
   );
@@ -916,12 +1076,25 @@ const createStyles = (
       paddingBottom: 10, // Extra padding for landscape scrolling
       minHeight: '100%', // Ensure content takes full height
     },
-    logo: {
-      width: isIPadDevice ? Math.min(width * 0.3, 300) : width * 0.4,
+    logoContainer: {
+      position: 'relative',
+      width: isIPadDevice ? Math.min(width * 0.3, 300) : width * 0.6,
       height: isIPadDevice ? Math.min(height * 0.12, 150) : height * 0.15,
-      // marginTop: isIPadDevice ? height * 0.03 : height * 0.001,
-      marginBottom: isIPadDevice ? responsiveSpacing.lg : 20,
+      marginBottom: isIPadDevice ? responsiveSpacing.lg : 5,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    logo: {
+      width: '100%',
+      height: '100%',
       ...createMediumShadow(theme),
+    },
+    branchLogoOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
     },
     secondaryLogo: {
       width: isIPadDevice ? Math.min(width * 0.2, 200) : width * 0.3,
@@ -930,7 +1103,7 @@ const createStyles = (
     title: {
       fontSize: isIPadDevice ? responsiveFonts.largeTitle : fontSizes.title,
       fontWeight: 'bold',
-      color: theme.colors.text,
+      color: theme.colors.primary,
 
       textAlign: 'center',
     },
@@ -1007,10 +1180,10 @@ const createStyles = (
     resourceButton: {
       backgroundColor: theme.colors.surface,
       borderRadius: 12,
-      padding: 15,
+      padding: 10,
       marginBottom: 15,
       width: '48%',
-      minHeight: 70,
+      minHeight: 60,
       flexDirection: 'row',
       alignItems: 'center',
       ...theme.shadows.small,
@@ -1034,7 +1207,7 @@ const createStyles = (
     },
     socialMediaSection: {
       width: '100%',
-      marginTop: 10,
+      marginTop: 5,
       marginBottom: 30,
       alignItems: 'center',
       justifyContent: 'center',
@@ -1082,5 +1255,12 @@ const createStyles = (
       marginBottom: 10,
       paddingHorizontal: 20,
       fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    },
+    copyright: {
+      fontSize: 10,
+      color: theme.colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: 10,
+      paddingHorizontal: 20,
     },
   });

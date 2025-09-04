@@ -10,6 +10,8 @@ import {
   ScrollView,
   Platform,
   Dimensions,
+  AccessibilityInfo,
+  PixelRatio,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -152,7 +154,6 @@ const getMenuItems = (t) => [
   //   disabled: false,
   //   comingSoon: false,
   // },
-  
 ];
 
 export default function ParentScreen({ navigation }) {
@@ -172,10 +173,63 @@ export default function ParentScreen({ navigation }) {
   const flatListRef = React.useRef(null);
   const notificationsLoadedRef = React.useRef(new Set());
 
+  // Accessibility state for reduce motion support
+  const [accessibilityState, setAccessibilityState] = useState({
+    reduceMotion: false,
+    fontScale: 1.0,
+    screenReader: false,
+  });
+
   // Parent notifications hook
   const { selectStudent, refreshAllStudents } = useParentNotifications();
 
   const styles = createStyles(theme, fontSizes);
+
+  // Detect accessibility settings on component mount
+  useEffect(() => {
+    const detectAccessibilitySettings = async () => {
+      try {
+        const [reduceMotion, screenReader] = await Promise.all([
+          AccessibilityInfo.isReduceMotionEnabled(),
+          AccessibilityInfo.isScreenReaderEnabled(),
+        ]);
+
+        const fontScale = PixelRatio.getFontScale();
+
+        setAccessibilityState({
+          reduceMotion,
+          fontScale,
+          screenReader,
+        });
+
+        console.log('📱 PARENT: Accessibility settings detected:', {
+          reduceMotion,
+          fontScale,
+          screenReader,
+        });
+      } catch (error) {
+        console.error(
+          '📱 PARENT: Error detecting accessibility settings:',
+          error
+        );
+      }
+    };
+
+    detectAccessibilitySettings();
+  }, []);
+
+  // Helper to check if animations should be reduced
+  const shouldReduceMotion = React.useMemo(() => {
+    return (
+      accessibilityState.reduceMotion ||
+      accessibilityState.fontScale > 1.3 ||
+      accessibilityState.screenReader
+    );
+  }, [
+    accessibilityState.reduceMotion,
+    accessibilityState.fontScale,
+    accessibilityState.screenReader,
+  ]);
 
   // Refresh notifications when screen comes into focus
   useFocusEffect(
@@ -751,7 +805,7 @@ export default function ParentScreen({ navigation }) {
                     const nextIndex = (currentIndex + 1) % students.length;
                     flatListRef.current.scrollToIndex({
                       index: nextIndex,
-                      animated: true,
+                      animated: !shouldReduceMotion, // Respect reduce motion setting
                     });
                   }
                 }}
@@ -790,7 +844,7 @@ export default function ParentScreen({ navigation }) {
                         info.highestMeasuredFrameIndex,
                         students.length - 1
                       ),
-                      animated: true,
+                      animated: !shouldReduceMotion, // Respect reduce motion setting
                     });
                   }
                 }, 100);
@@ -823,7 +877,7 @@ export default function ParentScreen({ navigation }) {
               const totalItems = menuItems.length;
 
               // Calculate columns per row based on device type
-              let itemsPerRow = 3; // Default for mobile
+              let itemsPerRow = 3; // Default for mobile (Android should show 3 per row)
               if (isIPadDevice && isLandscape) {
                 itemsPerRow = 6;
               } else if (isTabletDevice && isLandscape) {
@@ -844,7 +898,7 @@ export default function ParentScreen({ navigation }) {
               const shouldExpand = isLastRow && isLastInRow && isIncompleteRow;
 
               // Calculate minimum height based on device type
-              let minHeight = (screenWidth - 30) / 3 - 8; // Default mobile
+              let minHeight = (screenWidth - 20 - 20) / 3 - 8; // Default mobile (matches actionTile width)
               if (isIPadDevice && isLandscape) {
                 minHeight = (screenWidth - 100) / 6 - 6;
               } else if (isTabletDevice && isLandscape) {
@@ -1252,8 +1306,8 @@ const createStyles = (theme, fontSizes) =>
       gap: Math.max(8, (screenWidth - 90 - ((screenWidth - 90) / 6) * 6) / 5), // Dynamic gap for 6 tiles
     },
     actionTile: {
-      width: (screenWidth - 30) / 3 - 8, // 3 tiles per row: screen width - padding (24*2) - margins (8*3) / 3
-      minWidth: (screenWidth - 30) / 3 - 8, // Minimum width for flex expansion
+      width: (screenWidth - 20 - 20) / 3 - 5, // 3 tiles per row: screen width - content padding (10*2) - grid padding (10*2) - margins (8) / 3
+      minWidth: (screenWidth - 20 - 20) / 3 - 8, // Minimum width for flex expansion
       aspectRatio: 1, // Square tiles
       borderRadius: 20, // Slightly smaller border radius for smaller tiles
       padding: 14, // Reduced padding for smaller tiles
@@ -1428,7 +1482,7 @@ const createStyles = (theme, fontSizes) =>
       backgroundColor: theme.colors.surface,
       borderRadius: 12,
       padding: 12,
-      width: (screenWidth - 48) / 3 - 8, // 3 tiles per row: screen width - padding (24*2) - margins (8*3) / 3
+      width: (screenWidth - 20 - 20) / 3 - 8, // 3 tiles per row: screen width - content padding (10*2) - grid padding (10*2) - margins (8) / 3
       aspectRatio: 1, // Square items
       alignItems: 'center',
       justifyContent: 'center', // Center content vertically

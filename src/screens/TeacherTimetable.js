@@ -14,6 +14,8 @@ import {
   Alert,
   RefreshControl,
   Animated,
+  AccessibilityInfo,
+  PixelRatio,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -45,6 +47,13 @@ export default function TeacherTimetable({ route, navigation }) {
 
   const [timetableData, setTimetableData] = useState(initialData);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Accessibility state for reduce motion support
+  const [accessibilityState, setAccessibilityState] = useState({
+    reduceMotion: false,
+    fontScale: 1.0,
+    screenReader: false,
+  });
 
   // Initialize selectedBranchId - prioritize new parameter, fallback to index-based
   const [selectedBranchId, setSelectedBranchId] = useState(() => {
@@ -80,8 +89,62 @@ export default function TeacherTimetable({ route, navigation }) {
     [1, 2, 3, 4, 5].map(() => new Animated.Value(1))
   ).current;
 
-  // Start pulsing animation for today tab
+  // Detect accessibility settings on component mount
   useEffect(() => {
+    const detectAccessibilitySettings = async () => {
+      try {
+        const [reduceMotion, screenReader] = await Promise.all([
+          AccessibilityInfo.isReduceMotionEnabled(),
+          AccessibilityInfo.isScreenReaderEnabled(),
+        ]);
+
+        const fontScale = PixelRatio.getFontScale();
+
+        setAccessibilityState({
+          reduceMotion,
+          fontScale,
+          screenReader,
+        });
+
+        console.log('📅 TIMETABLE: Accessibility settings detected:', {
+          reduceMotion,
+          fontScale,
+          screenReader,
+        });
+      } catch (error) {
+        console.error(
+          '📅 TIMETABLE: Error detecting accessibility settings:',
+          error
+        );
+      }
+    };
+
+    detectAccessibilitySettings();
+  }, []);
+
+  // Helper to check if animations should be reduced
+  const shouldReduceMotion = useMemo(() => {
+    return (
+      accessibilityState.reduceMotion ||
+      accessibilityState.fontScale > 1.3 ||
+      accessibilityState.screenReader
+    );
+  }, [
+    accessibilityState.reduceMotion,
+    accessibilityState.fontScale,
+    accessibilityState.screenReader,
+  ]);
+
+  // Start pulsing animation for today tab (respecting accessibility settings)
+  useEffect(() => {
+    if (shouldReduceMotion) {
+      // Skip animation if reduce motion is enabled
+      console.log(
+        '📅 TIMETABLE: Skipping pulse animation due to accessibility settings'
+      );
+      return;
+    }
+
     const pulseAnimation = Animated.loop(
       Animated.sequence([
         Animated.timing(todayTabAnimation, {
@@ -100,43 +163,55 @@ export default function TeacherTimetable({ route, navigation }) {
     pulseAnimation.start();
 
     return () => pulseAnimation.stop();
-  }, [todayTabAnimation]);
+  }, [todayTabAnimation, shouldReduceMotion]);
 
-  // Animate tab indicator position when selected day changes
+  // Animate tab indicator position when selected day changes (respecting accessibility settings)
   useEffect(() => {
     const targetPosition = selectedDay - 1; // 0, 1, 2, 3, 4 for days 1-5
-    Animated.spring(tabIndicatorPosition, {
-      toValue: targetPosition,
-      useNativeDriver: false,
-      tension: 100,
-      friction: 8,
-    }).start();
-  }, [selectedDay, tabIndicatorPosition]);
 
-  // Animated day change function for day tabs
+    if (shouldReduceMotion) {
+      // Instant position change if reduce motion is enabled
+      tabIndicatorPosition.setValue(targetPosition);
+    } else {
+      // Smooth spring animation
+      Animated.spring(tabIndicatorPosition, {
+        toValue: targetPosition,
+        useNativeDriver: false,
+        tension: 100,
+        friction: 8,
+      }).start();
+    }
+  }, [selectedDay, tabIndicatorPosition, shouldReduceMotion]);
+
+  // Animated day change function for day tabs (respecting accessibility settings)
   const animateToDay = useCallback(
     (newDay) => {
       if (newDay === selectedDay) return;
 
-      // Animate tab scale
-      const tabIndex = newDay - 1;
-      Animated.sequence([
-        Animated.timing(tabScaleAnimations[tabIndex], {
-          toValue: 0.95,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-        Animated.timing(tabScaleAnimations[tabIndex], {
-          toValue: 1,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      if (shouldReduceMotion) {
+        // Skip tab scale animation if reduce motion is enabled
+        setSelectedDay(newDay);
+      } else {
+        // Animate tab scale
+        const tabIndex = newDay - 1;
+        Animated.sequence([
+          Animated.timing(tabScaleAnimations[tabIndex], {
+            toValue: 0.95,
+            duration: 100,
+            useNativeDriver: true,
+          }),
+          Animated.timing(tabScaleAnimations[tabIndex], {
+            toValue: 1,
+            duration: 150,
+            useNativeDriver: true,
+          }),
+        ]).start();
 
-      // Change the selected day (no content animation)
-      setSelectedDay(newDay);
+        // Change the selected day (no content animation)
+        setSelectedDay(newDay);
+      }
     },
-    [selectedDay, tabScaleAnimations]
+    [selectedDay, tabScaleAnimations, shouldReduceMotion]
   );
 
   // Fetch fresh timetable data
