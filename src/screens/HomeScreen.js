@@ -36,7 +36,7 @@ import ReAnimated, { FadeInDown } from 'react-native-reanimated';
 import { Platform } from 'expo-modules-core';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { useBranchLogo } from '../hooks/useThemeLogo';
+import { useBranchLogo, useSchoolLogo } from '../hooks/useThemeLogo';
 import {
   isIPad,
   getResponsiveFontSizes,
@@ -68,6 +68,7 @@ export default function HomeScreen({ navigation }) {
   const { t, currentLanguage } = useLanguage();
   const fontSizes = getLanguageFontSizes(currentLanguage);
   const logoData = useBranchLogo();
+  const schoolLogo = useSchoolLogo();
 
   // Helper function to check if animations should be reduced (with null safety)
   const shouldReduceMotion = React.useMemo(() => {
@@ -1026,11 +1027,21 @@ export default function HomeScreen({ navigation }) {
               </TouchableOpacity>
             </View>
           </View>
-          {/* copyright with version */}
-          <Text style={styles.copyright}>
-            © {new Date().getFullYear()} Powered by EduNova. {t('version')}{' '}
-            {Config.APP.VERSION}
-          </Text>
+          {/* copyright with version and logo */}
+          <View style={styles.copyrightContainer}>
+            <Text style={styles.copyright}>
+              © {new Date().getFullYear()} Powered by{' '}
+            </Text>
+            <Animated.Image
+              source={schoolLogo}
+              style={styles.copyrightLogo}
+              resizeMode='contain'
+            />
+            <Text style={styles.copyright}>
+              {' '}
+              {t('version')} {Config.APP.VERSION}
+            </Text>
+          </View>
         </ReAnimated.View>
       </View>
     </SafeAreaView>
@@ -1256,11 +1267,22 @@ const createStyles = (
       paddingHorizontal: 20,
       fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
     },
+    copyrightContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 10,
+      paddingHorizontal: 10,
+      flexWrap: 'wrap', // Allow wrapping on small screens
+    },
     copyright: {
       fontSize: 10,
       color: theme.colors.textSecondary,
       textAlign: 'center',
-      marginBottom: 10,
-      paddingHorizontal: 20,
+    },
+    copyrightLogo: {
+      height: 50,
+      width: 50, // Add width to maintain aspect ratio
+      marginHorizontal: 2,
     },
   });
