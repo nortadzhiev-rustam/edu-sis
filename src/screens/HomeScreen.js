@@ -1037,10 +1037,10 @@ export default function HomeScreen({ navigation }) {
               style={styles.copyrightLogo}
               resizeMode='contain'
             />
-            <Text style={styles.copyright}>
+            {/* <Text style={styles.copyright}>
               {' '}
               {t('version')} {Config.APP.VERSION}
-            </Text>
+            </Text> */}
           </View>
         </ReAnimated.View>
       </View>
@@ -1219,7 +1219,7 @@ const createStyles = (
     socialMediaSection: {
       width: '100%',
       marginTop: 5,
-      marginBottom: 30,
+      marginBottom: 5,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -1276,13 +1276,13 @@ const createStyles = (
       flexWrap: 'wrap', // Allow wrapping on small screens
     },
     copyright: {
-      fontSize: 10,
+      fontSize: 16,
       color: theme.colors.textSecondary,
       textAlign: 'center',
     },
     copyrightLogo: {
-      height: 50,
-      width: 50, // Add width to maintain aspect ratio
+      height: 80,
+      width: 80, // Add width to maintain aspect ratio
       marginHorizontal: 2,
     },
   });
