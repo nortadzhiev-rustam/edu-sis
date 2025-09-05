@@ -1219,6 +1219,51 @@ export default function GradesScreen({ navigation, route }) {
 
     return (
       <View style={styles.modernGradesContainer}>
+        {/* Grade Codes Explanation */}
+        <View style={styles.gradeCodesContainer}>
+          <Text style={styles.gradeCodesTitle}>
+            {t('gradeCodesExplanation')}
+          </Text>
+          <View style={styles.gradeCodesGrid}>
+            <View style={styles.gradeCodeItem}>
+              <View
+                style={[styles.gradeCodeDot, { backgroundColor: '#34C759' }]}
+              />
+              <Text style={styles.gradeCodeLabel}>EE</Text>
+              <Text style={styles.gradeCodeDescription}>
+                {t('exceedingExpectations')}
+              </Text>
+            </View>
+            <View style={styles.gradeCodeItem}>
+              <View
+                style={[styles.gradeCodeDot, { backgroundColor: '#FF9500' }]}
+              />
+              <Text style={styles.gradeCodeLabel}>ME</Text>
+              <Text style={styles.gradeCodeDescription}>
+                {t('meetingExpectations')}
+              </Text>
+            </View>
+            <View style={styles.gradeCodeItem}>
+              <View
+                style={[styles.gradeCodeDot, { backgroundColor: '#007AFF' }]}
+              />
+              <Text style={styles.gradeCodeLabel}>AE</Text>
+              <Text style={styles.gradeCodeDescription}>
+                {t('approachingExpectations')}
+              </Text>
+            </View>
+            <View style={styles.gradeCodeItem}>
+              <View
+                style={[styles.gradeCodeDot, { backgroundColor: '#FF3B30' }]}
+              />
+              <Text style={styles.gradeCodeLabel}>BE</Text>
+              <Text style={styles.gradeCodeDescription}>
+                {t('belowExpectations')}
+              </Text>
+            </View>
+          </View>
+        </View>
+
         <FlatList
           data={paginatedData}
           renderItem={renderGradeCard}
@@ -2030,5 +2075,57 @@ const createStyles = (theme) =>
       fontSize: 12,
       color: theme.colors.textSecondary,
       marginTop: 2,
+    },
+    // Grade Codes Explanation Styles
+    gradeCodesContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 12,
+      padding: 16,
+      marginHorizontal: 16,
+      marginBottom: 16,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 3.84,
+      elevation: 5,
+    },
+    gradeCodesTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.colors.text,
+      marginBottom: 12,
+      textAlign: 'center',
+    },
+    gradeCodesGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+    },
+    gradeCodeItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      width: '48%',
+      marginBottom: 8,
+    },
+    gradeCodeDot: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      marginRight: 8,
+    },
+    gradeCodeLabel: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.colors.text,
+      minWidth: 24,
+      marginRight: 8,
+    },
+    gradeCodeDescription: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      flex: 1,
     },
   });

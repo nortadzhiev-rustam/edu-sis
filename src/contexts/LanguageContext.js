@@ -714,6 +714,11 @@ const translations = {
     summative: 'Summative',
     lifeSkills: 'Life Skills',
     notGraded: 'Not Graded',
+    gradeCodesExplanation: 'Grade Codes Explanation',
+    exceedingExpectations: 'Exceeding Expectations',
+    meetingExpectations: 'Meeting Expectations',
+    approachingExpectations: 'Approaching Expectations',
+    belowExpectations: 'Below Expectations',
 
     // Library Screen
     authenticationRequired: 'Authentication required',
@@ -1453,6 +1458,11 @@ const translations = {
     summative: 'အပေါင်းအမှတ်',
     lifeSkills: 'ဘဝကျွမ်းကျင်မှု',
     notGraded: 'အမှတ်မပေးရသေး',
+    gradeCodesExplanation: 'အမှတ်ကုဒ်များ ရှင်းလင်းချက်',
+    exceedingExpectations: 'မျှော်လင့်ချက်ထက် ကျော်လွန်',
+    meetingExpectations: 'မျှော်လင့်ချက်နှင့် ကိုက်ညီ',
+    approachingExpectations: 'မျှော်လင့်ချက်နှင့် နီးကပ်',
+    belowExpectations: 'မျှော်လင့်ချက်အောက်',
 
     // Library Screen
     authenticationRequired: 'အထောက်အထားပြရန် လိုအပ်သည်',
@@ -2149,6 +2159,11 @@ const translations = {
     summative: '总结性评价',
     lifeSkills: '生活技能',
     notGraded: '未评分',
+    gradeCodesExplanation: '成绩代码说明',
+    exceedingExpectations: '超出预期',
+    meetingExpectations: '达到预期',
+    approachingExpectations: '接近预期',
+    belowExpectations: '低于预期',
 
     // Library Screen
     authenticationRequired: '需要身份验证',
@@ -2865,6 +2880,11 @@ const translations = {
     summative: 'การประเมินรวม',
     lifeSkills: 'ทักษะชีวิต',
     notGraded: 'ยังไม่ได้ให้คะแนน',
+    gradeCodesExplanation: 'คำอธิบายรหัสเกรด',
+    exceedingExpectations: 'เกินความคาดหวัง',
+    meetingExpectations: 'ตรงตามความคาดหวัง',
+    approachingExpectations: 'ใกล้เคียงความคาดหวัง',
+    belowExpectations: 'ต่ำกว่าความคาดหวัง',
 
     // Library Screen
     authenticationRequired: 'ต้องการการยืนยันตัวตน',
