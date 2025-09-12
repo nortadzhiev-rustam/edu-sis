@@ -2,7 +2,7 @@
   "expo": {
     "name": "BFI",
     "slug": "edu-sis",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "default",
     "icon": "./assets/app_logo.png",
     "userInterfaceStyle": "light",
@@ -37,7 +37,9 @@
             "compileSdkVersion": 35,
             "targetSdkVersion": 35,
             "minSdkVersion": 24,
-            "buildToolsVersion": "35.0.0"
+            "buildToolsVersion": "35.0.0",
+            "ndkVersion": "28.0.12433566",
+            "enableFlexiblePageSizes": true
           }
         }
       ]

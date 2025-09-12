@@ -93,6 +93,11 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 31
         versionName "1.0.2"
+
+        // Enable 16KB page size support
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+        }
     }
     signingConfigs {
         debug {
@@ -120,6 +125,9 @@ android {
         jniLibs {
             useLegacyPackaging (findProperty('expo.useLegacyPackaging')?.toBoolean() ?: false)
         }
+        // Ensure proper alignment for 16KB page sizes
+        doNotStrip "*/arm64-v8a/*.so"
+        doNotStrip "*/x86_64/*.so"
     }
     androidResources {
         ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'
