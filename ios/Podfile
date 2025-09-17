@@ -30,8 +30,12 @@ target 'BFI' do
 
   config = use_native_modules!(config_command)
 
-  use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
-  use_frameworks! :linkage => ENV['USE_FRAMEWORKS'].to_sym if ENV['USE_FRAMEWORKS']
+  # When using use_frameworks with RN 0.81 + New Architecture, mark Firebase pods modular
+  pod 'Firebase', :modular_headers => true
+  pod 'FirebaseCore', :modular_headers => true
+  pod 'FirebaseCoreInternal', :modular_headers => true
+  pod 'FirebaseMessaging', :modular_headers => true
+  pod 'GoogleUtilities', :modular_headers => true
 
   use_react_native!(
     :path => config[:reactNativePath],
@@ -48,5 +52,29 @@ target 'BFI' do
       :mac_catalyst_enabled => false,
       :ccache_enabled => podfile_properties['apple.ccacheEnabled'] == 'true',
     )
+
+    # Allow RNFirebase to import React headers when building as frameworks
+    installer.pods_project.targets.each do |target|
+      if ['RNFBApp', 'RNFBMessaging'].include?(target.name)
+        target.build_configurations.each do |config|
+          config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+          config.build_settings['DEFINES_MODULE'] = 'YES'
+          config.build_settings['HEADER_SEARCH_PATHS'] = [
+            '$(inherited)',
+            '"${PODS_ROOT}/Headers/Public/RNFBApp"',
+            '"${PODS_ROOT}/Headers/Public/React-Core"',
+            '"${PODS_ROOT}/Headers/Public/React-Core/React"'
+          ].join(' ')
+        end
+      end
+    end
+  end
+
+  post_integrate do |installer|
+    begin
+      expo_patch_react_imports!(installer)
+    rescue => e
+      Pod::UI.warn e
+    end
   end
 end

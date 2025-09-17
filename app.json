@@ -30,9 +30,6 @@
       [
         "expo-build-properties",
         {
-          "ios": {
-            "useFrameworks": "static"
-          },
           "android": {
             "compileSdkVersion": 35,
             "targetSdkVersion": 35,
@@ -83,10 +80,6 @@
       "package": "com.edunovaasia.edusis",
       "runtimeVersion": "1.0.2",
       "googleServicesFile": "./google-services.json",
-      "screenOrientation": "portrait",
-      "compileSdkVersion": 35,
-      "targetSdkVersion": 35,
-      "minSdkVersion": 24,
       "versionCode": 31
     },
     "web": {
