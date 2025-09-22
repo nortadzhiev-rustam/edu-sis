@@ -15,6 +15,7 @@
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		D84D5323AB2CD38754D22E39 /* libPods-BFI.a in Frameworks */ = {isa = PBXBuildFile; fileRef = AFB0729EBF7447B16FB27A99 /* libPods-BFI.a */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
+		365DCE5FE3D64A4DB993E45A /* bfi-app-logo.icon in Resources */ = {isa = PBXBuildFile; fileRef = 4BC3BAFB97FB4412AD670F97 /* bfi-app-logo.icon */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +33,7 @@
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = BFI/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* BFI-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "BFI-Bridging-Header.h"; path = "BFI/BFI-Bridging-Header.h"; sourceTree = "<group>"; };
 		F92C3DD3AD5B5F03F81559AE /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-BFI/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		4BC3BAFB97FB4412AD670F97 /* bfi-app-logo.icon */ = {isa = PBXFileReference; name = "bfi-app-logo.icon"; path = "BFI/bfi-app-logo.icon"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +59,7 @@
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
 				34C7E17FD67E4108B2E6C392 /* GoogleService-Info.plist */,
 				172C9345A1047CC1563BEEAC /* PrivacyInfo.xcprivacy */,
+				4BC3BAFB97FB4412AD670F97 /* bfi-app-logo.icon */,
 			);
 			name = BFI;
 			sourceTree = "<group>";
@@ -201,6 +204,7 @@
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
 				92D454582CCE45B69265B003 /* GoogleService-Info.plist in Resources */,
 				07BE9424E4A08A05A5299470 /* PrivacyInfo.xcprivacy in Resources */,
+				365DCE5FE3D64A4DB993E45A /* bfi-app-logo.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -396,7 +400,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 1CCBC36FB6558EF9D1001CAF /* Pods-BFI.debug.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = bfi-app-logo;
 				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = BFI/BFI.entitlements;
@@ -421,7 +425,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.edunovaasia.edusis;
-				PRODUCT_NAME = BFI;
+				PRODUCT_NAME = "BFI";
 				SWIFT_OBJC_BRIDGING_HEADER = "BFI/BFI-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -434,7 +438,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = E5CDACD3BAC2D7A2D097E719 /* Pods-BFI.release.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = bfi-app-logo;
 				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = BFI/BFI.entitlements;
@@ -454,7 +458,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.edunovaasia.edusis;
-				PRODUCT_NAME = BFI;
+				PRODUCT_NAME = "BFI";
 				SWIFT_OBJC_BRIDGING_HEADER = "BFI/BFI-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -535,6 +539,7 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				USE_HERMES = true;
+				ASSETCATALOG_COMPILER_APPICON_NAME = bfi-app-logo;
 			};
 			name = Debug;
 		};
@@ -603,6 +608,7 @@
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				USE_HERMES = true;
 				VALIDATE_PRODUCT = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = bfi-app-logo;
 			};
 			name = Release;
 		};

@@ -57,6 +57,7 @@
       "buildNumber": "30",
       "runtimeVersion": "1.0.2",
       "googleServicesFile": "./GoogleService-Info.plist",
+      "icon": "./assets/bfi-app-logo.icon",
       "config": {
         "usesNonExemptEncryption": false
       },
