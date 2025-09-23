@@ -156,8 +156,8 @@ export const Config = {
 
   // App Configuration
   APP: {
-    NAME: 'EduSIS',
-    VERSION: '1.0.3',
+    NAME: 'EduNova School',
+    VERSION: '1.0.4',
     BUNDLE_ID: 'com.edunovaasia.edusis',
   },
 

@@ -2,7 +2,7 @@
   "expo": {
     "name": "BFI",
     "slug": "edu-sis",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "default",
     "icon": "./assets/app_logo.png",
     "userInterfaceStyle": "light",
