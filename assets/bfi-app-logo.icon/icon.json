@@ -9,6 +9,10 @@
     {
       "blend-mode-specializations" : [
         {
+          "appearance" : "dark",
+          "value" : "hard-light"
+        },
+        {
           "appearance" : "tinted",
           "value" : "plus-darker"
         }
@@ -27,6 +31,54 @@
         }
       ],
       "layers" : [
+        {
+          "fill-specializations" : [
+            {
+              "value" : {
+                "solid" : "display-p3:0.14238,0.33919,0.96207,1.00000"
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "solid" : "srgb:1.00000,0.55186,0.00000,1.00000"
+              }
+            }
+          ],
+          "glass" : false,
+          "image-name-specializations" : [
+            {
+              "value" : "frame.png"
+            },
+            {
+              "idiom" : "watchOS",
+              "value" : "frame-round.png"
+            }
+          ],
+          "name" : "frame-round",
+          "position-specializations" : [
+            {
+              "idiom" : "square",
+              "value" : {
+                "scale" : 0.8,
+                "translation-in-points" : [
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "idiom" : "watchOS",
+              "value" : {
+                "scale" : 0.85,
+                "translation-in-points" : [
+                  0,
+                  0
+                ]
+              }
+            }
+          ]
+        },
         {
           "fill-specializations" : [
             {
@@ -49,7 +101,29 @@
             }
           ],
           "image-name" : "app_logo.png",
-          "name" : "app_logo"
+          "name" : "app_logo",
+          "position-specializations" : [
+            {
+              "idiom" : "square",
+              "value" : {
+                "scale" : 0.85,
+                "translation-in-points" : [
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "idiom" : "watchOS",
+              "value" : {
+                "scale" : 0.9,
+                "translation-in-points" : [
+                  0,
+                  0
+                ]
+              }
+            }
+          ]
         }
       ],
       "opacity-specializations" : [
@@ -58,10 +132,21 @@
           "value" : 0.5
         }
       ],
-      "shadow" : {
-        "kind" : "layer-color",
-        "opacity" : 1
-      },
+      "shadow-specializations" : [
+        {
+          "value" : {
+            "kind" : "layer-color",
+            "opacity" : 1
+          }
+        },
+        {
+          "appearance" : "dark",
+          "value" : {
+            "kind" : "layer-color",
+            "opacity" : 1
+          }
+        }
+      ],
       "specular-specializations" : [
         {
           "value" : true
