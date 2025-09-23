@@ -75,7 +75,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/app_logo.png",
+        "foregroundImage": "./assets/bfi-app-logo-watchOS-Default-1088x1088@2x.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.edunovaasia.edusis",
