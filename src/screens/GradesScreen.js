@@ -66,6 +66,7 @@ export default function GradesScreen({ navigation, route }) {
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
   const { authCode } = route.params || {};
   const [grades, setGrades] = useState(null);
+  const [calculatedGrades, setCalculatedGrades] = useState(null); // Advanced calculation results
   const [loading, setLoading] = useState(false);
 
   // Subject filtering state
@@ -102,7 +103,7 @@ export default function GradesScreen({ navigation, route }) {
   // Memoize styles to prevent recreation on every render
   const styles = useMemo(() => createStyles(theme), [theme]);
 
-  // Fetch grades data
+  // Fetch grades data (legacy details + advanced calculation summary)
   const fetchGrades = async () => {
     if (!authCode) {
       return;
@@ -116,32 +117,58 @@ export default function GradesScreen({ navigation, route }) {
         console.log('🎭 DEMO MODE: Using demo student grades data');
         const demoData = getDemoStudentGradesData();
         setGrades(demoData);
+        setCalculatedGrades(null);
         setLoading(false);
         return;
       }
 
-      const url = buildApiUrl(Config.API_ENDPOINTS.GET_STUDENT_GRADES, {
+      const legacyUrl = buildApiUrl(Config.API_ENDPOINTS.GET_STUDENT_GRADES, {
         authCode,
       });
+      const calcUrl = buildApiUrl(
+        Config.API_ENDPOINTS.GET_STUDENT_CALCULATED_GRADES,
+        { authCode }
+      );
 
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-      });
+      const [legacyRes, calcRes] = await Promise.all([
+        fetch(legacyUrl, {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+        }),
+        fetch(calcUrl, {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+        }),
+      ]);
 
-      if (response.ok) {
-        const data = await response.json();
-        setGrades(data);
+      if (legacyRes.ok) {
+        const legacyData = await legacyRes.json();
+        setGrades(legacyData);
       } else {
-        // Handle error silently
-        console.error('Failed to fetch grades:', response.status);
+        console.error('Failed to fetch grades (legacy):', legacyRes.status);
+      }
+
+      if (calcRes.ok) {
+        const calcData = await calcRes.json();
+        if (calcData?.success && calcData?.data) {
+          setCalculatedGrades(calcData.data);
+        } else {
+          setCalculatedGrades(null);
+        }
+      } else {
+        console.error('Failed to fetch calculated grades:', calcRes.status);
+        setCalculatedGrades(null);
       }
     } catch (error) {
       // Handle error silently
       console.error('Failed to fetch grades:', error);
+      setCalculatedGrades(null);
     } finally {
       setLoading(false);
     }
@@ -151,7 +178,7 @@ export default function GradesScreen({ navigation, route }) {
     fetchGrades();
   }, [authCode]);
 
-  // Extract unique subjects from grades data
+  // Extract unique subjects from grades data (union of legacy + advanced results)
   const extractSubjects = (gradesData) => {
     const subjects = new Set();
 
@@ -171,10 +198,24 @@ export default function GradesScreen({ navigation, route }) {
       });
     }
 
+    // Include subjects from advanced calculation if present
+    if (
+      calculatedGrades?.subject_averages &&
+      Array.isArray(calculatedGrades.subject_averages)
+    ) {
+      calculatedGrades.subject_averages.forEach((s) => {
+        if (s.subject_name) {
+          subjects.add(s.subject_name);
+        }
+      });
+    }
+
     // If no API data, extract from dummy data
     if (
       (!gradesData?.summative || gradesData.summative.length === 0) &&
-      (!gradesData?.formative || gradesData.formative.length === 0)
+      (!gradesData?.formative || gradesData.formative.length === 0) &&
+      (!calculatedGrades?.subject_averages ||
+        calculatedGrades.subject_averages.length === 0)
     ) {
       // Add dummy subjects for testing
       ['Mathematics', 'English', 'Physics', 'Chemistry', 'Biology'].forEach(
@@ -187,13 +228,11 @@ export default function GradesScreen({ navigation, route }) {
     return Array.from(subjects);
   };
 
-  // Update available subjects when grades data changes
+  // Update available subjects when grades or calculated data changes
   useEffect(() => {
-    if (grades) {
-      const subjects = extractSubjects(grades);
-      setAvailableSubjects(subjects);
-    }
-  }, [grades]);
+    const subjects = extractSubjects(grades || {});
+    setAvailableSubjects(subjects);
+  }, [grades, calculatedGrades]);
 
   // Reset pagination when tab or subject changes
   useEffect(() => {
@@ -457,7 +496,13 @@ export default function GradesScreen({ navigation, route }) {
     (subject) => {
       const subjectColor = getSubjectColor(subject);
       const subjectIcon = getSubjectIcon(subject);
-      const average = getSubjectAverage(subject);
+      const advEntry = calculatedGrades?.subject_averages?.find(
+        (s) => s.subject_name === subject
+      );
+      const average =
+        advEntry?.overall_average != null
+          ? Math.round(advEntry.overall_average)
+          : getSubjectAverage(subject);
 
       // Calculate grade counts
       const summativeCount =
@@ -468,18 +513,7 @@ export default function GradesScreen({ navigation, route }) {
         0;
       const totalGrades = summativeCount + formativeCount;
 
-      // Get grade letter based on average
-      const getGradeLetter = (avg) => {
-        if (!avg) return 'N/A';
-        if (avg >= 90) return 'A*';
-        if (avg >= 80) return 'A';
-        if (avg >= 70) return 'B';
-        if (avg >= 60) return 'C';
-        if (avg >= 50) return 'D';
-        return 'F';
-      };
-
-      const gradeLetter = getGradeLetter(average);
+      const gradeLetter = advEntry?.letter_grade || getGradeLabel(average);
 
       // Create dynamic styles (these are lightweight and subject-specific)
       const cardBackgroundStyle = { backgroundColor: `${subjectColor}08` };
@@ -1361,6 +1395,31 @@ export default function GradesScreen({ navigation, route }) {
                 Choose a subject to view your grades and performance
               </Text>
             </View>
+            {calculatedGrades?.summary && (
+              <View style={styles.summaryCard}>
+                <View style={styles.summaryRow}>
+                  <View style={styles.summaryMetric}>
+                    <Text style={styles.summaryValue}>
+                      {Math.round(calculatedGrades.summary.overall_average)}%
+                    </Text>
+                    <Text style={styles.summaryLabel}>Overall Avg</Text>
+                  </View>
+                  <View style={styles.summaryMetric}>
+                    <Text style={styles.summaryPill}>
+                      {calculatedGrades.summary.overall_letter_grade}
+                    </Text>
+                    <Text style={styles.summaryLabel}>Letter</Text>
+                  </View>
+                  <View style={styles.summaryMetric}>
+                    <Text style={styles.summaryValue}>
+                      {calculatedGrades.summary.total_subjects}
+                    </Text>
+                    <Text style={styles.summaryLabel}>Subjects</Text>
+                  </View>
+                </View>
+              </View>
+            )}
+
             <ScrollView
               style={styles.fullWidth}
               contentContainerStyle={styles.subjectGrid}
@@ -1536,6 +1595,45 @@ const createStyles = (theme) =>
       lineHeight: 22,
       maxWidth: 280,
     },
+    // Summary (Advanced Calculation) Styles
+    summaryCard: {
+      backgroundColor: theme.colors.card,
+      borderRadius: 16,
+      padding: 14,
+      marginTop: 10,
+      marginBottom: 6,
+      marginHorizontal: 16,
+      ...createCardShadow(theme),
+    },
+    summaryRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-around',
+    },
+    summaryMetric: {
+      alignItems: 'center',
+      flex: 1,
+    },
+    summaryValue: {
+      fontSize: 20,
+      fontWeight: '800',
+      color: theme.colors.text,
+    },
+    summaryLabel: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      marginTop: 4,
+    },
+    summaryPill: {
+      backgroundColor: theme.colors.headerBackground,
+      color: '#fff',
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+      borderRadius: 12,
+      overflow: 'hidden',
+      fontWeight: '700',
+    },
+
     subjectGrid: {
       alignItems: 'center',
       width: '100%',
