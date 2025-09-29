@@ -14,7 +14,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { Config, buildApiUrl } from '../config/env';
 import {
   faArrowLeft,
-  faChartLine,
   faBook,
   faTrophy,
   faUser,
@@ -38,7 +37,6 @@ import {
   faBalanceScale,
   faHeartbeat,
   faLeaf,
-  faBell,
   faGraduationCap,
 } from '@fortawesome/free-solid-svg-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -46,7 +44,7 @@ import { useScreenOrientation } from '../hooks/useScreenOrientation';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useNotifications } from '../contexts/NotificationContext';
-import NotificationBadge from '../components/NotificationBadge';
+
 import {
   createSmallShadow,
   createMediumShadow,
@@ -60,7 +58,7 @@ const GradeSeparator = () => null; // We'll use marginVertical on cards instead
 export default function GradesScreen({ navigation, route }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const { unreadCount, refreshNotifications } = useNotifications();
+  const { refreshNotifications } = useNotifications();
 
   const [activeTab, setActiveTab] = useState('summative');
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
@@ -156,13 +154,26 @@ export default function GradesScreen({ navigation, route }) {
 
       if (calcRes.ok) {
         const calcData = await calcRes.json();
+        console.log('🔍 GRADES: Advanced calculation API response:', calcData);
         if (calcData?.success && calcData?.data) {
+          console.log('✅ GRADES: Advanced calculation data received:', {
+            hasSummary: !!calcData.data.summary,
+            hasSubjectAverages: !!calcData.data.subject_averages,
+            subjectCount: calcData.data.subject_averages?.length || 0,
+          });
           setCalculatedGrades(calcData.data);
         } else {
+          console.warn(
+            '⚠️ GRADES: Advanced calculation API returned invalid format:',
+            calcData
+          );
           setCalculatedGrades(null);
         }
       } else {
-        console.error('Failed to fetch calculated grades:', calcRes.status);
+        console.error(
+          '❌ GRADES: Failed to fetch calculated grades:',
+          calcRes.status
+        );
         setCalculatedGrades(null);
       }
     } catch (error) {
@@ -228,6 +239,72 @@ export default function GradesScreen({ navigation, route }) {
     return Array.from(subjects);
   };
 
+  // Helper function to convert numerical grade to letter grade
+  const getLetterGrade = useCallback((average) => {
+    if (average >= 90) return 'A*';
+    if (average >= 80) return 'A';
+    if (average >= 70) return 'B';
+    if (average >= 60) return 'C';
+    if (average >= 50) return 'D';
+    if (average >= 40) return 'E';
+    return 'U';
+  }, []);
+
+  // Create fallback summary from legacy grades data
+  const createFallbackSummary = useCallback(
+    (gradesData) => {
+      if (!gradesData || (!gradesData.summative && !gradesData.formative)) {
+        return null;
+      }
+
+      const subjects = extractSubjects(gradesData);
+      const subjectAverages = [];
+      let totalAverage = 0;
+      let validSubjects = 0;
+      let highestGrade = 0;
+      let lowestGrade = 100;
+
+      subjects.forEach((subject) => {
+        const average = getSubjectAverage(subject);
+        if (average > 0) {
+          subjectAverages.push({
+            subject_name: subject,
+            overall_average: average,
+            letter_grade: getLetterGrade(average),
+          });
+          totalAverage += average;
+          validSubjects++;
+
+          // Track highest and lowest grades
+          if (average > highestGrade) highestGrade = average;
+          if (average < lowestGrade) lowestGrade = average;
+        }
+      });
+
+      if (validSubjects === 0) return null;
+
+      const overallAverage = totalAverage / validSubjects;
+      return {
+        overall_average: overallAverage,
+        overall_letter_grade: getLetterGrade(overallAverage),
+        total_subjects: validSubjects,
+        highest_grade: highestGrade,
+        lowest_grade: lowestGrade,
+        subject_averages: subjectAverages,
+      };
+    },
+    [extractSubjects, getSubjectAverage, getLetterGrade]
+  );
+
+  // Get summary data (from advanced API or fallback)
+  const getSummaryData = useCallback(() => {
+    if (calculatedGrades?.summary) {
+      return calculatedGrades.summary;
+    }
+    // Fallback to calculated summary from legacy data
+    return createFallbackSummary(grades);
+  }, [calculatedGrades, grades, createFallbackSummary]);
+
   // Update available subjects when grades or calculated data changes
   useEffect(() => {
     const subjects = extractSubjects(grades || {});
@@ -269,12 +346,6 @@ export default function GradesScreen({ navigation, route }) {
     setSelectedSubject(subject);
     setShowSubjectList(false);
     setCurrentPage(1); // Reset pagination when selecting a subject
-  };
-
-  const handleBackToSubjects = () => {
-    setSelectedSubject(null);
-    setShowSubjectList(true);
-    setCurrentPage(1);
   };
 
   // Helper function to get specific subject icon
@@ -538,7 +609,7 @@ export default function GradesScreen({ navigation, route }) {
           <View style={styles.cardHeader}>
             <View style={styles.headerLeft}>
               <View style={[styles.subjectIconContainer, iconContainerStyle]}>
-                <FontAwesomeIcon icon={subjectIcon} size={22} color='#fff' />
+                <FontAwesomeIcon icon={subjectIcon} size={18} color='#fff' />
               </View>
               <View style={styles.titleContainer}>
                 <Text style={styles.modernSubjectTitle} numberOfLines={2}>
@@ -1376,13 +1447,84 @@ export default function GradesScreen({ navigation, route }) {
             </View>
           </View>
         )}
+
+        {/* Summary Subheader - Only show when in subject list and not loading */}
+        {showSubjectList &&
+          !loading &&
+          (() => {
+            const summaryData = getSummaryData();
+            return summaryData ? (
+              <View style={styles.summarySubHeader}>
+                <Text style={styles.summarySubHeaderTitle}>
+                  Academic Performance
+                </Text>
+
+                {/* Main metrics row */}
+                <View style={styles.summarySubHeaderRow}>
+                  <View style={styles.summarySubHeaderMetric}>
+                    <Text style={styles.summarySubHeaderValue}>
+                      {Math.round(summaryData.overall_average) || 0}%
+                    </Text>
+                    <Text style={styles.summarySubHeaderLabel}>
+                      Overall Avg
+                    </Text>
+                  </View>
+                  <View style={styles.summarySubHeaderMetric}>
+                    <Text style={styles.summarySubHeaderPill}>
+                      {summaryData.overall_letter_grade || 'N/A'}
+                    </Text>
+                    <Text style={styles.summarySubHeaderLabel}>Letter</Text>
+                  </View>
+                  <View style={styles.summarySubHeaderMetric}>
+                    <Text style={styles.summarySubHeaderValue}>
+                      {summaryData.total_subjects || 0}
+                    </Text>
+                    <Text style={styles.summarySubHeaderLabel}>Subjects</Text>
+                  </View>
+                </View>
+
+                {/* Additional metrics row */}
+                {(summaryData.highest_grade || summaryData.lowest_grade) && (
+                  <View style={styles.summarySubHeaderSecondaryRow}>
+                    <View style={styles.summarySubHeaderSecondaryMetric}>
+                      <Text style={styles.summarySubHeaderSecondaryValue}>
+                        {summaryData.highest_grade || 'N/A'}%
+                      </Text>
+                      <Text style={styles.summarySubHeaderSecondaryLabel}>
+                        Highest
+                      </Text>
+                    </View>
+                    <View style={styles.summarySubHeaderSecondaryMetric}>
+                      <Text style={styles.summarySubHeaderSecondaryValue}>
+                        {summaryData.lowest_grade || 'N/A'}%
+                      </Text>
+                      <Text style={styles.summarySubHeaderSecondaryLabel}>
+                        Lowest
+                      </Text>
+                    </View>
+                    <View style={styles.summarySubHeaderSecondaryMetric}>
+                      <Text style={styles.summarySubHeaderSecondaryValue}>
+                        {summaryData.highest_grade && summaryData.lowest_grade
+                          ? summaryData.highest_grade - summaryData.lowest_grade
+                          : 'N/A'}
+                        %
+                      </Text>
+                      <Text style={styles.summarySubHeaderSecondaryLabel}>
+                        Range
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+            ) : null;
+          })()}
       </View>
 
       <View style={[styles.content, isLandscape && styles.landscapeContent]}>
         {showSubjectList ? (
           // Show subject selection screen
           <View style={styles.subjectListContainer}>
-            <View style={styles.headerSection}>
+            {/* <View style={styles.headerSection}>
               <View style={styles.headerIconContainer}>
                 <FontAwesomeIcon
                   icon={faGraduationCap}
@@ -1394,31 +1536,7 @@ export default function GradesScreen({ navigation, route }) {
               <Text style={styles.subjectListSubtitle}>
                 Choose a subject to view your grades and performance
               </Text>
-            </View>
-            {calculatedGrades?.summary && (
-              <View style={styles.summaryCard}>
-                <View style={styles.summaryRow}>
-                  <View style={styles.summaryMetric}>
-                    <Text style={styles.summaryValue}>
-                      {Math.round(calculatedGrades.summary.overall_average)}%
-                    </Text>
-                    <Text style={styles.summaryLabel}>Overall Avg</Text>
-                  </View>
-                  <View style={styles.summaryMetric}>
-                    <Text style={styles.summaryPill}>
-                      {calculatedGrades.summary.overall_letter_grade}
-                    </Text>
-                    <Text style={styles.summaryLabel}>Letter</Text>
-                  </View>
-                  <View style={styles.summaryMetric}>
-                    <Text style={styles.summaryValue}>
-                      {calculatedGrades.summary.total_subjects}
-                    </Text>
-                    <Text style={styles.summaryLabel}>Subjects</Text>
-                  </View>
-                </View>
-              </View>
-            )}
+            </View> */}
 
             <ScrollView
               style={styles.fullWidth}
@@ -1476,6 +1594,77 @@ const createStyles = (theme) =>
       backgroundColor: theme.colors.surface,
       paddingHorizontal: 16,
       paddingVertical: 16,
+    },
+    // Summary SubHeader Styles (integrated with navigation header)
+    summarySubHeader: {
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+    },
+    summarySubHeaderTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: theme.colors.text,
+      textAlign: 'center',
+      marginBottom: 12,
+    },
+    summarySubHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 10,
+    },
+    summarySubHeaderMetric: {
+      alignItems: 'center',
+      flex: 1,
+      paddingHorizontal: 8,
+    },
+    summarySubHeaderValue: {
+      fontSize: 18,
+      fontWeight: '800',
+      color: theme.colors.text,
+    },
+    summarySubHeaderLabel: {
+      fontSize: 11,
+      color: theme.colors.textSecondary,
+      marginTop: 4,
+    },
+    summarySubHeaderPill: {
+      backgroundColor: theme.colors.headerBackground,
+      color: '#fff',
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 10,
+      overflow: 'hidden',
+      fontWeight: '700',
+      fontSize: 16,
+      textAlign: 'center',
+      minWidth: 28,
+    },
+    summarySubHeaderSecondaryRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 10,
+      marginTop: 10,
+      paddingTop: 10,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border + '20', // Very light border
+    },
+    summarySubHeaderSecondaryMetric: {
+      alignItems: 'center',
+      flex: 1,
+      paddingHorizontal: 8,
+    },
+    summarySubHeaderSecondaryValue: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.colors.text,
+    },
+    summarySubHeaderSecondaryLabel: {
+      fontSize: 10,
+      color: theme.colors.textSecondary,
+      marginTop: 2,
     },
     // Legacy header style (keeping for compatibility)
     header: {
@@ -1554,8 +1743,6 @@ const createStyles = (theme) =>
     // Subject List Screen Styles
     subjectListContainer: {
       flex: 1,
-      alignItems: 'center',
-      paddingTop: 20,
     },
     // Enhanced Header Section
     headerSection: {
@@ -1599,20 +1786,30 @@ const createStyles = (theme) =>
     summaryCard: {
       backgroundColor: theme.colors.card,
       borderRadius: 16,
-      padding: 14,
+      padding: 20,
       marginTop: 10,
-      marginBottom: 6,
+      marginBottom: 16,
       marginHorizontal: 16,
+      minHeight: 100,
       ...createCardShadow(theme),
+    },
+    summaryTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: theme.colors.text,
+      textAlign: 'center',
+      marginBottom: 16,
     },
     summaryRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-around',
+      justifyContent: 'space-between',
+      paddingHorizontal: 10,
     },
     summaryMetric: {
       alignItems: 'center',
       flex: 1,
+      paddingHorizontal: 8,
     },
     summaryValue: {
       fontSize: 20,
@@ -1627,11 +1824,40 @@ const createStyles = (theme) =>
     summaryPill: {
       backgroundColor: theme.colors.headerBackground,
       color: '#fff',
-      paddingHorizontal: 12,
-      paddingVertical: 4,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
       borderRadius: 12,
       overflow: 'hidden',
       fontWeight: '700',
+      fontSize: 18,
+      textAlign: 'center',
+      minWidth: 30,
+    },
+    // Secondary metrics row styles
+    summarySecondaryRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 10,
+      marginTop: 12,
+      paddingTop: 12,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border + '30', // Semi-transparent border
+    },
+    summarySecondaryMetric: {
+      alignItems: 'center',
+      flex: 1,
+      paddingHorizontal: 8,
+    },
+    summarySecondaryValue: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.colors.text,
+    },
+    summarySecondaryLabel: {
+      fontSize: 11,
+      color: theme.colors.textSecondary,
+      marginTop: 2,
     },
 
     subjectGrid: {
@@ -1647,9 +1873,9 @@ const createStyles = (theme) =>
     modernSubjectCard: {
       backgroundColor: theme.colors.card,
       width: '100%',
-      marginVertical: 10,
-      borderRadius: 24,
-      padding: 20,
+      marginVertical: 6,
+      borderRadius: 16,
+      padding: 14,
       // Removed overflow: 'hidden' to prevent shadow clipping on Android
       // Only show border on iOS - Android elevation provides sufficient visual separation
       ...(Platform.OS === 'ios' && {
@@ -1665,12 +1891,12 @@ const createStyles = (theme) =>
       justifyContent: 'space-between',
     },
     subjectIconContainer: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
       justifyContent: 'center',
       alignItems: 'center',
-      marginRight: 12,
+      marginRight: 10,
       // Enhanced shadow using platform-specific utilities
       ...createMediumShadow(theme),
     },
@@ -1678,14 +1904,14 @@ const createStyles = (theme) =>
       flex: 1,
     },
     modernSubjectTitle: {
-      fontSize: 18,
+      fontSize: 16,
       fontWeight: '700',
       color: theme.colors.text,
-      marginBottom: 4,
+      marginBottom: 2,
       letterSpacing: 0.2,
     },
     subjectGradeCount: {
-      fontSize: 14,
+      fontSize: 13,
       color: '#666',
     },
     subjectCardRight: {
@@ -1710,7 +1936,7 @@ const createStyles = (theme) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      marginBottom: 16,
+      marginBottom: 10,
     },
     headerLeft: {
       flexDirection: 'row',
@@ -1744,27 +1970,27 @@ const createStyles = (theme) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-around',
-      marginBottom: 16,
-      paddingVertical: 8,
+      marginBottom: 10,
+      paddingVertical: 4,
     },
     gradeSection: {
       alignItems: 'center',
       flex: 1,
     },
     gradeCircle: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
       borderWidth: 2,
       backgroundColor: theme.colors.card,
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: 6,
+      marginBottom: 4,
       // Enhanced shadow using platform-specific utilities
       ...createSmallShadow(theme),
     },
     gradeLetterText: {
-      fontSize: 16,
+      fontSize: 14,
       fontWeight: '800',
       letterSpacing: 0.5,
     },
@@ -1781,15 +2007,15 @@ const createStyles = (theme) =>
     percentageDisplay: {
       flexDirection: 'row',
       alignItems: 'baseline',
-      marginBottom: 6,
+      marginBottom: 4,
     },
     percentageNumber: {
-      fontSize: 24,
+      fontSize: 20,
       fontWeight: '800',
       letterSpacing: -0.5,
     },
     percentageSymbol: {
-      fontSize: 16,
+      fontSize: 14,
       fontWeight: '600',
       marginLeft: 2,
     },
@@ -1825,13 +2051,13 @@ const createStyles = (theme) =>
 
     // Progress Section
     progressSection: {
-      marginBottom: 16,
+      marginBottom: 8,
     },
     progressInfo: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 8,
+      marginBottom: 6,
     },
     progressLabel: {
       fontSize: 12,

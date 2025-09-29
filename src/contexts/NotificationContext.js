@@ -15,7 +15,6 @@ import {
   getNotificationCategories as getAPINotificationCategories,
   sendNotification as sendAPINotification,
   getNotificationStatistics as getAPINotificationStatistics,
-  getLegacyNotifications,
 } from '../services/notificationService';
 import { Config, buildApiUrl } from '../config/env';
 
@@ -98,48 +97,66 @@ export const NotificationProvider = ({ children }) => {
       isLoading.current = true;
       setLoading(true);
 
-      // Try to fetch from API first
+      // Check if we have a global authCode before trying to fetch main notifications
       try {
-        const apiResponse = await getAPINotifications({ page: 1, limit: 50 });
+        const userDataString = await AsyncStorage.getItem('userData');
+        const hasGlobalAuth = !!(
+          userDataString && JSON.parse(userDataString)?.authCode
+        );
 
-        if (
-          apiResponse?.success &&
-          (apiResponse?.data || apiResponse?.notifications)
-        ) {
-          // Handle both data and notifications response formats
-          const notificationArray =
-            apiResponse.notifications || apiResponse.data;
+        if (hasGlobalAuth) {
+          // Try to fetch from API first
+          const apiResponse = await getAPINotifications({ page: 1, limit: 50 });
 
-          // Transform API data to match local notification format
-          const apiNotifications = notificationArray.map((notification) => ({
-            id:
-              notification.notification_id?.toString() ||
-              notification.id?.toString() ||
-              Date.now().toString(),
-            title: notification.title || 'Notification',
-            body: notification.body || notification.message || '',
-            timestamp: notification.created_at
-              ? new Date(notification.created_at).getTime()
-              : Date.now(),
-            read: !!notification.read_at || !!notification.is_read,
-            type: notification.type || notification.category || 'general',
-            data: notification.data || {},
-            // Keep original API data for reference
-            _apiData: notification,
-          }));
+          if (
+            apiResponse?.success &&
+            (apiResponse?.data || apiResponse?.notifications)
+          ) {
+            // Handle both data and notifications response formats
+            const notificationArray =
+              apiResponse.notifications || apiResponse.data;
 
-          setNotifications(apiNotifications);
-          setUnreadCount(apiNotifications.filter((n) => !n.read).length);
+            // Transform API data to match local notification format
+            const apiNotifications = notificationArray.map((notification) => ({
+              id:
+                notification.notification_id?.toString() ||
+                notification.id?.toString() ||
+                Date.now().toString(),
+              title: notification.title || 'Notification',
+              body: notification.body || notification.message || '',
+              timestamp: notification.created_at
+                ? new Date(notification.created_at).getTime()
+                : Date.now(),
+              read: !!notification.read_at || !!notification.is_read,
+              type: notification.type || notification.category || 'general',
+              data: notification.data || {},
+              // Keep original API data for reference
+              _apiData: notification,
+            }));
 
-          // Also store in local storage as backup
-          await AsyncStorage.setItem(
-            'notificationHistory',
-            JSON.stringify(apiNotifications)
+            setNotifications(apiNotifications);
+            setUnreadCount(apiNotifications.filter((n) => !n.read).length);
+
+            // Also store in local storage as backup
+            await AsyncStorage.setItem(
+              'notificationHistory',
+              JSON.stringify(apiNotifications)
+            );
+            return;
+          }
+        } else {
+          console.log(
+            '🔕 NOTIFICATIONS: No global authCode found, skipping main notification fetch'
           );
-          return;
+          console.log(
+            'ℹ️ NOTIFICATIONS: This is normal for parent-only mode with added students'
+          );
         }
       } catch (apiError) {
-        // API notifications not available, falling back to local storage
+        console.warn(
+          '⚠️ NOTIFICATIONS: API fetch failed, falling back to local storage:',
+          apiError.message
+        );
       }
 
       // Fallback to local storage if API fails
