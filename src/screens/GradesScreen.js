@@ -250,6 +250,19 @@ export default function GradesScreen({ navigation, route }) {
     setAvailableSubjects(subjects);
   }, [grades, calculatedGrades]);
 
+  // Debug when calculatedGrades changes
+  useEffect(() => {
+    console.log('🔄 GRADES: calculatedGrades updated:', calculatedGrades);
+    if (calculatedGrades?.subject_averages) {
+      console.log(
+        '📊 GRADES: Subject averages available:',
+        calculatedGrades.subject_averages.map(
+          (s) => `${s.subject_name}: ${s.overall_average}%`
+        )
+      );
+    }
+  }, [calculatedGrades]);
+
   // Reset pagination when tab or subject changes
   useEffect(() => {
     setCurrentPage(1);
@@ -482,6 +495,14 @@ export default function GradesScreen({ navigation, route }) {
           ? Math.round(advEntry.overall_average)
           : null;
 
+      // Debug logging
+      console.log(
+        `🔍 SUBJECT CARD: ${subject} - advEntry:`,
+        advEntry,
+        'average:',
+        average
+      );
+
       // Calculate grade counts
       const summativeCount =
         grades?.summative?.filter((g) => g.subject_name === subject)?.length ||
@@ -614,7 +635,7 @@ export default function GradesScreen({ navigation, route }) {
         </TouchableOpacity>
       );
     },
-    [grades, styles]
+    [grades, calculatedGrades, styles]
   );
 
   const renderTabButton = (tabName, title) => (
