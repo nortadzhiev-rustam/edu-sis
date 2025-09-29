@@ -15,6 +15,7 @@ export const Config = {
     GET_TEACHER_TIMETABLE: '/get-teacher-timetable-data/',
     GET_STUDENT_GRADES: '/get-student-grades',
     GET_STUDENT_CALCULATED_GRADES: '/get-student-calculated-grades',
+    GET_STUDENT_GRADES_BY_STRANDS: '/get-student-grades-by-strands',
     VALIDATE_SCORE_TEMPLATE_SYSTEM: '/validate-score-template-system',
     COMPARE_CALCULATION_METHODS: '/compare-calculation-methods',
     GET_STUDENT_ATTENDANCE: '/get-student-attendance-data',

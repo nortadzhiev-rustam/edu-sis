@@ -5,9 +5,11 @@ import {
   StyleSheet,
   TouchableOpacity,
   FlatList,
+  SectionList,
   ScrollView,
   Dimensions,
   Platform,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -37,7 +39,8 @@ import {
   faBalanceScale,
   faHeartbeat,
   faLeaf,
-  faGraduationCap,
+  faChevronDown,
+  faChevronUp,
 } from '@fortawesome/free-solid-svg-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useScreenOrientation } from '../hooks/useScreenOrientation';
@@ -64,7 +67,11 @@ export default function GradesScreen({ navigation, route }) {
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
   const { authCode } = route.params || {};
   const [grades, setGrades] = useState(null);
-  const [calculatedGrades, setCalculatedGrades] = useState(null); // Advanced calculation results
+  const [calculatedGrades, setCalculatedGrades] = useState(null);
+  const [strandGrades, setStrandGrades] = useState(null);
+  const [expandedSections, setExpandedSections] = useState(new Set());
+  const [selectedStrand, setSelectedStrand] = useState(null);
+  const [strandAssessments, setStrandAssessments] = useState([]); // Advanced calculation results
   const [loading, setLoading] = useState(false);
 
   // Subject filtering state
@@ -127,8 +134,18 @@ export default function GradesScreen({ navigation, route }) {
         Config.API_ENDPOINTS.GET_STUDENT_CALCULATED_GRADES,
         { authCode }
       );
+      const strandUrl = buildApiUrl(
+        Config.API_ENDPOINTS.GET_STUDENT_GRADES_BY_STRANDS,
+        { authCode }
+      );
 
-      const [legacyRes, calcRes] = await Promise.all([
+      console.log('🔍 GRADES: Fetching from URLs:', {
+        legacy: legacyUrl,
+        calculated: calcUrl,
+        strands: strandUrl,
+      });
+
+      const [legacyRes, calcRes, strandRes] = await Promise.all([
         fetch(legacyUrl, {
           method: 'GET',
           headers: {
@@ -137,6 +154,13 @@ export default function GradesScreen({ navigation, route }) {
           },
         }),
         fetch(calcUrl, {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+        }),
+        fetch(strandUrl, {
           method: 'GET',
           headers: {
             Accept: 'application/json',
@@ -176,10 +200,37 @@ export default function GradesScreen({ navigation, route }) {
         );
         setCalculatedGrades(null);
       }
+
+      // Handle strand-based grades response
+      if (strandRes.ok) {
+        const strandData = await strandRes.json();
+        console.log('🔍 GRADES: Strand-based API response:', strandData);
+        if (strandData?.success && strandData?.data) {
+          console.log('✅ GRADES: Strand-based data received:', {
+            calculationMethod: strandData.calculation_method,
+            subjectsWithStrands:
+              strandData.data.subjects_with_strands?.length || 0,
+          });
+          setStrandGrades(strandData.data);
+        } else {
+          console.warn(
+            '⚠️ GRADES: Strand-based API returned invalid format:',
+            strandData
+          );
+          setStrandGrades(null);
+        }
+      } else {
+        console.error(
+          '❌ GRADES: Failed to fetch strand-based grades:',
+          strandRes.status
+        );
+        setStrandGrades(null);
+      }
     } catch (error) {
       // Handle error silently
       console.error('Failed to fetch grades:', error);
       setCalculatedGrades(null);
+      setStrandGrades(null);
     } finally {
       setLoading(false);
     }
@@ -244,6 +295,408 @@ export default function GradesScreen({ navigation, route }) {
     return calculatedGrades?.summary || null;
   }, [calculatedGrades]);
 
+  // Prepare section list data from strand grades
+  const getSectionListData = useCallback(() => {
+    if (!strandGrades?.subjects_with_strands) {
+      return [];
+    }
+
+    return strandGrades.subjects_with_strands.map((subject) => ({
+      title: subject.subject_name,
+      data: expandedSections.has(subject.subject_name) ? subject.strands : [],
+      subjectId: subject.subject_id,
+      // Include the full subject data for header calculations
+      subjectData: subject,
+    }));
+  }, [strandGrades, expandedSections]);
+
+  // Prepare formative data in section list format
+  const getFormativeSectionListData = useCallback(() => {
+    if (!grades?.formative) {
+      return [];
+    }
+
+    // Group formative assessments by subject
+    const subjectGroups = {};
+    grades.formative.forEach((assessment) => {
+      const subject = assessment.subject_name;
+      if (!subjectGroups[subject]) {
+        subjectGroups[subject] = [];
+      }
+      subjectGroups[subject].push(assessment);
+    });
+
+    // Convert to section list format
+    return Object.entries(subjectGroups).map(([subjectName, assessments]) => ({
+      title: subjectName,
+      data: expandedSections.has(subjectName) ? assessments : [],
+      subjectId: assessments[0]?.subject_id || subjectName,
+      // Calculate subject summary for formative
+      subjectData: {
+        total_assessments: assessments.length,
+        subject_name: subjectName,
+      },
+    }));
+  }, [grades, expandedSections]);
+
+  // Toggle section expansion
+  const toggleSection = useCallback((sectionTitle) => {
+    setExpandedSections((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionTitle)) {
+        newSet.delete(sectionTitle);
+      } else {
+        newSet.add(sectionTitle);
+      }
+      return newSet;
+    });
+  }, []);
+
+  // Get assessments for a specific strand
+  const getStrandAssessments = useCallback(
+    (subjectName, strandName) => {
+      if (!grades) {
+        return [];
+      }
+
+      // Combine summative and formative assessments
+      const allAssessments = [
+        ...(grades.summative || []),
+        ...(grades.formative || []),
+      ];
+
+      // Filter assessments by subject and strand
+      const subjectAssessments = allAssessments.filter(
+        (assessment) => assessment.subject_name === subjectName
+      );
+
+      // Filter by strand name (assuming strand info is in assessment data)
+      // If strand info is not directly available, we might need to match by assessment type or other criteria
+      const strandAssessments = subjectAssessments.filter((assessment) => {
+        // Check if assessment has strand information
+        if (assessment.strand_name) {
+          return assessment.strand_name === strandName;
+        }
+
+        // Fallback: match by assessment name/type containing strand keywords
+        const assessmentName = assessment.assessment_name?.toLowerCase() || '';
+        const strandKeywords = strandName.toLowerCase().split(' ');
+
+        return strandKeywords.some((keyword) =>
+          assessmentName.includes(keyword.toLowerCase())
+        );
+      });
+
+      // Sort assessments by date (newest first)
+      return strandAssessments.sort((a, b) => {
+        const dateA = new Date(a.date || a.date_created || 0);
+        const dateB = new Date(b.date || b.date_created || 0);
+        return dateB - dateA;
+      });
+    },
+    [grades]
+  );
+
+  // Handle strand selection
+  const handleStrandPress = useCallback(
+    (strand, subjectName) => {
+      console.log(
+        `🔍 STRAND: Selected ${strand.strand_name} in ${subjectName}`
+      );
+
+      const assessments = getStrandAssessments(subjectName, strand.strand_name);
+      console.log(
+        `📊 STRAND: Found ${assessments.length} assessments:`,
+        assessments
+      );
+
+      setSelectedStrand({
+        ...strand,
+        subjectName,
+        assessments,
+      });
+      setStrandAssessments(assessments);
+    },
+    [getStrandAssessments]
+  );
+
+  // Close strand details
+  const closeStrandDetails = useCallback(() => {
+    setSelectedStrand(null);
+    setStrandAssessments([]);
+  }, []);
+
+  // Render section header for SectionList
+  const renderSectionHeader = useCallback(
+    ({ section }) => {
+      const subjectColor = getSubjectColor(section.title);
+      const subjectIcon = getSubjectIcon(section.title);
+      const isExpanded = expandedSections.has(section.title);
+
+      // Use API-provided subject data instead of calculating from strands
+      const subjectData = section.subjectData;
+      const overallAverage = subjectData?.subject_overall_average
+        ? Math.round(subjectData.subject_overall_average)
+        : '--';
+      const overallGrade = subjectData?.subject_letter_grade || '--';
+      const totalStrands =
+        subjectData?.total_strands || subjectData?.strands?.length || 0;
+
+      return (
+        <TouchableOpacity
+          style={[
+            styles.sectionHeader,
+            { backgroundColor: `${subjectColor}15` },
+          ]}
+          onPress={() => toggleSection(section.title)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.sectionHeaderLeft}>
+            <View
+              style={[
+                styles.sectionHeaderIcon,
+                { backgroundColor: subjectColor },
+              ]}
+            >
+              <FontAwesomeIcon icon={subjectIcon} size={16} color='#fff' />
+            </View>
+            <View style={styles.sectionHeaderInfo}>
+              <Text style={styles.sectionHeaderTitle}>{section.title}</Text>
+              <Text style={styles.sectionHeaderSubtitle}>
+                {totalStrands} strand
+                {totalStrands !== 1 ? 's' : ''}
+                {isExpanded ? ' • Expanded' : ' • Tap to expand'}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.sectionHeaderRight}>
+            <View style={styles.sectionHeaderGrades}>
+              <Text
+                style={[styles.sectionHeaderAverage, { color: subjectColor }]}
+              >
+                {overallAverage === '--' ? '--' : `${overallAverage}%`}
+              </Text>
+              <Text
+                style={[
+                  styles.sectionHeaderGrade,
+                  { backgroundColor: subjectColor },
+                ]}
+              >
+                {overallGrade}
+              </Text>
+            </View>
+            <View style={styles.expandIcon}>
+              <FontAwesomeIcon
+                icon={isExpanded ? faChevronUp : faChevronDown}
+                size={12}
+                color={subjectColor}
+              />
+            </View>
+          </View>
+        </TouchableOpacity>
+      );
+    },
+    [expandedSections, toggleSection]
+  );
+
+  // Render formative section header
+  const renderFormativeSectionHeader = useCallback(
+    ({ section }) => {
+      const subjectColor = getSubjectColor(section.title);
+      const subjectIcon = getSubjectIcon(section.title);
+      const isExpanded = expandedSections.has(section.title);
+
+      const subjectData = section.subjectData;
+      const totalAssessments = subjectData?.total_assessments || 0;
+
+      return (
+        <TouchableOpacity
+          style={[
+            styles.sectionHeader,
+            { backgroundColor: `${subjectColor}15` },
+          ]}
+          onPress={() => toggleSection(section.title)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.sectionHeaderLeft}>
+            <View
+              style={[
+                styles.sectionHeaderIcon,
+                { backgroundColor: subjectColor },
+              ]}
+            >
+              <FontAwesomeIcon icon={subjectIcon} size={16} color='#fff' />
+            </View>
+            <View style={styles.sectionHeaderInfo}>
+              <Text style={styles.sectionHeaderTitle}>{section.title}</Text>
+              <Text style={styles.sectionHeaderSubtitle}>
+                {totalAssessments} assessment{totalAssessments !== 1 ? 's' : ''}
+                {isExpanded ? ' • Expanded' : ' • Tap to expand'}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.sectionHeaderRight}>
+            <View style={styles.sectionHeaderGrades}>
+              <Text
+                style={[styles.sectionHeaderAverage, { color: subjectColor }]}
+              >
+                Life Skills
+              </Text>
+            </View>
+            <View style={styles.expandIcon}>
+              <FontAwesomeIcon
+                icon={isExpanded ? faChevronUp : faChevronDown}
+                size={12}
+                color={subjectColor}
+              />
+            </View>
+          </View>
+        </TouchableOpacity>
+      );
+    },
+    [expandedSections, toggleSection]
+  );
+
+  // Render strand item for SectionList
+  const renderStrandItem = useCallback(({ item, section }) => {
+    const subjectColor = getSubjectColor(section.title);
+
+    return (
+      <TouchableOpacity
+        style={styles.strandItem}
+        onPress={() => handleStrandPress(item, section.title)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.strandItemLeft}>
+          <Text style={styles.strandName}>{item.strand_name}</Text>
+          <Text style={styles.strandDetails}>
+            {item.total_assessments} assessment
+            {item.total_assessments !== 1 ? 's' : ''}
+            {item.calculation_details && (
+              <Text style={styles.strandBreakdown}>
+                {' '}
+                • {item.calculation_details.normal_assessments} normal,{' '}
+                {item.calculation_details.final_assessments} final
+              </Text>
+            )}
+          </Text>
+        </View>
+        <View style={styles.strandItemRight}>
+          <Text style={[styles.strandAverage, { color: subjectColor }]}>
+            {item.strand_average}%
+          </Text>
+          <Text style={[styles.strandGrade, { backgroundColor: subjectColor }]}>
+            {item.strand_letter_grade}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  }, []);
+
+  // Render formative assessment item
+  const renderFormativeItem = useCallback(({ item, section }) => {
+    const subjectColor = getSubjectColor(section.title);
+
+    // Assessment criteria with colors
+    const criteria = [
+      {
+        label: 'EE',
+        value: item.tt1 || '',
+        color: '#34C759',
+        name: 'Exceeding Expectations',
+      },
+      {
+        label: 'ME',
+        value: item.tt2 || '',
+        color: '#FF9500',
+        name: 'Meeting Expectations',
+      },
+      {
+        label: 'AE',
+        value: item.tt3 || '',
+        color: '#007AFF',
+        name: 'Approaching Expectations',
+      },
+      {
+        label: 'BE',
+        value: item.tt4 || '',
+        color: '#FF3B30',
+        name: 'Below Expectations',
+      },
+    ];
+
+    return (
+      <TouchableOpacity
+        style={styles.formativeItem}
+        onPress={() => {
+          console.log(
+            `Selected formative assessment: ${item.assessment_name} in ${section.title}`
+          );
+        }}
+        activeOpacity={0.7}
+      >
+        <View style={styles.formativeItemLeft}>
+          <Text style={styles.formativeAssessmentName}>
+            {item.assessment_name}
+          </Text>
+          <Text style={styles.formativeAssessmentDetails}>
+            {item.assessment_type || 'Assessment'} •{' '}
+            {(() => {
+              const dateField = item.date || item.date_created;
+              if (!dateField) return 'No date';
+
+              const dateStr = dateField.toString();
+              if (dateStr.includes('/') || dateStr.includes('-')) {
+                try {
+                  const date = new Date(dateStr);
+                  if (!isNaN(date.getTime())) {
+                    return date.toLocaleDateString();
+                  }
+                } catch (error) {
+                  return dateStr;
+                }
+              }
+              return dateStr;
+            })()}
+          </Text>
+          {item.feedback && (
+            <Text style={styles.formativeFeedback} numberOfLines={2}>
+              {item.feedback}
+            </Text>
+          )}
+        </View>
+        <View style={styles.formativeItemRight}>
+          <View style={styles.criteriaContainer}>
+            {criteria.map((criterion, index) => (
+              <View key={index} style={styles.criterionItem}>
+                <View
+                  style={[
+                    styles.criterionIndicator,
+                    {
+                      backgroundColor: criterion.value
+                        ? criterion.color
+                        : '#E5E5EA',
+                      borderColor: criterion.color,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.criterionLabel,
+                      { color: criterion.value ? '#fff' : '#8E8E93' },
+                    ]}
+                  >
+                    {criterion.label}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  }, []);
+
   // Update available subjects when grades or calculated data changes
   useEffect(() => {
     const subjects = extractSubjects(grades || {});
@@ -262,6 +715,22 @@ export default function GradesScreen({ navigation, route }) {
       );
     }
   }, [calculatedGrades]);
+
+  // Debug when strandGrades changes
+  useEffect(() => {
+    console.log('🔄 GRADES: strandGrades updated:', strandGrades);
+    if (strandGrades?.subjects_with_strands) {
+      console.log('🧬 GRADES: Strand-based subjects available:');
+      strandGrades.subjects_with_strands.forEach((subject) => {
+        console.log(`  ${subject.subject_name}:`);
+        subject.strands.forEach((strand) => {
+          console.log(
+            `    - ${strand.strand_name}: ${strand.strand_average}% (${strand.strand_letter_grade})`
+          );
+        });
+      });
+    }
+  }, [strandGrades]);
 
   // Reset pagination when tab or subject changes
   useEffect(() => {
@@ -487,20 +956,42 @@ export default function GradesScreen({ navigation, route }) {
     (subject) => {
       const subjectColor = getSubjectColor(subject);
       const subjectIcon = getSubjectIcon(subject);
+      // Check for strand-based data first, then fall back to calculated grades
+      const strandEntry = strandGrades?.subjects_with_strands?.find(
+        (s) => s.subject_name === subject
+      );
       const advEntry = calculatedGrades?.subject_averages?.find(
         (s) => s.subject_name === subject
       );
-      const average =
-        advEntry?.overall_average != null
-          ? Math.round(advEntry.overall_average)
-          : null;
+
+      // Calculate overall average from strands if available
+      let average = null;
+      let gradeLetter = null;
+
+      if (strandEntry?.strands?.length > 0) {
+        // Use strand-based calculation
+        const strandAverages = strandEntry.strands.map((s) => s.strand_average);
+        average = Math.round(
+          strandAverages.reduce((a, b) => a + b, 0) / strandAverages.length
+        );
+        gradeLetter = strandEntry.strands[0]?.strand_letter_grade; // Use first strand's letter grade as representative
+      } else if (advEntry?.overall_average != null) {
+        // Fall back to advanced calculation
+        average = Math.round(advEntry.overall_average);
+        gradeLetter = advEntry.letter_grade;
+      }
 
       // Debug logging
       console.log(
-        `🔍 SUBJECT CARD: ${subject} - advEntry:`,
+        `🔍 SUBJECT CARD: ${subject}`,
+        'strandEntry:',
+        strandEntry,
+        'advEntry:',
         advEntry,
         'average:',
-        average
+        average,
+        'gradeLetter:',
+        gradeLetter
       );
 
       // Calculate grade counts
@@ -511,8 +1002,6 @@ export default function GradesScreen({ navigation, route }) {
         grades?.formative?.filter((g) => g.subject_name === subject)?.length ||
         0;
       const totalGrades = summativeCount + formativeCount;
-
-      const gradeLetter = advEntry?.letter_grade || null;
 
       // Create dynamic styles (these are lightweight and subject-specific)
       const cardBackgroundStyle = { backgroundColor: `${subjectColor}08` };
@@ -635,7 +1124,7 @@ export default function GradesScreen({ navigation, route }) {
         </TouchableOpacity>
       );
     },
-    [grades, calculatedGrades, styles]
+    [grades, calculatedGrades, strandGrades, styles]
   );
 
   const renderTabButton = (tabName, title) => (
@@ -1376,76 +1865,178 @@ export default function GradesScreen({ navigation, route }) {
           </View>
         )}
 
-        {/* Summary Subheader - Only show when in subject list and not loading */}
-        {showSubjectList &&
-          !loading &&
-          (() => {
-            const summaryData = getSummaryData();
-            return summaryData ? (
-              <View style={styles.summarySubHeader}>
-                <Text style={styles.summarySubHeaderTitle}>
-                  Academic Performance
+        {/* Combined Subheader - Tabs + Summary/Criteria */}
+        {showSubjectList && !loading && (
+          <View style={styles.summarySubHeader}>
+            {/* Tab Navigation */}
+            <View style={styles.subHeaderTabs}>
+              <TouchableOpacity
+                style={[
+                  styles.subHeaderTab,
+                  activeTab === 'summative' && styles.activeSubHeaderTab,
+                ]}
+                onPress={() => setActiveTab('summative')}
+              >
+                <Text
+                  style={[
+                    styles.subHeaderTabText,
+                    activeTab === 'summative' && styles.activeSubHeaderTabText,
+                  ]}
+                >
+                  Summative
                 </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.subHeaderTab,
+                  activeTab === 'formative' && styles.activeSubHeaderTab,
+                ]}
+                onPress={() => setActiveTab('formative')}
+              >
+                <Text
+                  style={[
+                    styles.subHeaderTabText,
+                    activeTab === 'formative' && styles.activeSubHeaderTabText,
+                  ]}
+                >
+                  Life Skills
+                </Text>
+              </TouchableOpacity>
+            </View>
 
-                {/* Main metrics row */}
-                <View style={styles.summarySubHeaderRow}>
-                  <View style={styles.summarySubHeaderMetric}>
-                    <Text style={styles.summarySubHeaderValue}>
-                      {Math.round(summaryData.overall_average) || 0}%
+            {/* Content based on active tab */}
+            {activeTab === 'summative' &&
+              (() => {
+                const summaryData = getSummaryData();
+                return summaryData ? (
+                  <View>
+                    <Text style={styles.summarySubHeaderTitle}>
+                      Academic Performance
                     </Text>
-                    <Text style={styles.summarySubHeaderLabel}>
-                      Overall Avg
+
+                    {/* Main metrics row */}
+                    <View style={styles.summarySubHeaderRow}>
+                      <View style={styles.summarySubHeaderMetric}>
+                        <Text style={styles.summarySubHeaderValue}>
+                          {Math.round(summaryData.overall_average) || 0}%
+                        </Text>
+                        <Text style={styles.summarySubHeaderLabel}>
+                          Overall Avg
+                        </Text>
+                      </View>
+                      <View style={styles.summarySubHeaderMetric}>
+                        <Text style={styles.summarySubHeaderPill}>
+                          {summaryData.overall_letter_grade || 'N/A'}
+                        </Text>
+                        <Text style={styles.summarySubHeaderLabel}>Letter</Text>
+                      </View>
+                      <View style={styles.summarySubHeaderMetric}>
+                        <Text style={styles.summarySubHeaderValue}>
+                          {summaryData.total_subjects || 0}
+                        </Text>
+                        <Text style={styles.summarySubHeaderLabel}>
+                          Subjects
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Additional metrics row */}
+                    {(summaryData.highest_grade ||
+                      summaryData.lowest_grade) && (
+                      <View style={styles.summarySubHeaderSecondaryRow}>
+                        <View style={styles.summarySubHeaderSecondaryMetric}>
+                          <Text style={styles.summarySubHeaderSecondaryValue}>
+                            {summaryData.highest_grade || 'N/A'}%
+                          </Text>
+                          <Text style={styles.summarySubHeaderSecondaryLabel}>
+                            Highest
+                          </Text>
+                        </View>
+                        <View style={styles.summarySubHeaderSecondaryMetric}>
+                          <Text style={styles.summarySubHeaderSecondaryValue}>
+                            {summaryData.lowest_grade || 'N/A'}%
+                          </Text>
+                          <Text style={styles.summarySubHeaderSecondaryLabel}>
+                            Lowest
+                          </Text>
+                        </View>
+                        <View style={styles.summarySubHeaderSecondaryMetric}>
+                          <Text style={styles.summarySubHeaderSecondaryValue}>
+                            {summaryData.highest_grade &&
+                            summaryData.lowest_grade
+                              ? summaryData.highest_grade -
+                                summaryData.lowest_grade
+                              : 'N/A'}
+                            %
+                          </Text>
+                          <Text style={styles.summarySubHeaderSecondaryLabel}>
+                            Range
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                ) : null;
+              })()}
+
+            {/* Show criteria explanation for life skills */}
+            {activeTab === 'formative' && (
+              <View>
+                <Text style={styles.summarySubHeaderTitle}>
+                  Assessment Criteria
+                </Text>
+                <View style={styles.criteriaSubHeaderGrid}>
+                  <View style={styles.criteriaSubHeaderItem}>
+                    <View
+                      style={[
+                        styles.criteriaSubHeaderIndicator,
+                        { backgroundColor: '#34C759' },
+                      ]}
+                    >
+                      <Text style={styles.criteriaSubHeaderLabel}>EE</Text>
+                    </View>
+                    <Text style={styles.criteriaSubHeaderText}>Exceeding</Text>
+                  </View>
+                  <View style={styles.criteriaSubHeaderItem}>
+                    <View
+                      style={[
+                        styles.criteriaSubHeaderIndicator,
+                        { backgroundColor: '#FF9500' },
+                      ]}
+                    >
+                      <Text style={styles.criteriaSubHeaderLabel}>ME</Text>
+                    </View>
+                    <Text style={styles.criteriaSubHeaderText}>Meeting</Text>
+                  </View>
+                  <View style={styles.criteriaSubHeaderItem}>
+                    <View
+                      style={[
+                        styles.criteriaSubHeaderIndicator,
+                        { backgroundColor: '#007AFF' },
+                      ]}
+                    >
+                      <Text style={styles.criteriaSubHeaderLabel}>AE</Text>
+                    </View>
+                    <Text style={styles.criteriaSubHeaderText}>
+                      Approaching
                     </Text>
                   </View>
-                  <View style={styles.summarySubHeaderMetric}>
-                    <Text style={styles.summarySubHeaderPill}>
-                      {summaryData.overall_letter_grade || 'N/A'}
-                    </Text>
-                    <Text style={styles.summarySubHeaderLabel}>Letter</Text>
-                  </View>
-                  <View style={styles.summarySubHeaderMetric}>
-                    <Text style={styles.summarySubHeaderValue}>
-                      {summaryData.total_subjects || 0}
-                    </Text>
-                    <Text style={styles.summarySubHeaderLabel}>Subjects</Text>
+                  <View style={styles.criteriaSubHeaderItem}>
+                    <View
+                      style={[
+                        styles.criteriaSubHeaderIndicator,
+                        { backgroundColor: '#FF3B30' },
+                      ]}
+                    >
+                      <Text style={styles.criteriaSubHeaderLabel}>BE</Text>
+                    </View>
+                    <Text style={styles.criteriaSubHeaderText}>Below</Text>
                   </View>
                 </View>
-
-                {/* Additional metrics row */}
-                {(summaryData.highest_grade || summaryData.lowest_grade) && (
-                  <View style={styles.summarySubHeaderSecondaryRow}>
-                    <View style={styles.summarySubHeaderSecondaryMetric}>
-                      <Text style={styles.summarySubHeaderSecondaryValue}>
-                        {summaryData.highest_grade || 'N/A'}%
-                      </Text>
-                      <Text style={styles.summarySubHeaderSecondaryLabel}>
-                        Highest
-                      </Text>
-                    </View>
-                    <View style={styles.summarySubHeaderSecondaryMetric}>
-                      <Text style={styles.summarySubHeaderSecondaryValue}>
-                        {summaryData.lowest_grade || 'N/A'}%
-                      </Text>
-                      <Text style={styles.summarySubHeaderSecondaryLabel}>
-                        Lowest
-                      </Text>
-                    </View>
-                    <View style={styles.summarySubHeaderSecondaryMetric}>
-                      <Text style={styles.summarySubHeaderSecondaryValue}>
-                        {summaryData.highest_grade && summaryData.lowest_grade
-                          ? summaryData.highest_grade - summaryData.lowest_grade
-                          : 'N/A'}
-                        %
-                      </Text>
-                      <Text style={styles.summarySubHeaderSecondaryLabel}>
-                        Range
-                      </Text>
-                    </View>
-                  </View>
-                )}
               </View>
-            ) : null;
-          })()}
+            )}
+          </View>
+        )}
       </View>
 
       <View style={[styles.content, isLandscape && styles.landscapeContent]}>
@@ -1466,13 +2057,43 @@ export default function GradesScreen({ navigation, route }) {
               </Text>
             </View> */}
 
-            <ScrollView
-              style={styles.fullWidth}
-              contentContainerStyle={styles.subjectGrid}
-              showsVerticalScrollIndicator={false}
-            >
-              {availableSubjects.map((subject) => renderSubjectCard(subject))}
-            </ScrollView>
+            {activeTab === 'summative' &&
+            strandGrades?.subjects_with_strands ? (
+              // Show strand-based section list for summative
+              <SectionList
+                sections={getSectionListData()}
+                keyExtractor={(item, index) => `${item.strand_id}-${index}`}
+                renderItem={renderStrandItem}
+                renderSectionHeader={renderSectionHeader}
+                style={styles.fullWidth}
+                contentContainerStyle={styles.sectionListContainer}
+                showsVerticalScrollIndicator={false}
+                stickySectionHeadersEnabled={false}
+              />
+            ) : activeTab === 'formative' && grades?.formative ? (
+              // Show formative section list for life skills
+              <SectionList
+                sections={getFormativeSectionListData()}
+                keyExtractor={(item, index) =>
+                  `${item.id || index}-${item.assessment_name}`
+                }
+                renderItem={renderFormativeItem}
+                renderSectionHeader={renderFormativeSectionHeader}
+                style={styles.fullWidth}
+                contentContainerStyle={styles.sectionListContainer}
+                showsVerticalScrollIndicator={false}
+                stickySectionHeadersEnabled={false}
+              />
+            ) : (
+              // Fallback to original subject cards
+              <ScrollView
+                style={styles.fullWidth}
+                contentContainerStyle={styles.subjectGrid}
+                showsVerticalScrollIndicator={false}
+              >
+                {availableSubjects.map((subject) => renderSubjectCard(subject))}
+              </ScrollView>
+            )}
           </View>
         ) : (
           // Show grades table for selected subject
@@ -1486,6 +2107,212 @@ export default function GradesScreen({ navigation, route }) {
           </View>
         )}
       </View>
+
+      {/* Strand Details Modal */}
+      <Modal
+        visible={selectedStrand !== null}
+        animationType='slide'
+        presentationStyle='pageSheet'
+        onRequestClose={closeStrandDetails}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={closeStrandDetails}
+            >
+              <FontAwesomeIcon
+                icon={faArrowLeft}
+                size={20}
+                color={theme.colors.text}
+              />
+            </TouchableOpacity>
+            <View style={styles.modalHeaderInfo}>
+              <Text style={styles.modalTitle}>
+                {selectedStrand?.strand_name}
+              </Text>
+              <Text style={styles.modalSubtitle}>
+                {selectedStrand?.subjectName} •{' '}
+                {selectedStrand?.total_assessments} assessments
+              </Text>
+            </View>
+            <View style={styles.modalHeaderGrade}>
+              <Text
+                style={[
+                  styles.modalGradeText,
+                  { color: getSubjectColor(selectedStrand?.subjectName || '') },
+                ]}
+              >
+                {selectedStrand?.strand_average}%
+              </Text>
+              <Text
+                style={[
+                  styles.modalGradeLetter,
+                  {
+                    backgroundColor: getSubjectColor(
+                      selectedStrand?.subjectName || ''
+                    ),
+                  },
+                ]}
+              >
+                {selectedStrand?.strand_letter_grade}
+              </Text>
+            </View>
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            {strandAssessments.length > 0 ? (
+              <View style={styles.assessmentsList}>
+                <Text style={styles.assessmentsTitle}>Assessments</Text>
+                {strandAssessments.map((assessment, index) => {
+                  // Determine if this is summative or formative
+                  const isFormative = grades?.formative?.includes(assessment);
+                  const assessmentCategory = isFormative
+                    ? 'Formative'
+                    : 'Summative';
+
+                  return (
+                    <View
+                      key={`${assessment.id || index}-${
+                        assessment.assessment_name
+                      }`}
+                      style={styles.assessmentItem}
+                    >
+                      <View style={styles.assessmentLeft}>
+                        <View style={styles.assessmentHeader}>
+                          <Text style={styles.assessmentName}>
+                            {assessment.assessment_name}
+                          </Text>
+                          <View
+                            style={[
+                              styles.assessmentCategoryBadge,
+                              {
+                                backgroundColor: isFormative
+                                  ? '#4CAF50'
+                                  : '#FF9500',
+                              },
+                            ]}
+                          >
+                            <Text style={styles.assessmentCategoryText}>
+                              {assessmentCategory}
+                            </Text>
+                          </View>
+                        </View>
+                        <Text style={styles.assessmentDetails}>
+                          {assessment.assessment_type} •{' '}
+                          {(() => {
+                            const dateField =
+                              assessment.date || assessment.date_created;
+                            if (!dateField) return 'No date';
+
+                            // Handle string dates - try different formats
+                            const dateStr = dateField.toString();
+
+                            // If it's already a formatted date string, return as is
+                            if (
+                              dateStr.includes('/') ||
+                              dateStr.includes('-')
+                            ) {
+                              try {
+                                const date = new Date(dateStr);
+                                if (!isNaN(date.getTime())) {
+                                  return date.toLocaleDateString();
+                                }
+                              } catch (error) {
+                                // If parsing fails, return the original string
+                                return dateStr;
+                              }
+                            }
+
+                            // Return the original string if it doesn't look like a date
+                            return dateStr;
+                          })()}
+                        </Text>
+                        {assessment.description && (
+                          <Text style={styles.assessmentDescription}>
+                            {assessment.description}
+                          </Text>
+                        )}
+                      </View>
+                      <View style={styles.assessmentRight}>
+                        <Text
+                          style={[
+                            styles.assessmentScore,
+                            {
+                              color: getSubjectColor(
+                                selectedStrand?.subjectName || ''
+                              ),
+                            },
+                          ]}
+                        >
+                          {assessment.score || 0}/{assessment.max_score || 0}
+                        </Text>
+                        <Text style={styles.assessmentPercentage}>
+                          {assessment.max_score && assessment.max_score > 0
+                            ? Math.round(
+                                (assessment.score / assessment.max_score) * 100
+                              )
+                            : 0}
+                          %
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            ) : (
+              <View style={styles.noAssessmentsContainer}>
+                <Text style={styles.noAssessmentsText}>
+                  No assessments found for this strand
+                </Text>
+                <Text style={styles.noAssessmentsSubtext}>
+                  Assessments may be categorized differently or not yet
+                  available
+                </Text>
+              </View>
+            )}
+
+            {/* Calculation Details */}
+            {selectedStrand?.calculation_details && (
+              <View style={styles.calculationDetails}>
+                <Text style={styles.calculationTitle}>
+                  Calculation Breakdown
+                </Text>
+                <View style={styles.calculationGrid}>
+                  <View style={styles.calculationItem}>
+                    <Text style={styles.calculationLabel}>
+                      Normal Assessments
+                    </Text>
+                    <Text style={styles.calculationValue}>
+                      {selectedStrand.calculation_details.normal_assessments}
+                    </Text>
+                  </View>
+                  <View style={styles.calculationItem}>
+                    <Text style={styles.calculationLabel}>
+                      Final Assessments
+                    </Text>
+                    <Text style={styles.calculationValue}>
+                      {selectedStrand.calculation_details.final_assessments}
+                    </Text>
+                  </View>
+                  <View style={styles.calculationItem}>
+                    <Text style={styles.calculationLabel}>Normal Score</Text>
+                    <Text style={styles.calculationValue}>
+                      {selectedStrand.calculation_details.normal_score}
+                    </Text>
+                  </View>
+                  <View style={styles.calculationItem}>
+                    <Text style={styles.calculationLabel}>Final Score</Text>
+                    <Text style={styles.calculationValue}>
+                      {selectedStrand.calculation_details.final_score}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            )}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1796,6 +2623,125 @@ const createStyles = (theme) =>
       alignItems: 'center',
       width: '100%',
       padding: 10,
+    },
+    // SectionList Styles
+    sectionListContainer: {
+      padding: 16,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: 16,
+      marginVertical: 8,
+      borderRadius: 12,
+      ...createCardShadow(theme),
+    },
+    sectionHeaderLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
+    sectionHeaderIcon: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    sectionHeaderInfo: {
+      flex: 1,
+    },
+    sectionHeaderTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: theme.colors.text,
+      marginBottom: 2,
+    },
+    sectionHeaderSubtitle: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+    },
+    sectionHeaderRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    sectionHeaderGrades: {
+      alignItems: 'flex-end',
+      marginRight: 12,
+    },
+    sectionHeaderAverage: {
+      fontSize: 18,
+      fontWeight: '800',
+      marginBottom: 4,
+    },
+    sectionHeaderGrade: {
+      color: '#fff',
+      fontSize: 12,
+      fontWeight: '700',
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 8,
+      textAlign: 'center',
+      minWidth: 24,
+    },
+    expandIcon: {
+      width: 24,
+      height: 24,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    // Strand Item Styles
+    strandItem: {
+      backgroundColor: theme.colors.card,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: 12,
+      marginHorizontal: 16,
+      marginVertical: 4,
+      borderRadius: 8,
+      borderLeftWidth: 3,
+      borderLeftColor: theme.colors.border,
+      ...createSmallShadow(theme),
+    },
+    strandItemLeft: {
+      flex: 1,
+      marginRight: 12,
+    },
+    strandName: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.colors.text,
+      marginBottom: 4,
+    },
+    strandDetails: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+    },
+    strandBreakdown: {
+      fontSize: 11,
+      color: theme.colors.textSecondary,
+      fontStyle: 'italic',
+    },
+    strandItemRight: {
+      alignItems: 'flex-end',
+    },
+    strandAverage: {
+      fontSize: 16,
+      fontWeight: '700',
+      marginBottom: 4,
+    },
+    strandGrade: {
+      color: '#fff',
+      fontSize: 11,
+      fontWeight: '700',
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 6,
+      textAlign: 'center',
+      minWidth: 20,
     },
     fullWidth: {
       width: '100%',
@@ -2383,5 +3329,360 @@ const createStyles = (theme) =>
       fontSize: 12,
       color: theme.colors.textSecondary,
       flex: 1,
+    },
+    // Modal Styles
+    modalContainer: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+      backgroundColor: theme.colors.card,
+    },
+    modalCloseButton: {
+      width: 40,
+      height: 40,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    modalHeaderInfo: {
+      flex: 1,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: theme.colors.text,
+      marginBottom: 2,
+    },
+    modalSubtitle: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+    },
+    modalHeaderGrade: {
+      alignItems: 'flex-end',
+    },
+    modalGradeText: {
+      fontSize: 20,
+      fontWeight: '800',
+      marginBottom: 4,
+    },
+    modalGradeLetter: {
+      color: '#fff',
+      fontSize: 12,
+      fontWeight: '700',
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 8,
+      textAlign: 'center',
+      minWidth: 28,
+    },
+    modalContent: {
+      flex: 1,
+      padding: 16,
+    },
+    assessmentsList: {
+      marginBottom: 24,
+    },
+    assessmentsTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: theme.colors.text,
+      marginBottom: 12,
+    },
+    assessmentItem: {
+      backgroundColor: theme.colors.card,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: 16,
+      marginBottom: 8,
+      borderRadius: 12,
+      ...createCardShadow(theme),
+    },
+    assessmentLeft: {
+      flex: 1,
+      marginRight: 12,
+    },
+    assessmentHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 4,
+    },
+    assessmentName: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.colors.text,
+      flex: 1,
+      marginRight: 8,
+    },
+    assessmentCategoryBadge: {
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 4,
+    },
+    assessmentCategoryText: {
+      fontSize: 10,
+      fontWeight: '600',
+      color: '#fff',
+    },
+    assessmentDetails: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      marginBottom: 2,
+    },
+    assessmentDescription: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      fontStyle: 'italic',
+    },
+    assessmentRight: {
+      alignItems: 'flex-end',
+    },
+    assessmentScore: {
+      fontSize: 16,
+      fontWeight: '700',
+      marginBottom: 2,
+    },
+    assessmentPercentage: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+    },
+    noAssessmentsContainer: {
+      alignItems: 'center',
+      padding: 32,
+    },
+    noAssessmentsText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.colors.text,
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    noAssessmentsSubtext: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      textAlign: 'center',
+    },
+    calculationDetails: {
+      backgroundColor: theme.colors.card,
+      padding: 16,
+      borderRadius: 12,
+      ...createCardShadow(theme),
+    },
+    calculationTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: theme.colors.text,
+      marginBottom: 12,
+    },
+    calculationGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+    },
+    calculationItem: {
+      width: '48%',
+      marginBottom: 12,
+    },
+    calculationLabel: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      marginBottom: 4,
+    },
+    calculationValue: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.colors.text,
+    },
+    // Subject List Tab Styles
+    subjectListTabs: {
+      flexDirection: 'row',
+      backgroundColor: theme.colors.card,
+      marginHorizontal: 16,
+      marginBottom: 16,
+      borderRadius: 12,
+      padding: 4,
+      ...createCardShadow(theme),
+    },
+    subjectListTab: {
+      flex: 1,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 8,
+      alignItems: 'center',
+    },
+    activeSubjectListTab: {
+      backgroundColor: theme.colors.primary,
+    },
+    subjectListTabText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.colors.textSecondary,
+    },
+    activeSubjectListTabText: {
+      color: '#fff',
+    },
+    // Criteria Explanation Styles
+    criteriaExplanation: {
+      backgroundColor: theme.colors.card,
+      marginHorizontal: 16,
+      marginBottom: 16,
+      padding: 16,
+      borderRadius: 12,
+      ...createCardShadow(theme),
+    },
+    criteriaTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: theme.colors.text,
+      marginBottom: 12,
+    },
+    criteriaGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+    },
+    criteriaItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      width: '48%',
+      marginBottom: 8,
+    },
+    criteriaIndicator: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 8,
+    },
+    criteriaLabel: {
+      fontSize: 10,
+      fontWeight: '700',
+      color: '#fff',
+    },
+    criteriaText: {
+      fontSize: 12,
+      color: theme.colors.text,
+      flex: 1,
+    },
+    // Formative Item Styles
+    formativeItem: {
+      backgroundColor: theme.colors.card,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: 16,
+      marginHorizontal: 16,
+      marginVertical: 4,
+      borderRadius: 8,
+      borderLeftWidth: 3,
+      borderLeftColor: theme.colors.border,
+      ...createSmallShadow(theme),
+    },
+    formativeItemLeft: {
+      flex: 1,
+      marginRight: 12,
+    },
+    formativeAssessmentName: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.colors.text,
+      marginBottom: 4,
+    },
+    formativeAssessmentDetails: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      marginBottom: 4,
+    },
+    formativeFeedback: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      fontStyle: 'italic',
+    },
+    formativeItemRight: {
+      alignItems: 'flex-end',
+    },
+    criteriaContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    criterionItem: {
+      marginLeft: 4,
+    },
+    criterionIndicator: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 1,
+    },
+    criterionLabel: {
+      fontSize: 8,
+      fontWeight: '700',
+    },
+    // Subheader Tab Styles
+    subHeaderTabs: {
+      flexDirection: 'row',
+      marginBottom: 16,
+      backgroundColor: theme.colors.background,
+      borderRadius: 8,
+      padding: 2,
+    },
+    subHeaderTab: {
+      flex: 1,
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderRadius: 6,
+      alignItems: 'center',
+    },
+    activeSubHeaderTab: {
+      backgroundColor: theme.colors.primary,
+    },
+    subHeaderTabText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: theme.colors.textSecondary,
+    },
+    activeSubHeaderTabText: {
+      color: '#fff',
+    },
+    // Criteria Subheader Styles
+    criteriaSubHeaderGrid: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginTop: 8,
+      alignSelf: "center",
+    },
+    criteriaSubHeaderItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      marginHorizontal: 2,
+    },
+    criteriaSubHeaderIndicator: {
+      width: 16,
+      height: 16,
+      borderRadius: 8,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 4,
+    },
+    criteriaSubHeaderLabel: {
+      fontSize: 8,
+      fontWeight: '700',
+      color: '#fff',
+    },
+    criteriaSubHeaderText: {
+      fontSize: 10,
+      color: theme.colors.textSecondary,
+      fontWeight: '500',
     },
   });
