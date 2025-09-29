@@ -239,71 +239,10 @@ export default function GradesScreen({ navigation, route }) {
     return Array.from(subjects);
   };
 
-  // Helper function to convert numerical grade to letter grade
-  const getLetterGrade = useCallback((average) => {
-    if (average >= 90) return 'A*';
-    if (average >= 80) return 'A';
-    if (average >= 70) return 'B';
-    if (average >= 60) return 'C';
-    if (average >= 50) return 'D';
-    if (average >= 40) return 'E';
-    return 'U';
-  }, []);
-
-  // Create fallback summary from legacy grades data
-  const createFallbackSummary = useCallback(
-    (gradesData) => {
-      if (!gradesData || (!gradesData.summative && !gradesData.formative)) {
-        return null;
-      }
-
-      const subjects = extractSubjects(gradesData);
-      const subjectAverages = [];
-      let totalAverage = 0;
-      let validSubjects = 0;
-      let highestGrade = 0;
-      let lowestGrade = 100;
-
-      subjects.forEach((subject) => {
-        const average = getSubjectAverage(subject);
-        if (average > 0) {
-          subjectAverages.push({
-            subject_name: subject,
-            overall_average: average,
-            letter_grade: getLetterGrade(average),
-          });
-          totalAverage += average;
-          validSubjects++;
-
-          // Track highest and lowest grades
-          if (average > highestGrade) highestGrade = average;
-          if (average < lowestGrade) lowestGrade = average;
-        }
-      });
-
-      if (validSubjects === 0) return null;
-
-      const overallAverage = totalAverage / validSubjects;
-      return {
-        overall_average: overallAverage,
-        overall_letter_grade: getLetterGrade(overallAverage),
-        total_subjects: validSubjects,
-        highest_grade: highestGrade,
-        lowest_grade: lowestGrade,
-        subject_averages: subjectAverages,
-      };
-    },
-    [extractSubjects, getSubjectAverage, getLetterGrade]
-  );
-
-  // Get summary data (from advanced API or fallback)
+  // Get summary data (only from advanced API)
   const getSummaryData = useCallback(() => {
-    if (calculatedGrades?.summary) {
-      return calculatedGrades.summary;
-    }
-    // Fallback to calculated summary from legacy data
-    return createFallbackSummary(grades);
-  }, [calculatedGrades, grades, createFallbackSummary]);
+    return calculatedGrades?.summary || null;
+  }, [calculatedGrades]);
 
   // Update available subjects when grades or calculated data changes
   useEffect(() => {
@@ -531,38 +470,6 @@ export default function GradesScreen({ navigation, route }) {
     return colors[colorIndex];
   };
 
-  // Helper function to calculate average grade for a subject
-  const getSubjectAverage = (subject) => {
-    if (!grades) return null;
-
-    const subjectGrades = [];
-    if (grades.summative) {
-      grades.summative.forEach((grade) => {
-        if (
-          grade.subject_name === subject &&
-          (grade.score_percentage || grade.percentage)
-        ) {
-          subjectGrades.push(grade.score_percentage || grade.percentage);
-        }
-      });
-    }
-    if (grades.formative) {
-      grades.formative.forEach((grade) => {
-        if (
-          grade.subject_name === subject &&
-          (grade.score_percentage || grade.percentage)
-        ) {
-          subjectGrades.push(grade.score_percentage || grade.percentage);
-        }
-      });
-    }
-
-    if (subjectGrades.length === 0) return null;
-    return Math.round(
-      subjectGrades.reduce((a, b) => a + b, 0) / subjectGrades.length
-    );
-  };
-
   const renderSubjectCard = useCallback(
     (subject) => {
       const subjectColor = getSubjectColor(subject);
@@ -573,7 +480,7 @@ export default function GradesScreen({ navigation, route }) {
       const average =
         advEntry?.overall_average != null
           ? Math.round(advEntry.overall_average)
-          : getSubjectAverage(subject);
+          : null;
 
       // Calculate grade counts
       const summativeCount =
@@ -584,7 +491,7 @@ export default function GradesScreen({ navigation, route }) {
         0;
       const totalGrades = summativeCount + formativeCount;
 
-      const gradeLetter = advEntry?.letter_grade || getGradeLabel(average);
+      const gradeLetter = advEntry?.letter_grade || null;
 
       // Create dynamic styles (these are lightweight and subject-specific)
       const cardBackgroundStyle = { backgroundColor: `${subjectColor}08` };
@@ -642,7 +549,7 @@ export default function GradesScreen({ navigation, route }) {
             <View style={styles.gradeSection}>
               <View style={[styles.gradeCircle, gradeCircleStyle]}>
                 <Text style={[styles.gradeLetterText, coloredTextStyle]}>
-                  {gradeLetter}
+                  {gradeLetter || '--'}
                 </Text>
               </View>
               <Text style={styles.gradeLabel}>Grade</Text>
@@ -1580,7 +1487,7 @@ const createStyles = (theme) =>
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.15,
       shadowRadius: 4,
-      overflow: 'hidden',
+
       zIndex: 1,
     },
     navigationHeader: {
@@ -1589,6 +1496,8 @@ const createStyles = (theme) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
     },
     subHeader: {
       backgroundColor: theme.colors.surface,
@@ -1600,6 +1509,8 @@ const createStyles = (theme) =>
       backgroundColor: theme.colors.surface,
       paddingHorizontal: 20,
       paddingVertical: 16,
+      borderBottomLeftRadius: 16,
+      borderBottomRightRadius: 16,
     },
     summarySubHeaderTitle: {
       fontSize: 16,
