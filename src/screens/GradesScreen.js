@@ -10,6 +10,7 @@ import {
   Dimensions,
   Platform,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -339,13 +340,13 @@ export default function GradesScreen({ navigation, route }) {
     }));
   }, [grades, expandedSections]);
 
-  // Toggle section expansion
+  // Toggle section expansion (accordion style - only one open at a time)
   const toggleSection = useCallback((sectionTitle) => {
     setExpandedSections((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(sectionTitle)) {
-        newSet.delete(sectionTitle);
-      } else {
+      const newSet = new Set();
+      // If the clicked section is already expanded, collapse it (empty set)
+      // If it's not expanded, expand only this section
+      if (!prev.has(sectionTitle)) {
         newSet.add(sectionTitle);
       }
       return newSet;
@@ -382,6 +383,7 @@ export default function GradesScreen({ navigation, route }) {
 
       // Filter assessments by strand logic:
       // - ONLY summative assessments that match the strand_name
+      // - ONLY graded assessments (have a score)
       // - Formative assessments should NOT appear in strand modals
       const strandAssessments = subjectAssessments.filter((assessment) => {
         // Check if this is a summative assessment (from grades.summative array)
@@ -391,10 +393,18 @@ export default function GradesScreen({ navigation, route }) {
           // For summative assessments, filter by strand_name
           if (assessment.strand_name) {
             const matches = assessment.strand_name === strandName;
+
+            // Also check if the assessment is graded (has a score)
+            const isGraded =
+              assessment.score !== null &&
+              assessment.score !== undefined &&
+              assessment.score !== '';
+
             console.log(
-              `🔍 STRAND: Summative assessment ${assessment.assessment_name}: ${matches} (${assessment.strand_name} vs ${strandName})`
+              `🔍 STRAND: Summative assessment ${assessment.assessment_name}: strand_match=${matches}, is_graded=${isGraded} (score: ${assessment.score})`
             );
-            return matches;
+
+            return matches && isGraded;
           } else {
             console.log(
               `⚠️ STRAND: Summative assessment ${assessment.assessment_name} missing strand_name`
@@ -1871,7 +1881,15 @@ export default function GradesScreen({ navigation, route }) {
       {/* Compact Header */}
       <View style={styles.compactHeaderContainer}>
         {/* Navigation Header */}
-        <View style={styles.navigationHeader}>
+        <View
+          style={[
+            styles.navigationHeader,
+            {
+              borderBottomLeftRadius: loading ? 16 : 0,
+              borderBottomRightRadius: loading ? 16 : 0,
+            },
+          ]}
+        >
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => {
@@ -2117,8 +2135,17 @@ export default function GradesScreen({ navigation, route }) {
               </Text>
             </View> */}
 
-            {activeTab === 'summative' &&
-            strandGrades?.subjects_with_strands ? (
+            {loading ? (
+              // Show loading indicator while data is being fetched
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size='large' color={theme.colors.primary} />
+                <Text style={styles.loadingText}>Loading grades...</Text>
+                <Text style={styles.loadingSubtext}>
+                  Please wait while we fetch your academic data
+                </Text>
+              </View>
+            ) : activeTab === 'summative' &&
+              strandGrades?.subjects_with_strands ? (
               // Show strand-based section list for summative
               <SectionList
                 sections={getSectionListData()}
@@ -3751,5 +3778,27 @@ const createStyles = (theme) =>
       fontSize: 10,
       color: theme.colors.textSecondary,
       fontWeight: '500',
+    },
+    // Loading Styles
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: 60,
+      paddingHorizontal: 20,
+    },
+    loadingText: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: theme.colors.text,
+      marginTop: 16,
+      textAlign: 'center',
+    },
+    loadingSubtext: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      marginTop: 8,
+      textAlign: 'center',
+      lineHeight: 20,
     },
   });
