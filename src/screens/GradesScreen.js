@@ -356,6 +356,7 @@ export default function GradesScreen({ navigation, route }) {
   const getStrandAssessments = useCallback(
     (subjectName, strandName) => {
       if (!grades) {
+        console.log('🚫 STRAND: No grades data available');
         return [];
       }
 
@@ -365,27 +366,53 @@ export default function GradesScreen({ navigation, route }) {
         ...(grades.formative || []),
       ];
 
+      console.log(
+        `🔍 STRAND: Total assessments available: ${allAssessments.length}`
+      );
+      console.log('🔍 STRAND: Sample assessment structure:', allAssessments[0]);
+
       // Filter assessments by subject and strand
       const subjectAssessments = allAssessments.filter(
         (assessment) => assessment.subject_name === subjectName
       );
 
-      // Filter by strand name (assuming strand info is in assessment data)
-      // If strand info is not directly available, we might need to match by assessment type or other criteria
+      console.log(
+        `🔍 STRAND: Assessments for ${subjectName}: ${subjectAssessments.length}`
+      );
+
+      // Filter assessments by strand logic:
+      // - ONLY summative assessments that match the strand_name
+      // - Formative assessments should NOT appear in strand modals
       const strandAssessments = subjectAssessments.filter((assessment) => {
-        // Check if assessment has strand information
-        if (assessment.strand_name) {
-          return assessment.strand_name === strandName;
+        // Check if this is a summative assessment (from grades.summative array)
+        const isSummative = grades.summative?.some((s) => s === assessment);
+
+        if (isSummative) {
+          // For summative assessments, filter by strand_name
+          if (assessment.strand_name) {
+            const matches = assessment.strand_name === strandName;
+            console.log(
+              `🔍 STRAND: Summative assessment ${assessment.assessment_name}: ${matches} (${assessment.strand_name} vs ${strandName})`
+            );
+            return matches;
+          } else {
+            console.log(
+              `⚠️ STRAND: Summative assessment ${assessment.assessment_name} missing strand_name`
+            );
+            return false;
+          }
+        } else {
+          // Formative assessments should NOT appear in strand modals
+          console.log(
+            `❌ STRAND: Excluding formative assessment ${assessment.assessment_name} (formative assessments don't belong to strands)`
+          );
+          return false;
         }
-
-        // Fallback: match by assessment name/type containing strand keywords
-        const assessmentName = assessment.assessment_name?.toLowerCase() || '';
-        const strandKeywords = strandName.toLowerCase().split(' ');
-
-        return strandKeywords.some((keyword) =>
-          assessmentName.includes(keyword.toLowerCase())
-        );
       });
+
+      console.log(
+        `🔍 STRAND: Final assessments to show: ${strandAssessments.length}`
+      );
 
       // Sort assessments by date (newest first)
       return strandAssessments.sort((a, b) => {
@@ -403,6 +430,7 @@ export default function GradesScreen({ navigation, route }) {
       console.log(
         `🔍 STRAND: Selected ${strand.strand_name} in ${subjectName}`
       );
+      console.log('🔍 STRAND: Current grades data:', grades);
 
       const assessments = getStrandAssessments(subjectName, strand.strand_name);
       console.log(
@@ -417,7 +445,7 @@ export default function GradesScreen({ navigation, route }) {
       });
       setStrandAssessments(assessments);
     },
-    [getStrandAssessments]
+    [getStrandAssessments, grades]
   );
 
   // Close strand details
@@ -425,6 +453,38 @@ export default function GradesScreen({ navigation, route }) {
     setSelectedStrand(null);
     setStrandAssessments([]);
   }, []);
+
+  // Refresh assessments when grades data changes and modal is open
+  useEffect(() => {
+    if (selectedStrand && grades) {
+      console.log('🔄 STRAND: Refreshing assessments due to data change');
+      const refreshedAssessments = getStrandAssessments(
+        selectedStrand.subjectName,
+        selectedStrand.strand_name
+      );
+      console.log(
+        `🔄 STRAND: Refreshed to ${refreshedAssessments.length} assessments`
+      );
+
+      // Only update if the assessments have actually changed
+      if (
+        JSON.stringify(refreshedAssessments) !==
+        JSON.stringify(strandAssessments)
+      ) {
+        setStrandAssessments(refreshedAssessments);
+        setSelectedStrand((prev) => ({
+          ...prev,
+          assessments: refreshedAssessments,
+        }));
+      }
+    }
+  }, [
+    selectedStrand?.strand_name,
+    selectedStrand?.subjectName,
+    grades,
+    getStrandAssessments,
+    strandAssessments,
+  ]);
 
   // Render section header for SectionList
   const renderSectionHeader = useCallback(
@@ -2161,7 +2221,14 @@ export default function GradesScreen({ navigation, route }) {
           </View>
 
           <ScrollView style={styles.modalContent}>
-            {strandAssessments.length > 0 ? (
+            {(() => {
+              console.log(
+                `🎯 MODAL: Rendering with ${strandAssessments.length} assessments`
+              );
+              console.log('🎯 MODAL: strandAssessments:', strandAssessments);
+              console.log('🎯 MODAL: selectedStrand:', selectedStrand);
+              return strandAssessments.length > 0;
+            })() ? (
               <View style={styles.assessmentsList}>
                 <Text style={styles.assessmentsTitle}>Assessments</Text>
                 {strandAssessments.map((assessment, index) => {
@@ -3659,7 +3726,7 @@ const createStyles = (theme) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       marginTop: 8,
-      alignSelf: "center",
+      alignSelf: 'center',
     },
     criteriaSubHeaderItem: {
       flexDirection: 'row',

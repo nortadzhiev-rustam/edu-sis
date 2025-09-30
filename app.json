@@ -41,6 +41,7 @@
         }
       ]
     ],
+    "assetBundlePatterns": ["**/*"],
     "splash": {
       "image": "./assets/app_logo.png",
       "resizeMode": "contain",
