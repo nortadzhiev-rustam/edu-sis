@@ -347,7 +347,9 @@ const createStyles = (theme, fontSizes) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      ...theme.shadows.medium,
+      ...theme.shadows.small,
+      marginHorizontal: 16,
+      borderRadius: 16,
     },
     backButton: {
       width: 40,
@@ -392,7 +394,7 @@ const createStyles = (theme, fontSizes) =>
       padding: 30,
       margin: 20,
       borderRadius: 16,
-      ...theme.shadows.medium,
+      ...theme.shadows.small,
     },
     avatarContainer: {
       marginBottom: 20,
@@ -435,7 +437,7 @@ const createStyles = (theme, fontSizes) =>
       marginTop: 0,
       borderRadius: 16,
       padding: 20,
-      ...theme.shadows.medium,
+      ...theme.shadows.small,
     },
     sectionTitle: {
       fontSize: fontSizes.sectionTitle,

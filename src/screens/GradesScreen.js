@@ -513,12 +513,14 @@ export default function GradesScreen({ navigation, route }) {
       const totalStrands =
         subjectData?.total_strands || subjectData?.strands?.length || 0;
 
+      // Use lighter background in dark mode
+      const backgroundColor = theme.dark
+        ? `${subjectColor}25`
+        : `${subjectColor}15`;
+
       return (
         <TouchableOpacity
-          style={[
-            styles.sectionHeader,
-            { backgroundColor: `${subjectColor}15` },
-          ]}
+          style={[styles.sectionHeader, { backgroundColor }]}
           onPress={() => toggleSection(section.title)}
           activeOpacity={0.7}
         >
@@ -580,12 +582,14 @@ export default function GradesScreen({ navigation, route }) {
       const subjectData = section.subjectData;
       const totalAssessments = subjectData?.total_assessments || 0;
 
+      // Use lighter background in dark mode
+      const backgroundColor = theme.dark
+        ? `${subjectColor}25`
+        : `${subjectColor}15`;
+
       return (
         <TouchableOpacity
-          style={[
-            styles.sectionHeader,
-            { backgroundColor: `${subjectColor}15` },
-          ]}
+          style={[styles.sectionHeader, { backgroundColor }]}
           onPress={() => toggleSection(section.title)}
           activeOpacity={0.7}
         >
@@ -659,13 +663,8 @@ export default function GradesScreen({ navigation, route }) {
           <Text style={[styles.strandGrade, { backgroundColor: subjectColor }]}>
             {item.strand_letter_grade}
           </Text>
-         
         </View>
-        <FontAwesomeIcon
-            icon={faChevronRight}
-            size={12}
-            color={subjectColor}
-          />
+        <FontAwesomeIcon icon={faChevronRight} size={12} color={subjectColor} />
       </TouchableOpacity>
     );
   }, []);

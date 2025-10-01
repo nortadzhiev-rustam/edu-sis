@@ -154,7 +154,8 @@ const lightTheme = {
 const darkTheme = {
   mode: 'dark',
   colors: {
-    primary: '#6B69FF',
+    primary: '#4A4A4A',
+    primaryRGB: 'rgb(74, 74, 74)',
     secondary: '#0A84FF',
     background: '#000000',
     surface: '#1C1C1E',
@@ -172,7 +173,7 @@ const darkTheme = {
     tabBackground: '#1C1C1E',
     tabActive: '#6B69FF',
     tabInactive: '#8E8E93',
-    shadow: '#000000',
+    shadow: '#3c3c3c',
     // BPS-specific colors for better UX
     bpsPositive: '#30D158', // Green for positive behavior
     bpsNegative: '#FF453A', // Red for negative behavior
