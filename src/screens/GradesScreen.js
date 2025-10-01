@@ -42,6 +42,7 @@ import {
   faLeaf,
   faChevronDown,
   faChevronUp,
+  faChartBar,
 } from '@fortawesome/free-solid-svg-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useScreenOrientation } from '../hooks/useScreenOrientation';
@@ -610,7 +611,7 @@ export default function GradesScreen({ navigation, route }) {
               <Text
                 style={[styles.sectionHeaderAverage, { color: subjectColor }]}
               >
-                Life Skills
+                Life Skill
               </Text>
             </View>
             <View style={styles.expandIcon}>
@@ -658,7 +659,13 @@ export default function GradesScreen({ navigation, route }) {
           <Text style={[styles.strandGrade, { backgroundColor: subjectColor }]}>
             {item.strand_letter_grade}
           </Text>
+         
         </View>
+        <FontAwesomeIcon
+            icon={faChevronRight}
+            size={12}
+            color={subjectColor}
+          />
       </TouchableOpacity>
     );
   }, []);
@@ -1180,7 +1187,7 @@ export default function GradesScreen({ navigation, route }) {
                 <View style={styles.typeItem}>
                   <View style={[styles.typeDot, typeDotFadedStyle]} />
                   <Text style={styles.typeText}>
-                    {formativeCount} Life Skills
+                    {formativeCount} Life Skill
                   </Text>
                 </View>
               )}
@@ -1943,22 +1950,35 @@ export default function GradesScreen({ navigation, route }) {
           </View>
         )}
 
-        {/* Combined Subheader - Tabs + Summary/Criteria */}
+        {/* Performance Overview - Tabs + Stats Cards */}
         {showSubjectList && !loading && (
-          <View style={styles.summarySubHeader}>
+          <View style={styles.performanceOverview}>
+            {/* Header with Icon and Title */}
+            <View style={styles.performanceHeader}>
+              <View style={styles.performanceIconContainer}>
+                <FontAwesomeIcon
+                  icon={faChartBar}
+                  size={20}
+                  color={theme.colors.primary}
+                />
+              </View>
+              <Text style={styles.performanceTitle}>Performance Overview</Text>
+            </View>
+
             {/* Tab Navigation */}
-            <View style={styles.subHeaderTabs}>
+            <View style={styles.performanceTabs}>
               <TouchableOpacity
                 style={[
-                  styles.subHeaderTab,
-                  activeTab === 'summative' && styles.activeSubHeaderTab,
+                  styles.performanceTab,
+                  activeTab === 'summative' && styles.activePerformanceTab,
                 ]}
                 onPress={() => setActiveTab('summative')}
               >
                 <Text
                   style={[
-                    styles.subHeaderTabText,
-                    activeTab === 'summative' && styles.activeSubHeaderTabText,
+                    styles.performanceTabText,
+                    activeTab === 'summative' &&
+                      styles.activePerformanceTabText,
                   ]}
                 >
                   Summative
@@ -1966,153 +1986,214 @@ export default function GradesScreen({ navigation, route }) {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
-                  styles.subHeaderTab,
-                  activeTab === 'formative' && styles.activeSubHeaderTab,
+                  styles.performanceTab,
+                  activeTab === 'formative' && styles.activePerformanceTab,
                 ]}
                 onPress={() => setActiveTab('formative')}
               >
                 <Text
                   style={[
-                    styles.subHeaderTabText,
-                    activeTab === 'formative' && styles.activeSubHeaderTabText,
+                    styles.performanceTabText,
+                    activeTab === 'formative' &&
+                      styles.activePerformanceTabText,
                   ]}
                 >
-                  Life Skills
+                  Life Skill
                 </Text>
               </TouchableOpacity>
             </View>
 
-            {/* Content based on active tab */}
+            {/* Stats Cards based on active tab */}
             {activeTab === 'summative' &&
               (() => {
                 const summaryData = getSummaryData();
-                return summaryData ? (
-                  <View>
-                    <Text style={styles.summarySubHeaderTitle}>
-                      Academic Performance
-                    </Text>
+                const totalAssessments = grades?.summative?.length || 0;
+                const gradedAssessments =
+                  grades?.summative?.filter(
+                    (a) =>
+                      a.score !== null &&
+                      a.score !== undefined &&
+                      a.score !== ''
+                  ).length || 0;
 
-                    {/* Main metrics row */}
-                    <View style={styles.summarySubHeaderRow}>
-                      <View style={styles.summarySubHeaderMetric}>
-                        <Text style={styles.summarySubHeaderValue}>
-                          {Math.round(summaryData.overall_average) || 0}%
-                        </Text>
-                        <Text style={styles.summarySubHeaderLabel}>
-                          Overall Avg
-                        </Text>
-                      </View>
-                      <View style={styles.summarySubHeaderMetric}>
-                        <Text style={styles.summarySubHeaderPill}>
-                          {summaryData.overall_letter_grade || 'N/A'}
-                        </Text>
-                        <Text style={styles.summarySubHeaderLabel}>Letter</Text>
-                      </View>
-                      <View style={styles.summarySubHeaderMetric}>
-                        <Text style={styles.summarySubHeaderValue}>
-                          {summaryData.total_subjects || 0}
-                        </Text>
-                        <Text style={styles.summarySubHeaderLabel}>
-                          Subjects
-                        </Text>
+                return summaryData ? (
+                  <View style={styles.statsCardsContainer}>
+                    {/* Overall Card */}
+                    <View style={styles.statsCard}>
+                      <Text style={styles.statsCardLabel}>OVERALL</Text>
+                      <Text style={styles.statsCardValue}>
+                        {Math.round(summaryData.overall_average) || 0}%
+                      </Text>
+                      <Text style={styles.statsCardSubtitle}>
+                        Average Performance
+                      </Text>
+                      <View style={styles.statsCardDetails}>
+                        <View style={styles.statsDetailRow}>
+                          <Text style={styles.statsDetailIcon}>📝</Text>
+                          <Text style={styles.statsDetailText}>
+                            {totalAssessments} Total
+                          </Text>
+                        </View>
+                        <View style={styles.statsDetailRow}>
+                          <Text style={styles.statsDetailIcon}>✅</Text>
+                          <Text style={styles.statsDetailText}>
+                            {(
+                              (gradedAssessments / totalAssessments) *
+                              100
+                            ).toFixed(1)}
+                            % Complete
+                          </Text>
+                        </View>
                       </View>
                     </View>
 
-                    {/* Additional metrics row */}
-                    {(summaryData.highest_grade ||
-                      summaryData.lowest_grade) && (
-                      <View style={styles.summarySubHeaderSecondaryRow}>
-                        <View style={styles.summarySubHeaderSecondaryMetric}>
-                          <Text style={styles.summarySubHeaderSecondaryValue}>
-                            {summaryData.highest_grade || 'N/A'}%
-                          </Text>
-                          <Text style={styles.summarySubHeaderSecondaryLabel}>
-                            Highest
-                          </Text>
-                        </View>
-                        <View style={styles.summarySubHeaderSecondaryMetric}>
-                          <Text style={styles.summarySubHeaderSecondaryValue}>
-                            {summaryData.lowest_grade || 'N/A'}%
-                          </Text>
-                          <Text style={styles.summarySubHeaderSecondaryLabel}>
-                            Lowest
+                    {/* Summative Card */}
+                    <View style={styles.statsCard}>
+                      <Text style={styles.statsCardLabel}>SUMMATIVE</Text>
+                      <Text style={styles.statsCardValue}>
+                        {Math.round(summaryData.overall_average) || 0}%
+                      </Text>
+                      <Text style={styles.statsCardSubtitle}>
+                        Average Grade
+                      </Text>
+                      <View style={styles.statsCardDetails}>
+                        <View style={styles.statsDetailRow}>
+                          <Text style={styles.statsDetailIcon}>📈</Text>
+                          <Text style={styles.statsDetailText}>
+                            High: {summaryData.highest_grade || 0}%
                           </Text>
                         </View>
-                        <View style={styles.summarySubHeaderSecondaryMetric}>
-                          <Text style={styles.summarySubHeaderSecondaryValue}>
-                            {summaryData.highest_grade &&
-                            summaryData.lowest_grade
-                              ? summaryData.highest_grade -
-                                summaryData.lowest_grade
-                              : 'N/A'}
-                            %
-                          </Text>
-                          <Text style={styles.summarySubHeaderSecondaryLabel}>
-                            Range
+                        <View style={styles.statsDetailRow}>
+                          <Text style={styles.statsDetailIcon}>📉</Text>
+                          <Text style={styles.statsDetailText}>
+                            Low: {summaryData.lowest_grade || 0}%
                           </Text>
                         </View>
                       </View>
-                    )}
+                    </View>
+
+                    {/* Subjects Card */}
+                    <View style={styles.statsCard}>
+                      <Text style={styles.statsCardLabel}>SUBJECTS</Text>
+                      <Text style={styles.statsCardValue}>
+                        {summaryData.total_subjects || 0}
+                      </Text>
+                      <Text style={styles.statsCardSubtitle}>
+                        Total Subjects
+                      </Text>
+                      <View style={styles.statsCardDetails}>
+                        <View style={styles.statsDetailRow}>
+                          <Text style={styles.statsDetailIcon}>📊</Text>
+                          <Text style={styles.statsDetailText}>
+                            {strandGrades?.subjects_with_strands?.length || 0}{' '}
+                            With Strands
+                          </Text>
+                        </View>
+                        <View style={styles.statsDetailRow}>
+                          <Text style={styles.statsDetailIcon}>🎯</Text>
+                          <Text style={styles.statsDetailText}>
+                            {gradedAssessments} Graded
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
                   </View>
                 ) : null;
               })()}
 
-            {/* Show criteria explanation for life skills */}
-            {activeTab === 'formative' && (
-              <View>
-                <Text style={styles.summarySubHeaderTitle}>
-                  Assessment Criteria
-                </Text>
-                <View style={styles.criteriaSubHeaderGrid}>
-                  <View style={styles.criteriaSubHeaderItem}>
-                    <View
-                      style={[
-                        styles.criteriaSubHeaderIndicator,
-                        { backgroundColor: '#34C759' },
-                      ]}
-                    >
-                      <Text style={styles.criteriaSubHeaderLabel}>EE</Text>
+            {/* Formative Stats */}
+            {activeTab === 'formative' &&
+              (() => {
+                const totalFormative = grades?.formative?.length || 0;
+                const gradedFormative =
+                  grades?.formative?.filter(
+                    (a) => a.tt1 || a.tt2 || a.tt3 || a.tt4
+                  ).length || 0;
+
+                return (
+                  <View style={styles.statsCardsContainer}>
+                    {/* Formative Card */}
+                    <View style={styles.statsCard}>
+                      <Text style={styles.statsCardLabel}>FORMATIVE</Text>
+                      <Text style={styles.statsCardValue}>
+                        {totalFormative}
+                      </Text>
+                      <Text style={styles.statsCardSubtitle}>
+                        Graded Assessments
+                      </Text>
+                      <View style={styles.statsCardDetails}>
+                        <View style={styles.statsDetailRow}>
+                          <Text style={styles.statsDetailIcon}>📊</Text>
+                          <Text style={styles.statsDetailText}>
+                            {totalFormative} Total
+                          </Text>
+                        </View>
+                        <View style={styles.statsDetailRow}>
+                          <Text style={styles.statsDetailIcon}>⏳</Text>
+                          <Text style={styles.statsDetailText}>
+                            {totalFormative - gradedFormative} Pending
+                          </Text>
+                        </View>
+                      </View>
                     </View>
-                    <Text style={styles.criteriaSubHeaderText}>Exceeding</Text>
-                  </View>
-                  <View style={styles.criteriaSubHeaderItem}>
-                    <View
-                      style={[
-                        styles.criteriaSubHeaderIndicator,
-                        { backgroundColor: '#FF9500' },
-                      ]}
-                    >
-                      <Text style={styles.criteriaSubHeaderLabel}>ME</Text>
+
+                    {/* Criteria Legend Card */}
+                    <View style={[styles.statsCard, styles.criteriaLegendCard]}>
+                      <Text style={styles.statsCardLabel}>CRITERIA</Text>
+                      <View style={styles.criteriaLegendGrid}>
+                        <View style={styles.criteriaLegendItem}>
+                          <View
+                            style={[
+                              styles.criteriaLegendDot,
+                              { backgroundColor: '#34C759' },
+                            ]}
+                          >
+                            <Text style={styles.criteriaLegendDotText}>EE</Text>
+                          </View>
+                          <Text style={styles.criteriaLegendText}>
+                            Exceeding
+                          </Text>
+                        </View>
+                        <View style={styles.criteriaLegendItem}>
+                          <View
+                            style={[
+                              styles.criteriaLegendDot,
+                              { backgroundColor: '#FF9500' },
+                            ]}
+                          >
+                            <Text style={styles.criteriaLegendDotText}>ME</Text>
+                          </View>
+                          <Text style={styles.criteriaLegendText}>Meeting</Text>
+                        </View>
+                        <View style={styles.criteriaLegendItem}>
+                          <View
+                            style={[
+                              styles.criteriaLegendDot,
+                              { backgroundColor: '#007AFF' },
+                            ]}
+                          >
+                            <Text style={styles.criteriaLegendDotText}>AE</Text>
+                          </View>
+                          <Text style={styles.criteriaLegendText}>
+                            Approaching
+                          </Text>
+                        </View>
+                        <View style={styles.criteriaLegendItem}>
+                          <View
+                            style={[
+                              styles.criteriaLegendDot,
+                              { backgroundColor: '#FF3B30' },
+                            ]}
+                          >
+                            <Text style={styles.criteriaLegendDotText}>BE</Text>
+                          </View>
+                          <Text style={styles.criteriaLegendText}>Below</Text>
+                        </View>
+                      </View>
                     </View>
-                    <Text style={styles.criteriaSubHeaderText}>Meeting</Text>
                   </View>
-                  <View style={styles.criteriaSubHeaderItem}>
-                    <View
-                      style={[
-                        styles.criteriaSubHeaderIndicator,
-                        { backgroundColor: '#007AFF' },
-                      ]}
-                    >
-                      <Text style={styles.criteriaSubHeaderLabel}>AE</Text>
-                    </View>
-                    <Text style={styles.criteriaSubHeaderText}>
-                      Approaching
-                    </Text>
-                  </View>
-                  <View style={styles.criteriaSubHeaderItem}>
-                    <View
-                      style={[
-                        styles.criteriaSubHeaderIndicator,
-                        { backgroundColor: '#FF3B30' },
-                      ]}
-                    >
-                      <Text style={styles.criteriaSubHeaderLabel}>BE</Text>
-                    </View>
-                    <Text style={styles.criteriaSubHeaderText}>Below</Text>
-                  </View>
-                </View>
-              </View>
-            )}
+                );
+              })()}
           </View>
         )}
       </View>
@@ -2158,7 +2239,7 @@ export default function GradesScreen({ navigation, route }) {
                 stickySectionHeadersEnabled={false}
               />
             ) : activeTab === 'formative' && grades?.formative ? (
-              // Show formative section list for life skills
+              // Show formative section list for life skill
               <SectionList
                 sections={getFormativeSectionListData()}
                 keyExtractor={(item, index) =>
@@ -2821,6 +2902,7 @@ const createStyles = (theme) =>
     },
     strandItemRight: {
       alignItems: 'flex-end',
+      marginRight: 12,
     },
     strandAverage: {
       fontSize: 16,
@@ -3800,5 +3882,145 @@ const createStyles = (theme) =>
       marginTop: 8,
       textAlign: 'center',
       lineHeight: 20,
+    },
+    // Performance Overview Styles
+    performanceOverview: {
+      backgroundColor: theme.colors.card,
+      marginHorizontal: 16,
+      marginBottom: 12,
+      borderRadius: 12,
+      padding: 12,
+      ...createCardShadow(theme),
+    },
+    performanceHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    performanceIconContainer: {
+      width: 28,
+      height: 28,
+      borderRadius: 6,
+      backgroundColor: `${theme.colors.primary}15`,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 8,
+    },
+    performanceTitle: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: theme.colors.text,
+    },
+    performanceTabs: {
+      flexDirection: 'row',
+      backgroundColor: theme.colors.background,
+      borderRadius: 8,
+      padding: 2,
+      marginBottom: 10,
+    },
+    performanceTab: {
+      flex: 1,
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      borderRadius: 6,
+      alignItems: 'center',
+    },
+    activePerformanceTab: {
+      backgroundColor: theme.colors.primary,
+    },
+    performanceTabText: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: theme.colors.textSecondary,
+    },
+    activePerformanceTabText: {
+      color: '#fff',
+    },
+    // Stats Cards Styles
+    statsCardsContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      marginHorizontal: -4,
+    },
+    statsCard: {
+      flex: 1,
+      minWidth: '30%',
+      backgroundColor: theme.colors.background,
+      borderRadius: 10,
+      padding: 10,
+      margin: 4,
+      ...createSmallShadow(theme),
+    },
+    criteriaLegendCard: {
+      flex: 2,
+      minWidth: '60%',
+    },
+    statsCardLabel: {
+      fontSize: 9,
+      fontWeight: '700',
+      color: theme.colors.textSecondary,
+      letterSpacing: 0.5,
+      marginBottom: 4,
+    },
+    statsCardValue: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: theme.colors.primary,
+      marginBottom: 2,
+    },
+    statsCardSubtitle: {
+      fontSize: 11,
+      fontWeight: '500',
+      color: theme.colors.text,
+      marginBottom: 8,
+    },
+    statsCardDetails: {
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border,
+      paddingTop: 8,
+    },
+    statsDetailRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    statsDetailIcon: {
+      fontSize: 12,
+      marginRight: 4,
+    },
+    statsDetailText: {
+      fontSize: 10,
+      color: theme.colors.textSecondary,
+      fontWeight: '500',
+    },
+    // Criteria Legend Styles
+    criteriaLegendGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      marginTop: 4,
+    },
+    criteriaLegendItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      width: '50%',
+      marginBottom: 6,
+    },
+    criteriaLegendDot: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 6,
+    },
+    criteriaLegendDotText: {
+      fontSize: 8,
+      fontWeight: '700',
+      color: '#fff',
+    },
+    criteriaLegendText: {
+      fontSize: 10,
+      color: theme.colors.text,
+      fontWeight: '500',
     },
   });
