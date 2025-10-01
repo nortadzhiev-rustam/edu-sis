@@ -2021,7 +2021,7 @@ export default function GradesScreen({ navigation, route }) {
                     <View style={styles.statsCard}>
                       <Text style={styles.statsCardLabel}>OVERALL</Text>
                       <Text style={styles.statsCardValue}>
-                        {Math.round(summaryData.overall_average) || 0}%
+                        {summaryData.overall_letter_grade || 'N/A'}
                       </Text>
                       <Text style={styles.statsCardSubtitle}>
                         Average Performance
@@ -2050,7 +2050,7 @@ export default function GradesScreen({ navigation, route }) {
                     <View style={styles.statsCard}>
                       <Text style={styles.statsCardLabel}>SUMMATIVE</Text>
                       <Text style={styles.statsCardValue}>
-                        {Math.round(summaryData.overall_average) || 0}%
+                        {summaryData.overall_letter_grade || 'N/A'}
                       </Text>
                       <Text style={styles.statsCardSubtitle}>
                         Average Grade
