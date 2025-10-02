@@ -3978,13 +3978,13 @@ const createStyles = (theme) =>
       marginTop: 4,
       justifyContent: 'space-between',
       alignSelf: "center",
-      gap: 10,
+      gap: 2,
+      
     },
     criteriaLegendItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      flexWrap: "wrap",
-      width: '45%',
+      width: '48%',
     },
     criteriaLegendDot: {
       width: 20,
