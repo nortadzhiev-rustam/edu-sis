@@ -3972,15 +3972,19 @@ const createStyles = (theme) =>
     },
     // Criteria Legend Styles
     criteriaLegendGrid: {
+      flex: 1,
       flexDirection: 'row',
       flexWrap: 'wrap',
       marginTop: 4,
+      justifyContent: 'space-between',
+      alignSelf: "center",
+      gap: 10,
     },
     criteriaLegendItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      width: '50%',
-      marginBottom: 6,
+      flexWrap: "wrap",
+      width: '45%',
     },
     criteriaLegendDot: {
       width: 20,
