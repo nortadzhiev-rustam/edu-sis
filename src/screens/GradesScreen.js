@@ -2017,35 +2017,6 @@ export default function GradesScreen({ navigation, route }) {
 
                 return summaryData ? (
                   <View style={styles.statsCardsContainer}>
-                    {/* Overall Card */}
-                    <View style={styles.statsCard}>
-                      <Text style={styles.statsCardLabel}>OVERALL</Text>
-                      <Text style={styles.statsCardValue}>
-                        {summaryData.overall_letter_grade || 'N/A'}
-                      </Text>
-                      <Text style={styles.statsCardSubtitle}>
-                        Average Performance
-                      </Text>
-                      <View style={styles.statsCardDetails}>
-                        <View style={styles.statsDetailRow}>
-                          <Text style={styles.statsDetailIcon}>📝</Text>
-                          <Text style={styles.statsDetailText}>
-                            {totalAssessments} Total
-                          </Text>
-                        </View>
-                        <View style={styles.statsDetailRow}>
-                          <Text style={styles.statsDetailIcon}>✅</Text>
-                          <Text style={styles.statsDetailText}>
-                            {(
-                              (gradedAssessments / totalAssessments) *
-                              100
-                            ).toFixed(1)}
-                            % Complete
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-
                     {/* Summative Card */}
                     <View style={styles.statsCard}>
                       <Text style={styles.statsCardLabel}>SUMMATIVE</Text>
@@ -2059,13 +2030,13 @@ export default function GradesScreen({ navigation, route }) {
                         <View style={styles.statsDetailRow}>
                           <Text style={styles.statsDetailIcon}>📈</Text>
                           <Text style={styles.statsDetailText}>
-                            High: {summaryData.highest_grade || 0}%
+                            Highest Grade: {summaryData.highest_grade || 0}%
                           </Text>
                         </View>
                         <View style={styles.statsDetailRow}>
                           <Text style={styles.statsDetailIcon}>📉</Text>
                           <Text style={styles.statsDetailText}>
-                            Low: {summaryData.lowest_grade || 0}%
+                            Lowest Grade: {summaryData.lowest_grade || 0}%
                           </Text>
                         </View>
                       </View>
@@ -2088,12 +2059,19 @@ export default function GradesScreen({ navigation, route }) {
                             With Strands
                           </Text>
                         </View>
+                        
                         <View style={styles.statsDetailRow}>
-                          <Text style={styles.statsDetailIcon}>🎯</Text>
+                          <Text style={styles.statsDetailIcon}>✅</Text>
                           <Text style={styles.statsDetailText}>
-                            {gradedAssessments} Graded
+                            {(
+                              (gradedAssessments / totalAssessments) *
+                              100
+                            ).toFixed(1)}
+                            % Complete
                           </Text>
+                          
                         </View>
+                        <Text style={styles.statsDetailText}>(Graded Assessments)</Text>
                       </View>
                     </View>
                   </View>
