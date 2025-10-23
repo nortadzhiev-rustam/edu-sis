@@ -362,6 +362,16 @@ export default function GradesScreen({navigation, route}) {
                 return [];
             }
 
+            // Get date range from strandGrades
+            const dateRange = strandGrades?.date_range;
+            const startDate = dateRange?.start ? new Date(dateRange.start) : null;
+            const endDate = dateRange?.end ? new Date(dateRange.end) : null;
+
+            console.log('🔍 STRAND: Date range filter:', {
+                start: startDate?.toISOString(),
+                end: endDate?.toISOString(),
+            });
+
             // Combine summative and formative assessments
             const allAssessments = [
                 ...(grades.summative || []),
@@ -385,6 +395,7 @@ export default function GradesScreen({navigation, route}) {
             // Filter assessments by strand logic:
             // - ONLY summative assessments that match the strand_name
             // - ONLY graded assessments (have a score)
+            // - ONLY assessments within the date range
             // - Formative assessments should NOT appear in strand modals
             const strandAssessments = subjectAssessments.filter((assessment) => {
                 // Check if this is a summative assessment (from grades.summative array)
@@ -401,11 +412,26 @@ export default function GradesScreen({navigation, route}) {
                             assessment.score !== undefined &&
                             assessment.score !== '';
 
+                        // Check if assessment is within date range
+                        let isInDateRange = true;
+                        if (startDate && endDate) {
+                            const assessmentDate = new Date(assessment.date || assessment.date_created);
+                            isInDateRange = assessmentDate >= startDate && assessmentDate <= endDate;
+
+                            console.log(
+                                `🔍 STRAND: Assessment ${assessment.assessment_name} date check:`,
+                                {
+                                    assessmentDate: assessmentDate.toISOString(),
+                                    isInRange: isInDateRange,
+                                }
+                            );
+                        }
+
                         console.log(
-                            `🔍 STRAND: Summative assessment ${assessment.assessment_name}: strand_match=${matches}, is_graded=${isGraded} (score: ${assessment.score})`
+                            `🔍 STRAND: Summative assessment ${assessment.assessment_name}: strand_match=${matches}, is_graded=${isGraded}, in_date_range=${isInDateRange} (score: ${assessment.score})`
                         );
 
-                        return matches && isGraded;
+                        return matches && isGraded && isInDateRange;
                     } else {
                         console.log(
                             `⚠️ STRAND: Summative assessment ${assessment.assessment_name} missing strand_name`
@@ -432,7 +458,7 @@ export default function GradesScreen({navigation, route}) {
                 return dateB - dateA;
             });
         },
-        [grades]
+        [grades, strandGrades]
     );
 
     // Handle strand selection
