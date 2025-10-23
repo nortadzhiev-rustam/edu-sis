@@ -543,21 +543,23 @@ export default function GradesScreen({navigation, route}) {
                         </View>
                     </View>
                     <View style={styles.sectionHeaderRight}>
-                        <View style={styles.sectionHeaderGrades}>
-                            <Text
-                                style={[styles.sectionHeaderAverage, {color: subjectColor}]}
-                            >
-                                {overallAverage === '--' ? '--' : `${overallAverage}%`}
-                            </Text>
-                            <Text
-                                style={[
-                                    styles.sectionHeaderGrade,
-                                    {backgroundColor: subjectColor},
-                                ]}
-                            >
-                                {overallGrade}
-                            </Text>
-                        </View>
+                        {subjectData?.has_locked_assessments && (
+                            <View style={styles.sectionHeaderGrades}>
+                                <Text
+                                    style={[styles.sectionHeaderAverage, {color: subjectColor}]}
+                                >
+                                    {overallAverage === '--' ? '--' : `${overallAverage}%`}
+                                </Text>
+                                <Text
+                                    style={[
+                                        styles.sectionHeaderGrade,
+                                        {backgroundColor: subjectColor},
+                                    ]}
+                                >
+                                    {overallGrade}
+                                </Text>
+                            </View>
+                        )}
                         <View style={styles.expandIcon}>
                             <FontAwesomeIcon
                                 icon={isExpanded ? faChevronUp : faChevronDown}
@@ -2015,13 +2017,18 @@ export default function GradesScreen({navigation, route}) {
                                             a.score !== ''
                                     ).length || 0;
 
+                                // Check if any subject has locked assessments
+                                const hasAnyLockedAssessments = strandGrades?.subjects_with_strands?.some(
+                                    (subject) => subject.has_locked_assessments
+                                ) || false;
+
                                 return summaryData ? (
                                     <View style={styles.statsCardsContainer}>
                                         {/* Summative Card */}
                                         <View style={styles.statsCard}>
                                             <Text style={styles.statsCardLabel}>SUMMATIVE</Text>
                                             <Text style={styles.statsCardValue}>
-                                                {summaryData.overall_letter_grade || 'N/A'}
+                                                {!hasAnyLockedAssessments ? 'N/A' : (!summaryData.overall_letter_grade ? 'N/A' : summaryData.overall_letter_grade)}
                                             </Text>
                                             <Text style={styles.statsCardSubtitle}>
                                                 Average Grade
@@ -2030,13 +2037,13 @@ export default function GradesScreen({navigation, route}) {
                                                 <View style={styles.statsDetailRow}>
                                                     <Text style={styles.statsDetailIcon}>📈</Text>
                                                     <Text style={styles.statsDetailText}>
-                                                        Highest Grade: {summaryData.highest_grade || 0}%
+                                                        Highest Grade: {!hasAnyLockedAssessments ? 'N/A' : `${summaryData.highest_grade || 0}%`}
                                                     </Text>
                                                 </View>
                                                 <View style={styles.statsDetailRow}>
                                                     <Text style={styles.statsDetailIcon}>📉</Text>
                                                     <Text style={styles.statsDetailText}>
-                                                        Lowest Grade: {summaryData.lowest_grade || 0}%
+                                                        Lowest Grade: {!hasAnyLockedAssessments ? 'N/A' : `${summaryData.lowest_grade || 0}%`}
                                                     </Text>
                                                 </View>
                                             </View>

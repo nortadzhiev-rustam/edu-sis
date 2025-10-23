@@ -38,6 +38,7 @@ import {
   faFileAlt,
   faHeartbeat,
   faClock,
+  faEllipsisV,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -45,6 +46,7 @@ import { useParentNotifications } from '../hooks/useParentNotifications';
 import ParentNotificationBadge from '../components/ParentNotificationBadge';
 import MessageBadge from '../components/MessageBadge';
 import { QuickActionTile, ComingSoonBadge } from '../components';
+import AnimatedHeaderActions from '../components/AnimatedHeaderActions';
 import { cleanupStudentData } from '../services/logoutService';
 import { isIPad, isTablet } from '../utils/deviceDetection';
 import DemoModeIndicator from '../components/DemoModeIndicator';
@@ -708,74 +710,77 @@ export default function ParentScreen({ navigation }) {
             {t('parentDashboard')}
           </Text>
 
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              style={styles.headerActionButton}
-              onPress={() => {
-                // Navigate to appropriate messaging screen based on user type
-                // For parents, we'll navigate to a general messaging screen or student messaging
-                if (selectedStudent) {
-                  navigation.navigate('StudentMessagingScreen', {
-                    authCode: selectedStudent.authCode,
-                    studentName: selectedStudent.name,
-                  });
-                } else {
-                  // If no student selected, show alert or navigate to first student
-                  if (students.length > 0) {
+          <AnimatedHeaderActions
+            actions={[
+              {
+                icon: faComments,
+                onPress: () => {
+                  // Navigate to appropriate messaging screen based on user type
+                  // For parents, we'll navigate to a general messaging screen or student messaging
+                  if (selectedStudent) {
                     navigation.navigate('StudentMessagingScreen', {
-                      authCode: students[0].authCode,
-                      studentName: students[0].name,
-                    });
-                  }
-                }
-              }}
-            >
-              <FontAwesomeIcon icon={faComments} size={18} color='#fff' />
-              <MessageBadge
-                userType='parent'
-                selectedStudent={selectedStudent}
-                showAllStudents={false}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.headerActionButton}
-              onPress={() => {
-                // Navigate to notification screen with selected student context
-                if (selectedStudent) {
-                  navigation.navigate('NotificationScreen', {
-                    userType: 'parent',
-                    authCode: selectedStudent.authCode,
-                    studentName: selectedStudent.name,
-                    studentId: selectedStudent.id,
-                  });
-                } else {
-                  // If no student selected, show alert or navigate to first student
-                  if (students.length > 0) {
-                    navigation.navigate('NotificationScreen', {
-                      userType: 'parent',
-                      authCode: students[0].authCode,
-                      studentName: students[0].name,
-                      studentId: students[0].id,
+                      authCode: selectedStudent.authCode,
+                      studentName: selectedStudent.name,
                     });
                   } else {
-                    Alert.alert(t('noStudents'), t('pleaseAddStudent'));
+                    // If no student selected, show alert or navigate to first student
+                    if (students.length > 0) {
+                      navigation.navigate('StudentMessagingScreen', {
+                        authCode: students[0].authCode,
+                        studentName: students[0].name,
+                      });
+                    }
                   }
-                }
-              }}
-            >
-              <FontAwesomeIcon icon={faBell} size={18} color='#fff' />
-              <ParentNotificationBadge
-                selectedStudent={selectedStudent}
-                showAllStudents={false}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.headerActionButton}
-              onPress={handleAddStudent}
-            >
-              <FontAwesomeIcon icon={faPlus} size={18} color='#fff' />
-            </TouchableOpacity>
-          </View>
+                },
+                badge: (
+                  <MessageBadge
+                    userType='parent'
+                    selectedStudent={selectedStudent}
+                    showAllStudents={false}
+                  />
+                ),
+              },
+              {
+                icon: faBell,
+                onPress: () => {
+                  // Navigate to notification screen with selected student context
+                  if (selectedStudent) {
+                    navigation.navigate('NotificationScreen', {
+                      userType: 'parent',
+                      authCode: selectedStudent.authCode,
+                      studentName: selectedStudent.name,
+                      studentId: selectedStudent.id,
+                    });
+                  } else {
+                    // If no student selected, show alert or navigate to first student
+                    if (students.length > 0) {
+                      navigation.navigate('NotificationScreen', {
+                        userType: 'parent',
+                        authCode: students[0].authCode,
+                        studentName: students[0].name,
+                        studentId: students[0].id,
+                      });
+                    } else {
+                      Alert.alert(t('noStudents'), t('pleaseAddStudent'));
+                    }
+                  }
+                },
+                badge: (
+                  <ParentNotificationBadge
+                    selectedStudent={selectedStudent}
+                    showAllStudents={false}
+                  />
+                ),
+              },
+              {
+                icon: faPlus,
+                onPress: handleAddStudent,
+              },
+            ]}
+            theme={theme}
+            userType='parent'
+            selectedStudent={selectedStudent}
+          />
         </View>
       </View>
 

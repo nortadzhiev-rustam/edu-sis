@@ -33,6 +33,7 @@ import {
   faHeartbeat,
   faDoorOpen,
   faClock,
+  faEllipsisV,
 } from '@fortawesome/free-solid-svg-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
@@ -42,6 +43,7 @@ import { useMessaging } from '../contexts/MessagingContext';
 import NotificationBadge from '../components/NotificationBadge';
 import MessageBadge from '../components/MessageBadge';
 import { QuickActionTile } from '../components';
+import AnimatedHeaderActions from '../components/AnimatedHeaderActions';
 import { performLogout } from '../services/logoutService';
 import DemoModeIndicator from '../components/DemoModeIndicator';
 import { isIPad, isTablet } from '../utils/deviceDetection';
@@ -798,39 +800,32 @@ export default function TeacherScreen({ route, navigation }) {
             {t('teacherDashboard')}
           </Text>
 
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              style={styles.headerActionButton}
-              onPress={() =>
-                navigation.navigate('TeacherMessagingScreen', {
-                  authCode: userData.authCode,
-                  teacherName: userData.name,
-                })
-              }
-            >
-              <FontAwesomeIcon icon={faComments} size={18} color='#fff' />
-              <MessageBadge userType='teacher' />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.headerActionButton}
-              onPress={() =>
-                navigation.navigate('NotificationScreen', {
-                  userType: 'teacher',
-                })
-              }
-            >
-              <FontAwesomeIcon icon={faBell} size={18} color='#fff' />
-              <NotificationBadge />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.headerActionButton}
-              onPress={handleLogout}
-            >
-              <FontAwesomeIcon icon={faDoorOpen} size={18} color='#fff' />
-            </TouchableOpacity>
-          </View>
+          <AnimatedHeaderActions
+            actions={[
+              {
+                icon: faComments,
+                onPress: () =>
+                  navigation.navigate('TeacherMessagingScreen', {
+                    authCode: userData.authCode,
+                    teacherName: userData.name,
+                  }),
+                badge: <MessageBadge userType='teacher' />,
+              },
+              {
+                icon: faBell,
+                onPress: () =>
+                  navigation.navigate('NotificationScreen', {
+                    userType: 'teacher',
+                  }),
+                badge: <NotificationBadge />,
+              },
+              {
+                icon: faDoorOpen,
+                onPress: handleLogout,
+              },
+            ]}
+            theme={theme}
+          />
         </View>
 
         {/* Teacher & Branch Info Subheader */}
