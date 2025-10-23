@@ -12,6 +12,15 @@ import {
     Modal,
     ActivityIndicator,
 } from 'react-native';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+    withTiming,
+    runOnJS,
+    interpolate,
+    Easing,
+} from 'react-native-reanimated';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {Config, buildApiUrl} from '../config/env';
@@ -523,6 +532,41 @@ export default function GradesScreen({navigation, route}) {
         strandAssessments,
     ]);
 
+    // Animated Chevron Component
+    const AnimatedChevron = ({isExpanded, color}) => {
+        const rotation = useSharedValue(0);
+
+        useEffect(() => {
+            if (isExpanded) {
+                rotation.value = withSpring(180, {
+                    damping: 20,
+                    stiffness: 300,
+                });
+            } else {
+                rotation.value = withTiming(0, {
+                    duration: 200,
+                    easing: Easing.out(Easing.quad),
+                });
+            }
+        }, [isExpanded]);
+
+        const animatedStyle = useAnimatedStyle(() => {
+            return {
+                transform: [{rotate: `${rotation.value}deg`}],
+            };
+        });
+
+        return (
+            <Animated.View style={animatedStyle}>
+                <FontAwesomeIcon
+                    icon={faChevronDown}
+                    size={12}
+                    color={color}
+                />
+            </Animated.View>
+        );
+    };
+
     // Render section header for SectionList
     const renderSectionHeader = useCallback(
         ({section}) => {
@@ -587,11 +631,7 @@ export default function GradesScreen({navigation, route}) {
                             </View>
                         )}
                         <View style={styles.expandIcon}>
-                            <FontAwesomeIcon
-                                icon={isExpanded ? faChevronUp : faChevronDown}
-                                size={12}
-                                color={subjectColor}
-                            />
+                            <AnimatedChevron isExpanded={isExpanded} color={subjectColor} />
                         </View>
                     </View>
                 </TouchableOpacity>
@@ -647,11 +687,7 @@ export default function GradesScreen({navigation, route}) {
                             </Text>
                         </View>
                         <View style={styles.expandIcon}>
-                            <FontAwesomeIcon
-                                icon={isExpanded ? faChevronUp : faChevronDown}
-                                size={12}
-                                color={subjectColor}
-                            />
+                            <AnimatedChevron isExpanded={isExpanded} color={subjectColor} />
                         </View>
                     </View>
                 </TouchableOpacity>
@@ -660,46 +696,165 @@ export default function GradesScreen({navigation, route}) {
         [expandedSections, toggleSection]
     );
 
-    // Render strand item for SectionList
-    const renderStrandItem = useCallback(({item, section}) => {
+    // Animated wrapper component for strand items
+    const AnimatedStrandItem = ({item, section, index}) => {
         const subjectColor = getSubjectColor(section.title);
+        const isExpanded = expandedSections.has(section.title);
+
+        // Animated values
+        const opacity = useSharedValue(0);
+        const scale = useSharedValue(0.95);
+        const translateX = useSharedValue(-20);
+
+        // Animate when expanded state changes with staggered delay
+        useEffect(() => {
+            if (isExpanded) {
+                // Staggered animation on expand
+                const delay = index * 50; // 50ms delay per item
+                setTimeout(() => {
+                    opacity.value = withSpring(1, {
+                        damping: 25,
+                        stiffness: 400,
+                    });
+                    scale.value = withSpring(1, {
+                        damping: 25,
+                        stiffness: 400,
+                    });
+                    translateX.value = withSpring(0, {
+                        damping: 25,
+                        stiffness: 400,
+                    });
+                }, delay);
+            } else {
+                // Quick hide with timing
+                opacity.value = withTiming(0, {
+                    duration: 150,
+                    easing: Easing.out(Easing.quad),
+                });
+                scale.value = withTiming(0.95, {
+                    duration: 150,
+                    easing: Easing.out(Easing.quad),
+                });
+                translateX.value = withTiming(-20, {
+                    duration: 150,
+                    easing: Easing.out(Easing.quad),
+                });
+            }
+        }, [isExpanded]);
+
+        const animatedStyle = useAnimatedStyle(() => {
+            return {
+                opacity: opacity.value,
+                transform: [
+                    { scale: scale.value },
+                    { translateX: translateX.value },
+                ],
+            };
+        });
+
+        if (!isExpanded && opacity.value === 0) {
+            return null;
+        }
 
         return (
-            <TouchableOpacity
-                style={styles.strandItem}
-                onPress={() => handleStrandPress(item, section.title)}
-                activeOpacity={0.7}
-            >
-                <View style={styles.strandItemLeft}>
-                    <Text style={styles.strandName}>{item.strand_name}</Text>
-                    <Text style={styles.strandDetails}>
-                        {item.total_assessments} assessment
-                        {item.total_assessments !== 1 ? 's' : ''}
-                        {item.calculation_details && (
-                            <Text style={styles.strandBreakdown}>
-                                {' '}
-                                • {item.calculation_details.normal_assessments} normal,{' '}
-                                {item.calculation_details.final_assessments} final
-                            </Text>
-                        )}
-                    </Text>
-                </View>
-                <View style={styles.strandItemRight}>
-                    <Text style={[styles.strandAverage, {color: subjectColor}]}>
-                        {item.strand_average}%
-                    </Text>
-                    <Text style={[styles.strandGrade, {backgroundColor: subjectColor}]}>
-                        {item.strand_letter_grade}
-                    </Text>
-                </View>
-                <FontAwesomeIcon icon={faChevronRight} size={12} color={subjectColor}/>
-            </TouchableOpacity>
+            <Animated.View style={animatedStyle}>
+                <TouchableOpacity
+                    style={styles.strandItem}
+                    onPress={() => handleStrandPress(item, section.title)}
+                    activeOpacity={0.7}
+                >
+                    <View style={styles.strandItemLeft}>
+                        <Text style={styles.strandName}>{item.strand_name}</Text>
+                        <Text style={styles.strandDetails}>
+                            {item.total_assessments} assessment
+                            {item.total_assessments !== 1 ? 's' : ''}
+                            {item.calculation_details && (
+                                <Text style={styles.strandBreakdown}>
+                                    {' '}
+                                    • {item.calculation_details.normal_assessments} normal,{' '}
+                                    {item.calculation_details.final_assessments} final
+                                </Text>
+                            )}
+                        </Text>
+                    </View>
+                    <View style={styles.strandItemRight}>
+                        <Text style={[styles.strandAverage, {color: subjectColor}]}>
+                            {item.strand_average}%
+                        </Text>
+                        <Text style={[styles.strandGrade, {backgroundColor: subjectColor}]}>
+                            {item.strand_letter_grade}
+                        </Text>
+                    </View>
+                    <FontAwesomeIcon icon={faChevronRight} size={12} color={subjectColor}/>
+                </TouchableOpacity>
+            </Animated.View>
         );
-    }, []);
+    };
 
-    // Render formative assessment item
-    const renderFormativeItem = useCallback(({item, section}) => {
+    // Render strand item for SectionList
+    const renderStrandItem = useCallback(({item, section, index}) => {
+        return <AnimatedStrandItem item={item} section={section} index={index} />;
+    }, [expandedSections]);
+
+    // Animated wrapper component for formative items
+    const AnimatedFormativeItem = ({item, section, index}) => {
         const subjectColor = getSubjectColor(section.title);
+        const isExpanded = expandedSections.has(section.title);
+
+        // Animated values
+        const opacity = useSharedValue(0);
+        const scale = useSharedValue(0.95);
+        const translateX = useSharedValue(-20);
+
+        // Animate when expanded state changes with staggered delay
+        useEffect(() => {
+            if (isExpanded) {
+                // Staggered animation on expand
+                const delay = index * 50; // 50ms delay per item
+                setTimeout(() => {
+                    opacity.value = withSpring(1, {
+                        damping: 25,
+                        stiffness: 400,
+                    });
+                    scale.value = withSpring(1, {
+                        damping: 25,
+                        stiffness: 400,
+                    });
+                    translateX.value = withSpring(0, {
+                        damping: 25,
+                        stiffness: 400,
+                    });
+                }, delay);
+            } else {
+                // Quick hide with timing
+                opacity.value = withTiming(0, {
+                    duration: 150,
+                    easing: Easing.out(Easing.quad),
+                });
+                scale.value = withTiming(0.95, {
+                    duration: 150,
+                    easing: Easing.out(Easing.quad),
+                });
+                translateX.value = withTiming(-20, {
+                    duration: 150,
+                    easing: Easing.out(Easing.quad),
+                });
+            }
+        }, [isExpanded]);
+
+        const animatedStyle = useAnimatedStyle(() => {
+            return {
+                opacity: opacity.value,
+                transform: [
+                    { scale: scale.value },
+                    { translateX: translateX.value },
+                ],
+            };
+        });
+
+        if (!isExpanded && opacity.value === 0) {
+            return null;
+        }
 
         // Assessment criteria with colors
         const criteria = [
@@ -730,76 +885,83 @@ export default function GradesScreen({navigation, route}) {
         ];
 
         return (
-            <TouchableOpacity
-                style={styles.formativeItem}
-                onPress={() => {
-                    console.log(
-                        `Selected formative assessment: ${item.assessment_name} in ${section.title}`
-                    );
-                }}
-                activeOpacity={0.7}
-            >
-                <View style={styles.formativeItemLeft}>
-                    <Text style={styles.formativeAssessmentName}>
-                        {item.assessment_name}
-                    </Text>
-                    <Text style={styles.formativeAssessmentDetails}>
-                        {item.assessment_type || 'Assessment'} •{' '}
-                        {(() => {
-                            const dateField = item.date || item.date_created;
-                            if (!dateField) return 'No date';
-
-                            const dateStr = dateField.toString();
-                            if (dateStr.includes('/') || dateStr.includes('-')) {
-                                try {
-                                    const date = new Date(dateStr);
-                                    if (!isNaN(date.getTime())) {
-                                        return date.toLocaleDateString();
-                                    }
-                                } catch (error) {
-                                    return dateStr;
-                                }
-                            }
-                            return dateStr;
-                        })()}
-                    </Text>
-                    {item.feedback && (
-                        <Text style={styles.formativeFeedback} numberOfLines={2}>
-                            {item.feedback}
+            <Animated.View style={animatedStyle}>
+                <TouchableOpacity
+                    style={styles.formativeItem}
+                    onPress={() => {
+                        console.log(
+                            `Selected formative assessment: ${item.assessment_name} in ${section.title}`
+                        );
+                    }}
+                    activeOpacity={0.7}
+                >
+                    <View style={styles.formativeItemLeft}>
+                        <Text style={styles.formativeAssessmentName}>
+                            {item.assessment_name}
                         </Text>
-                    )}
-                </View>
-                <View style={styles.formativeItemRight}>
-                    <View style={styles.criteriaContainer}>
-                        {criteria.map((criterion, index) => (
-                            <View key={index} style={styles.criterionItem}>
-                                <View
-                                    style={[
-                                        styles.criterionIndicator,
-                                        {
-                                            backgroundColor: criterion.value
-                                                ? criterion.color
-                                                : '#E5E5EA',
-                                            borderColor: criterion.color,
-                                        },
-                                    ]}
-                                >
-                                    <Text
+                        <Text style={styles.formativeAssessmentDetails}>
+                            {item.assessment_type || 'Assessment'} •{' '}
+                            {(() => {
+                                const dateField = item.date || item.date_created;
+                                if (!dateField) return 'No date';
+
+                                const dateStr = dateField.toString();
+                                if (dateStr.includes('/') || dateStr.includes('-')) {
+                                    try {
+                                        const date = new Date(dateStr);
+                                        if (!isNaN(date.getTime())) {
+                                            return date.toLocaleDateString();
+                                        }
+                                    } catch (error) {
+                                        return dateStr;
+                                    }
+                                }
+                                return dateStr;
+                            })()}
+                        </Text>
+                        {item.feedback && (
+                            <Text style={styles.formativeFeedback} numberOfLines={2}>
+                                {item.feedback}
+                            </Text>
+                        )}
+                    </View>
+                    <View style={styles.formativeItemRight}>
+                        <View style={styles.criteriaContainer}>
+                            {criteria.map((criterion, index) => (
+                                <View key={index} style={styles.criterionItem}>
+                                    <View
                                         style={[
-                                            styles.criterionLabel,
-                                            {color: criterion.value ? '#fff' : '#8E8E93'},
+                                            styles.criterionIndicator,
+                                            {
+                                                backgroundColor: criterion.value
+                                                    ? criterion.color
+                                                    : '#E5E5EA',
+                                                borderColor: criterion.color,
+                                            },
                                         ]}
                                     >
-                                        {criterion.label}
-                                    </Text>
+                                        <Text
+                                            style={[
+                                                styles.criterionLabel,
+                                                {color: criterion.value ? '#fff' : '#8E8E93'},
+                                            ]}
+                                        >
+                                            {criterion.label}
+                                        </Text>
+                                    </View>
                                 </View>
-                            </View>
-                        ))}
+                            ))}
+                        </View>
                     </View>
-                </View>
-            </TouchableOpacity>
+                </TouchableOpacity>
+            </Animated.View>
         );
-    }, []);
+    };
+
+    // Render formative assessment item
+    const renderFormativeItem = useCallback(({item, section, index}) => {
+        return <AnimatedFormativeItem item={item} section={section} index={index} />;
+    }, [expandedSections]);
 
     // Update available subjects when grades or calculated data changes
     useEffect(() => {

@@ -7,7 +7,10 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ef623be7-f661-4789-8237-3d30a600b41f" name="Changes" comment="refactor: integrate AnimatedHeaderActions component in ParentScreen and TeacherScreen, and update GradesScreen to conditionally display grades based on locked assessments" />
+    <list default="true" id="ef623be7-f661-4789-8237-3d30a600b41f" name="Changes" comment="refactor: add date range filtering for strand assessments in GradesScreen">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/screens/GradesScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/screens/GradesScreen.js" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -68,7 +71,7 @@
       <workItem from="1760583778926" duration="3773000" />
       <workItem from="1760609278753" duration="8179000" />
       <workItem from="1761018133532" duration="20000" />
-      <workItem from="1761126620601" duration="10471000" />
+      <workItem from="1761126620601" duration="12131000" />
     </task>
     <task id="LOCAL-00001" summary="update: adjusted app logos and launcher assets, updated dependencies and project configurations">
       <option name="closed" value="true" />
@@ -102,7 +105,15 @@
       <option name="project" value="LOCAL" />
       <updated>1761195450130</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="refactor: add date range filtering for strand assessments in GradesScreen">
+      <option name="closed" value="true" />
+      <created>1761196111871</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1761196111871</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -124,7 +135,8 @@
     <MESSAGE value="add: added Play Store launcher icon" />
     <MESSAGE value="update: adjusted app logo scales, updated configurations, and applied minor formatting changes" />
     <MESSAGE value="refactor: integrate AnimatedHeaderActions component in ParentScreen and TeacherScreen, and update GradesScreen to conditionally display grades based on locked assessments" />
-    <option name="LAST_COMMIT_MESSAGE" value="refactor: integrate AnimatedHeaderActions component in ParentScreen and TeacherScreen, and update GradesScreen to conditionally display grades based on locked assessments" />
+    <MESSAGE value="refactor: add date range filtering for strand assessments in GradesScreen" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor: add date range filtering for strand assessments in GradesScreen" />
   </component>
   <component name="VueSettings">
     <option name="useTypesFromServer" value="true" />
