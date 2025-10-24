@@ -768,7 +768,7 @@ export default function HomeScreen({ navigation }) {
       </TouchableOpacity>
 
       <View style={styles.content}>
-        <Text style={styles.title}>{t('welcomeTo')}</Text>
+        {/*<Text style={styles.title}>{t('welcomeTo')}</Text>*/}
         {/* Logo with liquid transition effect */}
         <View style={styles.logoContainer}>
           <Animated.Image
@@ -858,7 +858,7 @@ export default function HomeScreen({ navigation }) {
                 />
               </View>
               <Text style={styles.roleText}>{t('teacher')}</Text>
-              <Text style={styles.roleDescription} numberOfLines={2}>
+              <Text style={styles.roleDescription} numberOfLines={3}>
                 {t('teacherDescription')}
               </Text>
             </TouchableOpacity>
@@ -875,7 +875,7 @@ export default function HomeScreen({ navigation }) {
                 />
               </View>
               <Text style={styles.roleText}>{t('parent')}</Text>
-              <Text style={styles.roleDescription} numberOfLines={2}>
+              <Text style={styles.roleDescription} numberOfLines={3}>
                 {t('parentDescription')}
               </Text>
             </TouchableOpacity>
@@ -1089,7 +1089,7 @@ const createStyles = (
     },
     logoContainer: {
       position: 'relative',
-      width: isIPadDevice ? Math.min(width * 0.3, 300) : width * 0.6,
+      width: isIPadDevice ? Math.min(width * 0.3, 300) : width * 0.8,
       height: isIPadDevice ? Math.min(height * 0.12, 150) : height * 0.15,
       marginBottom: isIPadDevice ? responsiveSpacing.lg : 5,
       alignItems: 'center',
@@ -1109,7 +1109,7 @@ const createStyles = (
     },
     secondaryLogo: {
       width: isIPadDevice ? Math.min(width * 0.2, 200) : width * 0.3,
-      height: isIPadDevice ? Math.min(height * 0.08, 50) : height * 0.05,
+      height: isIPadDevice ? Math.min(height * 0.08, 50) : height * 0.1,
     },
     title: {
       fontSize: isIPadDevice ? responsiveFonts.largeTitle : fontSizes.title,
@@ -1147,7 +1147,7 @@ const createStyles = (
     },
     roleButtonHorizontal: {
       width: '48%',
-      height: 150,
+      minHeight: 170,
     },
     iconContainer: {
       width: 60,

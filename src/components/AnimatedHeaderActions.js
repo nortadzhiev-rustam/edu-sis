@@ -1,5 +1,5 @@
-import React, {useState} from 'react';
-import {View, TouchableOpacity, StyleSheet, Text} from 'react-native';
+import React, {useState, useImperativeHandle, forwardRef, useEffect, useRef} from 'react';
+import {View, TouchableOpacity, StyleSheet, Text, Modal, TouchableWithoutFeedback} from 'react-native';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {faEllipsisV} from '@fortawesome/free-solid-svg-icons';
 import Animated, {
@@ -12,189 +12,285 @@ import {useNotifications} from '../contexts/NotificationContext';
 import {useMessaging} from '../contexts/MessagingContext';
 import {useParentNotifications} from '../hooks/useParentNotifications';
 
-const AnimatedHeaderActions = ({actions, theme, userType = 'teacher', selectedStudent = null}) => {
-    const [isExpanded, setIsExpanded] = useState(false);
+const AnimatedHeaderActions = forwardRef(({
+                                              actions,
+                                              theme,
+                                              userType = 'teacher',
+                                              selectedStudent = null,
+                                              onExpandChange,
+                                              autoDismissTimeout = 3000
+                                          }, ref) => {
+        const [isExpanded, setIsExpanded] = useState(false);
+        const autoDismissTimer = useRef(null);
 
-    // Get unread counts based on user type
-    const teacherNotifications = useNotifications();
-    const teacherMessaging = useMessaging();
-    const parentNotifications = useParentNotifications();
+        // Get unread counts based on user type
+        const teacherNotifications = useNotifications();
+        const teacherMessaging = useMessaging();
+        const parentNotifications = useParentNotifications();
 
-    // Calculate total unread count based on user type
-    let totalUnreadCount = 0;
-    if (userType === 'teacher') {
-        totalUnreadCount = (teacherNotifications?.unreadCount || 0) + (teacherMessaging?.unreadCount || 0);
-    } else if (userType === 'parent') {
-        // For parents, get the unread count for selected student or all students
-        const notificationCount = selectedStudent
-            ? (parentNotifications?.getStudentUnreadCount?.(selectedStudent.authCode) || 0)
-            : (parentNotifications?.getTotalUnreadCount?.() || 0);
-        // Parent messaging count would need to be implemented similarly
-        // For now, we'll just use notification count
-        totalUnreadCount = notificationCount;
-    }
-
-    // Shared values for animations
-    const backgroundWidth = useSharedValue(36);
-    const backgroundOpacity = useSharedValue(0);
-
-    // Individual button animations
-    const button1Scale = useSharedValue(0);
-    const button1Opacity = useSharedValue(0);
-    const button2Scale = useSharedValue(0);
-    const button2Opacity = useSharedValue(0);
-    const button3Scale = useSharedValue(0);
-    const button3Opacity = useSharedValue(0);
-
-    // Spring configuration
-    const springConfig = {
-        damping: 15,
-        stiffness: 150,
-        mass: 0.5,
-    };
-
-    const toggleExpansion = () => {
-        if (!isExpanded) {
-            // Expand animation
-            setIsExpanded(true);
-
-            // Expand background (36px per button + 2px gap between = 38px * 4 buttons = 152px)
-            backgroundWidth.value = withSpring(152, springConfig);
-            backgroundOpacity.value = withSpring(1, springConfig);
-
-            // Animate buttons one by one with delays
-            button1Scale.value = withDelay(100, withSpring(1, springConfig));
-            button1Opacity.value = withDelay(100, withSpring(1, springConfig));
-
-            button2Scale.value = withDelay(200, withSpring(1, springConfig));
-            button2Opacity.value = withDelay(200, withSpring(1, springConfig));
-
-            button3Scale.value = withDelay(300, withSpring(1, springConfig));
-            button3Opacity.value = withDelay(300, withSpring(1, springConfig));
-        } else {
-            // Collapse animation (reverse order)
-            button3Scale.value = withSpring(0, springConfig);
-            button3Opacity.value = withSpring(0, springConfig);
-
-            button2Scale.value = withDelay(100, withSpring(0, springConfig));
-            button2Opacity.value = withDelay(100, withSpring(0, springConfig));
-
-            button1Scale.value = withDelay(200, withSpring(0, springConfig));
-            button1Opacity.value = withDelay(200, withSpring(0, springConfig));
-
-            // Collapse background
-            backgroundWidth.value = withDelay(300, withSpring(36, springConfig));
-            backgroundOpacity.value = withDelay(300, withSpring(0, springConfig));
-
-            setTimeout(() => setIsExpanded(false), 600);
+        // Calculate total unread count based on user type
+        let totalUnreadCount = 0;
+        if (userType === 'teacher') {
+            totalUnreadCount = (teacherNotifications?.unreadCount || 0) + (teacherMessaging?.unreadCount || 0);
+        } else if (userType === 'parent') {
+            // For parents, get the unread count for selected student or all students
+            const notificationCount = selectedStudent
+                ? (parentNotifications?.getStudentUnreadCount?.(selectedStudent.authCode) || 0)
+                : (parentNotifications?.getTotalUnreadCount?.() || 0);
+            // Parent messaging count would need to be implemented similarly
+            // For now, we'll just use notification count
+            totalUnreadCount = notificationCount;
         }
-    };
 
-    // Animated styles
-    const animatedBackgroundStyle = useAnimatedStyle(() => ({
-        width: backgroundWidth.value,
-        opacity: backgroundOpacity.value,
-    }));
+        // Shared values for animations
+        const backgroundWidth = useSharedValue(36);
+        const backgroundOpacity = useSharedValue(0);
 
-    const animatedButton1Style = useAnimatedStyle(() => ({
-        transform: [{scale: button1Scale.value}],
-        opacity: button1Opacity.value,
-    }));
+        // Toggle button animation
+        const toggleOpacity = useSharedValue(1);
+        const toggleScale = useSharedValue(1);
 
-    const animatedButton2Style = useAnimatedStyle(() => ({
-        transform: [{scale: button2Scale.value}],
-        opacity: button2Opacity.value,
-    }));
+        // Individual button animations
+        const button1Scale = useSharedValue(0);
+        const button1Opacity = useSharedValue(0);
+        const button2Scale = useSharedValue(0);
+        const button2Opacity = useSharedValue(0);
+        const button3Scale = useSharedValue(0);
+        const button3Opacity = useSharedValue(0);
 
-    const animatedButton3Style = useAnimatedStyle(() => ({
-        transform: [{scale: button3Scale.value}],
-        opacity: button3Opacity.value,
-    }));
+        // Spring configuration
+        const springConfig = {
+            damping: 15,
+            stiffness: 150,
+            mass: 0.5,
+        };
 
-    const handleActionPress = (action) => {
-        toggleExpansion();
-        // Delay the action to allow collapse animation
-        setTimeout(() => {
-            action.onPress();
-        }, 400);
-    };
+        const clearAutoDismissTimer = () => {
+            if (autoDismissTimer.current) {
+                clearTimeout(autoDismissTimer.current);
+                autoDismissTimer.current = null;
+            }
+        };
 
-    return (
-        <View style={styles.container}>
-            {/* Expanded background */}
-            <Animated.View
-                style={[
-                    styles.expandedBackground,
-                    animatedBackgroundStyle,
-                    {backgroundColor: 'rgba(255, 255, 255, 0.15)'},
-                ]}
-            />
+        const startAutoDismissTimer = () => {
+            clearAutoDismissTimer();
+            if (autoDismissTimeout > 0) {
+                autoDismissTimer.current = setTimeout(() => {
+                    if (isExpanded) {
+                        toggleExpansion();
+                    }
+                }, autoDismissTimeout);
+            }
+        };
 
-            {/* Action buttons (rendered when expanded) */}
-            {isExpanded && (
-                <>
-                    <Animated.View style={[styles.actionButton, animatedButton1Style]}>
-                        <TouchableOpacity
-                            style={styles.headerActionButton}
-                            onPress={() => handleActionPress(actions[0])}
-                        >
-                            <FontAwesomeIcon
-                                icon={actions[0].icon}
-                                size={18}
-                                color="#fff"
-                            />
-                            {actions[0].badge}
-                        </TouchableOpacity>
-                    </Animated.View>
+        const toggleExpansion = () => {
+            if (!isExpanded) {
+                // Expand animation
+                setIsExpanded(true);
+                onExpandChange?.(true);
 
-                    <Animated.View style={[styles.actionButton, animatedButton2Style]}>
-                        <TouchableOpacity
-                            style={styles.headerActionButton}
-                            onPress={() => handleActionPress(actions[1])}
-                        >
-                            <FontAwesomeIcon
-                                icon={actions[1].icon}
-                                size={18}
-                                color="#fff"
-                            />
-                            {actions[1].badge}
-                        </TouchableOpacity>
-                    </Animated.View>
+                // Hide toggle button
+                toggleOpacity.value = withSpring(0, springConfig);
+                toggleScale.value = withSpring(0, springConfig);
 
-                    <Animated.View style={[styles.actionButton, animatedButton3Style]}>
-                        <TouchableOpacity
-                            style={styles.headerActionButton}
-                            onPress={() => handleActionPress(actions[2])}
-                        >
-                            <FontAwesomeIcon
-                                icon={actions[2].icon}
-                                size={18}
-                                color="#fff"
-                            />
-                        </TouchableOpacity>
-                    </Animated.View>
-                </>
-            )}
+                // Expand background to fit 3 action buttons (36px per button + 2px gap = 38px * 3 = 114px)
+                backgroundWidth.value = withSpring(114, springConfig);
+                backgroundOpacity.value = withSpring(1, springConfig);
 
-            {/* Toggle button (3 dots) */}
-            <TouchableOpacity
-                style={styles.toggleButton}
-                onPress={toggleExpansion}
-            >
-                <FontAwesomeIcon icon={faEllipsisV} size={18} color="#fff"/>
-                {!isExpanded && totalUnreadCount > 0 && (
-                    <View style={styles.badge}>
-                        <Text style={styles.badgeText}>
-                            {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
-                        </Text>
-                    </View>
+                // Animate buttons one by one with delays
+                button1Scale.value = withDelay(100, withSpring(1, springConfig));
+                button1Opacity.value = withDelay(100, withSpring(1, springConfig));
+
+                button2Scale.value = withDelay(200, withSpring(1, springConfig));
+                button2Opacity.value = withDelay(200, withSpring(1, springConfig));
+
+                button3Scale.value = withDelay(300, withSpring(1, springConfig));
+                button3Opacity.value = withDelay(300, withSpring(1, springConfig));
+
+                // Start auto-dismiss timer
+                startAutoDismissTimer();
+            } else {
+                // Clear auto-dismiss timer
+                clearAutoDismissTimer();
+
+                // Collapse animation (reverse order)
+                button3Scale.value = withSpring(0, springConfig);
+                button3Opacity.value = withSpring(0, springConfig);
+
+                button2Scale.value = withDelay(100, withSpring(0, springConfig));
+                button2Opacity.value = withDelay(100, withSpring(0, springConfig));
+
+                button1Scale.value = withDelay(200, withSpring(0, springConfig));
+                button1Opacity.value = withDelay(200, withSpring(0, springConfig));
+
+                // Collapse background
+                backgroundWidth.value = withDelay(300, withSpring(36, springConfig));
+                backgroundOpacity.value = withDelay(300, withSpring(0, springConfig));
+
+                // Show toggle button
+                toggleOpacity.value = withDelay(300, withSpring(1, springConfig));
+                toggleScale.value = withDelay(300, withSpring(1, springConfig));
+
+                setTimeout(() => {
+                    setIsExpanded(false);
+                    onExpandChange?.(false);
+                }, 600);
+            }
+        };
+
+        // Animated styles
+        const animatedBackgroundStyle = useAnimatedStyle(() => ({
+            width: backgroundWidth.value,
+            opacity: backgroundOpacity.value,
+        }));
+
+        const animatedToggleStyle = useAnimatedStyle(() => ({
+            opacity: toggleOpacity.value,
+            transform: [{scale: toggleScale.value}],
+        }));
+
+        const animatedButton1Style = useAnimatedStyle(() => ({
+            transform: [{scale: button1Scale.value}],
+            opacity: button1Opacity.value,
+        }));
+
+        const animatedButton2Style = useAnimatedStyle(() => ({
+            transform: [{scale: button2Scale.value}],
+            opacity: button2Opacity.value,
+        }));
+
+        const animatedButton3Style = useAnimatedStyle(() => ({
+            transform: [{scale: button3Scale.value}],
+            opacity: button3Opacity.value,
+        }));
+
+        const handleActionPress = (action) => {
+            toggleExpansion();
+            // Delay the action to allow collapse animation
+            setTimeout(() => {
+                action.onPress();
+            }, 400);
+        };
+
+        // Cleanup timer on unmount
+        useEffect(() => {
+            return () => {
+                clearAutoDismissTimer();
+            };
+        }, []);
+
+        // Expose collapse method to parent
+        useImperativeHandle(ref, () => ({
+            collapse: () => {
+                if (isExpanded) {
+                    toggleExpansion();
+                }
+            },
+            isExpanded: () => isExpanded,
+        }));
+
+        return (
+            <>
+                {/* Transparent overlay for tap-outside-to-dismiss */}
+                {isExpanded && (
+                    <Modal
+                        transparent
+                        visible={isExpanded}
+                        animationType="none"
+                        onRequestClose={toggleExpansion}
+                        statusBarTranslucent
+                    >
+                        <TouchableWithoutFeedback onPress={toggleExpansion}>
+                            <View style={styles.overlay} />
+                        </TouchableWithoutFeedback>
+                    </Modal>
                 )}
-            </TouchableOpacity>
-        </View>
-    );
-};
+
+                <View style={styles.container}>
+                {/* Expanded background */}
+                <Animated.View
+                    style={[
+                        styles.expandedBackground,
+                        animatedBackgroundStyle,
+                        {backgroundColor: 'rgba(255, 255, 255, 0.15)'},
+                    ]}
+                />
+
+                {/* Action buttons (rendered when expanded) */}
+                {isExpanded && (
+                    <>
+                        <Animated.View style={[styles.actionButton, animatedButton1Style]}>
+                            <TouchableOpacity
+                                style={styles.headerActionButton}
+                                onPress={() => handleActionPress(actions[0])}
+                            >
+                                <FontAwesomeIcon
+                                    icon={actions[0].icon}
+                                    size={18}
+                                    color="#fff"
+                                />
+                                {actions[0].badge}
+                            </TouchableOpacity>
+                        </Animated.View>
+
+                        <Animated.View style={[styles.actionButton, animatedButton2Style]}>
+                            <TouchableOpacity
+                                style={styles.headerActionButton}
+                                onPress={() => handleActionPress(actions[1])}
+                            >
+                                <FontAwesomeIcon
+                                    icon={actions[1].icon}
+                                    size={18}
+                                    color="#fff"
+                                />
+                                {actions[1].badge}
+                            </TouchableOpacity>
+                        </Animated.View>
+
+                        <Animated.View style={[styles.actionButton, animatedButton3Style]}>
+                            <TouchableOpacity
+                                style={styles.headerActionButton}
+                                onPress={() => handleActionPress(actions[2])}
+                            >
+                                <FontAwesomeIcon
+                                    icon={actions[2].icon}
+                                    size={18}
+                                    color="#fff"
+                                />
+                            </TouchableOpacity>
+                        </Animated.View>
+                    </>
+                )}
+
+                {/* Toggle button (3 dots) - only render when not expanded */}
+                {!isExpanded && (
+                    <Animated.View style={animatedToggleStyle}>
+                        <TouchableOpacity
+                            style={styles.toggleButton}
+                            onPress={toggleExpansion}
+                        >
+                            <FontAwesomeIcon icon={faEllipsisV} size={18} color="#fff"/>
+                            {totalUnreadCount > 0 && (
+                                <View style={styles.badge}>
+                                    <Text style={styles.badgeText}>
+                                        {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                                    </Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                    </Animated.View>
+                )}
+            </View>
+            </>
+        );
+    }
+);
 
 const styles = StyleSheet.create({
+    overlay: {
+        flex: 1,
+        backgroundColor: 'transparent',
+    },
     container: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -226,7 +322,6 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255, 255, 255, 0.2)',
         justifyContent: 'center',
         alignItems: 'center',
-        zIndex: 10,
     },
     badge: {
         position: 'absolute',
