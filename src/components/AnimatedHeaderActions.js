@@ -1,5 +1,5 @@
 import React, {useState, useImperativeHandle, forwardRef, useEffect, useRef} from 'react';
-import {View, TouchableOpacity, StyleSheet, Text, Modal, TouchableWithoutFeedback} from 'react-native';
+import {View, TouchableOpacity, StyleSheet, Text} from 'react-native';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {faEllipsisV} from '@fortawesome/free-solid-svg-icons';
 import Animated, {
@@ -23,7 +23,7 @@ const AnimatedHeaderActions = forwardRef(({
         const [isExpanded, setIsExpanded] = useState(false);
         const autoDismissTimer = useRef(null);
 
-        // Get unread counts based on user type
+        // Get unread counts based on a user type
         const teacherNotifications = useNotifications();
         const teacherMessaging = useMessaging();
         const parentNotifications = useParentNotifications();
@@ -190,23 +190,7 @@ const AnimatedHeaderActions = forwardRef(({
         }));
 
         return (
-            <>
-                {/* Transparent overlay for tap-outside-to-dismiss */}
-                {isExpanded && (
-                    <Modal
-                        transparent
-                        visible={isExpanded}
-                        animationType="none"
-                        onRequestClose={toggleExpansion}
-                        statusBarTranslucent
-                    >
-                        <TouchableWithoutFeedback onPress={toggleExpansion}>
-                            <View style={styles.overlay} />
-                        </TouchableWithoutFeedback>
-                    </Modal>
-                )}
-
-                <View style={styles.container}>
+            <View style={styles.container}>
                 {/* Expanded background */}
                 <Animated.View
                     style={[
@@ -281,16 +265,11 @@ const AnimatedHeaderActions = forwardRef(({
                     </Animated.View>
                 )}
             </View>
-            </>
         );
     }
 );
 
 const styles = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        backgroundColor: 'transparent',
-    },
     container: {
         flexDirection: 'row',
         alignItems: 'center',

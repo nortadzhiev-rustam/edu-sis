@@ -764,7 +764,7 @@ export default function HomeScreen({ navigation }) {
         style={styles.settingsButton}
         onPress={() => navigation.navigate('SettingsScreen')}
       >
-        <FontAwesomeIcon icon={faCog} size={20} color={theme.colors.text} />
+        <FontAwesomeIcon icon={faCog} size={20} color={theme.colors.primary} />
       </TouchableOpacity>
 
       <View style={styles.content}>

@@ -7,10 +7,9 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ef623be7-f661-4789-8237-3d30a600b41f" name="Changes" comment="refactor: add animations for toggling and displaying strand and formative assessments in GradesScreen">
+    <list default="true" id="ef623be7-f661-4789-8237-3d30a600b41f" name="Changes" comment="refactor: enhance AnimatedHeaderActions with forwardRef, auto-dismiss, and tap-to-dismiss logic, and improve UI animations">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/components/AnimatedHeaderActions.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/AnimatedHeaderActions.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/screens/HomeScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/screens/HomeScreen.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -23,6 +22,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "nortadzhiev-rustam"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/nortadzhiev-rustam/edu-sis.git",
+    "accountId": "31ed6b35-abf7-4d5a-939a-bf4a05872e50"
+  }
+}]]></component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 6
 }</component>
@@ -31,28 +42,28 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true",
-    "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "/Users/developerone/Documents/edu-sis",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "ts.external.directory.path": "/Applications/WebStorm.app/Contents/plugins/javascript-plugin/jsLanguageServicesImpl/external",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/developerone/Documents/edu-sis&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;/Applications/WebStorm.app/Contents/plugins/javascript-plugin/jsLanguageServicesImpl/external&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -72,7 +83,8 @@
       <workItem from="1760583778926" duration="3773000" />
       <workItem from="1760609278753" duration="8179000" />
       <workItem from="1761018133532" duration="20000" />
-      <workItem from="1761126620601" duration="15705000" />
+      <workItem from="1761126620601" duration="16273000" />
+      <workItem from="1761274636423" duration="331000" />
     </task>
     <task id="LOCAL-00001" summary="update: adjusted app logos and launcher assets, updated dependencies and project configurations">
       <option name="closed" value="true" />
@@ -122,7 +134,15 @@
       <option name="project" value="LOCAL" />
       <updated>1761197468213</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="refactor: enhance AnimatedHeaderActions with forwardRef, auto-dismiss, and tap-to-dismiss logic, and improve UI animations">
+      <option name="closed" value="true" />
+      <created>1761274156610</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1761274156610</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -146,7 +166,8 @@
     <MESSAGE value="refactor: integrate AnimatedHeaderActions component in ParentScreen and TeacherScreen, and update GradesScreen to conditionally display grades based on locked assessments" />
     <MESSAGE value="refactor: add date range filtering for strand assessments in GradesScreen" />
     <MESSAGE value="refactor: add animations for toggling and displaying strand and formative assessments in GradesScreen" />
-    <option name="LAST_COMMIT_MESSAGE" value="refactor: add animations for toggling and displaying strand and formative assessments in GradesScreen" />
+    <MESSAGE value="refactor: enhance AnimatedHeaderActions with forwardRef, auto-dismiss, and tap-to-dismiss logic, and improve UI animations" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor: enhance AnimatedHeaderActions with forwardRef, auto-dismiss, and tap-to-dismiss logic, and improve UI animations" />
   </component>
   <component name="VueSettings">
     <option name="useTypesFromServer" value="true" />

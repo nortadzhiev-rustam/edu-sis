@@ -340,7 +340,7 @@ export default function LoginScreen({ route, navigation }) {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <FontAwesomeIcon icon={faArrowLeft} size={20} color='#fff' />
+          <FontAwesomeIcon icon={faArrowLeft} size={20} color={theme.colors.primary} />
         </TouchableOpacity>
         <Animated.Image
           source={logoSource}
@@ -476,7 +476,7 @@ const createStyles = (theme, fontSizes) =>
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: theme.colors.primary,
+      backgroundColor: theme.colors.surface,
       justifyContent: 'center',
       alignItems: 'center',
       shadowColor: '#000',
