@@ -18,7 +18,7 @@ const AnimatedHeaderActions = forwardRef(({
                                               userType = 'teacher',
                                               selectedStudent = null,
                                               onExpandChange,
-                                              autoDismissTimeout = 3000
+                                              autoDismissTimeout = 5000
                                           }, ref) => {
         const [isExpanded, setIsExpanded] = useState(false);
         const autoDismissTimer = useRef(null);
@@ -82,6 +82,12 @@ const AnimatedHeaderActions = forwardRef(({
                 }, autoDismissTimeout);
             }
         };
+
+        useEffect(() => {
+            if (isExpanded) {
+                startAutoDismissTimer();
+            }
+        }, [isExpanded]);
 
         const toggleExpansion = () => {
             if (!isExpanded) {
