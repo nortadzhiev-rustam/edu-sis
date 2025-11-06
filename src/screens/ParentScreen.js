@@ -1043,7 +1043,7 @@ export default function ParentScreen({ navigation }) {
               const shouldExpand = isLastRow && isLastInRow && isIncompleteRow;
 
               // Calculate minimum height based on device type
-              let minHeight = (screenWidth - 20 - 20) / 3 - 8; // Default mobile (matches actionTile width)
+              let minHeight = (screenWidth - 40) / 3 - 8; // Default mobile (matches actionTile width)
               if (isIPadDevice && isLandscape) {
                 minHeight = (screenWidth - 100) / 6 - 6;
               } else if (isTabletDevice && isLandscape) {
@@ -1082,8 +1082,9 @@ export default function ParentScreen({ navigation }) {
                   additionalStyle={
                     shouldExpand
                       ? {
-                          flex: 1,
-                          marginRight: 0,
+                          flexGrow: 1,
+                          flexShrink: 0,
+                          maxWidth: '100%',
                           aspectRatio: undefined, // Remove aspect ratio constraint for expanding tiles
                           height: minHeight, // Set exact height to match other tiles
                         }
@@ -1351,7 +1352,7 @@ const createStyles = (theme, fontSizes) =>
       backgroundColor: theme.colors.primary,
     },
     selectedStudentText: {
-      color: theme.mode === 'dark' ? '#fff' :theme.colors.primary,
+      color: theme.colors.primary,
     },
     selectedBadge: {
       position: 'absolute',
@@ -1392,11 +1393,11 @@ const createStyles = (theme, fontSizes) =>
       justifyContent: 'center',
     },
     studentName: {
-      fontSize: fontSizes.body,
+      fontSize: fontSizes.medium,
       fontWeight: '700',
-      color: theme.mode === 'dark' ? theme.colors.primary : theme.colors.text,
+      color: theme.colors.text,
       marginBottom: 4,
-
+        textTransform: 'uppercase',
     },
     studentDetails: {
       fontSize: fontSizes.bodySmall,
@@ -1461,7 +1462,7 @@ const createStyles = (theme, fontSizes) =>
       flexDirection: 'row',
       flexWrap: 'wrap',
       justifyContent: 'flex-start', // Changed from space-between to support flex expansion
-      paddingBottom: 170, // Add padding for scrollable content
+      paddingBottom: 50, // Add padding for scrollable content
       paddingHorizontal: 3, // Add padding for scrollable content
     },
     // iPad-specific grid layout - 4 tiles per row, wraps to next row for additional tiles
