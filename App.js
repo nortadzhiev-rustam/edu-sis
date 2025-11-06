@@ -68,6 +68,7 @@ import { getDemoCredentials } from './src/services/authService';
 import performanceMonitor, {
   wrapWithTimeout,
 } from './src/utils/performanceMonitor';
+import { checkForUpdates, logUpdateInfo } from './src/utils/appUpdates';
 
 const Stack = createNativeStackNavigator();
 
@@ -207,6 +208,15 @@ export default function App() {
       const startTime = Date.now();
 
       try {
+        // Log current update information
+        logUpdateInfo();
+
+        // Check for updates (non-blocking)
+        checkForUpdates().catch((error) => {
+          console.error('❌ UPDATES: Update check failed:', error);
+          // Don't block app initialization if update check fails
+        });
+
         // Wrap Firebase setup with timeout protection
         await wrapWithTimeout(
           setupFirebase,

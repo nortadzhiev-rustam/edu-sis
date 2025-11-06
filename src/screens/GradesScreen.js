@@ -52,6 +52,8 @@ import {
     faChevronDown,
     faChevronUp,
     faChartBar,
+    faCalendar,
+    faCheck,
 } from '@fortawesome/free-solid-svg-icons';
 import {useFocusEffect} from '@react-navigation/native';
 import {useScreenOrientation} from '../hooks/useScreenOrientation';
@@ -93,6 +95,11 @@ export default function GradesScreen({navigation, route}) {
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10); // Number of items per page
+
+    // Term filtering state
+    const [availableTerms, setAvailableTerms] = useState([]);
+    const [selectedTerm, setSelectedTerm] = useState(null);
+    const [showTermPicker, setShowTermPicker] = useState(false);
 
     // Refresh notifications when screen comes into focus
     useFocusEffect(
@@ -138,16 +145,82 @@ export default function GradesScreen({navigation, route}) {
                 return;
             }
 
+            // First, fetch terms data to get available terms
+            const termsUrl = buildApiUrl(
+                Config.API_ENDPOINTS.GET_STUDENT_GRADES_BY_STRANDS,
+                {authCode, group_by_term: 1}
+            );
+
+            console.log('🔍 GRADES: Fetching terms from URL:', termsUrl);
+
+            const termsRes = await fetch(termsUrl, {
+                method: 'GET',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            let currentTermData = null;
+            if (termsRes.ok) {
+                const termsData = await termsRes.json();
+                console.log('🔍 GRADES: Terms API response:', termsData);
+                if (termsData?.success && termsData?.terms) {
+                    console.log('✅ GRADES: Terms data received:', {
+                        totalTerms: termsData.total_terms,
+                        terms: termsData.terms.map(t => ({
+                            id: t.semester_id,
+                            name: t.semester_name,
+                            isCurrent: t.is_current,
+                        })),
+                    });
+                    setAvailableTerms(termsData.terms);
+
+                    // Find and set the current term as default
+                    currentTermData = termsData.terms.find(t => t.is_current);
+                    if (currentTermData && !selectedTerm) {
+                        console.log('✅ GRADES: Setting current term as default:', currentTermData.semester_name);
+                        setSelectedTerm(currentTermData);
+                    }
+                } else {
+                    console.warn('⚠️ GRADES: Terms API returned invalid format:', termsData);
+                }
+            } else {
+                console.error('❌ GRADES: Failed to fetch terms:', termsRes.status);
+            }
+
+            // Determine which term to use for fetching grades
+            const termToUse = selectedTerm || currentTermData;
+            const startDate = termToUse?.start_date;
+            const endDate = termToUse?.end_date;
+
+            console.log('🔍 GRADES: Using term for grades:', {
+                term: termToUse?.semester_name,
+                startDate,
+                endDate,
+            });
+
+            // Build URLs with date range if we have a term
             const legacyUrl = buildApiUrl(Config.API_ENDPOINTS.GET_STUDENT_GRADES, {
                 authCode,
+                ...(startDate && {start_date: startDate}),
+                ...(endDate && {end_date: endDate}),
             });
             const calcUrl = buildApiUrl(
                 Config.API_ENDPOINTS.GET_STUDENT_CALCULATED_GRADES,
-                {authCode}
+                {
+                    authCode,
+                    ...(startDate && {start_date: startDate}),
+                    ...(endDate && {end_date: endDate}),
+                }
             );
             const strandUrl = buildApiUrl(
                 Config.API_ENDPOINTS.GET_STUDENT_GRADES_BY_STRANDS,
-                {authCode}
+                {
+                    authCode,
+                    ...(startDate && {start_date: startDate}),
+                    ...(endDate && {end_date: endDate}),
+                }
             );
 
             console.log('🔍 GRADES: Fetching from URLs:', {
@@ -249,7 +322,7 @@ export default function GradesScreen({navigation, route}) {
 
     useEffect(() => {
         fetchGrades();
-    }, [authCode]);
+    }, [authCode, selectedTerm]);
 
     // Extract unique subjects from grades data (union of legacy + advanced results)
     const extractSubjects = (gradesData) => {
@@ -2139,6 +2212,36 @@ export default function GradesScreen({navigation, route}) {
                     </View>
                 )}
 
+                {/* Term Selector - Show when we have terms available */}
+                {availableTerms.length > 0 && showSubjectList && (
+                    <View style={styles.termSelectorContainer}>
+                        <TouchableOpacity
+                            style={styles.termSelectorButton}
+                            onPress={() => setShowTermPicker(true)}
+                            activeOpacity={0.7}
+                        >
+                            <FontAwesomeIcon
+                                icon={faCalendar}
+                                size={14}
+                                color={theme.colors.primary}
+                            />
+                            <Text style={styles.termSelectorText}>
+                                {selectedTerm?.semester_name || 'Select Term'}
+                            </Text>
+                            {selectedTerm?.is_current && (
+                                <View style={styles.currentTermBadge}>
+                                    <Text style={styles.currentTermBadgeText}>Current</Text>
+                                </View>
+                            )}
+                            <FontAwesomeIcon
+                                icon={faChevronDown}
+                                size={12}
+                                color={theme.colors.textSecondary}
+                            />
+                        </TouchableOpacity>
+                    </View>
+                )}
+
                 {/* Performance Overview - Tabs + Stats Cards */}
                 {showSubjectList && !loading && (
                     <View style={styles.performanceOverview}>
@@ -2447,6 +2550,78 @@ export default function GradesScreen({navigation, route}) {
                     </View>
                 )}
             </View>
+
+            {/* Term Picker Modal */}
+            <Modal
+                visible={showTermPicker}
+                animationType='slide'
+                presentationStyle='pageSheet'
+                onRequestClose={() => setShowTermPicker(false)}
+            >
+                <SafeAreaView style={styles.modalContainer}>
+                    <View style={styles.modalHeader}>
+                        <TouchableOpacity
+                            style={styles.modalCloseButton}
+                            onPress={() => setShowTermPicker(false)}
+                        >
+                            <FontAwesomeIcon
+                                icon={faArrowLeft}
+                                size={20}
+                                color={theme.colors.text}
+                            />
+                        </TouchableOpacity>
+                        <View style={styles.modalHeaderInfo}>
+                            <Text style={styles.modalTitle}>Select Term</Text>
+                            <Text style={styles.modalSubtitle}>
+                                {availableTerms.length} term{availableTerms.length !== 1 ? 's' : ''} available
+                            </Text>
+                        </View>
+                    </View>
+
+                    <ScrollView style={styles.modalContent}>
+                        {availableTerms.map((term) => (
+                            <TouchableOpacity
+                                key={term.semester_id}
+                                style={[
+                                    styles.termPickerItem,
+                                    selectedTerm?.semester_id === term.semester_id &&
+                                        styles.termPickerItemSelected,
+                                ]}
+                                onPress={() => {
+                                    setSelectedTerm(term);
+                                    setShowTermPicker(false);
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                <View style={styles.termPickerItemLeft}>
+                                    <Text style={styles.termPickerItemName}>
+                                        {term.semester_name}
+                                    </Text>
+                                    <Text style={styles.termPickerItemDates}>
+                                        {term.start_date} - {term.end_date}
+                                    </Text>
+                                </View>
+                                <View style={styles.termPickerItemRight}>
+                                    {term.is_current && (
+                                        <View style={styles.currentTermBadgeLarge}>
+                                            <Text style={styles.currentTermBadgeTextLarge}>
+                                                Current
+                                            </Text>
+                                        </View>
+                                    )}
+                                    {selectedTerm?.semester_id === term.semester_id && (
+                                        <FontAwesomeIcon
+                                            icon={faCheck}
+                                            size={18}
+                                            color={theme.colors.primary}
+                                        />
+                                    )}
+                                </View>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </SafeAreaView>
+            </Modal>
 
             {/* Strand Details Modal */}
             <Modal
@@ -4187,5 +4362,83 @@ const createStyles = (theme) =>
             fontSize: 10,
             color: theme.colors.text,
             fontWeight: '500',
+        },
+        // Term Selector Styles
+        termSelectorContainer: {
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            backgroundColor: theme.colors.background,
+        },
+        termSelectorButton: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: theme.colors.card,
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            borderRadius: 12,
+            gap: 8,
+            ...createCardShadow(theme),
+        },
+        termSelectorText: {
+            flex: 1,
+            fontSize: 14,
+            fontWeight: '600',
+            color: theme.colors.text,
+        },
+        currentTermBadge: {
+            backgroundColor: theme.colors.primary,
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+            borderRadius: 6,
+        },
+        currentTermBadgeText: {
+            fontSize: 10,
+            fontWeight: '700',
+            color: '#fff',
+        },
+        currentTermBadgeLarge: {
+            backgroundColor: theme.colors.primary,
+            paddingHorizontal: 10,
+            paddingVertical: 5,
+            borderRadius: 8,
+            marginRight: 8,
+        },
+        currentTermBadgeTextLarge: {
+            fontSize: 12,
+            fontWeight: '700',
+            color: '#fff',
+        },
+        // Term Picker Modal Styles
+        termPickerItem: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            backgroundColor: theme.colors.card,
+            padding: 16,
+            marginBottom: 12,
+            borderRadius: 12,
+            ...createCardShadow(theme),
+        },
+        termPickerItemSelected: {
+            borderWidth: 2,
+            borderColor: theme.colors.primary,
+        },
+        termPickerItemLeft: {
+            flex: 1,
+        },
+        termPickerItemName: {
+            fontSize: 16,
+            fontWeight: '600',
+            color: theme.colors.text,
+            marginBottom: 4,
+        },
+        termPickerItemDates: {
+            fontSize: 13,
+            color: theme.colors.textSecondary,
+        },
+        termPickerItemRight: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
         },
     });
