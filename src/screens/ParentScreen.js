@@ -1351,7 +1351,7 @@ const createStyles = (theme, fontSizes) =>
       backgroundColor: theme.colors.primary,
     },
     selectedStudentText: {
-      color: theme.colors.primary,
+      color: theme.mode === 'dark' ? '#fff' :theme.colors.primary,
     },
     selectedBadge: {
       position: 'absolute',
@@ -1392,11 +1392,11 @@ const createStyles = (theme, fontSizes) =>
       justifyContent: 'center',
     },
     studentName: {
-      fontSize: fontSizes.medium,
+      fontSize: fontSizes.body,
       fontWeight: '700',
-      color: theme.colors.text,
+      color: theme.mode === 'dark' ? theme.colors.primary : theme.colors.text,
       marginBottom: 4,
-        textTransform: 'uppercase',
+
     },
     studentDetails: {
       fontSize: fontSizes.bodySmall,

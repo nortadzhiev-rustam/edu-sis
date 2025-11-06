@@ -7,9 +7,9 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ef623be7-f661-4789-8237-3d30a600b41f" name="Changes" comment="add: introduce animated pagination, student scrolling, and enhanced styling in ParentScreen; improve GradesScreen logic for past term data handling">
+    <list default="true" id="ef623be7-f661-4789-8237-3d30a600b41f" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/screens/GradesScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/screens/GradesScreen.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/screens/HomeScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/screens/HomeScreen.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/screens/ParentScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/screens/ParentScreen.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -46,33 +46,33 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Node.js.HomeScreen.js.executor": "Debug",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true",
-    "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "/Users/developerone/Documents/edu-sis",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "ts.external.directory.path": "/Applications/WebStorm.app/Contents/plugins/javascript-plugin/jsLanguageServicesImpl/external",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Node.js.HomeScreen.js.executor&quot;: &quot;Debug&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/developerone/Documents/edu-sis&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;/Applications/WebStorm.app/Contents/plugins/javascript-plugin/jsLanguageServicesImpl/external&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-3aa1da707db6-JavaScript-WS-252.26830.93" />
+        <option value="bundled-js-predefined-d6986cc7102b-3aa1da707db6-JavaScript-WS-252.27397.92" />
       </set>
     </attachedChunks>
   </component>
@@ -92,6 +92,8 @@
       <workItem from="1761274636423" duration="1723000" />
       <workItem from="1761704449570" duration="600000" />
       <workItem from="1762402875443" duration="13517000" />
+      <workItem from="1762416756705" duration="586000" />
+      <workItem from="1762417368291" duration="1722000" />
     </task>
     <task id="LOCAL-00001" summary="update: adjusted app logos and launcher assets, updated dependencies and project configurations">
       <option name="closed" value="true" />
@@ -181,7 +183,23 @@
       <option name="project" value="LOCAL" />
       <updated>1762410644372</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="add: introduce animated pagination, student scrolling, and enhanced styling in ParentScreen; improve GradesScreen logic for past term data handling">
+      <option name="closed" value="true" />
+      <created>1762416839806</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1762416839806</updated>
+    </task>
+    <task id="LOCAL-00013" summary="refactor: remove unused FontAwesomeIcon from ParentScreen scroll indicator text">
+      <option name="closed" value="true" />
+      <created>1762416931574</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1762416931574</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -210,7 +228,9 @@
     <MESSAGE value="refactor: extend auto-dismiss timeout in AnimatedHeaderActions and add effect to manage timer on expansion" />
     <MESSAGE value="add: implement OTA updates with `expo-updates`, integrate automatic update checks, and enable term-based filtering in GradesScreen" />
     <MESSAGE value="add: replace term picker modal with horizontal term switcher; fetch grades by term and integrate term-specific formative data filtering in GradesScreen" />
-    <option name="LAST_COMMIT_MESSAGE" value="" />
+    <MESSAGE value="add: introduce animated pagination, student scrolling, and enhanced styling in ParentScreen; improve GradesScreen logic for past term data handling" />
+    <MESSAGE value="refactor: remove unused FontAwesomeIcon from ParentScreen scroll indicator text" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor: remove unused FontAwesomeIcon from ParentScreen scroll indicator text" />
   </component>
   <component name="VueSettings">
     <option name="useTypesFromServer" value="true" />

@@ -989,7 +989,7 @@ export default function HomeScreen({navigation}) {
                             onPress={() => alert(t('connectWithUsSocial'))}
                         >
                             <View style={styles.socialMediaIconContainer}>
-                                <FontAwesomeIcon icon={faShareAlt} size={20} color='#fff'/>
+                                <FontAwesomeIcon icon={faShareAlt} size={20} color={theme.colors.primary}/>
                             </View>
                             <Text style={styles.socialMediaText}>{t('connectWithUs')}</Text>
                         </TouchableOpacity>
@@ -1096,6 +1096,7 @@ const createStyles = (
             marginBottom: isIPadDevice ? responsiveSpacing.lg : 5,
             alignItems: 'center',
             justifyContent: 'center',
+
         },
         logo: {
             width: '100%',
@@ -1189,6 +1190,7 @@ const createStyles = (
             flexWrap: 'wrap',
             justifyContent: 'space-between', // Works well for 4 items (2x2 grid)
             width: '100%',
+            marginVertical: 10,
         },
         resourceButton: {
             backgroundColor: theme.colors.surface,
@@ -1220,13 +1222,12 @@ const createStyles = (
         },
         socialMediaSection: {
             width: '100%',
-            marginTop: 5,
-            marginBottom: 5,
+            marginVertical: 10,
             alignItems: 'center',
             justifyContent: 'center',
         },
         socialMediaButton: {
-            backgroundColor: theme.colors.primary,
+            backgroundColor: theme.colors.surface,
             borderRadius: 25,
             paddingVertical: 12,
             paddingHorizontal: 20,
@@ -1241,7 +1242,7 @@ const createStyles = (
             marginRight: 10,
         },
         socialMediaText: {
-            color: '#fff',
+            color: theme.colors.text,
             fontSize: fontSizes.body,
             fontWeight: '600',
             lineHeight: fontSizes.bodyLineHeight,
