@@ -924,12 +924,7 @@ export default function ParentScreen({ navigation }) {
                 <Text style={styles.scrollIndicatorText}>
                   {t('scrollForMore')}
                 </Text>
-                <FontAwesomeIcon
-                  icon={faChevronDown}
-                  size={12}
-                  color={theme.colors.primary}
-                  style={{ marginLeft: 6, transform: [{ rotate: '-90deg' }] }}
-                />
+
               </TouchableOpacity>
             )}
           </View>
