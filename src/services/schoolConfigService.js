@@ -16,7 +16,7 @@ const STORAGE_KEYS = {
 const DEFAULT_SCHOOL_CONFIGS = {
   bfi_edu_mm: {
     schoolId: 'bfi_edu_mm',
-    name: 'BFI International School',
+    name: 'SKT Riverside Campus',
     domain: 'bfi.edu.mm',
     hasGoogleWorkspace: true,
     googleConfig: {
@@ -47,7 +47,7 @@ const DEFAULT_SCHOOL_CONFIGS = {
       },
     },
     branding: {
-      name: 'BFI International School',
+      name: 'SKT Riverside Campus',
       logo: {
         light: require('../../assets/app_logo.png'),
         dark: require('../../assets/app_logo_dark.png'),
@@ -68,6 +68,12 @@ const DEFAULT_SCHOOL_CONFIGS = {
       attendance: true,
       bps: true,
       health: true,
+    },
+    socialMedia: {
+      facebook: 'https://www.facebook.com/SKTInternationalSchoolRiversideCampus',
+      facebookPreschool: 'https://www.facebook.com/SKTPreschoolRiversideCampus',
+      youtube: 'https://www.youtube.com/@sktinternationalcollege6656',
+      instagram: 'https://www.instagram.com/skt_riverside_campus',
     },
   },
   demo_school: {
@@ -124,6 +130,115 @@ const DEFAULT_SCHOOL_CONFIGS = {
       attendance: true,
       bps: true,
       health: true,
+    },
+    socialMedia: {
+      facebook: 'https://www.facebook.com/SKTInternationalSchoolRiversideCampus',
+      facebookPreschool: 'https://www.facebook.com/SKTPreschoolRiversideCampus',
+      youtube: 'https://www.youtube.com/@sktinternationalcollege6656',
+      instagram: 'https://www.instagram.com/skt_riverside_campus',
+    },
+  },
+  skt_city_campus: {
+    schoolId: 'skt_city_campus',
+    name: 'SKT City Campus',
+    domain: 'skt.edu.mm',
+    hasGoogleWorkspace: false,
+    branding: {
+      name: 'SKT City Campus',
+      logo: {
+        light: require('../../assets/app_logo.png'),
+        dark: require('../../assets/app_logo_dark.png'),
+      },
+      colors: {
+        primary: '#007AFF',
+        secondary: '#5856D6',
+        accent: '#FF9500',
+      },
+    },
+    features: {
+      googleCalendar: false,
+      googleCalendarReadOnly: false,
+      nativeCalendar: true,
+      customEvents: true,
+      messaging: true,
+      homework: true,
+      attendance: true,
+      bps: true,
+      health: true,
+    },
+    socialMedia: {
+      facebook: 'https://www.facebook.com/SKTInternationalSchoolCityCampus',
+      facebookPreschool: 'https://www.facebook.com/SKTPreschoolCityCampus',
+      youtube: 'https://www.youtube.com/@bahaninternationalsciencea7001',
+      instagram: 'https://www.instagram.com/skt_city_campus',
+    },
+  },
+  nisa: {
+    schoolId: 'nisa',
+    name: 'Naypyitaw International School of Acumen',
+    domain: 'nisa.edu.mm',
+    hasGoogleWorkspace: false,
+    branding: {
+      name: 'NISA',
+      logo: {
+        light: require('../../assets/app_logo.png'),
+        dark: require('../../assets/app_logo_dark.png'),
+      },
+      colors: {
+        primary: '#007AFF',
+        secondary: '#5856D6',
+        accent: '#FF9500',
+      },
+    },
+    features: {
+      googleCalendar: false,
+      googleCalendarReadOnly: false,
+      nativeCalendar: true,
+      customEvents: true,
+      messaging: true,
+      homework: true,
+      attendance: true,
+      bps: true,
+      health: true,
+    },
+    socialMedia: {
+      facebook: 'https://www.facebook.com/naypyitawinternationalschoolofacumen',
+      youtube: 'https://www.youtube.com/@naypyitawinternationalscie4268',
+      instagram: 'https://www.instagram.com/naypyitaw.int.school.acumen',
+    },
+  },
+  misa: {
+    schoolId: 'misa',
+    name: 'Mandalay International School of Acumen',
+    domain: 'misa.edu.mm',
+    hasGoogleWorkspace: false,
+    branding: {
+      name: 'MISA',
+      logo: {
+        light: require('../../assets/app_logo.png'),
+        dark: require('../../assets/app_logo_dark.png'),
+      },
+      colors: {
+        primary: '#007AFF',
+        secondary: '#5856D6',
+        accent: '#FF9500',
+      },
+    },
+    features: {
+      googleCalendar: false,
+      googleCalendarReadOnly: false,
+      nativeCalendar: true,
+      customEvents: true,
+      messaging: true,
+      homework: true,
+      attendance: true,
+      bps: true,
+      health: true,
+    },
+    socialMedia: {
+      facebook: 'https://www.facebook.com/mandalayinternationalschoolofacumen',
+      youtube: 'https://www.youtube.com/@mandalayinternationalscienceac',
+      instagram: 'https://www.instagram.com/mandalay.int.school.of.acumen',
     },
   },
 };
@@ -717,6 +832,36 @@ export const getThemeLogo = (themeMode = 'light') => {
   // Use demo or production config based on environment
   const config = Config.DEMO_MODE ? demoSchoolConfig : bfiSchoolConfig;
   return config.branding.logo[themeMode] || config.branding.logo.light;
+};
+
+/**
+ * Get all social media links from all schools
+ * @returns {Array} Array of social media links grouped by school
+ */
+export const getAllSocialMediaLinks = () => {
+  const allLinks = [];
+
+  Object.values(DEFAULT_SCHOOL_CONFIGS).forEach((school) => {
+    if (school.socialMedia) {
+      allLinks.push({
+        schoolId: school.schoolId,
+        schoolName: school.name,
+        socialMedia: school.socialMedia,
+      });
+    }
+  });
+
+  return allLinks;
+};
+
+/**
+ * Get social media links for a specific school
+ * @param {string} schoolId - School identifier
+ * @returns {Object|null} Social media links or null
+ */
+export const getSocialMediaLinks = (schoolId) => {
+  const school = DEFAULT_SCHOOL_CONFIGS[schoolId];
+  return school?.socialMedia || null;
 };
 
 export default SchoolConfigService;

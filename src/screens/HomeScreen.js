@@ -10,6 +10,10 @@ import {
     PixelRatio,
     Animated,
     AppState,
+    Linking,
+    Modal,
+    ScrollView,
+    Pressable,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useFocusEffect} from '@react-navigation/native';
@@ -24,6 +28,7 @@ import {
     faQuestionCircle,
     faShareAlt,
     faCog,
+    faTimes,
 } from '@fortawesome/free-solid-svg-icons';
 import {
     faFacebookF,
@@ -61,6 +66,7 @@ import {
     usePerformanceMonitoring,
 } from '../utils/performanceMonitor';
 import {Config} from '../config/env';
+import {getAllSocialMediaLinks} from '../services/schoolConfigService';
 
 const {width, height} = Dimensions.get('window');
 
@@ -150,6 +156,11 @@ export default function HomeScreen({navigation}) {
         screenReader: false,
         debugInfo: '',
     });
+
+    // Social media modal state
+    const [socialModalVisible, setSocialModalVisible] = React.useState(false);
+    const [selectedPlatform, setSelectedPlatform] = React.useState(null);
+    const [platformLinks, setPlatformLinks] = React.useState([]);
 
     // Debug logging for iOS content visibility
     React.useEffect(() => {
@@ -751,6 +762,114 @@ export default function HomeScreen({navigation}) {
         }
     };
 
+    // Helper function to open social media links
+    const handleSocialMediaPress = (platform) => {
+        try {
+            const allLinks = getAllSocialMediaLinks();
+
+            // Filter out demo school
+            const filteredLinks = allLinks.filter(school => school.schoolId !== 'demo_school');
+
+            if (filteredLinks.length === 0) {
+                Alert.alert(t('noSocialMedia'), t('noSocialMediaAvailable'));
+                return;
+            }
+
+            // Create options for each school's social media
+            const options = [];
+
+            filteredLinks.forEach((school) => {
+                const links = school.socialMedia;
+
+                if (platform === 'facebook' && links.facebook) {
+                    options.push({
+                        schoolName: school.schoolName,
+                        label: school.schoolName,
+                        url: links.facebook,
+                        type: 'main',
+                    });
+                    if (links.facebookPreschool) {
+                        options.push({
+                            schoolName: school.schoolName,
+                            label: `${school.schoolName} Preschool`,
+                            url: links.facebookPreschool,
+                            type: 'preschool',
+                        });
+                    }
+                } else if (platform === 'youtube' && links.youtube) {
+                    options.push({
+                        schoolName: school.schoolName,
+                        label: school.schoolName,
+                        url: links.youtube,
+                        type: 'main',
+                    });
+                } else if (platform === 'instagram' && links.instagram) {
+                    options.push({
+                        schoolName: school.schoolName,
+                        label: school.schoolName,
+                        url: links.instagram,
+                        type: 'main',
+                    });
+                } else if (platform === 'twitter' && links.twitter) {
+                    options.push({
+                        schoolName: school.schoolName,
+                        label: school.schoolName,
+                        url: links.twitter,
+                        type: 'main',
+                    });
+                }
+            });
+
+            if (options.length === 0) {
+                Alert.alert(
+                    t('notAvailable'),
+                    t(`${platform}NotAvailable`)
+                );
+                return;
+            }
+
+            // Set platform and links, then show modal
+            setSelectedPlatform(platform);
+            setPlatformLinks(options);
+            setSocialModalVisible(true);
+        } catch (error) {
+            console.error('❌ HOME: Error opening social media link:', error);
+            Alert.alert(t('error'), t('failedToOpenLink'));
+        }
+    };
+
+    // Helper function to open a specific link
+    const handleOpenLink = async (url) => {
+        try {
+            const supported = await Linking.canOpenURL(url);
+            if (supported) {
+                await Linking.openURL(url);
+                setSocialModalVisible(false);
+            } else {
+                Alert.alert(t('error'), t('cannotOpenLink'));
+            }
+        } catch (error) {
+            console.error('❌ HOME: Error opening link:', error);
+            Alert.alert(t('error'), t('failedToOpenLink'));
+        }
+    };
+
+    // Get platform icon and color
+    const getPlatformInfo = (platform) => {
+        switch (platform) {
+            case 'facebook':
+                return { icon: faFacebookF, color: '#1877F2', name: 'Facebook' };
+            case 'youtube':
+                return { icon: faYoutube, color: '#FF0000', name: 'YouTube' };
+            case 'instagram':
+                return { icon: faInstagram, color: '#E4405F', name: 'Instagram' };
+            case 'twitter':
+                return { icon: faXTwitter, color: theme.mode === 'dark' ? '#fff' : '#000000', name: 'Twitter' };
+            default:
+                return { icon: faShareAlt, color: theme.colors.primary, name: 'Social Media' };
+        }
+    };
+
     return (
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
             {/* Hide status bar on Android in dark mode to match other screens */}
@@ -883,7 +1002,7 @@ export default function HomeScreen({navigation}) {
                     </View>
 
                     {/* Second row with additional buttons */}
-                    <Text style={styles.sectionTitle}>{t('schoolResources')}</Text>
+                    <Text style={[styles.sectionTitle, {textAlign: 'left'}]}>{t('schoolResources')}</Text>
                     <View style={styles.resourcesContainer}>
                         <TouchableOpacity
                             style={styles.resourceButton}
@@ -984,53 +1103,133 @@ export default function HomeScreen({navigation}) {
 
                     {/* Social Media Section */}
                     <View style={styles.socialMediaSection}>
-                        <TouchableOpacity
-                            style={styles.socialMediaButton}
-                            onPress={() => alert(t('connectWithUsSocial'))}
-                        >
-                            <View style={styles.socialMediaIconContainer}>
-                                <FontAwesomeIcon icon={faShareAlt} size={20} color={theme.colors.primary}/>
-                            </View>
-                            <Text style={styles.socialMediaText}>{t('connectWithUs')}</Text>
-                        </TouchableOpacity>
-
-                        <View style={styles.socialIconsRow}>
+                        <Text style={styles.sectionTitle}>{t('followUs')}</Text>
+                        <View style={styles.socialMediaGrid}>
                             <TouchableOpacity
-                                style={styles.socialIcon}
-                                onPress={() => alert(t('facebookComingSoon'))}
+                                style={[styles.socialMediaCard, {backgroundColor: 'rgba(24, 119, 242, 0.1)'}]}
+                                onPress={() => handleSocialMediaPress('facebook')}
                             >
-                                <FontAwesomeIcon icon={faFacebookF} size={18} color='#3b5998'/>
+                                <View style={[styles.socialMediaIconCircle, {backgroundColor: '#1877F2'}]}>
+                                    <FontAwesomeIcon icon={faFacebookF} size={22} color='#fff'/>
+                                </View>
+                                <Text style={styles.socialMediaLabel}>Facebook</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
-                                style={styles.socialIcon}
-                                onPress={() => alert(t('twitterComingSoon'))}
+                                style={[styles.socialMediaCard, {backgroundColor: 'rgba(255, 0, 0, 0.1)'}]}
+                                onPress={() => handleSocialMediaPress('youtube')}
                             >
-                                <FontAwesomeIcon
-                                    icon={faXTwitter}
-                                    size={18}
-                                    color={theme.mode === 'dark' ? '#fff' : '#000000'}
-                                />
+                                <View style={[styles.socialMediaIconCircle, {backgroundColor: '#FF0000'}]}>
+                                    <FontAwesomeIcon icon={faYoutube} size={22} color='#fff'/>
+                                </View>
+                                <Text style={styles.socialMediaLabel}>YouTube</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
-                                style={styles.socialIcon}
-                                onPress={() => alert(t('instagramComingSoon'))}
+                                style={[styles.socialMediaCard, {backgroundColor: 'rgba(228, 64, 95, 0.1)'}]}
+                                onPress={() => handleSocialMediaPress('instagram')}
                             >
-                                <FontAwesomeIcon icon={faInstagram} size={18} color='#C13584'/>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={styles.socialIcon}
-                                onPress={() => alert(t('youtubeComingSoon'))}
-                            >
-                                <FontAwesomeIcon icon={faYoutube} size={18} color='#FF0000'/>
+                                <View style={[styles.socialMediaIconCircle, {backgroundColor: '#E4405F'}]}>
+                                    <FontAwesomeIcon icon={faInstagram} size={22} color='#fff'/>
+                                </View>
+                                <Text style={styles.socialMediaLabel}>Instagram</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
 
                 </ReAnimated.View>
             </View>
+
+            {/* Social Media Modal */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={socialModalVisible}
+                onRequestClose={() => setSocialModalVisible(false)}
+                presentationStyle="pageSheet"
+            >
+                <Pressable
+                    style={styles.modalContainer}
+                    onPress={() => setSocialModalVisible(false)}
+                >
+                    <Pressable
+                        style={styles.modalContent}
+                        onPress={(e) => e.stopPropagation()}
+                    >
+                        {selectedPlatform && (
+                            <>
+                                {/* Swipe Indicator */}
+                                <View style={styles.swipeIndicator} />
+
+                                {/* Close Button */}
+                                <TouchableOpacity
+                                    style={styles.modalCloseIcon}
+                                    onPress={() => setSocialModalVisible(false)}
+                                >
+                                    <FontAwesomeIcon
+                                        icon={faTimes}
+                                        size={20}
+                                        color={theme.colors.textSecondary}
+                                    />
+                                </TouchableOpacity>
+
+                                <View style={styles.modalHeader}>
+                                    <View style={[
+                                        styles.modalIconCircle,
+                                        {backgroundColor: getPlatformInfo(selectedPlatform).color}
+                                    ]}>
+                                        <FontAwesomeIcon
+                                            icon={getPlatformInfo(selectedPlatform).icon}
+                                            size={22}
+                                            color='#fff'
+                                        />
+                                    </View>
+                                    <Text style={styles.modalTitle}>
+                                        {getPlatformInfo(selectedPlatform).name}
+                                    </Text>
+                                    <Text style={styles.modalSubtitle}>
+                                        {t('selectSchoolToFollow')}
+                                    </Text>
+                                </View>
+
+                                <ScrollView style={styles.modalScrollView} showsVerticalScrollIndicator={false}>
+                                    {platformLinks.map((link, index) => (
+                                        <TouchableOpacity
+                                            key={index}
+                                            style={styles.schoolLinkCard}
+                                            onPress={() => handleOpenLink(link.url)}
+                                        >
+                                            <View style={styles.schoolLinkContent}>
+                                                <View style={[
+                                                    styles.schoolLinkIcon,
+                                                    {backgroundColor: `${getPlatformInfo(selectedPlatform).color}15`}
+                                                ]}>
+                                                    <FontAwesomeIcon
+                                                        icon={getPlatformInfo(selectedPlatform).icon}
+                                                        size={16}
+                                                        color={getPlatformInfo(selectedPlatform).color}
+                                                    />
+                                                </View>
+                                                <View style={styles.schoolLinkText}>
+                                                    <Text style={styles.schoolLinkName}>{link.label}</Text>
+                                                    {link.type === 'preschool' && (
+                                                        <Text style={styles.schoolLinkBadge}>{t('preschool')}</Text>
+                                                    )}
+                                                </View>
+                                            </View>
+                                            <FontAwesomeIcon
+                                                icon={faShareAlt}
+                                                size={14}
+                                                color={theme.colors.textSecondary}
+                                            />
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
+                            </>
+                        )}
+                    </Pressable>
+                </Pressable>
+            </Modal>
             {/* copyright with version and logo */}
             <View style={styles.copyrightContainer}>
                 <Text style={styles.copyright}>
@@ -1177,14 +1376,7 @@ const createStyles = (
             color: theme.colors.textSecondary,
             lineHeight: fontSizes.bodySmallLineHeight,
         },
-        sectionTitle: {
-            fontSize: fontSizes.subtitle,
-            fontWeight: '600',
-            color: theme.colors.text,
-            marginBottom: 5,
-            alignSelf: 'flex-start',
-            lineHeight: fontSizes.subtitleLineHeight,
-        },
+
         resourcesContainer: {
             flexDirection: 'row',
             flexWrap: 'wrap',
@@ -1222,45 +1414,143 @@ const createStyles = (
         },
         socialMediaSection: {
             width: '100%',
-            marginVertical: 10,
+            paddingHorizontal: 20,
+        },
+        sectionTitle: {
+            fontSize: fontSizes.subtitle,
+            fontWeight: '700',
+            color: theme.colors.text,
+            marginBottom: 10,
+            textAlign: 'center',
+        },
+        socialMediaGrid: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            gap: 12,
+        },
+        socialMediaCard: {
+            flex: 1,
+            borderRadius: 16,
+            padding: 16,
             alignItems: 'center',
             justifyContent: 'center',
+            minHeight: 100,
+            ...theme.shadows.medium,
         },
-        socialMediaButton: {
-            backgroundColor: theme.colors.surface,
+        socialMediaIconCircle: {
+            width: 50,
+            height: 50,
             borderRadius: 25,
-            paddingVertical: 12,
-            paddingHorizontal: 20,
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginBottom: 8,
+        },
+        socialMediaLabel: {
+            fontSize: fontSizes.small,
+            fontWeight: '600',
+            color: theme.colors.text,
+            textAlign: 'center',
+        },
+        // Modal Styles
+        modalContainer: {
+            flex: 1,
+            justifyContent: 'flex-end',
+        },
+        modalContent: {
+            backgroundColor: theme.colors.background,
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            paddingTop: 8,
+            paddingBottom: 20,
+            paddingHorizontal: 16,
+            maxHeight: '70%',
+            ...theme.shadows.large,
+        },
+        swipeIndicator: {
+            width: 40,
+            height: 4,
+            backgroundColor: theme.colors.border,
+            borderRadius: 2,
+            alignSelf: 'center',
+            marginBottom: 8,
+        },
+        modalCloseIcon: {
+            position: 'absolute',
+            top: 12,
+            right: 16,
+            width: 32,
+            height: 32,
+            borderRadius: 16,
+            backgroundColor: theme.colors.surface,
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 10,
+        },
+        modalHeader: {
+            alignItems: 'center',
+            marginBottom: 12,
+            paddingBottom: 12,
+            borderBottomWidth: 1,
+            borderBottomColor: theme.colors.border,
+        },
+        modalIconCircle: {
+            width: 50,
+            height: 50,
+            borderRadius: 25,
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginBottom: 8,
+        },
+        modalTitle: {
+            fontSize: fontSizes.subtitle,
+            fontWeight: '700',
+            color: theme.colors.text,
+            marginBottom: 4,
+        },
+        modalSubtitle: {
+            fontSize: fontSizes.small,
+            color: theme.colors.textSecondary,
+            textAlign: 'center',
+        },
+        modalScrollView: {
+            maxHeight: 300,
+        },
+        schoolLinkCard: {
+            backgroundColor: theme.colors.surface,
+            borderRadius: 10,
+            padding: 12,
+            marginBottom: 8,
             flexDirection: 'row',
             alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 15,
-            alignSelf: 'center', // This should center it within the ScrollView
+            justifyContent: 'space-between',
             ...theme.shadows.small,
         },
-        socialMediaIconContainer: {
+        schoolLinkContent: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            flex: 1,
+        },
+        schoolLinkIcon: {
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            justifyContent: 'center',
+            alignItems: 'center',
             marginRight: 10,
         },
-        socialMediaText: {
-            color: theme.colors.text,
+        schoolLinkText: {
+            flex: 1,
+        },
+        schoolLinkName: {
             fontSize: fontSizes.body,
             fontWeight: '600',
-            lineHeight: fontSizes.bodyLineHeight,
+            color: theme.colors.text,
+            marginBottom: 2,
         },
-        socialIconsRow: {
-            flexDirection: 'row',
-            justifyContent: 'center',
-            width: '100%',
-        },
-        socialIcon: {
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            backgroundColor: theme.colors.surface,
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginHorizontal: 10,
-            ...theme.shadows.small,
+        schoolLinkBadge: {
+            fontSize: fontSizes.small - 1,
+            color: theme.colors.textSecondary,
+            fontStyle: 'italic',
         },
         debugText: {
             fontSize: 10,

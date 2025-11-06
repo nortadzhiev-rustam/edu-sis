@@ -608,10 +608,24 @@ const translations = {
 
     // Social Media
     connectWithUsSocial: 'Connect with us on social media!',
+    followUs: 'Follow Us',
+    selectSchoolToFollow: 'Select a school to follow',
+    preschool: 'Preschool',
     facebookComingSoon: 'Facebook page coming soon!',
     twitterComingSoon: 'Twitter page coming soon!',
     instagramComingSoon: 'Instagram page coming soon!',
     youtubeComingSoon: 'YouTube channel coming soon!',
+    noSocialMedia: 'No Social Media',
+    noSocialMediaAvailable: 'No social media links are available at this time.',
+    selectSchool: 'Select School',
+    selectSchoolToView: 'Please select which school you would like to view:',
+    cannotOpenLink: 'Cannot open this link on your device.',
+    failedToOpenLink: 'Failed to open the link. Please try again.',
+    notAvailable: 'Not Available',
+    facebookNotAvailable: 'Facebook links are not available for any schools.',
+    twitterNotAvailable: 'Twitter links are not available for any schools.',
+    instagramNotAvailable: 'Instagram links are not available for any schools.',
+    youtubeNotAvailable: 'YouTube links are not available for any schools.',
 
     // Teacher Screen
     confirmLogout: 'Are you sure you want to logout?',
@@ -1344,10 +1358,24 @@ const translations = {
 
     // Social Media
     connectWithUsSocial: 'ကျွန်ုပ်တို့နှင့် ဆိုရှယ်မီဒီယာတွင် ချိတ်ဆက်ပါ!',
+    followUs: 'ကျွန်ုပ်တို့ကို လိုက်ကြည့်ပါ',
+    selectSchoolToFollow: 'လိုက်ကြည့်လိုသော ကျောင်းကို ရွေးချယ်ပါ',
+    preschool: 'မူကြိုကျောင်း',
     facebookComingSoon: 'Facebook စာမျက်နှာ မကြာမီရရှိမည်!',
     twitterComingSoon: 'Twitter စာမျက်နှာ မကြာမီရရှိမည်!',
     instagramComingSoon: 'Instagram စာမျက်နှာ မကြာမီရရှိမည်!',
     youtubeComingSoon: 'YouTube ချန်နယ် မကြာမီရရှိမည်!',
+    noSocialMedia: 'ဆိုရှယ်မီဒီယာမရှိပါ',
+    noSocialMediaAvailable: 'လောလောဆယ် ဆိုရှယ်မီဒီယာလင့်များမရှိပါ။',
+    selectSchool: 'ကျောင်းရွေးချယ်ပါ',
+    selectSchoolToView: 'ကြည့်ရှုလိုသော ကျောင်းကို ရွေးချယ်ပါ:',
+    cannotOpenLink: 'သင့်စက်ပစ္စည်းတွင် ဤလင့်ကို ဖွင့်၍မရပါ။',
+    failedToOpenLink: 'လင့်ဖွင့်၍မရပါ။ ကျေးဇူးပြု၍ ပြန်လည်ကြိုးစားပါ။',
+    notAvailable: 'မရရှိနိုင်ပါ',
+    facebookNotAvailable: 'မည်သည့်ကျောင်းအတွက်မျှ Facebook လင့်များမရှိပါ။',
+    twitterNotAvailable: 'မည်သည့်ကျောင်းအတွက်မျှ Twitter လင့်များမရှိပါ။',
+    instagramNotAvailable: 'မည်သည့်ကျောင်းအတွက်မျှ Instagram လင့်များမရှိပါ။',
+    youtubeNotAvailable: 'မည်သည့်ကျောင်းအတွက်မျှ YouTube လင့်များမရှိပါ။',
 
     // Teacher Screen
     confirmLogout: 'လော့ဂ်အောက်ထွက်ရန် သေချာပါသလား?',
@@ -2060,10 +2088,24 @@ const translations = {
 
     // Social Media
     connectWithUsSocial: '在社交媒体上关注我们！',
+    followUs: '关注我们',
+    selectSchoolToFollow: '选择要关注的学校',
+    preschool: '学前班',
     facebookComingSoon: 'Facebook页面即将推出！',
     twitterComingSoon: 'Twitter页面即将推出！',
     instagramComingSoon: 'Instagram页面即将推出！',
     youtubeComingSoon: 'YouTube频道即将推出！',
+    noSocialMedia: '无社交媒体',
+    noSocialMediaAvailable: '目前没有可用的社交媒体链接。',
+    selectSchool: '选择学校',
+    selectSchoolToView: '请选择您想查看的学校：',
+    cannotOpenLink: '无法在您的设备上打开此链接。',
+    failedToOpenLink: '打开链接失败。请重试。',
+    notAvailable: '不可用',
+    facebookNotAvailable: '没有学校的Facebook链接。',
+    twitterNotAvailable: '没有学校的Twitter链接。',
+    instagramNotAvailable: '没有学校的Instagram链接。',
+    youtubeNotAvailable: '没有学校的YouTube链接。',
 
     // Teacher Screen
     confirmLogout: '您确定要退出登录吗？',
@@ -2775,10 +2817,24 @@ const translations = {
 
     // Social Media
     connectWithUsSocial: 'ติดตามเราบนโซเชียลมีเดีย!',
+    followUs: 'ติดตามเรา',
+    selectSchoolToFollow: 'เลือกโรงเรียนที่ต้องการติดตาม',
+    preschool: 'อนุบาล',
     facebookComingSoon: 'หน้า Facebook เร็วๆ นี้!',
     twitterComingSoon: 'หน้า Twitter เร็วๆ นี้!',
     instagramComingSoon: 'หน้า Instagram เร็วๆ นี้!',
     youtubeComingSoon: 'ช่อง YouTube เร็วๆ นี้!',
+    noSocialMedia: 'ไม่มีโซเชียลมีเดีย',
+    noSocialMediaAvailable: 'ไม่มีลิงก์โซเชียลมีเดียในขณะนี้',
+    selectSchool: 'เลือกโรงเรียน',
+    selectSchoolToView: 'กรุณาเลือกโรงเรียนที่คุณต้องการดู:',
+    cannotOpenLink: 'ไม่สามารถเปิดลิงก์นี้บนอุปกรณ์ของคุณได้',
+    failedToOpenLink: 'ไม่สามารถเปิดลิงก์ได้ กรุณาลองอีกครั้ง',
+    notAvailable: 'ไม่พร้อมใช้งาน',
+    facebookNotAvailable: 'ไม่มีลิงก์ Facebook สำหรับโรงเรียนใดๆ',
+    twitterNotAvailable: 'ไม่มีลิงก์ Twitter สำหรับโรงเรียนใดๆ',
+    instagramNotAvailable: 'ไม่มีลิงก์ Instagram สำหรับโรงเรียนใดๆ',
+    youtubeNotAvailable: 'ไม่มีลิงก์ YouTube สำหรับโรงเรียนใดๆ',
 
     // Teacher Screen
     confirmLogout: 'คุณแน่ใจหรือไม่ว่าต้องการออกจากระบบ?',
