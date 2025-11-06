@@ -1414,7 +1414,7 @@ const createStyles = (
         },
         socialMediaSection: {
             width: '100%',
-            paddingHorizontal: 20,
+            paddingHorizontal: 10,
         },
         sectionTitle: {
             fontSize: fontSizes.subtitle,
@@ -1426,7 +1426,7 @@ const createStyles = (
         socialMediaGrid: {
             flexDirection: 'row',
             justifyContent: 'space-between',
-            gap: 12,
+            gap: 8,
         },
         socialMediaCard: {
             flex: 1,
