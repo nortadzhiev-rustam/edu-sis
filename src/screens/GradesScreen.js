@@ -52,8 +52,6 @@ import {
     faChevronDown,
     faChevronUp,
     faChartBar,
-    faCalendar,
-    faCheck,
 } from '@fortawesome/free-solid-svg-icons';
 import {useFocusEffect} from '@react-navigation/native';
 import {useScreenOrientation} from '../hooks/useScreenOrientation';
@@ -99,7 +97,6 @@ export default function GradesScreen({navigation, route}) {
     // Term filtering state
     const [availableTerms, setAvailableTerms] = useState([]);
     const [selectedTerm, setSelectedTerm] = useState(null);
-    const [showTermPicker, setShowTermPicker] = useState(false);
 
     // Refresh notifications when screen comes into focus
     useFocusEffect(
@@ -145,9 +142,9 @@ export default function GradesScreen({navigation, route}) {
                 return;
             }
 
-            // First, fetch terms data to get available terms
+            // First, fetch terms data using GET_STUDENT_GRADES with group_by_term=1
             const termsUrl = buildApiUrl(
-                Config.API_ENDPOINTS.GET_STUDENT_GRADES_BY_STRANDS,
+                Config.API_ENDPOINTS.GET_STUDENT_GRADES,
                 {authCode, group_by_term: 1}
             );
 
@@ -162,6 +159,7 @@ export default function GradesScreen({navigation, route}) {
             });
 
             let currentTermData = null;
+            let termsWithData = [];
             if (termsRes.ok) {
                 const termsData = await termsRes.json();
                 console.log('🔍 GRADES: Terms API response:', termsData);
@@ -174,6 +172,9 @@ export default function GradesScreen({navigation, route}) {
                             isCurrent: t.is_current,
                         })),
                     });
+
+                    // Store full term data including formative assessments
+                    termsWithData = termsData.terms;
                     setAvailableTerms(termsData.terms);
 
                     // Find and set the current term as default
@@ -255,7 +256,31 @@ export default function GradesScreen({navigation, route}) {
 
             if (legacyRes.ok) {
                 const legacyData = await legacyRes.json();
-                setGrades(legacyData);
+
+                // Replace formative data with the selected term's formative data
+                if (termToUse && termsWithData.length > 0) {
+                    const selectedTermData = termsWithData.find(
+                        t => t.semester_id === termToUse.semester_id
+                    );
+
+                    if (selectedTermData && selectedTermData.formative) {
+                        console.log('✅ GRADES: Using formative data from selected term:', {
+                            term: selectedTermData.semester_name,
+                            formativeCount: selectedTermData.formative.length,
+                        });
+
+                        // Replace formative assessments with term-specific data
+                        const updatedGrades = {
+                            ...legacyData,
+                            formative: selectedTermData.formative,
+                        };
+                        setGrades(updatedGrades);
+                    } else {
+                        setGrades(legacyData);
+                    }
+                } else {
+                    setGrades(legacyData);
+                }
             } else {
                 console.error('Failed to fetch grades (legacy):', legacyRes.status);
             }
@@ -704,7 +729,7 @@ export default function GradesScreen({navigation, route}) {
                             </View>
                         )}
                         <View style={styles.expandIcon}>
-                            <AnimatedChevron isExpanded={isExpanded} color={subjectColor} />
+                            <AnimatedChevron isExpanded={isExpanded} color={subjectColor}/>
                         </View>
                     </View>
                 </TouchableOpacity>
@@ -760,7 +785,7 @@ export default function GradesScreen({navigation, route}) {
                             </Text>
                         </View>
                         <View style={styles.expandIcon}>
-                            <AnimatedChevron isExpanded={isExpanded} color={subjectColor} />
+                            <AnimatedChevron isExpanded={isExpanded} color={subjectColor}/>
                         </View>
                     </View>
                 </TouchableOpacity>
@@ -819,8 +844,8 @@ export default function GradesScreen({navigation, route}) {
             return {
                 opacity: opacity.value,
                 transform: [
-                    { scale: scale.value },
-                    { translateX: translateX.value },
+                    {scale: scale.value},
+                    {translateX: translateX.value},
                 ],
             };
         });
@@ -866,7 +891,7 @@ export default function GradesScreen({navigation, route}) {
 
     // Render strand item for SectionList
     const renderStrandItem = useCallback(({item, section, index}) => {
-        return <AnimatedStrandItem item={item} section={section} index={index} />;
+        return <AnimatedStrandItem item={item} section={section} index={index}/>;
     }, [expandedSections]);
 
     // Animated wrapper component for formative items
@@ -919,8 +944,8 @@ export default function GradesScreen({navigation, route}) {
             return {
                 opacity: opacity.value,
                 transform: [
-                    { scale: scale.value },
-                    { translateX: translateX.value },
+                    {scale: scale.value},
+                    {translateX: translateX.value},
                 ],
             };
         });
@@ -1033,7 +1058,7 @@ export default function GradesScreen({navigation, route}) {
 
     // Render formative assessment item
     const renderFormativeItem = useCallback(({item, section, index}) => {
-        return <AnimatedFormativeItem item={item} section={section} index={index} />;
+        return <AnimatedFormativeItem item={item} section={section} index={index}/>;
     }, [expandedSections]);
 
     // Update available subjects when grades or calculated data changes
@@ -2212,35 +2237,6 @@ export default function GradesScreen({navigation, route}) {
                     </View>
                 )}
 
-                {/* Term Selector - Show when we have terms available */}
-                {availableTerms.length > 0 && showSubjectList && (
-                    <View style={styles.termSelectorContainer}>
-                        <TouchableOpacity
-                            style={styles.termSelectorButton}
-                            onPress={() => setShowTermPicker(true)}
-                            activeOpacity={0.7}
-                        >
-                            <FontAwesomeIcon
-                                icon={faCalendar}
-                                size={14}
-                                color={theme.colors.primary}
-                            />
-                            <Text style={styles.termSelectorText}>
-                                {selectedTerm?.semester_name || 'Select Term'}
-                            </Text>
-                            {selectedTerm?.is_current && (
-                                <View style={styles.currentTermBadge}>
-                                    <Text style={styles.currentTermBadgeText}>Current</Text>
-                                </View>
-                            )}
-                            <FontAwesomeIcon
-                                icon={faChevronDown}
-                                size={12}
-                                color={theme.colors.textSecondary}
-                            />
-                        </TouchableOpacity>
-                    </View>
-                )}
 
                 {/* Performance Overview - Tabs + Stats Cards */}
                 {showSubjectList && !loading && (
@@ -2328,13 +2324,15 @@ export default function GradesScreen({navigation, route}) {
                                                 <View style={styles.statsDetailRow}>
                                                     <Text style={styles.statsDetailIcon}>📈</Text>
                                                     <Text style={styles.statsDetailText}>
-                                                        Highest Grade: {!hasAnyLockedAssessments ? 'N/A' : `${summaryData.highest_grade || 0}%`}
+                                                        Highest
+                                                        Grade: {!hasAnyLockedAssessments ? 'N/A' : `${summaryData.highest_grade || 0}%`}
                                                     </Text>
                                                 </View>
                                                 <View style={styles.statsDetailRow}>
                                                     <Text style={styles.statsDetailIcon}>📉</Text>
                                                     <Text style={styles.statsDetailText}>
-                                                        Lowest Grade: {!hasAnyLockedAssessments ? 'N/A' : `${summaryData.lowest_grade || 0}%`}
+                                                        Lowest
+                                                        Grade: {!hasAnyLockedAssessments ? 'N/A' : `${summaryData.lowest_grade || 0}%`}
                                                     </Text>
                                                 </View>
                                             </View>
@@ -2469,8 +2467,51 @@ export default function GradesScreen({navigation, route}) {
                                     </View>
                                 );
                             })()}
+                        {/* Term Selector Switch - Show when we have terms available */}
+                        {availableTerms.length > 0 && showSubjectList && (
+                            <View style={styles.termSelectorContainer}>
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    contentContainerStyle={styles.termSwitchScrollContent}
+                                >
+                                    {availableTerms.map((term) => (
+                                        <TouchableOpacity
+                                            key={term.semester_id}
+                                            style={[
+                                                styles.termSwitchButton,
+                                                selectedTerm?.semester_id === term.semester_id &&
+                                                styles.termSwitchButtonActive,
+                                            ]}
+                                            onPress={() => setSelectedTerm(term)}
+                                            activeOpacity={0.7}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.termSwitchButtonText,
+                                                    selectedTerm?.semester_id === term.semester_id &&
+                                                    styles.termSwitchButtonTextActive,
+                                                ]}
+                                            >
+                                                {term.semester_name}
+                                            </Text>
+                                            {term.is_current && (
+                                                <View
+                                                    style={[
+                                                        styles.currentTermDot,
+                                                        selectedTerm?.semester_id === term.semester_id &&
+                                                        styles.currentTermDotActive,
+                                                    ]}
+                                                />
+                                            )}
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
+                            </View>
+                        )}
                     </View>
                 )}
+
             </View>
 
             <View style={[styles.content, isLandscape && styles.landscapeContent]}>
@@ -2550,78 +2591,6 @@ export default function GradesScreen({navigation, route}) {
                     </View>
                 )}
             </View>
-
-            {/* Term Picker Modal */}
-            <Modal
-                visible={showTermPicker}
-                animationType='slide'
-                presentationStyle='pageSheet'
-                onRequestClose={() => setShowTermPicker(false)}
-            >
-                <SafeAreaView style={styles.modalContainer}>
-                    <View style={styles.modalHeader}>
-                        <TouchableOpacity
-                            style={styles.modalCloseButton}
-                            onPress={() => setShowTermPicker(false)}
-                        >
-                            <FontAwesomeIcon
-                                icon={faArrowLeft}
-                                size={20}
-                                color={theme.colors.text}
-                            />
-                        </TouchableOpacity>
-                        <View style={styles.modalHeaderInfo}>
-                            <Text style={styles.modalTitle}>Select Term</Text>
-                            <Text style={styles.modalSubtitle}>
-                                {availableTerms.length} term{availableTerms.length !== 1 ? 's' : ''} available
-                            </Text>
-                        </View>
-                    </View>
-
-                    <ScrollView style={styles.modalContent}>
-                        {availableTerms.map((term) => (
-                            <TouchableOpacity
-                                key={term.semester_id}
-                                style={[
-                                    styles.termPickerItem,
-                                    selectedTerm?.semester_id === term.semester_id &&
-                                        styles.termPickerItemSelected,
-                                ]}
-                                onPress={() => {
-                                    setSelectedTerm(term);
-                                    setShowTermPicker(false);
-                                }}
-                                activeOpacity={0.7}
-                            >
-                                <View style={styles.termPickerItemLeft}>
-                                    <Text style={styles.termPickerItemName}>
-                                        {term.semester_name}
-                                    </Text>
-                                    <Text style={styles.termPickerItemDates}>
-                                        {term.start_date} - {term.end_date}
-                                    </Text>
-                                </View>
-                                <View style={styles.termPickerItemRight}>
-                                    {term.is_current && (
-                                        <View style={styles.currentTermBadgeLarge}>
-                                            <Text style={styles.currentTermBadgeTextLarge}>
-                                                Current
-                                            </Text>
-                                        </View>
-                                    )}
-                                    {selectedTerm?.semester_id === term.semester_id && (
-                                        <FontAwesomeIcon
-                                            icon={faCheck}
-                                            size={18}
-                                            color={theme.colors.primary}
-                                        />
-                                    )}
-                                </View>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </SafeAreaView>
-            </Modal>
 
             {/* Strand Details Modal */}
             <Modal
@@ -2873,6 +2842,8 @@ const createStyles = (theme) =>
             backgroundColor: theme.colors.surface,
             paddingHorizontal: 16,
             paddingVertical: 16,
+            borderBottomLeftRadius: 16,
+            borderBottomRightRadius: 16,
         },
         // Summary SubHeader Styles (integrated with navigation header)
         summarySubHeader: {
@@ -4222,10 +4193,9 @@ const createStyles = (theme) =>
         // Performance Overview Styles
         performanceOverview: {
             backgroundColor: theme.colors.card,
-            marginHorizontal: 16,
-            marginBottom: 12,
-            borderRadius: 12,
             padding: 12,
+            borderBottomLeftRadius: 16,
+            borderBottomRightRadius: 16,
             ...createCardShadow(theme),
         },
         performanceHeader: {
@@ -4363,82 +4333,52 @@ const createStyles = (theme) =>
             color: theme.colors.text,
             fontWeight: '500',
         },
-        // Term Selector Styles
+        // Term Selector Switch Styles
         termSelectorContainer: {
             paddingHorizontal: 16,
             paddingVertical: 12,
             backgroundColor: theme.colors.background,
+            borderBottomWidth: 1,
+            borderBottomColor: theme.colors.border,
+            ...createSmallShadow(theme),
+            borderBottomLeftRadius: 16,
+            borderBottomRightRadius: 16,
         },
-        termSelectorButton: {
+        termSwitchScrollContent: {
+            paddingRight: 16,
+            gap: 8,
+        },
+        termSwitchButton: {
             flexDirection: 'row',
             alignItems: 'center',
             backgroundColor: theme.colors.card,
             paddingHorizontal: 16,
-            paddingVertical: 12,
-            borderRadius: 12,
-            gap: 8,
-            ...createCardShadow(theme),
+            paddingVertical: 10,
+            borderRadius: 20,
+            borderWidth: 1.5,
+            borderColor: theme.colors.border,
+            gap: 6,
+            minHeight: 40,
         },
-        termSelectorText: {
-            flex: 1,
+        termSwitchButtonActive: {
+            backgroundColor: theme.colors.primary,
+            borderColor: theme.colors.primary,
+        },
+        termSwitchButtonText: {
             fontSize: 14,
             fontWeight: '600',
             color: theme.colors.text,
         },
-        currentTermBadge: {
-            backgroundColor: theme.colors.primary,
-            paddingHorizontal: 8,
-            paddingVertical: 4,
-            borderRadius: 6,
-        },
-        currentTermBadgeText: {
-            fontSize: 10,
-            fontWeight: '700',
+        termSwitchButtonTextActive: {
             color: '#fff',
         },
-        currentTermBadgeLarge: {
+        currentTermDot: {
+            width: 6,
+            height: 6,
+            borderRadius: 3,
             backgroundColor: theme.colors.primary,
-            paddingHorizontal: 10,
-            paddingVertical: 5,
-            borderRadius: 8,
-            marginRight: 8,
         },
-        currentTermBadgeTextLarge: {
-            fontSize: 12,
-            fontWeight: '700',
-            color: '#fff',
-        },
-        // Term Picker Modal Styles
-        termPickerItem: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            backgroundColor: theme.colors.card,
-            padding: 16,
-            marginBottom: 12,
-            borderRadius: 12,
-            ...createCardShadow(theme),
-        },
-        termPickerItemSelected: {
-            borderWidth: 2,
-            borderColor: theme.colors.primary,
-        },
-        termPickerItemLeft: {
-            flex: 1,
-        },
-        termPickerItemName: {
-            fontSize: 16,
-            fontWeight: '600',
-            color: theme.colors.text,
-            marginBottom: 4,
-        },
-        termPickerItemDates: {
-            fontSize: 13,
-            color: theme.colors.textSecondary,
-        },
-        termPickerItemRight: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 8,
+        currentTermDotActive: {
+            backgroundColor: '#fff',
         },
     });

@@ -7,12 +7,9 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ef623be7-f661-4789-8237-3d30a600b41f" name="Changes" comment="refactor: extend auto-dismiss timeout in AnimatedHeaderActions and add effect to manage timer on expansion">
-      <change afterPath="$PROJECT_DIR$/src/utils/appUpdates.js" afterDir="false" />
+    <list default="true" id="ef623be7-f661-4789-8237-3d30a600b41f" name="Changes" comment="add: implement OTA updates with `expo-updates`, integrate automatic update checks, and enable term-based filtering in GradesScreen">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/config/env.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/config/env.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/screens/GradesScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/screens/GradesScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/screens/HomeScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/screens/HomeScreen.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -90,7 +87,7 @@
       <workItem from="1761126620601" duration="16273000" />
       <workItem from="1761274636423" duration="1723000" />
       <workItem from="1761704449570" duration="600000" />
-      <workItem from="1762402875443" duration="4165000" />
+      <workItem from="1762402875443" duration="7173000" />
     </task>
     <task id="LOCAL-00001" summary="update: adjusted app logos and launcher assets, updated dependencies and project configurations">
       <option name="closed" value="true" />
@@ -164,7 +161,15 @@
       <option name="project" value="LOCAL" />
       <updated>1761275734259</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="add: implement OTA updates with `expo-updates`, integrate automatic update checks, and enable term-based filtering in GradesScreen">
+      <option name="closed" value="true" />
+      <created>1762407566906</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1762407566906</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -191,7 +196,8 @@
     <MESSAGE value="refactor: enhance AnimatedHeaderActions with forwardRef, auto-dismiss, and tap-to-dismiss logic, and improve UI animations" />
     <MESSAGE value="refactor: remove modal logic from AnimatedHeaderActions, adjust styles, and update theme-based colors across screens" />
     <MESSAGE value="refactor: extend auto-dismiss timeout in AnimatedHeaderActions and add effect to manage timer on expansion" />
-    <option name="LAST_COMMIT_MESSAGE" value="refactor: extend auto-dismiss timeout in AnimatedHeaderActions and add effect to manage timer on expansion" />
+    <MESSAGE value="add: implement OTA updates with `expo-updates`, integrate automatic update checks, and enable term-based filtering in GradesScreen" />
+    <option name="LAST_COMMIT_MESSAGE" value="add: implement OTA updates with `expo-updates`, integrate automatic update checks, and enable term-based filtering in GradesScreen" />
   </component>
   <component name="VueSettings">
     <option name="useTypesFromServer" value="true" />
