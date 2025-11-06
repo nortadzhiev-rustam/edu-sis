@@ -1415,6 +1415,7 @@ const createStyles = (
         socialMediaSection: {
             width: '100%',
             paddingHorizontal: 10,
+            marginBottom: 40,
         },
         sectionTitle: {
             fontSize: fontSizes.subtitle,
