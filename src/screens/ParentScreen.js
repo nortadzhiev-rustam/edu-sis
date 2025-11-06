@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,12 @@ import {
   AccessibilityInfo,
   PixelRatio,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  interpolate,
+} from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -39,6 +45,9 @@ import {
   faHeartbeat,
   faClock,
   faEllipsisV,
+  faSignOutAlt,
+  faUserShield,
+  faChevronDown,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme, getLanguageFontSizes } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -47,10 +56,12 @@ import ParentNotificationBadge from '../components/ParentNotificationBadge';
 import MessageBadge from '../components/MessageBadge';
 import { QuickActionTile, ComingSoonBadge } from '../components';
 import AnimatedHeaderActions from '../components/AnimatedHeaderActions';
-import { cleanupStudentData } from '../services/logoutService';
+import { cleanupStudentData, performLogout } from '../services/logoutService';
+
 import { isIPad, isTablet } from '../utils/deviceDetection';
 import DemoModeIndicator from '../components/DemoModeIndicator';
 import { updateLastLogin } from '../services/deviceService';
+
 
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -146,6 +157,16 @@ const getMenuItems = (t) => [
     disabled: false,
     comingSoon: false,
   },
+  {
+    id: 'guardian-pickup',
+    title: 'Guardian & Pickup',
+    icon: faUserShield,
+    backgroundColor: '#8B5CF6',
+    iconColor: '#fff',
+    action: 'guardian-pickup',
+    disabled: true,
+    comingSoon: true,
+  },
   // {
   //   id: 'reports',
   //   title: t('reports'),
@@ -157,6 +178,44 @@ const getMenuItems = (t) => [
   //   comingSoon: false,
   // },
 ];
+
+// Animated Pagination Dot Component - manages its own shared value
+const AnimatedPaginationDot = ({ isActive, theme, onPress, dotStyle, touchableStyle }) => {
+  const animValue = useSharedValue(isActive ? 1 : 0);
+
+  // Update animation when isActive changes
+  React.useEffect(() => {
+    animValue.value = withSpring(isActive ? 1 : 0, {
+      damping: 15,
+      stiffness: 150,
+      mass: 0.8,
+    });
+  }, [isActive]);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    const width = interpolate(animValue.value, [0, 1], [8, 24]);
+    const opacity = interpolate(animValue.value, [0, 1], [0.5, 1]);
+
+    return {
+      width,
+      opacity,
+    };
+  });
+
+  return (
+    <TouchableOpacity onPress={onPress} style={touchableStyle}>
+      <Animated.View
+        style={[
+          dotStyle,
+          animatedStyle,
+          {
+            backgroundColor: isActive ? theme.colors.primary : theme.colors.border,
+          },
+        ]}
+      />
+    </TouchableOpacity>
+  );
+};
 
 export default function ParentScreen({ navigation }) {
   const { theme } = useTheme();
@@ -172,6 +231,7 @@ export default function ParentScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [currentUserData, setCurrentUserData] = useState(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = React.useRef(null);
   const notificationsLoadedRef = React.useRef(new Set());
 
@@ -186,6 +246,18 @@ export default function ParentScreen({ navigation }) {
   const { selectStudent, refreshAllStudents } = useParentNotifications();
 
   const styles = createStyles(theme, fontSizes);
+
+  // Update current index when selected student changes
+  useEffect(() => {
+    if (selectedStudent && students.length > 0) {
+      const studentIndex = students.findIndex(
+        (s) => s.id === selectedStudent.id
+      );
+      if (studentIndex !== -1 && studentIndex !== currentIndex) {
+        setCurrentIndex(studentIndex);
+      }
+    }
+  }, [selectedStudent, students]);
 
   // Detect accessibility settings on component mount
   useEffect(() => {
@@ -273,6 +345,13 @@ export default function ParentScreen({ navigation }) {
     }
   }, [students, selectedStudent, restoreSelectedStudent]);
 
+  // Ensure first dot is selected when students are first loaded
+  useEffect(() => {
+    if (students.length > 0 && currentIndex !== 0 && !selectedStudent) {
+      setCurrentIndex(0);
+    }
+  }, [students.length, selectedStudent]);
+
   // Load notifications when students are loaded (only once per student set)
   useEffect(() => {
     if (students.length > 0) {
@@ -306,6 +385,16 @@ export default function ParentScreen({ navigation }) {
   const handleStudentPress = async (student) => {
     // Set the selected student
     setSelectedStudent(student);
+
+    // Find the index of the selected student and center it
+    const studentIndex = students.findIndex((s) => s.id === student.id);
+    if (studentIndex !== -1) {
+      setCurrentIndex(studentIndex);
+      flatListRef.current?.scrollToIndex({
+        index: studentIndex,
+        animated: true,
+      });
+    }
 
     // Save selected student to AsyncStorage for persistence
     try {
@@ -646,17 +735,35 @@ export default function ParentScreen({ navigation }) {
               <FontAwesomeIcon icon={faChild} size={30} color='#fff' />
             </View>
           )}
-          <Text
-            style={[
-              styles.studentName,
-              isSelected && styles.selectedStudentText,
-            ]}
-          >
-            {item.name || t('student')}
-          </Text>
-          <Text style={styles.studentDetails}>
-            {t('id')}: {item.id || t('notAvailable')}
-          </Text>
+
+          <View style={styles.studentInfoContainer}>
+            <Text
+              style={[
+                styles.studentName,
+                isSelected && styles.selectedStudentText,
+              ]}
+            >
+              {item.name || t('student')}
+            </Text>
+            <Text style={styles.studentDetails}>
+              {t('id')}: {item.id || t('notAvailable')}
+            </Text>
+            {item.class_name && (
+              <Text style={styles.studentClass}>
+                {item.class_name}
+              </Text>
+            )}
+            {item.branch?.branch_name && (
+              <Text style={styles.studentBranch}>
+                {item.branch.branch_name}
+              </Text>
+            )}
+            {item.email && (
+              <Text style={styles.studentEmail}>
+                {item.email}
+              </Text>
+            )}
+          </View>
 
           {isSelected && (
             <View style={styles.selectedBadge}>
@@ -798,26 +905,31 @@ export default function ParentScreen({ navigation }) {
             <Text style={styles.sectionTitle}>
               {students.length > 1 ? t('yourChildren') : t('yourChild')}
             </Text>
-            {students.length > 2 && (
+            {students.length > 1 && (
               <TouchableOpacity
                 style={styles.scrollIndicator}
                 onPress={() => {
-                  if (students.length > 2 && flatListRef.current) {
+                  if (students.length > 1 && flatListRef.current) {
                     // Scroll to the next item
-                    const currentIndex = selectedStudent
-                      ? students.findIndex((s) => s.id === selectedStudent.id)
-                      : 0;
                     const nextIndex = (currentIndex + 1) % students.length;
+                    setCurrentIndex(nextIndex);
                     flatListRef.current.scrollToIndex({
                       index: nextIndex,
                       animated: !shouldReduceMotion, // Respect reduce motion setting
                     });
+                    handleStudentPress(students[nextIndex]);
                   }
                 }}
               >
                 <Text style={styles.scrollIndicatorText}>
                   {t('scrollForMore')}
                 </Text>
+                <FontAwesomeIcon
+                  icon={faChevronDown}
+                  size={12}
+                  color={theme.colors.primary}
+                  style={{ marginLeft: 6, transform: [{ rotate: '-90deg' }] }}
+                />
               </TouchableOpacity>
             )}
           </View>
@@ -829,32 +941,65 @@ export default function ParentScreen({ navigation }) {
           ) : students.length === 0 ? (
             <EmptyListComponent />
           ) : (
-            <FlatList
-              ref={flatListRef}
-              data={students}
-              renderItem={renderStudentItem}
-              keyExtractor={(_, index) => `student-${index}`}
-              contentContainerStyle={styles.listContainer}
-              horizontal={true}
-              showsHorizontalScrollIndicator={false}
-              snapToAlignment='start'
-              decelerationRate='fast'
-              snapToInterval={176} // Width of tile (160) + margin (16)
-              onScrollToIndexFailed={(info) => {
-                // Handle the failure by scrolling to a nearby item
-                setTimeout(() => {
-                  if (flatListRef.current && students.length > 0) {
-                    flatListRef.current.scrollToIndex({
-                      index: Math.min(
-                        info.highestMeasuredFrameIndex,
-                        students.length - 1
-                      ),
-                      animated: !shouldReduceMotion, // Respect reduce motion setting
-                    });
+            <>
+              <FlatList
+                ref={flatListRef}
+                data={students}
+                renderItem={renderStudentItem}
+                keyExtractor={(_, index) => `student-${index}`}
+                contentContainerStyle={styles.listContainer}
+                horizontal={true}
+                showsHorizontalScrollIndicator={false}
+                snapToAlignment='center'
+                decelerationRate='fast'
+                snapToInterval={346} // Width of tile (330) + margin (16)
+                onScroll={(event) => {
+                  const offsetX = event.nativeEvent.contentOffset.x;
+                  const index = Math.round(offsetX / 346);
+                  if (index !== currentIndex && index >= 0 && index < students.length) {
+                    setCurrentIndex(index);
                   }
-                }, 100);
-              }}
-            />
+                }}
+                scrollEventThrottle={16}
+                onScrollToIndexFailed={(info) => {
+                  // Handle the failure by scrolling to a nearby item
+                  setTimeout(() => {
+                    if (flatListRef.current && students.length > 0) {
+                      flatListRef.current.scrollToIndex({
+                        index: Math.min(
+                          info.highestMeasuredFrameIndex,
+                          students.length - 1
+                        ),
+                        animated: !shouldReduceMotion, // Respect reduce motion setting
+                      });
+                    }
+                  }, 100);
+                }}
+              />
+
+              {/* Pagination Dots */}
+              {students.length > 1 && (
+                <View style={styles.paginationContainer}>
+                  {students.map((student, index) => (
+                    <AnimatedPaginationDot
+                      key={`dot-${index}`}
+                      isActive={index === currentIndex}
+                      theme={theme}
+                      onPress={() => {
+                        setCurrentIndex(index);
+                        flatListRef.current?.scrollToIndex({
+                          index,
+                          animated: true,
+                        });
+                        handleStudentPress(student);
+                      }}
+                      dotStyle={styles.paginationDot}
+                      touchableStyle={styles.paginationDotTouchable}
+                    />
+                  ))}
+                </View>
+              )}
+            </>
           )}
         </View>
 
@@ -1088,20 +1233,43 @@ const createStyles = (theme, fontSizes) =>
       marginBottom: 5,
     },
     scrollIndicator: {
-      backgroundColor: theme.colors.primaryLight,
+      backgroundColor: theme.colors.surface,
       paddingHorizontal: 12,
       paddingVertical: 6,
-      borderRadius: 15,
+      borderRadius: 20,
       flexDirection: 'row',
       alignItems: 'center',
       borderWidth: 1,
-      borderColor: theme.colors.primary + '50',
+      borderColor: theme.colors.primary,
       marginRight: 10,
+      ...createCustomShadow(theme, {
+        height: 1,
+        opacity: 0.1,
+        radius: 4,
+        elevation: 2,
+      }),
     },
     scrollIndicatorText: {
       color: theme.colors.primary,
       fontSize: fontSizes.caption,
       fontWeight: '600',
+    },
+    paginationContainer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: 5,
+      paddingHorizontal: 20,
+    },
+    paginationDotTouchable: {
+      paddingHorizontal: 4,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    paginationDot: {
+      height: 8,
+      borderRadius: 4,
+      marginHorizontal: 2,
     },
     menuSection: {
       flex: 1,
@@ -1117,22 +1285,23 @@ const createStyles = (theme, fontSizes) =>
       marginLeft: 15,
     },
     listContainer: {
-      paddingBottom: 10,
-      paddingLeft: 10,
-      paddingRight: 40,
+      paddingVertical: 5,
+      paddingHorizontal: 16,
     },
     studentTileContainer: {
       position: 'relative',
-      margin: 8,
-      width: 160,
-      height: 180,
+      marginVertical: 5,
+      marginHorizontal: 8,
+      width: 330,
+      minHeight: 120,
     },
     studentTile: {
       backgroundColor: theme.colors.surface,
       borderRadius: 12,
-      padding: 15,
+      padding: 16,
       width: '100%',
-      height: '100%',
+      minHeight: 120,
+      flexDirection: 'row',
       alignItems: 'center',
       // Platform-specific shadow
       ...createCustomShadow(theme, {
@@ -1144,16 +1313,15 @@ const createStyles = (theme, fontSizes) =>
       borderWidth: 2,
       borderColor: 'transparent',
       position: 'relative',
-      overflow: 'hidden',
     },
     deleteButton: {
       position: 'absolute',
-      top: 5,
-      right: 5,
+      top: 4,
+      right: 4,
       backgroundColor: theme.colors.surface,
-      width: 30,
-      height: 30,
-      borderRadius: 15,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
       justifyContent: 'center',
       alignItems: 'center',
       zIndex: 10,
@@ -1192,11 +1360,11 @@ const createStyles = (theme, fontSizes) =>
     },
     selectedBadge: {
       position: 'absolute',
-      top: 10,
-      left: 10,
+      top: 6,
+      left: 6,
       backgroundColor: theme.colors.primary,
       paddingHorizontal: 6,
-      paddingVertical: 3,
+      paddingVertical: 4,
       borderRadius: 10,
     },
     selectedBadgeText: {
@@ -1205,39 +1373,57 @@ const createStyles = (theme, fontSizes) =>
       fontWeight: 'bold',
     },
     studentIconContainer: {
-      width: 70,
-      height: 70,
-      borderRadius: 35,
+      width: 60,
+      height: 60,
+      borderRadius: 30,
       backgroundColor: theme.colors.primary,
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: 15,
+      marginRight: 16,
     },
     studentPhoto: {
-      width: 90,
-      height: 90,
-      borderRadius: 50,
-      marginTop: 5,
-      marginBottom: 15,
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      marginRight: 12,
       borderWidth: 2,
       borderColor: 'transparent',
     },
     selectedStudentPhoto: {
       borderColor: theme.colors.primary,
     },
-    // No longer needed with FontAwesome icon
+    studentInfoContainer: {
+      flex: 1,
+      justifyContent: 'center',
+    },
     studentName: {
-      fontSize: 11,
-      fontWeight: '600',
+      fontSize: fontSizes.medium,
+      fontWeight: '700',
       color: theme.colors.text,
-      marginBottom: 8,
-      textAlign: 'center',
+      marginBottom: 4,
+        textTransform: 'uppercase',
     },
     studentDetails: {
-      fontSize: 14,
+      fontSize: fontSizes.bodySmall,
       color: theme.colors.textSecondary,
-      marginBottom: 4,
-      textAlign: 'center',
+      marginBottom: 2,
+    },
+    studentClass: {
+      fontSize: fontSizes.bodySmall,
+      color: theme.colors.primary,
+      fontWeight: '600',
+      marginBottom: 2,
+    },
+    studentBranch: {
+      fontSize: fontSizes.caption,
+      color: theme.colors.accent || '#FF9800',
+      fontWeight: '600',
+      marginBottom: 2,
+    },
+    studentEmail: {
+      fontSize: fontSizes.caption,
+      color: theme.colors.textSecondary,
+      fontStyle: 'italic',
     },
     emptyContainer: {
       width: '100%',
@@ -1280,8 +1466,8 @@ const createStyles = (theme, fontSizes) =>
       flexDirection: 'row',
       flexWrap: 'wrap',
       justifyContent: 'flex-start', // Changed from space-between to support flex expansion
-      paddingBottom: 50, // Add padding for scrollable content
-      paddingHorizontal: 5, // Add padding for scrollable content
+      paddingBottom: 170, // Add padding for scrollable content
+      paddingHorizontal: 3, // Add padding for scrollable content
     },
     // iPad-specific grid layout - 4 tiles per row, wraps to next row for additional tiles
     iPadActionTilesGrid: {
@@ -1311,8 +1497,8 @@ const createStyles = (theme, fontSizes) =>
       gap: Math.max(8, (screenWidth - 90 - ((screenWidth - 90) / 6) * 6) / 5), // Dynamic gap for 6 tiles
     },
     actionTile: {
-      width: (screenWidth - 20 - 20) / 3 - 5, // 3 tiles per row: screen width - content padding (10*2) - grid padding (10*2) - margins (8) / 3
-      minWidth: (screenWidth - 20 - 20) / 3 - 8, // Minimum width for flex expansion
+      width: (screenWidth - 30) / 3 - 8, // 3 tiles per row: screen width - padding (24*2) - margins (8*3) / 3
+      minWidth: (screenWidth - 30) / 3 - 8, // Minimum width for flex expansion
       aspectRatio: 1, // Square tiles
       borderRadius: 20, // Slightly smaller border radius for smaller tiles
       padding: 14, // Reduced padding for smaller tiles
@@ -1487,7 +1673,7 @@ const createStyles = (theme, fontSizes) =>
       backgroundColor: theme.colors.surface,
       borderRadius: 12,
       padding: 12,
-      width: (screenWidth - 20 - 20) / 3 - 8, // 3 tiles per row: screen width - content padding (10*2) - grid padding (10*2) - margins (8) / 3
+      width: (screenWidth - 48) / 3 - 8, // 3 tiles per row: screen width - padding (24*2) - margins (8*3) / 3
       aspectRatio: 1, // Square items
       alignItems: 'center',
       justifyContent: 'center', // Center content vertically

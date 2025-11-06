@@ -17,8 +17,6 @@ import Animated, {
     useSharedValue,
     withSpring,
     withTiming,
-    runOnJS,
-    interpolate,
     Easing,
 } from 'react-native-reanimated';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -97,6 +95,21 @@ export default function GradesScreen({navigation, route}) {
     // Term filtering state
     const [availableTerms, setAvailableTerms] = useState([]);
     const [selectedTerm, setSelectedTerm] = useState(null);
+
+    // Helper function to check if selected term is before current term
+    const isSelectedTermBeforeCurrent = useMemo(() => {
+        if (!selectedTerm || !availableTerms.length) return false;
+
+        // If the selected term is marked as current, it's not before current
+        if (selectedTerm.is_current) return false;
+
+        // Find the current term
+        const currentTerm = availableTerms.find(t => t.is_current);
+        if (!currentTerm) return false;
+
+        // Compare semester numbers (lower number = earlier term)
+        return selectedTerm.semester_number < currentTerm.semester_number;
+    }, [selectedTerm, availableTerms]);
 
     // Refresh notifications when screen comes into focus
     useFocusEffect(
@@ -201,6 +214,10 @@ export default function GradesScreen({navigation, route}) {
                 endDate,
             });
 
+            // Check if selected term is before current (past term)
+            const isPastTerm = termToUse && !termToUse.is_current && availableTerms.length > 0 &&
+                availableTerms.find(t => t.is_current)?.semester_number > termToUse.semester_number;
+
             // Build URLs with date range if we have a term
             const legacyUrl = buildApiUrl(Config.API_ENDPOINTS.GET_STUDENT_GRADES, {
                 authCode,
@@ -213,6 +230,8 @@ export default function GradesScreen({navigation, route}) {
                     authCode,
                     ...(startDate && {start_date: startDate}),
                     ...(endDate && {end_date: endDate}),
+                    // Force calculation for past terms
+                    ...(isPastTerm && {force_calculate: 1}),
                 }
             );
             const strandUrl = buildApiUrl(
@@ -221,6 +240,8 @@ export default function GradesScreen({navigation, route}) {
                     authCode,
                     ...(startDate && {start_date: startDate}),
                     ...(endDate && {end_date: endDate}),
+                    // Force calculation for past terms
+                    ...(isPastTerm && {force_calculate: 1}),
                 }
             );
 
@@ -674,6 +695,18 @@ export default function GradesScreen({navigation, route}) {
 
             // Use API-provided subject data instead of calculating from strands
             const subjectData = section.subjectData;
+
+            // Debug logging for past terms
+            if (isSelectedTermBeforeCurrent) {
+                console.log('🔍 GRADES: Past term subject data:', {
+                    subject: section.title,
+                    hasLockedAssessments: subjectData?.has_locked_assessments,
+                    overallAverage: subjectData?.subject_overall_average,
+                    letterGrade: subjectData?.subject_letter_grade,
+                    isBeforeCurrent: isSelectedTermBeforeCurrent,
+                });
+            }
+
             const overallAverage = subjectData?.subject_overall_average
                 ? Math.round(subjectData.subject_overall_average)
                 : '--';
@@ -711,7 +744,7 @@ export default function GradesScreen({navigation, route}) {
                         </View>
                     </View>
                     <View style={styles.sectionHeaderRight}>
-                        {subjectData?.has_locked_assessments && (
+                        {isSelectedTermBeforeCurrent && (
                             <View style={styles.sectionHeaderGrades}>
                                 <Text
                                     style={[styles.sectionHeaderAverage, {color: subjectColor}]}
@@ -735,7 +768,7 @@ export default function GradesScreen({navigation, route}) {
                 </TouchableOpacity>
             );
         },
-        [expandedSections, toggleSection]
+        [expandedSections, toggleSection, isSelectedTermBeforeCurrent, theme, strandGrades]
     );
 
     // Render formative section header
@@ -2304,10 +2337,8 @@ export default function GradesScreen({navigation, route}) {
                                             a.score !== ''
                                     ).length || 0;
 
-                                // Check if any subject has locked assessments
-                                const hasAnyLockedAssessments = strandGrades?.subjects_with_strands?.some(
-                                    (subject) => subject.has_locked_assessments
-                                ) || false;
+                                // Only show overall scores for past terms
+                                const shouldShowOverallScores = isSelectedTermBeforeCurrent;
 
                                 return summaryData ? (
                                     <View style={styles.statsCardsContainer}>
@@ -2315,7 +2346,7 @@ export default function GradesScreen({navigation, route}) {
                                         <View style={styles.statsCard}>
                                             <Text style={styles.statsCardLabel}>SUMMATIVE</Text>
                                             <Text style={styles.statsCardValue}>
-                                                {!hasAnyLockedAssessments ? 'N/A' : (!summaryData.overall_letter_grade ? 'N/A' : summaryData.overall_letter_grade)}
+                                                {!shouldShowOverallScores ? 'N/A' : (!summaryData.overall_letter_grade ? 'N/A' : summaryData.overall_letter_grade)}
                                             </Text>
                                             <Text style={styles.statsCardSubtitle}>
                                                 Average Grade
@@ -2325,14 +2356,14 @@ export default function GradesScreen({navigation, route}) {
                                                     <Text style={styles.statsDetailIcon}>📈</Text>
                                                     <Text style={styles.statsDetailText}>
                                                         Highest
-                                                        Grade: {!hasAnyLockedAssessments ? 'N/A' : `${summaryData.highest_grade || 0}%`}
+                                                        Grade: {!shouldShowOverallScores ? 'N/A' : `${summaryData.highest_grade || 0}%`}
                                                     </Text>
                                                 </View>
                                                 <View style={styles.statsDetailRow}>
                                                     <Text style={styles.statsDetailIcon}>📉</Text>
                                                     <Text style={styles.statsDetailText}>
                                                         Lowest
-                                                        Grade: {!hasAnyLockedAssessments ? 'N/A' : `${summaryData.lowest_grade || 0}%`}
+                                                        Grade: {!shouldShowOverallScores ? 'N/A' : `${summaryData.lowest_grade || 0}%`}
                                                     </Text>
                                                 </View>
                                             </View>
@@ -2820,7 +2851,7 @@ const createStyles = (theme) =>
             borderRadius: 16,
             marginHorizontal: 16,
             marginTop: 8,
-            marginBottom: 8,
+
             elevation: 3,
             shadowColor: '#000',
             shadowOffset: {width: 0, height: 2},
@@ -2987,7 +3018,7 @@ const createStyles = (theme) =>
         content: {
             flex: 1,
             paddingHorizontal: 5,
-            paddingVertical: 10,
+            paddingBottom: 5,
         },
         landscapeContent: {
             paddingHorizontal: 20, // More padding in landscape for better use of space
@@ -4336,13 +4367,10 @@ const createStyles = (theme) =>
         // Term Selector Switch Styles
         termSelectorContainer: {
             paddingHorizontal: 16,
-            paddingVertical: 12,
+            paddingVertical: 5,
             backgroundColor: theme.colors.background,
-            borderBottomWidth: 1,
-            borderBottomColor: theme.colors.border,
+            borderRadius: 10,
             ...createSmallShadow(theme),
-            borderBottomLeftRadius: 16,
-            borderBottomRightRadius: 16,
         },
         termSwitchScrollContent: {
             paddingRight: 16,
@@ -4353,12 +4381,12 @@ const createStyles = (theme) =>
             alignItems: 'center',
             backgroundColor: theme.colors.card,
             paddingHorizontal: 16,
-            paddingVertical: 10,
-            borderRadius: 20,
+            paddingVertical: 5,
+            borderRadius: 10,
             borderWidth: 1.5,
             borderColor: theme.colors.border,
             gap: 6,
-            minHeight: 40,
+            minHeight: 20,
         },
         termSwitchButtonActive: {
             backgroundColor: theme.colors.primary,
