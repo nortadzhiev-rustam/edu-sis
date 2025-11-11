@@ -420,10 +420,10 @@ export default function GradesScreen({navigation, route}) {
         return Array.from(subjects);
     };
 
-    // Get summary data (only from advanced API)
+    // Get summary data (from strand-based API, fallback to advanced API)
     const getSummaryData = useCallback(() => {
-        return calculatedGrades?.summary || null;
-    }, [calculatedGrades]);
+        return strandGrades?.summary || calculatedGrades?.summary || null;
+    }, [strandGrades, calculatedGrades]);
 
     // Prepare section list data from strand grades
     const getSectionListData = useCallback(() => {

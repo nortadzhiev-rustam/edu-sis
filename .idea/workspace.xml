@@ -7,7 +7,11 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ef623be7-f661-4789-8237-3d30a600b41f" name="Changes" comment="add: update school configurations with new campuses, social media links, and branding; implement social media link modals and add localized translations across supported languages" />
+    <list default="true" id="ef623be7-f661-4789-8237-3d30a600b41f" name="Changes" comment="refactor: add margin-bottom to social media section in HomeScreen for spacing adjustment">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/screens/GradesScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/screens/GradesScreen.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/screens/HomeScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/screens/HomeScreen.js" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -89,7 +93,9 @@
       <workItem from="1761704449570" duration="600000" />
       <workItem from="1762402875443" duration="13517000" />
       <workItem from="1762416756705" duration="586000" />
-      <workItem from="1762417368291" duration="4577000" />
+      <workItem from="1762417368291" duration="5281000" />
+      <workItem from="1762482166578" duration="7000" />
+      <workItem from="1762839737540" duration="775000" />
     </task>
     <task id="LOCAL-00001" summary="update: adjusted app logos and launcher assets, updated dependencies and project configurations">
       <option name="closed" value="true" />
@@ -219,7 +225,23 @@
       <option name="project" value="LOCAL" />
       <updated>1762421932834</updated>
     </task>
-    <option name="localTasksCounter" value="17" />
+    <task id="LOCAL-00017" summary="refactor: adjust social media section styles in HomeScreen, reducing padding and gap spacing for better alignment">
+      <option name="closed" value="true" />
+      <created>1762422225393</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1762422225393</updated>
+    </task>
+    <task id="LOCAL-00018" summary="refactor: add margin-bottom to social media section in HomeScreen for spacing adjustment">
+      <option name="closed" value="true" />
+      <created>1762422379437</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1762422379437</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -253,7 +275,9 @@
     <MESSAGE value="refactor: update theme-based color logic and adjust styles in ParentScreen and HomeScreen for dark mode consistency" />
     <MESSAGE value="refactor: adjust tile height logic, refine flex expansion, update text styles, and streamline dark mode theming in ParentScreen" />
     <MESSAGE value="add: update school configurations with new campuses, social media links, and branding; implement social media link modals and add localized translations across supported languages" />
-    <option name="LAST_COMMIT_MESSAGE" value="add: update school configurations with new campuses, social media links, and branding; implement social media link modals and add localized translations across supported languages" />
+    <MESSAGE value="refactor: adjust social media section styles in HomeScreen, reducing padding and gap spacing for better alignment" />
+    <MESSAGE value="refactor: add margin-bottom to social media section in HomeScreen for spacing adjustment" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor: add margin-bottom to social media section in HomeScreen for spacing adjustment" />
   </component>
   <component name="VueSettings">
     <option name="useTypesFromServer" value="true" />

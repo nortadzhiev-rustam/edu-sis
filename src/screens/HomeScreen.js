@@ -161,6 +161,50 @@ export default function HomeScreen({navigation}) {
     const [socialModalVisible, setSocialModalVisible] = React.useState(false);
     const [selectedPlatform, setSelectedPlatform] = React.useState(null);
     const [platformLinks, setPlatformLinks] = React.useState([]);
+    const modalTranslateY = React.useRef(new Animated.Value(0)).current;
+
+    // Pan responder for swipe down gesture
+    const panResponder = React.useRef(
+        React.useMemo(() => ({
+            onStartShouldSetPanResponder: () => true,
+            onMoveShouldSetPanResponder: (_, gestureState) => {
+                // Only respond to vertical swipes
+                return Math.abs(gestureState.dy) > 5;
+            },
+            onPanResponderMove: (_, gestureState) => {
+                // Only allow downward swipes
+                if (gestureState.dy > 0) {
+                    modalTranslateY.setValue(gestureState.dy);
+                }
+            },
+            onPanResponderRelease: (_, gestureState) => {
+                // If swiped down more than 100px, close the modal
+                if (gestureState.dy > 100) {
+                    Animated.timing(modalTranslateY, {
+                        toValue: 500,
+                        duration: 200,
+                        useNativeDriver: true,
+                    }).start(() => {
+                        setSocialModalVisible(false);
+                        modalTranslateY.setValue(0);
+                    });
+                } else {
+                    // Otherwise, spring back to original position
+                    Animated.spring(modalTranslateY, {
+                        toValue: 0,
+                        useNativeDriver: true,
+                    }).start();
+                }
+            },
+        }), [])
+    ).current;
+
+    // Reset modal position when it opens
+    React.useEffect(() => {
+        if (socialModalVisible) {
+            modalTranslateY.setValue(0);
+        }
+    }, [socialModalVisible]);
 
     // Debug logging for iOS content visibility
     React.useEffect(() => {
@@ -1146,15 +1190,19 @@ export default function HomeScreen({navigation}) {
                 transparent={true}
                 visible={socialModalVisible}
                 onRequestClose={() => setSocialModalVisible(false)}
-                presentationStyle="pageSheet"
             >
                 <Pressable
                     style={styles.modalContainer}
                     onPress={() => setSocialModalVisible(false)}
                 >
-                    <Pressable
-                        style={styles.modalContent}
-                        onPress={(e) => e.stopPropagation()}
+                    <Animated.View
+                        style={[
+                            styles.modalContent,
+                            {
+                                transform: [{ translateY: modalTranslateY }]
+                            }
+                        ]}
+                        {...panResponder.panHandlers}
                     >
                         {selectedPlatform && (
                             <>
@@ -1227,7 +1275,7 @@ export default function HomeScreen({navigation}) {
                                 </ScrollView>
                             </>
                         )}
-                    </Pressable>
+                    </Animated.View>
                 </Pressable>
             </Modal>
             {/* copyright with version and logo */}
